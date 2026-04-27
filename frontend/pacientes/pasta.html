@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../styles/components.css">
     <link rel="stylesheet" href="../styles/pacientes.css">
     <link rel="stylesheet" href="../anamnese/anamnese.css">
+    <link rel="stylesheet" href="../hipoteses/hipoteses.css">
 </head>
 <body>
     <div class="app-shell">
@@ -47,6 +48,7 @@
     let paciente = null;
     let etapaAtual = 'visao_geral';
     let anamneseExistente = null;
+    let hipoteseExistente = null;
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -88,12 +90,11 @@
         paciente = data;
         await CortexAudit.log('leitura', 'pacientes', pacienteId, { pacienteId });
 
-        await carregarAnamnese();
+        await Promise.all([carregarAnamnese(), carregarHipotese()]);
         renderizarPasta();
     }
 
     async function carregarAnamnese() {
-        // Status do A1: em_andamento (rascunho) | concluida (finalizada)
         const { data, error } = await window.cortexClient
             .from('anamneses')
             .select('id, faixa_etaria, status, created_at, updated_at, aprovado_em')
@@ -104,6 +105,18 @@
 
         if (!error && data) {
             anamneseExistente = data;
+        }
+    }
+
+    async function carregarHipotese() {
+        const { data, error } = await window.cortexClient
+            .from('hipoteses')
+            .select('id, hipoteses_iniciais, cids_sugeridos, instrumentos_sugeridos, aprovado_em, created_at, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) {
+            hipoteseExistente = data;
         }
     }
 
@@ -172,10 +185,12 @@
             </div>
         `;
 
-        // Marca anamnese como concluída na barra se status='concluida'
         const etapasComStatus = ETAPAS.map(et => {
             let concluida = false;
             if (et.id === 'anamnese' && anamneseExistente && anamneseExistente.status === 'concluida') {
+                concluida = true;
+            }
+            if (et.id === 'hipoteses' && hipoteseExistente && hipoteseExistente.aprovado_em) {
                 concluida = true;
             }
             return { ...et, concluida };
@@ -206,16 +221,11 @@
     window.trocarEtapa = trocarEtapa;
 
     function renderizarEtapa(etapaId) {
-        if (etapaId === 'visao_geral') {
-            return renderVisaoGeral();
-        }
-
-        if (etapaId === 'anamnese') {
-            return renderAnamnese();
-        }
+        if (etapaId === 'visao_geral') return renderVisaoGeral();
+        if (etapaId === 'anamnese') return renderAnamnese();
+        if (etapaId === 'hipoteses') return renderHipoteses();
 
         const sprints = {
-            'hipoteses': 'Sprint B3',
             'checklist': 'Sprint D1',
             'bateria': 'Sprint D3',
             'correcao': 'Sprint D4',
@@ -316,7 +326,7 @@
                             <h3>Anamnese finalizada</h3>
                             <p><strong>Formulário:</strong> ${faixaLabel}</p>
                             <p><strong>Finalizada em:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
-                            <p style="color: var(--color-text-muted); margin-top: 12px;">A anamnese está bloqueada para edição. Os dados estão disponíveis para o laudo e equipe.</p>
+                            <p style="color: var(--color-text-muted); margin-top: 12px;">A anamnese está bloqueada para edição.</p>
                         </div>
                         <div class="anamnese-card-resumo-acoes">
                             <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-secondary">Visualizar</a>
@@ -326,7 +336,6 @@
             `;
         }
 
-        // Em andamento (rascunho)
         return `
             <div class="etapa-content">
                 <div class="anamnese-card-resumo">
@@ -345,6 +354,103 @@
                     <div class="anamnese-card-resumo-acoes">
                         <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-primary">
                             Continuar anamnese
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderHipoteses() {
+        // Verifica se a anamnese está finalizada (pré-requisito recomendado)
+        const anamneseFinalizada = anamneseExistente && anamneseExistente.status === 'concluida';
+
+        if (!hipoteseExistente) {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                        </div>
+                        <h3>Hipóteses ainda não levantadas</h3>
+                        ${!anamneseFinalizada ? `
+                            <p style="margin-bottom: 18px; color: var(--color-warning-text);">⚠️ Recomendamos finalizar a anamnese antes de levantar hipóteses.</p>
+                        ` : `
+                            <p style="margin-bottom: 18px;">A partir da anamnese, defina as hipóteses diagnósticas iniciais para guiar a bateria de avaliação.</p>
+                        `}
+                        <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                            Iniciar hipóteses
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        const numCids = (hipoteseExistente.cids_sugeridos || []).length;
+        const numInst = (hipoteseExistente.instrumentos_sugeridos || []).length;
+        const aprovada = !!hipoteseExistente.aprovado_em;
+
+        if (aprovada) {
+            return `
+                <div class="etapa-content">
+                    <div class="hipoteses-card-resumo">
+                        <div class="hipoteses-card-resumo-icone hipoteses-card-resumo-icone-success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <div class="hipoteses-card-resumo-info">
+                            <h3>Hipóteses aprovadas</h3>
+                            <p><strong>Aprovadas em:</strong> ${formatarDataHora(hipoteseExistente.aprovado_em)}</p>
+                            <p style="color: var(--color-text-muted); margin-top: 4px;">Bloqueado para edição. Os dados estão prontos para o planejamento da bateria.</p>
+                            <div class="hipoteses-mini-stats">
+                                <div class="hipoteses-mini-stat">
+                                    <span class="hipoteses-mini-stat-num">${numCids}</span>
+                                    <span class="hipoteses-mini-stat-label">CIDs/DSM</span>
+                                </div>
+                                <div class="hipoteses-mini-stat">
+                                    <span class="hipoteses-mini-stat-num">${numInst}</span>
+                                    <span class="hipoteses-mini-stat-label">Instrumentos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hipoteses-card-resumo-acoes">
+                            <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-secondary">Visualizar</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="etapa-content">
+                <div class="hipoteses-card-resumo">
+                    <div class="hipoteses-card-resumo-icone hipoteses-card-resumo-icone-warning">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                        </svg>
+                    </div>
+                    <div class="hipoteses-card-resumo-info">
+                        <h3>Hipóteses em rascunho</h3>
+                        <p><strong>Última edição:</strong> ${formatarDataHora(hipoteseExistente.updated_at)}</p>
+                        <p style="color: var(--color-text-muted); margin-top: 4px;">Continue refinando as hipóteses ou aprove para bloquear edição.</p>
+                        <div class="hipoteses-mini-stats">
+                            <div class="hipoteses-mini-stat">
+                                <span class="hipoteses-mini-stat-num">${numCids}</span>
+                                <span class="hipoteses-mini-stat-label">CIDs/DSM</span>
+                            </div>
+                            <div class="hipoteses-mini-stat">
+                                <span class="hipoteses-mini-stat-num">${numInst}</span>
+                                <span class="hipoteses-mini-stat-label">Instrumentos</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-primary">
+                            Continuar
                         </a>
                     </div>
                 </div>

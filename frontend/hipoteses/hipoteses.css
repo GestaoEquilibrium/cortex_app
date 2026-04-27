@@ -1,0 +1,445 @@
+/* ============================================================================
+   CORTEX_APP — Hipóteses CSS (chips, autocomplete, sugestões automáticas)
+   ============================================================================ */
+
+/* Reaproveita estilos do anamnese.css para cabeçalho e indicador-save */
+.anamnese-cabecalho {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: var(--shadow-xs);
+    flex-wrap: wrap;
+}
+
+.anamnese-cabecalho-titulo h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.anamnese-cabecalho-sub {
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
+.anamnese-cabecalho-acoes {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.indicador-save {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    transition: all var(--transition-fast);
+    min-width: 110px;
+    text-align: right;
+}
+
+.indicador-save-pendente { color: var(--color-warning-text); }
+.indicador-save-salvando { color: var(--primary-blue); }
+.indicador-save-salvo { color: var(--primary-green); }
+.indicador-save-erro { color: var(--color-danger-text); }
+
+/* ============================================================================
+   SUGESTÕES AUTOMÁTICAS (gerada a partir da anamnese)
+   ============================================================================ */
+
+.hipoteses-sugestoes {
+    background: linear-gradient(135deg, var(--primary-blue-50) 0%, var(--primary-green-50) 100%);
+    border: 1px solid var(--primary-blue-200);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+    margin-bottom: 14px;
+}
+
+.hipoteses-sugestoes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: var(--primary-blue-dark);
+    font-weight: 600;
+    font-size: 13.5px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.hipoteses-sugestoes-header small {
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+.hipoteses-sugestoes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sugestao-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    background: var(--color-surface);
+    border: 1px dashed var(--primary-blue);
+    border-radius: var(--radius-md);
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+    font-family: inherit;
+    color: var(--color-text);
+    max-width: 360px;
+}
+
+.sugestao-chip:hover {
+    background: var(--primary-blue);
+    color: white;
+    border-style: solid;
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.sugestao-chip strong {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sugestao-chip small {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+}
+
+.sugestao-chip:hover small {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ============================================================================
+   FORM SECTION (reutilizado mas com ajustes pequenos)
+   ============================================================================ */
+
+.form-section h2.form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ============================================================================
+   CHIPS (CIDs e Instrumentos)
+   ============================================================================ */
+
+.chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chips-vazio {
+    color: var(--color-text-muted);
+    font-size: 12.5px;
+    font-style: italic;
+    padding: 14px 0;
+    text-align: center;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.chip-cid,
+.chip-instrumento {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    padding-right: 32px;
+    position: relative;
+    max-width: 360px;
+    transition: all var(--transition-fast);
+}
+
+.chip-cid {
+    border-left: 3px solid var(--primary-blue);
+}
+
+.chip-instrumento {
+    border-left: 3px solid var(--primary-green);
+}
+
+.chip-cid:hover,
+.chip-instrumento:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.chip-cid strong,
+.chip-instrumento strong {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--color-text);
+    line-height: 1.3;
+}
+
+.chip-cid small,
+.chip-instrumento small {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.chip-instrumento small {
+    font-family: inherit;
+    line-height: 1.3;
+}
+
+.chip-remover {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--slate-100);
+    color: var(--color-text-muted);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-weight: 500;
+}
+
+.chip-remover:hover {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.chip-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+/* ============================================================================
+   AUTOCOMPLETE DROPDOWN
+   ============================================================================ */
+
+.form-group {
+    position: relative;
+}
+
+.autocomplete-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    margin-top: 4px;
+    max-height: 320px;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.autocomplete-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--slate-100);
+    transition: background var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background: var(--primary-blue-50);
+}
+
+.autocomplete-item strong {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.autocomplete-item small {
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.autocomplete-vazio {
+    padding: 14px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 12.5px;
+    font-style: italic;
+}
+
+/* ============================================================================
+   NAVEGAÇÃO INFERIOR
+   ============================================================================ */
+
+.wizard-navegacao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.wizard-navegacao-direita {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ============================================================================
+   CARD DE RESUMO NA PASTA (similar ao da anamnese)
+   ============================================================================ */
+
+.hipoteses-card-resumo {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 20px;
+    background: var(--slate-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.hipoteses-card-resumo-icone {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hipoteses-card-resumo-icone svg {
+    width: 28px;
+    height: 28px;
+}
+
+.hipoteses-card-resumo-icone-success {
+    background: var(--primary-green-100);
+    color: var(--primary-green-dark);
+}
+
+.hipoteses-card-resumo-icone-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.hipoteses-card-resumo-info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.hipoteses-card-resumo-info h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.hipoteses-card-resumo-info p {
+    font-size: 13px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.hipoteses-card-resumo-acoes {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.hipoteses-mini-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.hipoteses-mini-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hipoteses-mini-stat-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-family: var(--font-display);
+}
+
+.hipoteses-mini-stat-label {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+}
+
+/* ============================================================================
+   RESPONSIVO
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .anamnese-cabecalho {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hipoteses-card-resumo {
+        flex-direction: column;
+    }
+
+    .hipoteses-card-resumo-acoes {
+        width: 100%;
+    }
+
+    .hipoteses-card-resumo-acoes .btn {
+        flex: 1;
+    }
+}

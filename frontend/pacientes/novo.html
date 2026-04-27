@@ -3,42 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo paciente — CORTEX_APP</title>
+    <title>Novo paciente — CORTEX</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles/base.css">
     <link rel="stylesheet" href="../styles/components.css">
     <link rel="stylesheet" href="../styles/pacientes.css">
 </head>
 <body>
     <div class="app-shell">
-        <header class="app-header">
-            <div class="app-brand">
-                <svg class="app-brand-logo" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M30 8 C36 8, 42 14, 42 20 C42 26, 36 30, 30 30 Z" fill="#1A5FA8"/>
-                    <path d="M52 30 C52 36, 46 42, 40 42 C34 42, 30 36, 30 30 Z" fill="#2BBCD4"/>
-                    <path d="M30 52 C24 52, 18 46, 18 40 C18 34, 24 30, 30 30 Z" fill="#1A5FA8"/>
-                    <path d="M8 30 C8 24, 14 18, 20 18 C26 18, 30 24, 30 30 Z" fill="#2BBCD4"/>
-                    <circle cx="30" cy="30" r="4" fill="#FFFFFF"/>
-                </svg>
-                <span>CORTEX_APP</span>
-            </div>
-            <nav class="app-nav">
-                <a href="lista.html" class="active">Pacientes</a>
-                <a href="#" onclick="alert('Em breve');return false;">Agenda</a>
-                <a href="#" onclick="alert('Em breve');return false;">Relatórios</a>
-            </nav>
-            <div class="app-user">
-                <div>
-                    <div class="app-user-name" id="user-name">Carregando...</div>
-                    <div class="app-user-perfil" id="user-perfil"></div>
-                </div>
-                <button class="btn btn-ghost btn-sm" id="logout-btn">Sair</button>
-            </div>
-        </header>
+        <div id="sidebar-container"></div>
 
         <main class="app-main">
+            <a href="lista.html" class="page-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Voltar à lista de pacientes
+            </a>
+
             <div class="page-header">
                 <div class="page-title">
                     <h1>Novo paciente</h1>
@@ -50,14 +32,11 @@
             </div>
 
             <form id="form-paciente">
-                <!-- Identificação -->
                 <div class="form-section">
                     <h2 class="form-section-title">Identificação</h2>
                     <div class="form-grid">
                         <div class="form-group span-full">
-                            <label class="form-label">
-                                Nome completo <span class="required">*</span>
-                            </label>
+                            <label class="form-label">Nome completo <span class="required">*</span></label>
                             <input type="text" class="form-input" name="nome_completo" required maxlength="200">
                         </div>
 
@@ -68,9 +47,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">
-                                Sexo <span class="required">*</span>
-                            </label>
+                            <label class="form-label">Sexo <span class="required">*</span></label>
                             <select class="form-select" name="sexo" required>
                                 <option value="">Selecione...</option>
                                 <option value="Masculino">Masculino</option>
@@ -80,9 +57,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">
-                                Data de nascimento <span class="required">*</span>
-                            </label>
+                            <label class="form-label">Data de nascimento <span class="required">*</span></label>
                             <input type="date" class="form-input" name="data_nascimento" required>
                         </div>
 
@@ -99,7 +74,6 @@
                     </div>
                 </div>
 
-                <!-- Sociodemográficos -->
                 <div class="form-section">
                     <h2 class="form-section-title">Dados sociodemográficos</h2>
                     <div class="form-grid">
@@ -138,7 +112,6 @@
                     </div>
                 </div>
 
-                <!-- Convênio -->
                 <div class="form-section">
                     <h2 class="form-section-title">Convênio</h2>
                     <div class="form-grid">
@@ -156,7 +129,6 @@
                     </div>
                 </div>
 
-                <!-- Contatos -->
                 <div class="form-section">
                     <h2 class="form-section-title">Contatos</h2>
                     <div class="form-grid">
@@ -187,10 +159,9 @@
                     </div>
                 </div>
 
-                <!-- Responsável -->
                 <div class="form-section">
                     <h2 class="form-section-title">Responsável</h2>
-                    <p class="form-help" style="margin-bottom: 1rem;">
+                    <p class="form-help" style="margin-bottom: 12px;">
                         Preencher quando o paciente for menor de idade ou tiver curatela.
                     </p>
                     <div class="form-grid">
@@ -216,7 +187,6 @@
                     </div>
                 </div>
 
-                <!-- Encaminhamento -->
                 <div class="form-section">
                     <h2 class="form-section-title">Encaminhamento</h2>
                     <div class="form-grid">
@@ -237,7 +207,6 @@
                     </div>
                 </div>
 
-                <!-- Observações -->
                 <div class="form-section">
                     <h2 class="form-section-title">Observações</h2>
                     <div class="form-group">
@@ -245,11 +214,9 @@
                     </div>
                 </div>
 
-                <!-- Erro de envio -->
-                <div id="form-error" class="form-error" style="display: none; margin-bottom: 1rem; padding: 1rem; background: var(--color-danger-bg); border-radius: 8px; font-size: 0.9rem;"></div>
+                <div id="form-error" style="display: none; margin-bottom: 14px; padding: 12px 16px; background: var(--color-danger-bg); color: var(--color-danger-text); border-radius: var(--radius-md); font-size: 13px; border-left: 3px solid var(--color-danger-text);"></div>
 
-                <!-- Ações finais -->
-                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-bottom: 2rem;">
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 24px;">
                     <a href="lista.html" class="btn btn-secondary">Cancelar</a>
                     <button type="submit" id="submit-btn" class="btn btn-primary btn-lg">
                         <span class="btn-text">Cadastrar paciente</span>
@@ -266,31 +233,20 @@
     <script src="../shared/auth_guard.js"></script>
     <script src="../shared/audit.js"></script>
     <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/sidebar.js"></script>
 
     <script>
-    window.addEventListener('cortex:auth-ready', async (e) => {
-        const prof = e.detail.profissional;
-        document.getElementById('user-name').textContent = (prof.nome_completo || prof.email).split(' ')[0];
-        document.getElementById('user-perfil').textContent = window.CortexUI.PERFIL_LABELS[prof.perfil] || prof.perfil;
+    window.addEventListener('cortex:auth-ready', async () => {
+        await CortexSidebar.render('pacientes');
 
-        // Aplica máscaras
         window.CortexUI.aplicarMascaraCPF(document.getElementById('cpf-input'));
         window.CortexUI.aplicarMascaraTelefone(document.getElementById('telefone-input'));
         window.CortexUI.aplicarMascaraTelefone(document.getElementById('resp-tel-input'));
         window.CortexUI.aplicarMascaraCEP(document.getElementById('cep-input'));
 
-        // Carrega convênios
         await carregarConvenios();
 
-        // Setup form
         document.getElementById('form-paciente').addEventListener('submit', cadastrarPaciente);
-
-        // Setup logout
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await CortexAudit.log('logout', 'auth.users');
-            await window.cortexClient.auth.signOut();
-            window.location.href = '../index.html';
-        });
     });
 
     async function carregarConvenios() {
@@ -322,21 +278,17 @@
         const btnLoading = submitBtn.querySelector('.btn-loading');
         const errorDiv = document.getElementById('form-error');
 
-        // Reset erro
         errorDiv.style.display = 'none';
         errorDiv.textContent = '';
 
-        // Coleta dados
         const formData = new FormData(form);
         const dados = {};
         formData.forEach((value, key) => {
-            // Remove valores vazios para não inserir strings vazias no banco
             if (value && value.trim()) {
                 dados[key] = value.trim();
             }
         });
 
-        // Validação CPF (se preenchido)
         if (dados.cpf && !window.CortexUI.validarCPF(dados.cpf)) {
             errorDiv.textContent = 'CPF inválido. Verifique os dígitos.';
             errorDiv.style.display = 'block';
@@ -344,7 +296,6 @@
             return;
         }
 
-        // Loading state
         submitBtn.disabled = true;
         btnText.style.display = 'none';
         btnLoading.style.display = 'inline';
@@ -358,16 +309,13 @@
 
             if (error) throw error;
 
-            // Auditoria
             await CortexAudit.log('criacao', 'pacientes', novoPaciente.id, {
                 pacienteId: novoPaciente.id,
                 detalhes: { nome: novoPaciente.nome_completo }
             });
 
-            // Sucesso
             window.CortexUI.toast('Paciente cadastrado com sucesso!', 'success');
 
-            // Redireciona pra pasta do paciente
             setTimeout(() => {
                 window.location.href = `pasta.html?id=${novoPaciente.id}`;
             }, 600);

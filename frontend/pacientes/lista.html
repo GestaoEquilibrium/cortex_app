@@ -3,44 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pacientes — CORTEX_APP</title>
+    <title>Pacientes — CORTEX</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles/base.css">
     <link rel="stylesheet" href="../styles/components.css">
     <link rel="stylesheet" href="../styles/pacientes.css">
 </head>
 <body>
     <div class="app-shell">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="app-brand">
-                <svg class="app-brand-logo" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M30 8 C36 8, 42 14, 42 20 C42 26, 36 30, 30 30 Z" fill="#1A5FA8"/>
-                    <path d="M52 30 C52 36, 46 42, 40 42 C34 42, 30 36, 30 30 Z" fill="#2BBCD4"/>
-                    <path d="M30 52 C24 52, 18 46, 18 40 C18 34, 24 30, 30 30 Z" fill="#1A5FA8"/>
-                    <path d="M8 30 C8 24, 14 18, 20 18 C26 18, 30 24, 30 30 Z" fill="#2BBCD4"/>
-                    <circle cx="30" cy="30" r="4" fill="#FFFFFF"/>
-                </svg>
-                <span>CORTEX_APP</span>
-            </div>
-            <nav class="app-nav">
-                <a href="lista.html" class="active">Pacientes</a>
-                <a href="#" onclick="alert('Em breve — Sprint C1');return false;">Agenda</a>
-                <a href="#" onclick="alert('Em breve');return false;">Relatórios</a>
-            </nav>
-            <div class="app-user">
-                <div>
-                    <div class="app-user-name" id="user-name">Carregando...</div>
-                    <div class="app-user-perfil" id="user-perfil"></div>
-                </div>
-                <button class="btn btn-ghost btn-sm" id="logout-btn">Sair</button>
-            </div>
-        </header>
+        <div id="sidebar-container"></div>
 
         <main class="app-main">
-            <!-- Page header -->
             <div class="page-header">
                 <div class="page-title">
                     <h1>Pacientes</h1>
@@ -48,7 +23,7 @@
                 </div>
                 <div class="page-actions">
                     <a href="novo.html" class="btn btn-primary">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                             <line x1="12" y1="5" x2="12" y2="19"/>
                             <line x1="5" y1="12" x2="19" y2="12"/>
                         </svg>
@@ -57,15 +32,9 @@
                 </div>
             </div>
 
-            <!-- Filtros -->
             <div class="lista-filtros">
                 <div class="lista-filtros-busca">
-                    <input
-                        type="text"
-                        id="busca"
-                        placeholder="Buscar por nome..."
-                        autocomplete="off"
-                    >
+                    <input type="text" id="busca" placeholder="Buscar por nome..." autocomplete="off">
                 </div>
                 <select id="filtro-status">
                     <option value="">Todos os status</option>
@@ -79,7 +48,7 @@
                 <select id="filtro-convenio">
                     <option value="">Todos os convênios</option>
                 </select>
-                <div class="view-toggle" role="tablist" aria-label="Modo de visualização">
+                <div class="view-toggle">
                     <button id="view-cards" class="active" title="Visualizar em cards">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7"/>
@@ -100,7 +69,6 @@
                 </div>
             </div>
 
-            <!-- Conteúdo da lista -->
             <div id="lista-conteudo">
                 <div class="loading-state">
                     <div class="spinner"></div>
@@ -117,47 +85,25 @@
     <script src="../shared/audit.js"></script>
     <script src="../shared/avatar.js"></script>
     <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/sidebar.js"></script>
 
     <script>
-    // ============================================================================
-    // Estado da página
-    // ============================================================================
     let pacientes = [];
     let modoVisualizacao = localStorage.getItem('cortex_view_pacientes') || 'cards';
     let busca = '';
     let filtroStatus = '';
     let filtroConvenio = '';
 
-    // ============================================================================
-    // Inicialização (após auth-ready)
-    // ============================================================================
     window.addEventListener('cortex:auth-ready', async (e) => {
-        const prof = e.detail.profissional;
+        await CortexSidebar.render('pacientes');
 
-        // Atualiza header com info do usuário
-        const primeiroNome = (prof.nome_completo || prof.email).split(' ')[0];
-        document.getElementById('user-name').textContent = primeiroNome;
-        document.getElementById('user-perfil').textContent = window.CortexUI.PERFIL_LABELS[prof.perfil] || prof.perfil;
-
-        // Restaura view preferida
         aplicarModoVisualizacao(modoVisualizacao);
-
-        // Carrega convênios para filtro
         await carregarConvenios();
-
-        // Carrega pacientes
         await carregarPacientes();
-
-        // Setup event listeners
         setupListeners();
-
-        // Audita acesso à página
         await CortexAudit.log('leitura', 'pacientes_lista');
     });
 
-    // ============================================================================
-    // Setup de eventos
-    // ============================================================================
     function setupListeners() {
         document.getElementById('busca').addEventListener('input', (e) => {
             busca = e.target.value.toLowerCase();
@@ -183,12 +129,6 @@
             aplicarModoVisualizacao('tabela');
             renderizar();
         });
-
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await CortexAudit.log('logout', 'auth.users');
-            await window.cortexClient.auth.signOut();
-            window.location.href = '../index.html';
-        });
     }
 
     function aplicarModoVisualizacao(modo) {
@@ -198,9 +138,6 @@
         document.getElementById('view-tabela').classList.toggle('active', modo === 'tabela');
     }
 
-    // ============================================================================
-    // Carregamento de dados
-    // ============================================================================
     async function carregarConvenios() {
         const { data, error } = await window.cortexClient
             .from('convenios')
@@ -235,24 +172,14 @@
         renderizar();
     }
 
-    // ============================================================================
-    // Renderização
-    // ============================================================================
     function filtrarPacientes() {
         return pacientes.filter(p => {
             if (busca && !p.nome_completo.toLowerCase().includes(busca)) return false;
             if (filtroStatus && p.status !== filtroStatus) return false;
             if (filtroConvenio) {
-                // Filtro por convênio é por ID; precisamos buscar pelo nome
-                if (p.convenio_nome) {
-                    // Comparação: se o nome do convênio bate
-                    // (não temos convenio_id na view, então comparamos por nome)
-                    const select = document.getElementById('filtro-convenio');
-                    const optionSelecionada = select.options[select.selectedIndex];
-                    if (optionSelecionada && optionSelecionada.text !== p.convenio_nome) {
-                        return false;
-                    }
-                } else {
+                const select = document.getElementById('filtro-convenio');
+                const optionSelecionada = select.options[select.selectedIndex];
+                if (optionSelecionada && p.convenio_nome !== optionSelecionada.text) {
                     return false;
                 }
             }
@@ -279,7 +206,6 @@
             container.innerHTML = renderTabela(filtrados);
         }
 
-        // Adiciona handlers de clique nas linhas/cards
         container.querySelectorAll('[data-paciente-id]').forEach(el => {
             el.addEventListener('click', () => {
                 const id = el.dataset.pacienteId;
@@ -292,16 +218,28 @@
         if (pacientes.length === 0) {
             return `
                 <div class="empty-state">
-                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <line x1="19" y1="8" x2="19" y2="14"/>
+                            <line x1="22" y1="11" x2="16" y2="11"/>
+                        </svg>
+                    </div>
                     <div class="empty-state-title">Nenhum paciente cadastrado ainda</div>
-                    <div class="empty-state-text">Comece cadastrando o primeiro paciente da Equilibrium.</div>
+                    <div class="empty-state-text">Comece cadastrando o primeiro paciente do CORTEX.</div>
                     <a href="novo.html" class="btn btn-primary">+ Cadastrar primeiro paciente</a>
                 </div>
             `;
         }
         return `
             <div class="empty-state">
-                <div class="empty-state-icon">🔍</div>
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </div>
                 <div class="empty-state-title">Nenhum paciente encontrado</div>
                 <div class="empty-state-text">Tente ajustar os filtros de busca.</div>
             </div>

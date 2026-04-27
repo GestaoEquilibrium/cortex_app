@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../styles/pacientes.css">
     <link rel="stylesheet" href="../anamnese/anamnese.css">
     <link rel="stylesheet" href="../hipoteses/hipoteses.css">
+    <link rel="stylesheet" href="../relatorio_escolar/relatorio_escolar.css">
 </head>
 <body>
     <div class="app-shell">
@@ -49,6 +50,7 @@
     let etapaAtual = 'visao_geral';
     let anamneseExistente = null;
     let hipoteseExistente = null;
+    let relatorioEscolarExistente = null;
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -90,7 +92,11 @@
         paciente = data;
         await CortexAudit.log('leitura', 'pacientes', pacienteId, { pacienteId });
 
-        await Promise.all([carregarAnamnese(), carregarHipotese()]);
+        await Promise.all([
+            carregarAnamnese(),
+            carregarHipotese(),
+            carregarRelatorioEscolar()
+        ]);
         renderizarPasta();
     }
 
@@ -103,9 +109,7 @@
             .limit(1)
             .maybeSingle();
 
-        if (!error && data) {
-            anamneseExistente = data;
-        }
+        if (!error && data) anamneseExistente = data;
     }
 
     async function carregarHipotese() {
@@ -115,9 +119,17 @@
             .eq('paciente_id', pacienteId)
             .maybeSingle();
 
-        if (!error && data) {
-            hipoteseExistente = data;
-        }
+        if (!error && data) hipoteseExistente = data;
+    }
+
+    async function carregarRelatorioEscolar() {
+        const { data, error } = await window.cortexClient
+            .from('relatorios_escolares')
+            .select('id, observacoes_educadores, created_at, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) relatorioEscolarExistente = data;
     }
 
     function mostrarErroPasta(msg) {
@@ -222,7 +234,7 @@
 
     function renderizarEtapa(etapaId) {
         if (etapaId === 'visao_geral') return renderVisaoGeral();
-        if (etapaId === 'anamnese') return renderAnamnese();
+        if (etapaId === 'anamnese') return renderAnamneseComRelatorio();
         if (etapaId === 'hipoteses') return renderHipoteses();
 
         const sprints = {
@@ -270,7 +282,16 @@
         `;
     }
 
-    function renderAnamnese() {
+    function renderAnamneseComRelatorio() {
+        return `
+            <div class="etapa-content">
+                ${renderCardAnamnese()}
+                ${renderCardRelatorioEscolar()}
+            </div>
+        `;
+    }
+
+    function renderCardAnamnese() {
         if (!anamneseExistente) {
             const idadeAnos = paciente.idade_anos;
             let faixaSugerida = 'Adulto';
@@ -281,23 +302,21 @@
             else faixaSugerida = 'Idoso (50+ anos)';
 
             return `
-                <div class="etapa-content">
-                    <div class="etapa-placeholder">
-                        <div class="etapa-placeholder-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                                <polyline points="10 9 9 9 8 9"/>
-                            </svg>
-                        </div>
-                        <h3>Anamnese ainda não iniciada</h3>
-                        <p style="margin-bottom: 18px;">Com base na idade do paciente (${paciente.idade_humanizada}), o formulário sugerido é:<br><strong>${faixaSugerida}</strong></p>
-                        <a href="../anamnese/anamnese.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
-                            Iniciar anamnese
-                        </a>
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
                     </div>
+                    <h3>Anamnese ainda não iniciada</h3>
+                    <p style="margin-bottom: 18px;">Com base na idade do paciente (${paciente.idade_humanizada}), o formulário sugerido é:<br><strong>${faixaSugerida}</strong></p>
+                    <a href="../anamnese/anamnese.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                        Iniciar anamnese
+                    </a>
                 </div>
             `;
         }
@@ -315,54 +334,101 @@
 
         if (isFinalizada) {
             return `
-                <div class="etapa-content">
-                    <div class="anamnese-card-resumo">
-                        <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-success">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                        </div>
-                        <div class="anamnese-card-resumo-info">
-                            <h3>Anamnese finalizada</h3>
-                            <p><strong>Formulário:</strong> ${faixaLabel}</p>
-                            <p><strong>Finalizada em:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
-                            <p style="color: var(--color-text-muted); margin-top: 12px;">A anamnese está bloqueada para edição.</p>
-                        </div>
-                        <div class="anamnese-card-resumo-acoes">
-                            <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-secondary">Visualizar</a>
-                        </div>
+                <div class="anamnese-card-resumo">
+                    <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-success">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <div class="anamnese-card-resumo-info">
+                        <h3>Anamnese finalizada</h3>
+                        <p><strong>Formulário:</strong> ${faixaLabel}</p>
+                        <p><strong>Finalizada em:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
+                    </div>
+                    <div class="anamnese-card-resumo-acoes">
+                        <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-secondary">Visualizar</a>
                     </div>
                 </div>
             `;
         }
 
         return `
-            <div class="etapa-content">
-                <div class="anamnese-card-resumo">
-                    <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-warning">
+            <div class="anamnese-card-resumo">
+                <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-warning">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                    </svg>
+                </div>
+                <div class="anamnese-card-resumo-info">
+                    <h3>Anamnese em rascunho</h3>
+                    <p><strong>Formulário:</strong> ${faixaLabel}</p>
+                    <p><strong>Última edição:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
+                </div>
+                <div class="anamnese-card-resumo-acoes">
+                    <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-primary">
+                        Continuar anamnese
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCardRelatorioEscolar() {
+        // Se não foi cadastrado ainda
+        if (!relatorioEscolarExistente) {
+            return `
+                <div class="relatorio-card-resumo" style="margin-top: 14px;">
+                    <div class="relatorio-card-resumo-icone">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                            <path d="M12 20h9"/>
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                         </svg>
                     </div>
-                    <div class="anamnese-card-resumo-info">
-                        <h3>Anamnese em rascunho</h3>
-                        <p><strong>Formulário:</strong> ${faixaLabel}</p>
-                        <p><strong>Última edição:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
-                        <p style="color: var(--color-text-muted); margin-top: 12px;">Continue de onde parou.</p>
+                    <div class="relatorio-card-resumo-info">
+                        <h3>📚 Relatório Escolar</h3>
+                        <p style="color: var(--color-text-muted);">
+                            Cole aqui o relatório que a escola enviou para complementar a anamnese.
+                        </p>
                     </div>
-                    <div class="anamnese-card-resumo-acoes">
-                        <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-primary">
-                            Continuar anamnese
+                    <div class="relatorio-card-resumo-acoes">
+                        <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-secondary">
+                            Adicionar
                         </a>
                     </div>
+                </div>
+            `;
+        }
+
+        // Tem relatório registrado
+        const conteudo = relatorioEscolarExistente.observacoes_educadores || '';
+        const preview = conteudo.length > 0
+            ? conteudo.substring(0, 200) + (conteudo.length > 200 ? '...' : '')
+            : null;
+
+        return `
+            <div class="relatorio-card-resumo" style="margin-top: 14px;">
+                <div class="relatorio-card-resumo-icone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                </div>
+                <div class="relatorio-card-resumo-info">
+                    <h3>📚 Relatório Escolar</h3>
+                    <p><strong>Última edição:</strong> ${formatarDataHora(relatorioEscolarExistente.updated_at)}</p>
+                    ${preview ? `<div class="resumo-preview">${escapeHtml(preview)}</div>` : `<p style="color: var(--color-text-muted); font-style: italic;">Documento ainda sem conteúdo.</p>`}
+                </div>
+                <div class="relatorio-card-resumo-acoes">
+                    <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-primary">
+                        Editar relatório
+                    </a>
                 </div>
             </div>
         `;
     }
 
     function renderHipoteses() {
-        // Verifica se a anamnese está finalizada (pré-requisito recomendado)
         const anamneseFinalizada = anamneseExistente && anamneseExistente.status === 'concluida';
 
         if (!hipoteseExistente) {
@@ -404,7 +470,7 @@
                         <div class="hipoteses-card-resumo-info">
                             <h3>Hipóteses aprovadas</h3>
                             <p><strong>Aprovadas em:</strong> ${formatarDataHora(hipoteseExistente.aprovado_em)}</p>
-                            <p style="color: var(--color-text-muted); margin-top: 4px;">Bloqueado para edição. Os dados estão prontos para o planejamento da bateria.</p>
+                            <p style="color: var(--color-text-muted); margin-top: 4px;">Bloqueado para edição.</p>
                             <div class="hipoteses-mini-stats">
                                 <div class="hipoteses-mini-stat">
                                     <span class="hipoteses-mini-stat-num">${numCids}</span>
@@ -436,7 +502,6 @@
                     <div class="hipoteses-card-resumo-info">
                         <h3>Hipóteses em rascunho</h3>
                         <p><strong>Última edição:</strong> ${formatarDataHora(hipoteseExistente.updated_at)}</p>
-                        <p style="color: var(--color-text-muted); margin-top: 4px;">Continue refinando as hipóteses ou aprove para bloquear edição.</p>
                         <div class="hipoteses-mini-stats">
                             <div class="hipoteses-mini-stat">
                                 <span class="hipoteses-mini-stat-num">${numCids}</span>

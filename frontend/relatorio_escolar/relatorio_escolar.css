@@ -1,0 +1,104 @@
+/* ============================================================================
+   CORTEX_APP — Relatório Escolar CSS
+   ============================================================================ */
+
+/* Textarea grande do relatório */
+.relatorio-textarea {
+    min-height: 400px;
+    resize: vertical;
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+/* Card de resumo na pasta (3 estados: vazio / rascunho / salvo) */
+.relatorio-card-resumo {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 20px;
+    background: var(--slate-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.relatorio-card-resumo-icone {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--primary-blue-100);
+    color: var(--primary-blue-dark);
+}
+
+.relatorio-card-resumo-icone svg {
+    width: 28px;
+    height: 28px;
+}
+
+.relatorio-card-resumo-info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.relatorio-card-resumo-info h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.relatorio-card-resumo-info p {
+    font-size: 13px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.relatorio-card-resumo-info .resumo-preview {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    line-height: 1.55;
+    max-height: 80px;
+    overflow: hidden;
+    position: relative;
+    font-style: italic;
+}
+
+.relatorio-card-resumo-info .resumo-preview::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: linear-gradient(to bottom, transparent, var(--color-surface));
+    pointer-events: none;
+}
+
+.relatorio-card-resumo-acoes {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .relatorio-card-resumo {
+        flex-direction: column;
+    }
+    .relatorio-card-resumo-acoes {
+        width: 100%;
+    }
+    .relatorio-card-resumo-acoes .btn {
+        flex: 1;
+    }
+}

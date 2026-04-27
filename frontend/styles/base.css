@@ -1,0 +1,94 @@
+/* ============================================================================
+   CORTEX_APP — Base CSS (variáveis e reset)
+   ============================================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Cores institucionais Equilibrium */
+    --color-navy: #1A5FA8;
+    --color-navy-dark: #0F3F77;
+    --color-navy-light: #4A85C2;
+    --color-teal: #2BBCD4;
+    --color-teal-light: #5FCFE4;
+    --color-teal-dark: #1E94A8;
+
+    /* Neutros */
+    --color-bg: #F7FAFD;
+    --color-bg-alt: #EFF4FA;
+    --color-surface: #FFFFFF;
+    --color-text: #1F2937;
+    --color-text-muted: #6B7280;
+    --color-text-soft: #9CA3AF;
+    --color-border: #E5E7EB;
+    --color-border-strong: #D1D5DB;
+
+    /* Semânticos */
+    --color-success-bg: #DCFCE7;
+    --color-success-text: #166534;
+    --color-warning-bg: #FEF3C7;
+    --color-warning-text: #92400E;
+    --color-danger-bg: #FEE2E2;
+    --color-danger-text: #991B1B;
+    --color-info-bg: #DBEAFE;
+    --color-info-text: #1E40AF;
+
+    /* Avatar (ícone por sexo, fundo sutil) */
+    --avatar-masc-bg: #DBEAFE;
+    --avatar-masc-fg: #1E40AF;
+    --avatar-fem-bg: #FCE7F3;
+    --avatar-fem-fg: #9D174D;
+    --avatar-outro-bg: #E0E7FF;
+    --avatar-outro-fg: #3730A3;
+
+    /* Sombras */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 12px rgba(26, 95, 168, 0.08);
+    --shadow-lg: 0 10px 30px rgba(26, 95, 168, 0.12);
+
+    /* Tipografia */
+    --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* Espaçamento e bordas */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+}
+
+html, body {
+    height: 100%;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+}
+
+a {
+    color: var(--color-navy);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--color-navy-dark);
+    text-decoration: underline;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+}

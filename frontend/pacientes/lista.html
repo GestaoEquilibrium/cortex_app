@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacientes — CORTEX_APP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/pacientes.css">
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="app-brand">
+                <svg class="app-brand-logo" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M30 8 C36 8, 42 14, 42 20 C42 26, 36 30, 30 30 Z" fill="#1A5FA8"/>
+                    <path d="M52 30 C52 36, 46 42, 40 42 C34 42, 30 36, 30 30 Z" fill="#2BBCD4"/>
+                    <path d="M30 52 C24 52, 18 46, 18 40 C18 34, 24 30, 30 30 Z" fill="#1A5FA8"/>
+                    <path d="M8 30 C8 24, 14 18, 20 18 C26 18, 30 24, 30 30 Z" fill="#2BBCD4"/>
+                    <circle cx="30" cy="30" r="4" fill="#FFFFFF"/>
+                </svg>
+                <span>CORTEX_APP</span>
+            </div>
+            <nav class="app-nav">
+                <a href="lista.html" class="active">Pacientes</a>
+                <a href="#" onclick="alert('Em breve — Sprint C1');return false;">Agenda</a>
+                <a href="#" onclick="alert('Em breve');return false;">Relatórios</a>
+            </nav>
+            <div class="app-user">
+                <div>
+                    <div class="app-user-name" id="user-name">Carregando...</div>
+                    <div class="app-user-perfil" id="user-perfil"></div>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="logout-btn">Sair</button>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <!-- Page header -->
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Pacientes</h1>
+                    <p id="contagem-pacientes">Carregando...</p>
+                </div>
+                <div class="page-actions">
+                    <a href="novo.html" class="btn btn-primary">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Novo paciente
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="lista-filtros">
+                <div class="lista-filtros-busca">
+                    <input
+                        type="text"
+                        id="busca"
+                        placeholder="Buscar por nome..."
+                        autocomplete="off"
+                    >
+                </div>
+                <select id="filtro-status">
+                    <option value="">Todos os status</option>
+                    <option value="cadastrado">Cadastrado</option>
+                    <option value="em_avaliacao">Em avaliação</option>
+                    <option value="pronto_para_laudo">Pronto para laudo</option>
+                    <option value="laudo_pronto">Laudo pronto</option>
+                    <option value="entregue">Entregue</option>
+                    <option value="pendente">Pendente</option>
+                </select>
+                <select id="filtro-convenio">
+                    <option value="">Todos os convênios</option>
+                </select>
+                <div class="view-toggle" role="tablist" aria-label="Modo de visualização">
+                    <button id="view-cards" class="active" title="Visualizar em cards">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                        Cards
+                    </button>
+                    <button id="view-tabela" title="Visualizar em tabela">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                            <line x1="3" y1="18" x2="21" y2="18"/>
+                        </svg>
+                        Lista
+                    </button>
+                </div>
+            </div>
+
+            <!-- Conteúdo da lista -->
+            <div id="lista-conteudo">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando pacientes...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/supabase_client.js"></script>
+    <script src="../shared/auth_guard.js"></script>
+    <script src="../shared/audit.js"></script>
+    <script src="../shared/avatar.js"></script>
+    <script src="../shared/ui_helpers.js"></script>
+
+    <script>
+    // ============================================================================
+    // Estado da página
+    // ============================================================================
+    let pacientes = [];
+    let modoVisualizacao = localStorage.getItem('cortex_view_pacientes') || 'cards';
+    let busca = '';
+    let filtroStatus = '';
+    let filtroConvenio = '';
+
+    // ============================================================================
+    // Inicialização (após auth-ready)
+    // ============================================================================
+    window.addEventListener('cortex:auth-ready', async (e) => {
+        const prof = e.detail.profissional;
+
+        // Atualiza header com info do usuário
+        const primeiroNome = (prof.nome_completo || prof.email).split(' ')[0];
+        document.getElementById('user-name').textContent = primeiroNome;
+        document.getElementById('user-perfil').textContent = window.CortexUI.PERFIL_LABELS[prof.perfil] || prof.perfil;
+
+        // Restaura view preferida
+        aplicarModoVisualizacao(modoVisualizacao);
+
+        // Carrega convênios para filtro
+        await carregarConvenios();
+
+        // Carrega pacientes
+        await carregarPacientes();
+
+        // Setup event listeners
+        setupListeners();
+
+        // Audita acesso à página
+        await CortexAudit.log('leitura', 'pacientes_lista');
+    });
+
+    // ============================================================================
+    // Setup de eventos
+    // ============================================================================
+    function setupListeners() {
+        document.getElementById('busca').addEventListener('input', (e) => {
+            busca = e.target.value.toLowerCase();
+            renderizar();
+        });
+
+        document.getElementById('filtro-status').addEventListener('change', (e) => {
+            filtroStatus = e.target.value;
+            renderizar();
+        });
+
+        document.getElementById('filtro-convenio').addEventListener('change', (e) => {
+            filtroConvenio = e.target.value;
+            renderizar();
+        });
+
+        document.getElementById('view-cards').addEventListener('click', () => {
+            aplicarModoVisualizacao('cards');
+            renderizar();
+        });
+
+        document.getElementById('view-tabela').addEventListener('click', () => {
+            aplicarModoVisualizacao('tabela');
+            renderizar();
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await CortexAudit.log('logout', 'auth.users');
+            await window.cortexClient.auth.signOut();
+            window.location.href = '../index.html';
+        });
+    }
+
+    function aplicarModoVisualizacao(modo) {
+        modoVisualizacao = modo;
+        localStorage.setItem('cortex_view_pacientes', modo);
+        document.getElementById('view-cards').classList.toggle('active', modo === 'cards');
+        document.getElementById('view-tabela').classList.toggle('active', modo === 'tabela');
+    }
+
+    // ============================================================================
+    // Carregamento de dados
+    // ============================================================================
+    async function carregarConvenios() {
+        const { data, error } = await window.cortexClient
+            .from('convenios')
+            .select('id, nome')
+            .eq('ativo', true)
+            .order('nome');
+
+        if (error || !data) return;
+
+        const select = document.getElementById('filtro-convenio');
+        data.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = c.nome;
+            select.appendChild(option);
+        });
+    }
+
+    async function carregarPacientes() {
+        const { data, error } = await window.cortexClient
+            .from('vw_pacientes_lista')
+            .select('*')
+            .order('nome_completo');
+
+        if (error) {
+            CortexUI.toast('Erro ao carregar pacientes: ' + error.message, 'danger');
+            console.error(error);
+            return;
+        }
+
+        pacientes = data || [];
+        renderizar();
+    }
+
+    // ============================================================================
+    // Renderização
+    // ============================================================================
+    function filtrarPacientes() {
+        return pacientes.filter(p => {
+            if (busca && !p.nome_completo.toLowerCase().includes(busca)) return false;
+            if (filtroStatus && p.status !== filtroStatus) return false;
+            if (filtroConvenio) {
+                // Filtro por convênio é por ID; precisamos buscar pelo nome
+                if (p.convenio_nome) {
+                    // Comparação: se o nome do convênio bate
+                    // (não temos convenio_id na view, então comparamos por nome)
+                    const select = document.getElementById('filtro-convenio');
+                    const optionSelecionada = select.options[select.selectedIndex];
+                    if (optionSelecionada && optionSelecionada.text !== p.convenio_nome) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+    function renderizar() {
+        const filtrados = filtrarPacientes();
+        const container = document.getElementById('lista-conteudo');
+
+        document.getElementById('contagem-pacientes').textContent =
+            `${filtrados.length} ${filtrados.length === 1 ? 'paciente' : 'pacientes'}` +
+            (filtrados.length !== pacientes.length ? ` (de ${pacientes.length})` : '');
+
+        if (filtrados.length === 0) {
+            container.innerHTML = renderEmpty();
+            return;
+        }
+
+        if (modoVisualizacao === 'cards') {
+            container.innerHTML = renderCards(filtrados);
+        } else {
+            container.innerHTML = renderTabela(filtrados);
+        }
+
+        // Adiciona handlers de clique nas linhas/cards
+        container.querySelectorAll('[data-paciente-id]').forEach(el => {
+            el.addEventListener('click', () => {
+                const id = el.dataset.pacienteId;
+                window.location.href = `pasta.html?id=${id}`;
+            });
+        });
+    }
+
+    function renderEmpty() {
+        if (pacientes.length === 0) {
+            return `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <div class="empty-state-title">Nenhum paciente cadastrado ainda</div>
+                    <div class="empty-state-text">Comece cadastrando o primeiro paciente da Equilibrium.</div>
+                    <a href="novo.html" class="btn btn-primary">+ Cadastrar primeiro paciente</a>
+                </div>
+            `;
+        }
+        return `
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <div class="empty-state-title">Nenhum paciente encontrado</div>
+                <div class="empty-state-text">Tente ajustar os filtros de busca.</div>
+            </div>
+        `;
+    }
+
+    function renderCards(lista) {
+        const cards = lista.map(p => {
+            const avatar = window.CortexAvatar.render(p, { tamanho: 'md' });
+            const statusLabel = window.CortexUI.STATUS_LABELS[p.status] || p.status;
+            const statusClass = window.CortexUI.STATUS_CLASSES[p.status] || 'status-info';
+
+            return `
+                <div class="paciente-card" data-paciente-id="${p.id}">
+                    <div class="paciente-card-header">
+                        ${avatar}
+                        <div class="paciente-card-info">
+                            <div class="paciente-card-nome">${escapeHtml(p.nome_completo)}</div>
+                            <div class="paciente-card-idade">${p.idade_humanizada}</div>
+                        </div>
+                    </div>
+                    <div class="paciente-card-meta">
+                        ${p.convenio_nome ? `
+                            <div class="paciente-card-meta-item">
+                                <span class="paciente-card-meta-label">Convênio:</span>
+                                <span>${escapeHtml(p.convenio_nome)}</span>
+                            </div>
+                        ` : ''}
+                        ${p.aplicador_nome ? `
+                            <div class="paciente-card-meta-item">
+                                <span class="paciente-card-meta-label">Aplicador:</span>
+                                <span>${escapeHtml(p.aplicador_nome)}</span>
+                            </div>
+                        ` : `
+                            <div class="paciente-card-meta-item" style="color: var(--color-text-soft);">
+                                Sem aplicador atribuído
+                            </div>
+                        `}
+                    </div>
+                    <div class="paciente-card-footer">
+                        <span class="badge ${statusClass}">${statusLabel}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `<div class="pacientes-grid">${cards}</div>`;
+    }
+
+    function renderTabela(lista) {
+        const linhas = lista.map(p => {
+            const avatar = window.CortexAvatar.render(p, { tamanho: 'sm' });
+            const statusLabel = window.CortexUI.STATUS_LABELS[p.status] || p.status;
+            const statusClass = window.CortexUI.STATUS_CLASSES[p.status] || 'status-info';
+
+            return `
+                <tr data-paciente-id="${p.id}">
+                    <td>
+                        <div class="col-nome">
+                            ${avatar}
+                            <span>${escapeHtml(p.nome_completo)}</span>
+                        </div>
+                    </td>
+                    <td>${p.idade_humanizada}</td>
+                    <td>${escapeHtml(p.convenio_nome || '—')}</td>
+                    <td>${escapeHtml(p.aplicador_nome || '—')}</td>
+                    <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <div class="pacientes-table-wrapper">
+                <table class="pacientes-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Idade</th>
+                            <th>Convênio</th>
+                            <th>Aplicador</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>

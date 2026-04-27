@@ -1,12 +1,8 @@
 // ============================================================================
-// CORTEX_APP — Lógica de autenticação (atualizada para Sprint B1)
-// ============================================================================
-// Mudança em relação ao Sprint A2:
-//   - Após login, redireciona para pacientes/lista.html (em vez de dashboard.html)
-//   - O dashboard.html continua existindo como fallback, mas a página
-//     principal pós-login agora é a lista de pacientes.
+// CORTEX_APP — Lógica de autenticação
 // ============================================================================
 
+// Inicializa o cliente Supabase
 const supabaseClient = supabase.createClient(
     SUPABASE_CONFIG.url,
     SUPABASE_CONFIG.anonKey,
@@ -19,8 +15,8 @@ const supabaseClient = supabase.createClient(
 async function checkExistingSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
-        // Já está logado, redireciona pra lista de pacientes
-        window.location.href = 'pacientes/lista.html';
+        // Já está logado, redireciona pro dashboard
+        window.location.href = 'dashboard.html';
     }
 }
 
@@ -29,7 +25,7 @@ async function checkExistingSession() {
 // ============================================================================
 function setupLoginForm() {
     const form = document.getElementById('login-form');
-    if (!form) return;
+    if (!form) return; // Estamos em outra página
 
     const button = document.getElementById('login-button');
     const btnText = button.querySelector('.btn-text');
@@ -39,9 +35,11 @@ function setupLoginForm() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        // Limpa erro anterior
         errorMessage.style.display = 'none';
         errorMessage.textContent = '';
 
+        // Estado de carregamento
         button.disabled = true;
         btnText.style.display = 'none';
         btnLoading.style.display = 'inline';
@@ -55,15 +53,19 @@ function setupLoginForm() {
                 password
             });
 
-            if (error) throw error;
+            if (error) {
+                throw error;
+            }
 
-            // Login deu certo — registra auditoria
+            // Login deu certo
+            // Antes de redirecionar, registra na auditoria
             await registerLoginAudit(data.user);
 
-            // Redireciona para a lista de pacientes
-            window.location.href = 'pacientes/lista.html';
+            // Redireciona pro dashboard
+            window.location.href = 'dashboard.html';
 
         } catch (error) {
+            // Mostra erro amigável
             let mensagemErro = 'Não foi possível fazer login. ';
 
             if (error.message?.includes('Invalid login credentials')) {
@@ -77,6 +79,7 @@ function setupLoginForm() {
             errorMessage.textContent = mensagemErro;
             errorMessage.style.display = 'block';
 
+            // Restaura botão
             button.disabled = false;
             btnText.style.display = 'inline';
             btnLoading.style.display = 'none';
@@ -89,6 +92,7 @@ function setupLoginForm() {
 // ============================================================================
 async function registerLoginAudit(user) {
     try {
+        // Busca o profissional vinculado
         const { data: profissional } = await supabaseClient
             .from('profissionais')
             .select('id')
@@ -97,6 +101,7 @@ async function registerLoginAudit(user) {
 
         if (!profissional) return;
 
+        // Insere log de auditoria
         await supabaseClient
             .from('auditoria_acessos')
             .insert({
@@ -106,12 +111,13 @@ async function registerLoginAudit(user) {
                 user_agent: navigator.userAgent
             });
     } catch (e) {
+        // Falha na auditoria não bloqueia o login
         console.warn('Falha ao registrar auditoria de login:', e);
     }
 }
 
 // ============================================================================
-// Inicialização
+// Inicialização ao carregar a página
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     checkExistingSession();

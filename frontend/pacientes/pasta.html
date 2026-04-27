@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasta do paciente — CORTEX_APP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/pacientes.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="app-brand">
+                <svg class="app-brand-logo" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M30 8 C36 8, 42 14, 42 20 C42 26, 36 30, 30 30 Z" fill="#1A5FA8"/>
+                    <path d="M52 30 C52 36, 46 42, 40 42 C34 42, 30 36, 30 30 Z" fill="#2BBCD4"/>
+                    <path d="M30 52 C24 52, 18 46, 18 40 C18 34, 24 30, 30 30 Z" fill="#1A5FA8"/>
+                    <path d="M8 30 C8 24, 14 18, 20 18 C26 18, 30 24, 30 30 Z" fill="#2BBCD4"/>
+                    <circle cx="30" cy="30" r="4" fill="#FFFFFF"/>
+                </svg>
+                <span>CORTEX_APP</span>
+            </div>
+            <nav class="app-nav">
+                <a href="lista.html" class="active">Pacientes</a>
+                <a href="#" onclick="alert('Em breve');return false;">Agenda</a>
+                <a href="#" onclick="alert('Em breve');return false;">Relatórios</a>
+            </nav>
+            <div class="app-user">
+                <div>
+                    <div class="app-user-name" id="user-name">Carregando...</div>
+                    <div class="app-user-perfil" id="user-perfil"></div>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="logout-btn">Sair</button>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div style="margin-bottom: 1rem;">
+                <a href="lista.html" style="color: var(--color-text-muted); font-size: 0.875rem;">
+                    ← Voltar à lista de pacientes
+                </a>
+            </div>
+
+            <div id="pasta-conteudo">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando paciente...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <input type="file" id="foto-input-hidden" accept="image/jpeg,image/png,image/webp" style="display:none">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/supabase_client.js"></script>
+    <script src="../shared/auth_guard.js"></script>
+    <script src="../shared/audit.js"></script>
+    <script src="../shared/avatar.js"></script>
+    <script src="../shared/ui_helpers.js"></script>
+
+    <script>
+    let pacienteId = null;
+    let paciente = null;
+    let etapaAtual = 'visao_geral';
+
+    const ETAPAS = [
+        { id: 'visao_geral', label: 'Visão geral' },
+        { id: 'anamnese', label: 'Anamnese' },
+        { id: 'hipoteses', label: 'Hipóteses' },
+        { id: 'checklist', label: 'Checklist' },
+        { id: 'bateria', label: 'Bateria' },
+        { id: 'correcao', label: 'Correção' },
+        { id: 'laudo', label: 'Laudo' },
+        { id: 'devolutiva', label: 'Devolutiva' }
+    ];
+
+    window.addEventListener('cortex:auth-ready', async (e) => {
+        const prof = e.detail.profissional;
+        document.getElementById('user-name').textContent = (prof.nome_completo || prof.email).split(' ')[0];
+        document.getElementById('user-perfil').textContent = window.CortexUI.PERFIL_LABELS[prof.perfil] || prof.perfil;
+
+        // Pega ID do paciente da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        pacienteId = urlParams.get('id');
+
+        if (!pacienteId) {
+            document.getElementById('pasta-conteudo').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <div class="empty-state-title">Paciente não especificado</div>
+                    <a href="lista.html" class="btn btn-primary">Voltar à lista</a>
+                </div>
+            `;
+            return;
+        }
+
+        // Setup logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await CortexAudit.log('logout', 'auth.users');
+            await window.cortexClient.auth.signOut();
+            window.location.href = '../index.html';
+        });
+
+        await carregarPaciente();
+    });
+
+    async function carregarPaciente() {
+        const { data, error } = await window.cortexClient
+            .from('vw_pacientes_lista')
+            .select('*')
+            .eq('id', pacienteId)
+            .single();
+
+        if (error || !data) {
+            document.getElementById('pasta-conteudo').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <div class="empty-state-title">Paciente não encontrado</div>
+                    <div class="empty-state-text">Pode ter sido arquivado ou você não tem permissão de acesso.</div>
+                    <a href="lista.html" class="btn btn-primary">Voltar à lista</a>
+                </div>
+            `;
+            return;
+        }
+
+        paciente = data;
+        await CortexAudit.log('leitura', 'pacientes', pacienteId, { pacienteId });
+
+        renderizarPasta();
+    }
+
+    async function renderizarPasta() {
+        // Tenta buscar URL assinada da foto
+        let signedUrl = null;
+        if (paciente.foto_url) {
+            signedUrl = await window.CortexAvatar.buscarUrlAssinada(pacienteId, paciente.foto_url);
+        }
+        const avatar = window.CortexAvatar.render(paciente, { tamanho: 'xl', signedUrl });
+        const statusClass = window.CortexUI.STATUS_CLASSES[paciente.status] || 'status-info';
+        const statusLabel = window.CortexUI.STATUS_LABELS[paciente.status] || paciente.status;
+
+        const cabecalho = `
+            <div class="pasta-cabecalho">
+                <div onclick="document.getElementById('foto-input-hidden').click()" style="cursor: pointer;" title="Clique para alterar foto">
+                    ${avatar}
+                </div>
+                <div class="pasta-info">
+                    <div class="pasta-nome">${escapeHtml(paciente.nome_completo)}${paciente.nome_social ? ` <span style="font-size: 0.9rem; color: var(--color-text-muted); font-weight: 400;">(${escapeHtml(paciente.nome_social)})</span>` : ''}</div>
+                    <div class="pasta-meta">
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Idade:</span>
+                            <span class="pasta-meta-valor">${paciente.idade_humanizada}</span>
+                        </div>
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Sexo:</span>
+                            <span class="pasta-meta-valor">${paciente.sexo}</span>
+                        </div>
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Nascimento:</span>
+                            <span class="pasta-meta-valor">${window.CortexUI.formatarDataBR(paciente.data_nascimento)}</span>
+                        </div>
+                        ${paciente.convenio_nome ? `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Convênio:</span>
+                                <span class="pasta-meta-valor">${escapeHtml(paciente.convenio_nome)}</span>
+                            </div>
+                        ` : ''}
+                        ${paciente.aplicador_nome ? `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Aplicador:</span>
+                                <span class="pasta-meta-valor">${escapeHtml(paciente.aplicador_nome)}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="pasta-actions">
+                        <span class="badge ${statusClass}">${statusLabel}</span>
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
+                            ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
+                        </button>
+                        <button class="btn btn-ghost btn-sm" onclick="alert('Em breve — Sprint C1')">+ Agendar sessão</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const etapasHtml = `
+            <div class="pasta-etapas">
+                ${ETAPAS.map(et => `
+                    <button class="etapa ${et.id === etapaAtual ? 'ativa' : ''}" onclick="trocarEtapa('${et.id}')">${et.label}</button>
+                `).join('')}
+            </div>
+        `;
+
+        const conteudoEtapa = renderizarEtapa(etapaAtual);
+
+        document.getElementById('pasta-conteudo').innerHTML = cabecalho + etapasHtml + conteudoEtapa;
+
+        // Setup do upload
+        document.getElementById('foto-input-hidden').onchange = uploadFoto;
+    }
+
+    function trocarEtapa(novaEtapa) {
+        etapaAtual = novaEtapa;
+        renderizarPasta();
+    }
+    window.trocarEtapa = trocarEtapa;
+
+    function renderizarEtapa(etapaId) {
+        if (etapaId === 'visao_geral') {
+            return `
+                <div class="etapa-content">
+                    <h3 style="font-family: var(--font-display); color: var(--color-navy-dark); margin-bottom: 1rem;">Visão geral</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                        ${campo('Telefone', paciente.telefone || '—')}
+                        ${campo('E-mail', paciente.email || '—')}
+                        ${campo('CPF', paciente.cpf || '—')}
+                        ${campo('Endereço', paciente.endereco || '—')}
+                        ${campo('Cidade', paciente.cidade || '—')}
+                        ${campo('Encaminhado por', paciente.encaminhado_por || '—')}
+                        ${campo('Médico de referência', paciente.medico_referencia || '—')}
+                        ${paciente.responsavel_nome ? campo('Responsável', `${paciente.responsavel_nome} (${paciente.responsavel_parentesco || 'sem parentesco'})`) : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Demais etapas: placeholder informando o sprint que vai construí-las
+        const sprints = {
+            'anamnese': 'Sprint B2',
+            'hipoteses': 'Sprint B3',
+            'checklist': 'Sprint D1',
+            'bateria': 'Sprint D3',
+            'correcao': 'Sprint D4',
+            'laudo': 'Sprint D5',
+            'devolutiva': 'Sprint C2'
+        };
+
+        const labelEtapa = ETAPAS.find(e => e.id === etapaId)?.label || etapaId;
+
+        return `
+            <div class="etapa-content">
+                <div class="etapa-placeholder">
+                    <h3>${labelEtapa}</h3>
+                    <p>Esta etapa será construída no <strong>${sprints[etapaId] || 'próximo sprint'}</strong>.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function campo(label, valor) {
+        return `
+            <div>
+                <div style="font-size: 0.75rem; color: var(--color-text-soft); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">${label}</div>
+                <div style="color: var(--color-text);">${escapeHtml(valor)}</div>
+            </div>
+        `;
+    }
+
+    async function uploadFoto(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validação simples
+        if (file.size > 2 * 1024 * 1024) {
+            window.CortexUI.toast('Arquivo muito grande. Máximo: 2MB.', 'danger');
+            return;
+        }
+
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            window.CortexUI.toast('Formato não suportado. Use JPG, PNG ou WEBP.', 'danger');
+            return;
+        }
+
+        window.CortexUI.toast('Enviando foto...', 'info');
+
+        // Path do arquivo: {paciente_id}/perfil.{ext}
+        const ext = file.name.split('.').pop().toLowerCase();
+        const path = `${pacienteId}/perfil.${ext}`;
+
+        try {
+            // Upload (substitui se já existir)
+            const { error: uploadError } = await window.cortexClient
+                .storage
+                .from('pacientes-fotos')
+                .upload(path, file, { upsert: true, contentType: file.type });
+
+            if (uploadError) throw uploadError;
+
+            // Atualiza foto_url no paciente
+            const { error: updateError } = await window.cortexClient
+                .from('pacientes')
+                .update({ foto_url: path })
+                .eq('id', pacienteId);
+
+            if (updateError) throw updateError;
+
+            await CortexAudit.log('edicao', 'pacientes', pacienteId, {
+                pacienteId,
+                detalhes: { campo: 'foto_url' }
+            });
+
+            window.CortexUI.toast('Foto enviada com sucesso!', 'success');
+
+            // Recarrega
+            paciente.foto_url = path;
+            renderizarPasta();
+
+        } catch (err) {
+            console.error('Erro no upload:', err);
+            window.CortexUI.toast('Erro ao enviar foto: ' + err.message, 'danger');
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>

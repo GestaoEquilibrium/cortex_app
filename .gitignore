@@ -1,0 +1,72 @@
+# ============================================================================
+# CORTEX_APP — .gitignore
+# ============================================================================
+
+# Variáveis de ambiente e secrets (NUNCA commitar)
+.env
+.env.local
+.env.production
+.env.development
+*.env
+*.pem
+*.key
+
+# Credenciais Supabase (chaves anônima e service_role)
+supabase/.env
+supabase/secrets.json
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# Node.js (se vier a ser usado)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Backup files
+*.backup
+*.bak
+*.old
+*.orig
+
+# Arquivos de output e build
+dist/
+build/
+out/
+.cache/
+
+# Arquivos do sistema operacional
+.DS_Store
+.AppleDouble
+.LSOverride
+desktop.ini
+
+# Arquivos sensíveis específicos do projeto
+# (dados clínicos, exports de pacientes, backups de banco)
+*.csv.bak
+exports/
+backups/
+patient_data/
+clinical_exports/
+
+# PDFs de teste/desenvolvimento (modelos finais ficam em modelos_relatorio/)
+test_pdfs/
+sample_outputs/
+
+# Arquivos de migração de dados reais (Firebase → Supabase, virá na Fase E)
+migration/firebase_dump/
+migration/data_real/

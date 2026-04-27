@@ -1,0 +1,422 @@
+/* ============================================================================
+   CORTEX_APP — Anamnese CSS (estilos do wizard)
+   ============================================================================ */
+
+/* ============================================================================
+   CABEÇALHO
+   ============================================================================ */
+
+.anamnese-cabecalho {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: var(--shadow-xs);
+    flex-wrap: wrap;
+}
+
+.anamnese-cabecalho-titulo h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.anamnese-cabecalho-sub {
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
+.anamnese-cabecalho-acoes {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Indicador de save status */
+.indicador-save {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    transition: all var(--transition-fast);
+    min-width: 110px;
+    text-align: right;
+}
+
+.indicador-save-pendente {
+    color: var(--color-warning-text);
+}
+
+.indicador-save-salvando {
+    color: var(--primary-blue);
+}
+
+.indicador-save-salvo {
+    color: var(--primary-green);
+}
+
+.indicador-save-erro {
+    color: var(--color-danger-text);
+}
+
+/* ============================================================================
+   PROGRESS BAR
+   ============================================================================ */
+
+.wizard-progresso {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 14px 20px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+}
+
+.wizard-progresso-barra {
+    height: 6px;
+    background: var(--slate-100);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.wizard-progresso-preenchido {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-blue) 0%, var(--primary-green) 100%);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+}
+
+.wizard-progresso-texto {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+}
+
+.wizard-progresso-texto strong {
+    color: var(--color-text);
+}
+
+/* ============================================================================
+   STEPPER (PILLS DE NAVEGAÇÃO RÁPIDA)
+   ============================================================================ */
+
+.wizard-stepper {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 8px;
+    box-shadow: var(--shadow-xs);
+}
+
+.stepper-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.stepper-pill:hover {
+    background: var(--slate-50);
+    color: var(--color-text);
+}
+
+.stepper-pill.ativa {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-green) 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.stepper-pill.concluida {
+    background: var(--primary-green-50);
+    color: var(--primary-green-dark);
+    font-weight: 500;
+}
+
+.stepper-pill-num {
+    background: rgba(255, 255, 255, 0.3);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.stepper-pill:not(.ativa):not(.concluida) .stepper-pill-num {
+    background: var(--slate-100);
+    color: var(--color-text-muted);
+}
+
+.stepper-pill.concluida .stepper-pill-num {
+    background: var(--primary-green-100);
+    color: var(--primary-green-dark);
+}
+
+.stepper-pill.concluida .stepper-pill-num::before {
+    content: '✓';
+}
+
+/* ============================================================================
+   ETAPA ATIVA
+   ============================================================================ */
+
+.wizard-etapa {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+}
+
+.wizard-etapa-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.wizard-etapa-icone {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--primary-blue-50) 0%, var(--primary-green-50) 100%);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.wizard-etapa-titulo {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+}
+
+/* Grids do formulário */
+.fg-grid2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
+}
+
+.fg-grid3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px 20px;
+}
+
+.fg-full {
+    grid-column: 1 / -1;
+}
+
+.required {
+    color: var(--color-danger-text);
+    margin-left: 2px;
+}
+
+/* Checkboxes */
+.ck-grupo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ck-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--slate-50);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 13px;
+}
+
+.ck-item:hover {
+    border-color: var(--primary-blue-200);
+    background: var(--primary-blue-50);
+}
+
+.ck-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--primary-blue);
+    cursor: pointer;
+}
+
+.ck-item:has(input:checked) {
+    background: var(--primary-blue-50);
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    font-weight: 500;
+}
+
+/* ============================================================================
+   NAVEGAÇÃO INFERIOR
+   ============================================================================ */
+
+.wizard-navegacao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.wizard-navegacao-direita {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ============================================================================
+   RESPONSIVO
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .fg-grid2, .fg-grid3 {
+        grid-template-columns: 1fr;
+    }
+
+    .anamnese-cabecalho {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .anamnese-cabecalho-acoes {
+        justify-content: space-between;
+    }
+
+    .stepper-pill-label {
+        display: none;
+    }
+
+    .wizard-stepper {
+        gap: 4px;
+        padding: 6px;
+    }
+
+    .stepper-pill {
+        padding: 6px 8px;
+    }
+}
+
+
+/* ============================================================================
+   CARD DE RESUMO DA ANAMNESE (na pasta do paciente)
+   Esses estilos são usados em pasta.html quando há anamnese existente.
+   ============================================================================ */
+
+.anamnese-card-resumo {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 20px;
+    background: var(--slate-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.anamnese-card-resumo-icone {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.anamnese-card-resumo-icone svg {
+    width: 28px;
+    height: 28px;
+}
+
+.anamnese-card-resumo-icone-success {
+    background: var(--primary-green-100);
+    color: var(--primary-green-dark);
+}
+
+.anamnese-card-resumo-icone-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.anamnese-card-resumo-info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.anamnese-card-resumo-info h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.anamnese-card-resumo-info p {
+    font-size: 13px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.anamnese-card-resumo-info p strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.anamnese-card-resumo-acoes {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .anamnese-card-resumo {
+        flex-direction: column;
+    }
+    .anamnese-card-resumo-acoes {
+        width: 100%;
+    }
+    .anamnese-card-resumo-acoes .btn {
+        flex: 1;
+    }
+}

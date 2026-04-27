@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../styles/base.css">
     <link rel="stylesheet" href="../styles/components.css">
     <link rel="stylesheet" href="../styles/pacientes.css">
+    <link rel="stylesheet" href="../anamnese/anamnese.css">
 </head>
 <body>
     <div class="app-shell">
@@ -45,6 +46,7 @@
     let pacienteId = null;
     let paciente = null;
     let etapaAtual = 'visao_geral';
+    let anamneseExistente = null;
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -64,15 +66,7 @@
         pacienteId = urlParams.get('id');
 
         if (!pacienteId) {
-            document.getElementById('pasta-conteudo').innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    </div>
-                    <div class="empty-state-title">Paciente não especificado</div>
-                    <a href="lista.html" class="btn btn-primary">Voltar à lista</a>
-                </div>
-            `;
+            mostrarErroPasta('Paciente não especificado');
             return;
         }
 
@@ -87,23 +81,42 @@
             .single();
 
         if (error || !data) {
-            document.getElementById('pasta-conteudo').innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    </div>
-                    <div class="empty-state-title">Paciente não encontrado</div>
-                    <div class="empty-state-text">Pode ter sido arquivado ou você não tem permissão de acesso.</div>
-                    <a href="lista.html" class="btn btn-primary">Voltar à lista</a>
-                </div>
-            `;
+            mostrarErroPasta('Paciente não encontrado');
             return;
         }
 
         paciente = data;
         await CortexAudit.log('leitura', 'pacientes', pacienteId, { pacienteId });
 
+        await carregarAnamnese();
         renderizarPasta();
+    }
+
+    async function carregarAnamnese() {
+        // Status do A1: em_andamento (rascunho) | concluida (finalizada)
+        const { data, error } = await window.cortexClient
+            .from('anamneses')
+            .select('id, faixa_etaria, status, created_at, updated_at, aprovado_em')
+            .eq('paciente_id', pacienteId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (!error && data) {
+            anamneseExistente = data;
+        }
+    }
+
+    function mostrarErroPasta(msg) {
+        document.getElementById('pasta-conteudo').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <div class="empty-state-title">${escapeHtml(msg)}</div>
+                <a href="lista.html" class="btn btn-primary">Voltar à lista</a>
+            </div>
+        `;
     }
 
     async function renderizarPasta() {
@@ -159,10 +172,22 @@
             </div>
         `;
 
+        // Marca anamnese como concluída na barra se status='concluida'
+        const etapasComStatus = ETAPAS.map(et => {
+            let concluida = false;
+            if (et.id === 'anamnese' && anamneseExistente && anamneseExistente.status === 'concluida') {
+                concluida = true;
+            }
+            return { ...et, concluida };
+        });
+
         const etapasHtml = `
             <div class="pasta-etapas">
-                ${ETAPAS.map(et => `
-                    <button class="etapa ${et.id === etapaAtual ? 'ativa' : ''}" onclick="trocarEtapa('${et.id}')">${et.label}</button>
+                ${etapasComStatus.map(et => `
+                    <button
+                        class="etapa ${et.id === etapaAtual ? 'ativa' : ''} ${et.concluida ? 'concluida' : ''}"
+                        onclick="trocarEtapa('${et.id}')"
+                    >${et.label}</button>
                 `).join('')}
             </div>
         `;
@@ -182,25 +207,14 @@
 
     function renderizarEtapa(etapaId) {
         if (etapaId === 'visao_geral') {
-            return `
-                <div class="etapa-content">
-                    <h3>Visão geral</h3>
-                    <div class="campos-grid">
-                        ${campo('Telefone', paciente.telefone)}
-                        ${campo('E-mail', paciente.email)}
-                        ${campo('CPF', paciente.cpf)}
-                        ${campo('Endereço', paciente.endereco)}
-                        ${campo('Cidade', paciente.cidade)}
-                        ${campo('Encaminhado por', paciente.encaminhado_por)}
-                        ${campo('Médico de referência', paciente.medico_referencia)}
-                        ${paciente.responsavel_nome ? campo('Responsável', `${paciente.responsavel_nome} (${paciente.responsavel_parentesco || 'sem parentesco'})`) : ''}
-                    </div>
-                </div>
-            `;
+            return renderVisaoGeral();
+        }
+
+        if (etapaId === 'anamnese') {
+            return renderAnamnese();
         }
 
         const sprints = {
-            'anamnese': 'Sprint B2',
             'hipoteses': 'Sprint B3',
             'checklist': 'Sprint D1',
             'bateria': 'Sprint D3',
@@ -228,6 +242,116 @@
         `;
     }
 
+    function renderVisaoGeral() {
+        return `
+            <div class="etapa-content">
+                <h3>Visão geral</h3>
+                <div class="campos-grid">
+                    ${campo('Telefone', paciente.telefone)}
+                    ${campo('E-mail', paciente.email)}
+                    ${campo('CPF', paciente.cpf)}
+                    ${campo('Endereço', paciente.endereco)}
+                    ${campo('Cidade', paciente.cidade)}
+                    ${campo('Encaminhado por', paciente.encaminhado_por)}
+                    ${campo('Médico de referência', paciente.medico_referencia)}
+                    ${paciente.responsavel_nome ? campo('Responsável', `${paciente.responsavel_nome} (${paciente.responsavel_parentesco || 'sem parentesco'})`) : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAnamnese() {
+        if (!anamneseExistente) {
+            const idadeAnos = paciente.idade_anos;
+            let faixaSugerida = 'Adulto';
+            if (idadeAnos < 6) faixaSugerida = 'Primeira Infância (0–6 anos)';
+            else if (idadeAnos < 12) faixaSugerida = 'Segunda Infância (6–12 anos)';
+            else if (idadeAnos < 18) faixaSugerida = 'Adolescência (12–18 anos)';
+            else if (idadeAnos < 50) faixaSugerida = 'Adulto (18–50 anos)';
+            else faixaSugerida = 'Idoso (50+ anos)';
+
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                        </div>
+                        <h3>Anamnese ainda não iniciada</h3>
+                        <p style="margin-bottom: 18px;">Com base na idade do paciente (${paciente.idade_humanizada}), o formulário sugerido é:<br><strong>${faixaSugerida}</strong></p>
+                        <a href="../anamnese/anamnese.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                            Iniciar anamnese
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        const FAIXAS_LABELS = {
+            'infantil': 'Primeira Infância (0–6 anos)',
+            'escolar': 'Segunda Infância (6–12 anos)',
+            'adolescente': 'Adolescência (12–18 anos)',
+            'adulto': 'Adulto (18–50 anos)',
+            'idoso': 'Idoso (50+ anos)'
+        };
+
+        const faixaLabel = FAIXAS_LABELS[anamneseExistente.faixa_etaria] || anamneseExistente.faixa_etaria;
+        const isFinalizada = anamneseExistente.status === 'concluida';
+
+        if (isFinalizada) {
+            return `
+                <div class="etapa-content">
+                    <div class="anamnese-card-resumo">
+                        <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <div class="anamnese-card-resumo-info">
+                            <h3>Anamnese finalizada</h3>
+                            <p><strong>Formulário:</strong> ${faixaLabel}</p>
+                            <p><strong>Finalizada em:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
+                            <p style="color: var(--color-text-muted); margin-top: 12px;">A anamnese está bloqueada para edição. Os dados estão disponíveis para o laudo e equipe.</p>
+                        </div>
+                        <div class="anamnese-card-resumo-acoes">
+                            <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-secondary">Visualizar</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Em andamento (rascunho)
+        return `
+            <div class="etapa-content">
+                <div class="anamnese-card-resumo">
+                    <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-warning">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                        </svg>
+                    </div>
+                    <div class="anamnese-card-resumo-info">
+                        <h3>Anamnese em rascunho</h3>
+                        <p><strong>Formulário:</strong> ${faixaLabel}</p>
+                        <p><strong>Última edição:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
+                        <p style="color: var(--color-text-muted); margin-top: 12px;">Continue de onde parou.</p>
+                    </div>
+                    <div class="anamnese-card-resumo-acoes">
+                        <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-primary">
+                            Continuar anamnese
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     function campo(label, valor) {
         return `
             <div class="campo">
@@ -235,6 +359,17 @@
                 <div class="campo-valor">${escapeHtml(valor || '—')}</div>
             </div>
         `;
+    }
+
+    function formatarDataHora(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        return `${dd}/${mm}/${yyyy} às ${hh}:${mi}`;
     }
 
     async function uploadFoto(event) {

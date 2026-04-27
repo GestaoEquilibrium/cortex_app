@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORTEX_APP — Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <div class="brand">
+                <div class="brand-logo">
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Pinwheel de 4 pétalas (identidade Equilibrium) -->
+                        <path d="M30 8 C36 8, 42 14, 42 20 C42 26, 36 30, 30 30 Z" fill="#1A5FA8"/>
+                        <path d="M52 30 C52 36, 46 42, 40 42 C34 42, 30 36, 30 30 Z" fill="#2BBCD4"/>
+                        <path d="M30 52 C24 52, 18 46, 18 40 C18 34, 24 30, 30 30 Z" fill="#1A5FA8"/>
+                        <path d="M8 30 C8 24, 14 18, 20 18 C26 18, 30 24, 30 30 Z" fill="#2BBCD4"/>
+                        <circle cx="30" cy="30" r="4" fill="#FFFFFF"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>CORTEX_APP</h1>
+                    <p>Equilibrium · Movimento que Acolhe</p>
+                </div>
+            </div>
+
+            <div class="login-form-wrapper">
+                <h2>Acesso ao sistema</h2>
+                <p class="subtitle">Sistema unificado de gestão clínica de neuropsicologia</p>
+
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="email">E-mail</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="seu@email.com"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="••••••••"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
+
+                    <div id="error-message" class="error-message" style="display: none;"></div>
+
+                    <button type="submit" id="login-button" class="btn-primary">
+                        <span class="btn-text">Entrar</span>
+                        <span class="btn-loading" style="display: none;">Verificando...</span>
+                    </button>
+                </form>
+
+                <div class="footer-info">
+                    <p>Equilibrium Med Center Ltda · CNPJ 34.032.586/0001-98</p>
+                    <p>Uberlândia/MG · Brasil</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-right">
+            <div class="quote-block">
+                <blockquote>
+                    "Cada laudo carrega uma vida. Cada avaliação muda um caminho."
+                </blockquote>
+                <div class="badges">
+                    <span class="badge">CFP 06/2019</span>
+                    <span class="badge">LGPD</span>
+                    <span class="badge">Auditoria imutável</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORTEX_APP — Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>CORTEX_APP</h1>
+            <div class="user-info">
+                <span id="user-name">Carregando...</span>
+                <button id="logout-btn" class="btn-logout">Sair</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="welcome-card">
+                <h2>Bem-vindo ao CORTEX_APP, <span id="welcome-name">profissional</span> 👋</h2>
+                <span id="perfil-badge" class="perfil-badge">Carregando perfil...</span>
+
+                <p>
+                    Você acabou de realizar seu <strong>primeiro login</strong> no sistema. Este é um marco
+                    simbólico importante: a partir deste momento, o CORTEX_APP é seu sistema clínico oficial,
+                    construído sob medida para a Equilibrium e operando com todas as proteções de Row Level
+                    Security ativas e auditoria imutável.
+                </p>
+
+                <div class="next-steps">
+                    <h3>Próximos passos do projeto</h3>
+                    <ul>
+                        <li><strong>Sprint A2:</strong> Concluído — autenticação e RLS funcionando</li>
+                        <li><strong>Fase B:</strong> Módulo de Pacientes, Anamnese, Hipóteses, Relatório Escolar</li>
+                        <li><strong>Fase D:</strong> Engine de testes — migração dos 22 instrumentos ativos</li>
+                        <li><strong>Fase C:</strong> Agenda multi-profissional e workflow do paciente</li>
+                        <li><strong>Fase E:</strong> Migração progressiva dos demais ~40 instrumentos</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 1.5rem; font-size: 0.85rem;">
+                    Esta é uma tela placeholder. As funcionalidades serão construídas progressivamente nos
+                    próximos sprints.
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script>
+        // Inicializa cliente Supabase
+        const sb = supabase.createClient(
+            SUPABASE_CONFIG.url,
+            SUPABASE_CONFIG.anonKey,
+            SUPABASE_CONFIG.options
+        );
+
+        // Verifica sessão ativa
+        async function checkAuthAndLoadUser() {
+            const { data: { session } } = await sb.auth.getSession();
+
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Busca dados do profissional
+            const { data: profissional, error } = await sb
+                .from('profissionais')
+                .select('nome_completo, email, perfil')
+                .eq('auth_user_id', session.user.id)
+                .single();
+
+            if (error || !profissional) {
+                console.error('Erro ao carregar profissional:', error);
+                document.getElementById('welcome-name').textContent = session.user.email;
+                return;
+            }
+
+            // Atualiza UI
+            const primeiroNome = (profissional.nome_completo || profissional.email).split(' ')[0];
+            document.getElementById('user-name').textContent = profissional.nome_completo || profissional.email;
+            document.getElementById('welcome-name').textContent = primeiroNome;
+
+            const perfilLabels = {
+                'admin_clinico': 'Admin Clínico',
+                'admin_gestor': 'Admin Gestor',
+                'neuropsicologo_aplicador': 'Neuropsicólogo Aplicador',
+                'estagiario': 'Estagiário',
+                'corretor': 'Corretor'
+            };
+            document.getElementById('perfil-badge').textContent =
+                perfilLabels[profissional.perfil] || profissional.perfil;
+        }
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await sb.auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+        // Roda ao carregar
+        document.addEventListener('DOMContentLoaded', checkAuthAndLoadUser);
+    </script>
+</body>
+</html>

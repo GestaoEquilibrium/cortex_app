@@ -11,6 +11,9 @@
 *.pem
 *.key
 
+# Configuração do frontend com credenciais Supabase
+frontend/config.js
+
 # Credenciais Supabase (chaves anônima e service_role)
 supabase/.env
 supabase/secrets.json
@@ -56,14 +59,13 @@ out/
 desktop.ini
 
 # Arquivos sensíveis específicos do projeto
-# (dados clínicos, exports de pacientes, backups de banco)
 *.csv.bak
 exports/
 backups/
 patient_data/
 clinical_exports/
 
-# PDFs de teste/desenvolvimento (modelos finais ficam em modelos_relatorio/)
+# PDFs de teste/desenvolvimento
 test_pdfs/
 sample_outputs/
 

@@ -17,6 +17,30 @@
 (function() {
     'use strict';
 
+    // ─── TESTES AUTOAPLICÁVEIS (Sprint D3) ─────────────────────────────────
+    // Testes onde o paciente responde via link público.
+    // Mapeamento: sigla do instrumento → URL relativa da página de resposta.
+    const TESTES_AUTOAPLICAVEIS = {
+        'RAADS-R': '../responder/raadsr.html'
+        // EQ-15 e SCARED virão nas próximas sprints
+    };
+
+    function ehAutoaplicavel(sigla) {
+        return TESTES_AUTOAPLICAVEIS.hasOwnProperty(sigla);
+    }
+
+    function montarUrlPaciente(sigla, token) {
+        const base = TESTES_AUTOAPLICAVEIS[sigla];
+        if (!base) return null;
+        // Estamos em /bateria/bateria.html — sobe um nível e vai pra responder/
+        // Resultado: localhost:8000/responder/raadsr.html?token=xxx (em local)
+        //            site.com/cortex_app/frontend/responder/raadsr.html?token=xxx (em GH Pages)
+        const a = document.createElement('a');
+        a.href = base;  // navegador resolve relativo automaticamente
+        return a.href + '?token=' + encodeURIComponent(token);
+    }
+
+
     const state = {
         pacienteId: null,
         paciente: null,
@@ -396,6 +420,11 @@
                                 ✓ Concluir
                             </button>
                         ` : ''}
+                        ${ehAutoaplicavel(inst.sigla) && (apl.status === 'aguardando' || apl.status === 'em_aplicacao') ? `
+                            <button class="btn btn-primary btn-sm" onclick="window.CortexBateria.gerarLink('${apl.id}', '${inst.sigla}')" style="background: linear-gradient(135deg, #1e40af 0%, #059669 100%);">
+                                📲 ${apl.link_unico ? 'Reenviar link' : 'Gerar link'}
+                            </button>
+                        ` : ''}
                         <button class="btn btn-ghost btn-sm" onclick="window.CortexBateria.abrirModal('${apl.id}')">
                             ✎ Editar
                         </button>
@@ -414,6 +443,90 @@
     // AÇÕES
     // ============================================================================
 
+    // ============================================================================
+    // MODAL DE LINK GERADO (D3)
+    // ============================================================================
+
+    function abrirModalLink(url, sigla, primeiroNome) {
+        // Tenta copiar pra área de transferência
+        try {
+            navigator.clipboard?.writeText(url);
+        } catch(e) { /* sem permissão */ }
+
+        // Mensagem WhatsApp pronta
+        const msgBase = primeiroNome
+            ? `Olá, ${primeiroNome}! Seu profissional da Equilibrium enviou um questionário pra você responder. ` +
+              `É rápido (5-10 minutos) e pode ser feito pelo celular. Aqui o link: ${url}`
+            : `Olá! Seu profissional da Equilibrium enviou um questionário pra você responder. ` +
+              `É rápido (5-10 minutos) e pode ser feito pelo celular. Aqui o link: ${url}`;
+        const msgWhats = encodeURIComponent(msgBase);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+        overlay.innerHTML = `
+            <div style="background:white;border-radius:16px;max-width:560px;width:100%;padding:28px;box-shadow:0 12px 40px rgba(0,0,0,.2);">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                    <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#1e40af 0%,#059669 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;">📲</div>
+                    <div>
+                        <h2 style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">Link gerado · ${escapeHtml(sigla)}</h2>
+                        <p style="margin:2px 0 0;font-size:12.5px;color:#64748b;">Validade: 7 dias</p>
+                    </div>
+                </div>
+
+                <p style="font-size:13px;color:#475569;margin-bottom:14px;line-height:1.6;">
+                    Envie este link ao paciente. Ele(a) responderá pelo celular ou computador, sem precisar fazer login.
+                </p>
+
+                <label style="display:block;font-size:11px;color:#64748b;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;">Link do paciente</label>
+                <div style="display:flex;gap:8px;margin-bottom:18px;">
+                    <input id="modal-link-input" type="text" value="${escapeHtml(url)}" readonly
+                        style="flex:1;padding:11px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;font-family:'SF Mono',Consolas,monospace;background:#f8fafc;color:#1e293b;"
+                        onclick="this.select()">
+                    <button id="modal-link-copy"
+                        style="padding:11px 18px;background:#1e40af;color:white;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;">
+                        📋 Copiar
+                    </button>
+                </div>
+
+                <div style="display:flex;gap:10px;">
+                    <a href="https://wa.me/?text=${msgWhats}" target="_blank" rel="noopener"
+                        style="flex:1;text-align:center;padding:12px;background:#25d366;color:white;text-decoration:none;border-radius:10px;font-weight:600;font-size:13.5px;">
+                        💬 Enviar pelo WhatsApp
+                    </a>
+                    <button id="modal-link-fechar"
+                        style="padding:12px 22px;background:#e2e8f0;color:#334155;border:none;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit;">
+                        Fechar
+                    </button>
+                </div>
+
+                <div style="margin-top:16px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#166534;">
+                    ✓ Link copiado pra sua área de transferência. Você pode colar onde quiser (Ctrl+V).
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const fechar = () => overlay.remove();
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) fechar();
+        });
+        overlay.querySelector('#modal-link-fechar').addEventListener('click', fechar);
+        overlay.querySelector('#modal-link-copy').addEventListener('click', async () => {
+            const inp = overlay.querySelector('#modal-link-input');
+            inp.select();
+            try {
+                await navigator.clipboard.writeText(url);
+                window.CortexUI.toast('Link copiado!', 'success');
+            } catch (err) {
+                document.execCommand('copy');
+                window.CortexUI.toast('Link copiado!', 'success');
+            }
+        });
+    }
+
     window.CortexBateria = {
         filtrar: function(status) {
             state.filtroStatus = status;
@@ -428,6 +541,46 @@
                 renderizar();
             } catch (err) {
                 window.CortexUI.toast('Erro ao sincronizar: ' + err.message, 'danger');
+            }
+        },
+
+        gerarLink: async function(aplicacaoId, sigla) {
+            try {
+                // Chama função do banco que gera token e define expiração 7 dias
+                const { data, error } = await window.cortexClient
+                    .rpc('gerar_link_aplicacao', { p_aplicacao_id: aplicacaoId });
+
+                if (error) {
+                    window.CortexUI.toast('Erro ao gerar link: ' + error.message, 'danger');
+                    return;
+                }
+
+                const token = data;
+                const url = montarUrlPaciente(sigla, token);
+                if (!url) {
+                    window.CortexUI.toast('Configuração de URL do teste não encontrada', 'danger');
+                    return;
+                }
+
+                // Pega nome do paciente para mensagem WhatsApp
+                let nomePaciente = '';
+                try {
+                    const { data: p } = await window.cortexClient
+                        .from('pacientes')
+                        .select('nome_completo')
+                        .eq('id', state.pacienteId)
+                        .single();
+                    nomePaciente = (p?.nome_completo || '').split(' ')[0];
+                } catch(e) { /* ignora */ }
+
+                abrirModalLink(url, sigla, nomePaciente);
+
+                // Atualiza estado local pra mostrar "Reenviar link"
+                const apl = state.aplicacoes.find(a => a.id === aplicacaoId);
+                if (apl) apl.link_unico = token;
+                renderizar();
+            } catch (err) {
+                window.CortexUI.toast('Erro inesperado: ' + err.message, 'danger');
             }
         },
 

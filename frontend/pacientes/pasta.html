@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="../anamnese/anamnese.css">
     <link rel="stylesheet" href="../hipoteses/hipoteses.css">
     <link rel="stylesheet" href="../relatorio_escolar/relatorio_escolar.css">
+    <link rel="stylesheet" href="../checklist/checklist.css">
 </head>
 <body>
     <div class="app-shell">
@@ -51,6 +52,7 @@
     let anamneseExistente = null;
     let hipoteseExistente = null;
     let relatorioEscolarExistente = null;
+    let checklistInfo = null;
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -95,7 +97,8 @@
         await Promise.all([
             carregarAnamnese(),
             carregarHipotese(),
-            carregarRelatorioEscolar()
+            carregarRelatorioEscolar(),
+            carregarChecklistInfo()
         ]);
         renderizarPasta();
     }
@@ -130,6 +133,24 @@
             .maybeSingle();
 
         if (!error && data) relatorioEscolarExistente = data;
+    }
+
+    async function carregarChecklistInfo() {
+        // O "checklist" reaproveita instrumentos_sugeridos da tabela hipoteses.
+        // Aqui só queremos saber o total de instrumentos selecionados.
+        const { data, error } = await window.cortexClient
+            .from('hipoteses')
+            .select('id, instrumentos_sugeridos, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) {
+            checklistInfo = {
+                total: (data.instrumentos_sugeridos || []).length,
+                updated_at: data.updated_at,
+                hipoteseId: data.id
+            };
+        }
     }
 
     function mostrarErroPasta(msg) {
@@ -205,6 +226,9 @@
             if (et.id === 'hipoteses' && hipoteseExistente && hipoteseExistente.aprovado_em) {
                 concluida = true;
             }
+            if (et.id === 'checklist' && checklistInfo && checklistInfo.total > 0) {
+                concluida = true;
+            }
             return { ...et, concluida };
         });
 
@@ -236,9 +260,9 @@
         if (etapaId === 'visao_geral') return renderVisaoGeral();
         if (etapaId === 'anamnese') return renderAnamneseComRelatorio();
         if (etapaId === 'hipoteses') return renderHipoteses();
+        if (etapaId === 'checklist') return renderChecklist();
 
         const sprints = {
-            'checklist': 'Sprint D1',
             'bateria': 'Sprint D3',
             'correcao': 'Sprint D4',
             'laudo': 'Sprint D5',
@@ -423,6 +447,48 @@
                     <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-primary">
                         Editar relatório
                     </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderChecklist() {
+        const total = checklistInfo ? checklistInfo.total : 0;
+
+        if (total === 0) {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M9 11l3 3L22 4"/>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                        </div>
+                        <h3>Checklist ainda não preenchido</h3>
+                        <p style="margin-bottom: 18px;">Selecione os instrumentos que serão aplicados ao paciente. A lista é filtrada automaticamente pela idade.</p>
+                        <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                            Abrir checklist
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="etapa-content">
+                <div class="checklist-card-resumo">
+                    <div class="checklist-card-icone">📋</div>
+                    <div class="checklist-card-info">
+                        <h3>Checklist com ${total} instrumento${total === 1 ? '' : 's'}</h3>
+                        <p><strong>Última atualização:</strong> ${formatarDataHora(checklistInfo.updated_at)}</p>
+                        <p style="color: var(--color-text-muted); margin-top: 4px;">Os instrumentos selecionados estão prontos para aplicação na etapa Bateria.</p>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">
+                            Editar / Imprimir
+                        </a>
+                    </div>
                 </div>
             </div>
         `;

@@ -1,0 +1,549 @@
+/* ============================================================================
+   CORTEX_APP — Checklist CSS
+   Tela: lista compacta com agrupamento por categoria
+   Print: A4 fiel aos PDFs originais da Equilibrium
+   ============================================================================ */
+
+/* ─── TELA (mesmo de antes) ────────────────────────────────────────────── */
+
+.aviso-permissao {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    border: 1px solid var(--color-warning-border, #facc15);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.checklist-categoria {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+}
+
+.checklist-categoria-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-blue-dark);
+    letter-spacing: -0.01em;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--slate-100);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checklist-itens {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 8px;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    background: var(--color-surface);
+}
+
+.checklist-item:hover {
+    border-color: var(--primary-blue-300, #93c5fd);
+    box-shadow: var(--shadow-sm);
+}
+
+.checklist-item.selecionado {
+    background: var(--primary-blue-50);
+    border-color: var(--primary-blue);
+    border-left: 3px solid var(--primary-blue);
+}
+
+.checklist-item.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.checklist-item.disabled:hover {
+    border-color: var(--color-border);
+    box-shadow: none;
+}
+
+.checklist-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--primary-blue);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.checklist-item.disabled input { cursor: not-allowed; }
+
+.checklist-item-info { flex: 1; min-width: 0; }
+
+.checklist-item-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 3px;
+}
+
+.checklist-item-titulo strong {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.checklist-item-idade {
+    font-size: 10.5px;
+    color: var(--color-text-muted);
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    background: var(--slate-100);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.checklist-item.selecionado .checklist-item-idade {
+    background: var(--color-surface);
+}
+
+.checklist-item-descricao {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+}
+
+/* ─── CARD DE RESUMO NA PASTA ──────────────────────────────────────────── */
+
+.checklist-card-resumo {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 20px;
+    background: var(--slate-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.checklist-card-icone {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--primary-blue-100);
+    color: var(--primary-blue-dark);
+    font-size: 28px;
+}
+
+.checklist-card-info { flex: 1; min-width: 250px; }
+
+.checklist-card-info h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* ============================================================================
+   IMPRESSÃO PDF — fiel aos PDFs originais da Equilibrium
+   ============================================================================ */
+
+.print-only {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    /* CRÍTICO: Força navegadores a imprimirem cores de fundo (cabeçalho navy, bullets coloridos, etc.) */
+    *,
+    *::before,
+    *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    .no-print, .no-print * {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background: white !important;
+    }
+
+    html, body {
+        width: 100%;
+        height: auto;
+    }
+}
+
+@media screen {
+    #print-area { display: none; }
+}
+
+/* Estilos do documento ─── fiel ao PDF original Equilibrium ─── */
+
+.print-doc {
+    font-family: 'Inter', sans-serif;
+    color: #1a202c;
+    background: white;
+    font-size: 10.5px;
+    line-height: 1.4;
+}
+
+/* === CABEÇALHO === */
+/* Fundo azul navy super escuro (quase preto-azulado), com pequeno gradiente sutil */
+
+.print-header {
+    background: linear-gradient(135deg, #0a1f3d 0%, #163a6c 100%) !important;
+    background-color: #0a1f3d !important;
+    color: white !important;
+    padding: 22px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.print-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Cata-vento da Equilibrium em SVG inline */
+.print-logo-mark {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+}
+
+.print-logo-text-block {
+    line-height: 1.15;
+}
+
+.print-logo-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: white;
+}
+
+.print-logo-sub {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+    margin-top: -2px;
+}
+
+.print-logo-equipe {
+    font-size: 7.5px;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    margin-top: 1px;
+}
+
+.print-header-right {
+    text-align: right;
+}
+
+.print-doc-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+}
+
+.print-faixa {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.print-faixa::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2bbcd4 !important;
+    background-color: #2bbcd4 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.print-contador-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34, 197, 94, 0.18) !important;
+    background-color: rgba(34, 197, 94, 0.18) !important;
+    border: 1px solid rgba(34, 197, 94, 0.6) !important;
+    color: white !important;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 500;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.print-contador-badge::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e !important;
+    background-color: #22c55e !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* === BLOCO DO PACIENTE === */
+/* Faixa branca limpa, com labels CAPS pequenos cinza e valores logo abaixo */
+
+.print-paciente-info {
+    background: white;
+    padding: 18px 32px;
+    display: flex;
+    gap: 56px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.print-paciente-bloco {
+    display: flex;
+    flex-direction: column;
+}
+
+.print-label {
+    font-size: 9px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.print-valor {
+    font-size: 12.5px;
+    color: #1e293b;
+    font-weight: 500;
+    border-bottom: 1.5px solid #1e293b;
+    padding-bottom: 1px;
+    min-width: 50px;
+    display: inline-block;
+}
+
+.print-valor-vazio {
+    color: transparent;
+    border-bottom: 1.5px solid #1e293b;
+    min-width: 50px;
+    display: inline-block;
+}
+
+.print-valor-data {
+    border-bottom: none;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* === TABELA === */
+
+.print-tabela-container {
+    padding: 0 32px;
+    margin-top: 16px;
+}
+
+.print-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5px;
+}
+
+.print-tabela thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.print-tabela thead th.col-check { width: 28px; }
+.print-tabela thead th.col-instrumento { width: 26%; }
+.print-tabela thead th.col-avalia { width: 38%; }
+.print-tabela thead th.col-faixa { width: 16%; }
+.print-tabela thead th.col-data { width: 16%; text-align: left; }
+
+/* Linhas de teste */
+.print-tabela tbody tr.linha-teste td {
+    padding: 7px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+}
+
+.print-tabela tbody tr.linha-teste td.col-check {
+    text-align: center;
+}
+
+.print-tabela tbody tr.linha-teste td.col-check::before {
+    content: '';
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 1.4px solid #94a3b8;
+    border-radius: 2.5px;
+    background: white;
+    vertical-align: middle;
+}
+
+.print-tabela tbody tr.linha-teste.marcado td.col-check::before {
+    background: #1e40af !important;
+    background-color: #1e40af !important;
+    border-color: #1e40af !important;
+    color: white !important;
+    content: '✓';
+    font-size: 10px;
+    line-height: 11px;
+    font-weight: bold;
+    text-align: center;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.print-tabela td.col-instrumento {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.print-tabela td.col-avalia { color: #475569; }
+
+.print-tabela td.col-faixa {
+    color: #64748b;
+    font-size: 10px;
+}
+
+.print-tabela td.col-data {
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    color: #94a3b8;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+}
+
+/* Linha de categoria — fundo azul claro pastel + bullet colorido */
+.print-tabela tbody tr.linha-categoria td {
+    background: #eaf1fb !important;
+    background-color: #eaf1fb !important;
+    color: #1e3a8a !important;
+    padding: 8px 8px;
+    border: none;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.print-tabela tbody tr.linha-categoria td .bullet-cat {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    margin-top: -1px;
+}
+
+/* Cores dos bullets por categoria (igual aos PDFs originais) */
+.bullet-inteligencia { background: #ec7c8a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-atencao { background: #ef4444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-funcoes-exec { background: #facc15 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-linguagem { background: #93c5fd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-tea { background: #4ade80 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-tdah { background: #fbbf24 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-humor { background: #94a3b8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-personalidade { background: #c084fc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-desenvolvimento { background: #fb923c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.bullet-sensorial { background: #2bbcd4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* === RODAPÉ === */
+
+.print-footer {
+    background: linear-gradient(135deg, #0a1f3d 0%, #163a6c 100%) !important;
+    background-color: #0a1f3d !important;
+    color: white !important;
+    padding: 12px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.print-footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.print-footer-logo svg { width: 22px; height: 22px; }
+
+.print-footer-data {
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.print-footer-contador {
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* ─── RESPONSIVO ──────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .checklist-itens {
+        grid-template-columns: 1fr;
+    }
+}

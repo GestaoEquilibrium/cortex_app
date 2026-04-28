@@ -1,5 +1,6 @@
 /* ============================================================================
-   CORTEX_APP — Pacientes CSS (estilos específicos do módulo)
+   CORTEX_APP — Pacientes CSS
+   ESTILO 1 · Gradiente Azul→Verde
    ============================================================================ */
 
 /* ============================================================================
@@ -27,13 +28,17 @@
     border-radius: var(--radius-md);
     font-size: 13.5px;
     background: var(--color-surface);
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
+}
+
+.lista-filtros-busca input:hover {
+    border-color: var(--primary-blue-200);
 }
 
 .lista-filtros-busca input:focus {
     outline: none;
     border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.10);
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.12);
 }
 
 .lista-filtros-busca::before {
@@ -57,7 +62,7 @@
     font-size: 13px;
     cursor: pointer;
     color: var(--color-text);
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     appearance: none;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2394A3B8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>');
     background-repeat: no-repeat;
@@ -65,9 +70,14 @@
     background-size: 14px;
 }
 
+.lista-filtros select:hover {
+    border-color: var(--primary-blue-200);
+}
+
 .lista-filtros select:focus {
     outline: none;
     border-color: var(--primary-blue);
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.12);
 }
 
 .view-toggle {
@@ -88,13 +98,17 @@
     gap: 6px;
     font-size: 12.5px;
     font-weight: 500;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
+}
+
+.view-toggle button:hover:not(.active) {
+    color: var(--primary-blue);
 }
 
 .view-toggle button.active {
-    background: var(--color-surface);
-    color: var(--primary-blue);
-    box-shadow: var(--shadow-xs);
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.25);
     font-weight: 600;
 }
 
@@ -126,14 +140,33 @@
     flex-direction: column;
     gap: 14px;
     box-shadow: var(--shadow-xs);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Barra colorida lateral que aparece no hover */
+.paciente-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: var(--gradient-primary-vertical);
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    transition: width var(--transition-base);
 }
 
 .paciente-card:hover {
     border-color: var(--primary-blue-200);
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow-mixed);
+    transform: translateY(-3px);
     text-decoration: none;
     color: inherit;
+}
+
+.paciente-card:hover::before {
+    width: 4px;
 }
 
 .paciente-card-header {
@@ -157,6 +190,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
     letter-spacing: -0.01em;
+    transition: color var(--transition-fast);
+}
+
+.paciente-card:hover .paciente-card-nome {
+    color: var(--primary-blue);
 }
 
 .paciente-card-idade {
@@ -209,15 +247,15 @@
 }
 
 .pacientes-table thead {
-    background: var(--slate-50);
+    background: var(--gradient-softer);
 }
 
 .pacientes-table th {
     text-align: left;
     padding: 12px 16px;
     font-size: 11px;
-    font-weight: 600;
-    color: var(--color-text-muted);
+    font-weight: 700;
+    color: var(--primary-blue-dark);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--color-border);
@@ -232,11 +270,16 @@
 
 .pacientes-table tbody tr {
     cursor: pointer;
-    transition: background var(--transition-fast);
+    transition: all var(--transition-fast);
+    position: relative;
 }
 
 .pacientes-table tbody tr:hover {
-    background: var(--slate-50);
+    background: var(--gradient-softer);
+}
+
+.pacientes-table tbody tr:hover .col-nome {
+    color: var(--primary-blue);
 }
 
 .pacientes-table tbody tr:last-child td {
@@ -249,70 +292,115 @@
     gap: 10px;
     font-weight: 500;
     color: var(--color-text);
+    transition: color var(--transition-fast);
 }
 
 /* ============================================================================
-   PASTA DO PACIENTE
+   PASTA DO PACIENTE — CABEÇALHO COM GRADIENTE SUTIL
    ============================================================================ */
 
 .pasta-cabecalho {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    padding: 22px 24px;
+    padding: 24px 28px;
     margin-bottom: 14px;
     display: flex;
     align-items: flex-start;
-    gap: 20px;
-    box-shadow: var(--shadow-xs);
+    gap: 22px;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+/* Faixa colorida superior decorativa */
+.pasta-cabecalho::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+}
+
+/* Glow decorativo no canto superior direito */
+.pasta-cabecalho::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(30, 64, 175, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.pasta-cabecalho:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
 }
 
 .pasta-info {
     flex: 1;
     min-width: 0;
+    position: relative;
+    z-index: 1;
 }
 
 .pasta-nome {
     font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 24px;
+    font-weight: 800;
     color: var(--color-text);
     letter-spacing: -0.02em;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .pasta-meta {
     display: flex;
-    gap: 20px;
+    gap: 22px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 
 .pasta-meta-item {
     display: flex;
     align-items: baseline;
-    gap: 5px;
+    gap: 6px;
     font-size: 12.5px;
 }
 
 .pasta-meta-label {
     color: var(--color-text-soft);
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 10.5px;
 }
 
 .pasta-meta-valor {
     color: var(--color-text);
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 13px;
 }
 
 .pasta-actions {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
     align-items: center;
 }
 
-/* Barra de etapas */
+/* ============================================================================
+   BARRA DE ETAPAS — agora mais viva
+   ============================================================================ */
+
 .pasta-etapas {
     display: flex;
     background: var(--color-surface);
@@ -328,38 +416,57 @@
 .etapa {
     flex: 1;
     min-width: 100px;
-    padding: 9px 12px;
+    padding: 10px 12px;
     text-align: center;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     font-size: 12.5px;
     font-weight: 500;
     color: var(--color-text-muted);
     white-space: nowrap;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    position: relative;
 }
 
-.etapa:hover {
-    background: var(--slate-50);
-    color: var(--color-text);
+.etapa:hover:not(.ativa) {
+    background: var(--gradient-softer);
+    color: var(--primary-blue);
+    transform: translateY(-1px);
 }
 
 .etapa.ativa {
-    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-green) 100%);
+    background: var(--gradient-primary);
     color: white;
-    font-weight: 600;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    transform: translateY(-1px);
 }
 
-.etapa.concluida {
+.etapa.concluida:not(.ativa) {
     color: var(--primary-green-dark);
+    background: var(--primary-green-50);
+}
+
+.etapa.concluida:not(.ativa):hover {
+    background: var(--primary-green-100);
 }
 
 .etapa.concluida::before {
     content: '✓ ';
-    font-weight: 700;
+    font-weight: 800;
 }
 
-/* Conteúdo da etapa */
+.etapa.ativa.concluida::before {
+    color: white;
+}
+
+/* ============================================================================
+   CONTEÚDO DA ETAPA
+   ============================================================================ */
+
 .etapa-content {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -367,6 +474,7 @@
     padding: 24px;
     min-height: 280px;
     box-shadow: var(--shadow-xs);
+    animation: fade-in 0.3s ease-out;
 }
 
 .etapa-content h3 {
@@ -381,41 +489,79 @@
 .etapa-placeholder {
     text-align: center;
     color: var(--color-text-muted);
-    padding: 40px 20px;
+    padding: 50px 20px;
 }
 
 .etapa-placeholder-icon {
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 12px;
-    background: linear-gradient(135deg, var(--primary-blue-50) 0%, var(--primary-green-50) 100%);
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: var(--gradient-soft);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--primary-blue);
+    box-shadow: 0 6px 16px rgba(30, 64, 175, 0.15);
+    transition: all var(--transition-base);
+}
+
+.etapa-placeholder:hover .etapa-placeholder-icon {
+    transform: scale(1.06) rotate(-3deg);
+    box-shadow: 0 10px 22px rgba(30, 64, 175, 0.25);
 }
 
 .etapa-placeholder-icon svg {
-    width: 22px;
-    height: 22px;
+    width: 32px;
+    height: 32px;
 }
 
 .etapa-placeholder h3 {
-    font-size: 15px;
-    margin-bottom: 4px;
+    font-size: 16px;
+    margin-bottom: 6px;
+    color: var(--color-text);
 }
 
 .etapa-placeholder p {
-    font-size: 12.5px;
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 420px;
+    margin: 0 auto;
 }
 
-/* Campo de visão geral */
+/* ============================================================================
+   CAMPO (Visão Geral)
+   ============================================================================ */
+
 .campo {
-    background: var(--slate-50);
+    background: var(--color-surface-alt);
     border-radius: var(--radius-md);
     padding: 12px 14px;
     border: 1px solid var(--color-border);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.campo::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: var(--gradient-primary-vertical);
+    transition: width var(--transition-base);
+}
+
+.campo:hover {
+    border-color: var(--primary-blue-200);
+    box-shadow: var(--shadow-sm);
+    transform: translateX(2px);
+}
+
+.campo:hover::before {
+    width: 3px;
 }
 
 .campo-label {
@@ -449,9 +595,14 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
+        padding: 22px 18px;
     }
 
     .pasta-meta {
         justify-content: center;
+    }
+
+    .pasta-cabecalho::after {
+        display: none;
     }
 }

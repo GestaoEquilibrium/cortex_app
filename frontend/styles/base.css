@@ -1,5 +1,6 @@
 /* ============================================================================
    CORTEX_APP — Base CSS (variáveis, reset, pattern de fundo)
+   ESTILO 1 · Gradiente Azul→Verde — refinamento visual
    ============================================================================ */
 
 * {
@@ -16,6 +17,7 @@
     --primary-blue-50: #EFF6FF;
     --primary-blue-100: #DBEAFE;
     --primary-blue-200: #BFDBFE;
+    --primary-blue-300: #93C5FD;
 
     --primary-green: #059669;
     --primary-green-dark: #047857;
@@ -23,6 +25,7 @@
     --primary-green-50: #ECFDF5;
     --primary-green-100: #D1FAE5;
     --primary-green-200: #A7F3D0;
+    --primary-green-300: #6EE7B7;
 
     /* Neutros (slate) */
     --slate-50: #F8FAFC;
@@ -64,12 +67,29 @@
     --avatar-outro-bg: #E0E7FF;
     --avatar-outro-fg: #3730A3;
 
-    /* Sombras */
+    /* ════════════════════════════════════════════════════════════════════════
+       NOVO — Gradientes do Estilo 1
+       ════════════════════════════════════════════════════════════════════════ */
+    --gradient-primary: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-green) 100%);
+    --gradient-primary-vertical: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-green) 100%);
+    --gradient-soft: linear-gradient(135deg, var(--primary-blue-100) 0%, var(--primary-green-100) 100%);
+    --gradient-softer: linear-gradient(135deg, var(--primary-blue-50) 0%, var(--primary-green-50) 100%);
+    --gradient-hover: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-green-dark) 100%);
+
+    /* Sombras — agora com mais variação para hovers ricos */
     --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
     --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.06);
     --shadow-md: 0 4px 12px rgba(30, 64, 175, 0.08);
     --shadow-lg: 0 8px 24px rgba(30, 64, 175, 0.12);
+    --shadow-xl: 0 18px 38px rgba(15, 23, 42, 0.18);
     --shadow-card-hover: 0 6px 16px rgba(30, 64, 175, 0.10);
+
+    /* NOVO — Sombras coloridas (glow) pra hover */
+    --shadow-glow-blue: 0 8px 22px rgba(30, 64, 175, 0.25);
+    --shadow-glow-green: 0 8px 22px rgba(5, 150, 105, 0.25);
+    --shadow-glow-mixed: 0 8px 22px rgba(30, 64, 175, 0.18), 0 8px 22px rgba(5, 150, 105, 0.10);
+    --shadow-ring-blue: 0 0 0 4px rgba(30, 64, 175, 0.15);
+    --shadow-ring-green: 0 0 0 4px rgba(5, 150, 105, 0.15);
 
     /* Tipografia */
     --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -86,9 +106,11 @@
     --sidebar-width: 232px;
     --sidebar-width-collapsed: 68px;
 
-    /* Transições */
+    /* Transições — agora com curvas suaves */
     --transition-fast: 0.15s ease;
-    --transition-base: 0.2s ease;
+    --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 html, body {
@@ -161,4 +183,42 @@ input, select, textarea {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   NOVO — Animações reutilizáveis do Estilo 1
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.65; }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(30, 64, 175, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(30, 64, 175, 0); }
+}
+
+@keyframes slide-in-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Classe utilitária pra elementos animados */
+.animate-in {
+    animation: slide-in-up 0.3s ease-out;
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 2s infinite;
 }

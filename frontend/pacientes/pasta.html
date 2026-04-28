@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../hipoteses/hipoteses.css">
     <link rel="stylesheet" href="../relatorio_escolar/relatorio_escolar.css">
     <link rel="stylesheet" href="../checklist/checklist.css">
+    <link rel="stylesheet" href="../bateria/bateria.css">
 </head>
 <body>
     <div class="app-shell">
@@ -53,6 +54,7 @@
     let hipoteseExistente = null;
     let relatorioEscolarExistente = null;
     let checklistInfo = null;
+    let bateriaInfo = null;
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -98,7 +100,8 @@
             carregarAnamnese(),
             carregarHipotese(),
             carregarRelatorioEscolar(),
-            carregarChecklistInfo()
+            carregarChecklistInfo(),
+            carregarBateriaInfo()
         ]);
         renderizarPasta();
     }
@@ -150,6 +153,25 @@
                 updated_at: data.updated_at,
                 hipoteseId: data.id
             };
+        }
+    }
+
+    async function carregarBateriaInfo() {
+        const { data, error } = await window.cortexClient
+            .from('aplicacoes_instrumento')
+            .select('id, status, updated_at')
+            .eq('paciente_id', pacienteId);
+
+        if (!error && data && data.length > 0) {
+            const stats = { total: data.length, aguardando: 0, em_aplicacao: 0, concluido: 0 };
+            data.forEach(a => {
+                if (a.status === 'aguardando') stats.aguardando++;
+                else if (a.status === 'em_aplicacao') stats.em_aplicacao++;
+                else if (['concluido_aplicacao', 'em_correcao', 'corrigido', 'integrado_laudo'].includes(a.status)) stats.concluido++;
+            });
+            const ultimaAtualizacao = data.reduce((max, a) =>
+                a.updated_at > max ? a.updated_at : max, '');
+            bateriaInfo = { ...stats, updated_at: ultimaAtualizacao };
         }
     }
 
@@ -229,6 +251,9 @@
             if (et.id === 'checklist' && checklistInfo && checklistInfo.total > 0) {
                 concluida = true;
             }
+            if (et.id === 'bateria' && bateriaInfo && bateriaInfo.total > 0 && bateriaInfo.concluido === bateriaInfo.total) {
+                concluida = true;
+            }
             return { ...et, concluida };
         });
 
@@ -261,9 +286,9 @@
         if (etapaId === 'anamnese') return renderAnamneseComRelatorio();
         if (etapaId === 'hipoteses') return renderHipoteses();
         if (etapaId === 'checklist') return renderChecklist();
+        if (etapaId === 'bateria') return renderBateria();
 
         const sprints = {
-            'bateria': 'Sprint D3',
             'correcao': 'Sprint D4',
             'laudo': 'Sprint D5',
             'devolutiva': 'Sprint C2'
@@ -447,6 +472,72 @@
                     <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-primary">
                         Editar relatório
                     </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderBateria() {
+        if (!bateriaInfo || bateriaInfo.total === 0) {
+            const totalChecklist = checklistInfo ? checklistInfo.total : 0;
+            if (totalChecklist === 0) {
+                return `
+                    <div class="etapa-content">
+                        <div class="etapa-placeholder">
+                            <div class="etapa-placeholder-icon">🎯</div>
+                            <h3>Bateria sem instrumentos</h3>
+                            <p style="margin-bottom: 18px;">É necessário primeiro selecionar testes no Checklist.</p>
+                            <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">Ir para Checklist</a>
+                        </div>
+                    </div>
+                `;
+            }
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">🎯</div>
+                        <h3>Bateria pronta para iniciar</h3>
+                        <p style="margin-bottom: 18px;">${totalChecklist} testes selecionados no checklist. Abra a bateria para carregá-los automaticamente.</p>
+                        <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">Iniciar bateria</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        const todosConcluidos = bateriaInfo.concluido === bateriaInfo.total;
+        const cor = todosConcluidos ? 'var(--primary-green)' : 'var(--primary-blue)';
+
+        return `
+            <div class="etapa-content">
+                <div class="bateria-card-resumo">
+                    <div class="bateria-card-icone">${todosConcluidos ? '✓' : '🎯'}</div>
+                    <div class="bateria-card-info">
+                        <h3>${todosConcluidos ? 'Bateria concluída' : 'Bateria em andamento'}</h3>
+                        <p><strong>Última atualização:</strong> ${formatarDataHora(bateriaInfo.updated_at)}</p>
+                        <div class="bateria-mini-stats">
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--color-warning-text);">${bateriaInfo.aguardando}</span>
+                                <span class="bateria-mini-stat-label">Aguardando</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--primary-blue);">${bateriaInfo.em_aplicacao}</span>
+                                <span class="bateria-mini-stat-label">Em aplicação</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--primary-green);">${bateriaInfo.concluido}</span>
+                                <span class="bateria-mini-stat-label">Concluídos</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num">${bateriaInfo.total}</span>
+                                <span class="bateria-mini-stat-label">Total</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-primary">
+                            ${todosConcluidos ? 'Visualizar' : 'Continuar'}
+                        </a>
+                    </div>
                 </div>
             </div>
         `;

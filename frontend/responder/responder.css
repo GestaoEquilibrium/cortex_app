@@ -1,0 +1,578 @@
+/* ============================================================================
+   CORTEX_APP — Página de Resposta do Paciente
+   ============================================================================
+   Layout limpo, mobile-first. SEM elementos do sistema autenticado.
+   SEM mostrar interpretações, cutoffs, reversos.
+   ============================================================================ */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    background: #f8fafc;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* ─── HEADER FIXO ─────────────────────────────────────────────────────── */
+
+.responder-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.responder-header-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.responder-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.responder-logo-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1e40af 0%, #059669 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.02em;
+}
+
+.responder-logo-text {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1e40af;
+    letter-spacing: 0.02em;
+}
+
+.responder-progresso {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.responder-progresso-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.responder-progresso-bar {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.responder-progresso-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1e40af 0%, #059669 100%);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+/* ─── CONTAINER PRINCIPAL ─────────────────────────────────────────────── */
+
+.responder-main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+}
+
+/* ─── TELA 1: TERMO DE CONSENTIMENTO ──────────────────────────────────── */
+
+.tela-consentimento {
+    background: white;
+    border-radius: 16px;
+    padding: 32px 28px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.tela-consentimento h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+}
+
+.tela-consentimento .subtitulo {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 22px;
+}
+
+.tela-consentimento h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tela-consentimento p {
+    margin-bottom: 12px;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.tela-consentimento ul {
+    list-style: none;
+    margin-bottom: 16px;
+}
+
+.tela-consentimento ul li {
+    padding: 6px 0 6px 22px;
+    position: relative;
+    font-size: 13.5px;
+    color: #334155;
+}
+
+.tela-consentimento ul li::before {
+    content: "•";
+    color: #059669;
+    font-weight: 800;
+    position: absolute;
+    left: 6px;
+    font-size: 16px;
+}
+
+.consentimento-aceite {
+    margin-top: 22px;
+    padding: 16px 18px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.consentimento-aceite:hover {
+    background: #dcfce7;
+}
+
+.consentimento-aceite input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: #059669;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.consentimento-aceite-texto {
+    font-size: 13.5px;
+    color: #166534;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.btn-prosseguir {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px 22px;
+    background: linear-gradient(135deg, #1e40af 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.btn-prosseguir:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.28);
+}
+
+.btn-prosseguir:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
+
+/* ─── TELA 2: ITENS / PERGUNTAS ───────────────────────────────────────── */
+
+.tela-perguntas {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.tela-perguntas-instrucoes {
+    background: white;
+    border-radius: 14px;
+    padding: 18px 22px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    margin-bottom: 4px;
+}
+
+.tela-perguntas-instrucoes p {
+    font-size: 14px;
+    color: #334155;
+    line-height: 1.6;
+}
+
+.tela-perguntas-instrucoes strong {
+    color: #1e40af;
+}
+
+.item-pergunta {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.2s;
+}
+
+.item-pergunta.respondido {
+    border-color: #bbf7d0;
+    background: #fafffb;
+}
+
+.item-numero-texto {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.item-numero {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.item-pergunta.respondido .item-numero {
+    background: #059669;
+    color: white;
+}
+
+.item-texto {
+    flex: 1;
+    font-size: 14.5px;
+    color: #1e293b;
+    line-height: 1.55;
+    padding-top: 4px;
+}
+
+.item-opcoes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item-opcao {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    font-size: 14px;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.item-opcao:hover {
+    border-color: #1e40af;
+    background: #f0f4ff;
+}
+
+.item-opcao.ativo {
+    background: #1e40af;
+    border-color: #1e40af;
+    color: white;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+}
+
+.item-opcao-bullet {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    position: relative;
+}
+
+.item-opcao:hover .item-opcao-bullet {
+    border-color: #1e40af;
+}
+
+.item-opcao.ativo .item-opcao-bullet {
+    border-color: white;
+    background: white;
+}
+
+.item-opcao.ativo .item-opcao-bullet::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1e40af;
+}
+
+.item-opcao-texto {
+    flex: 1;
+    font-weight: 500;
+}
+
+/* ─── BOTÃO ENVIAR (rodapé fixo) ──────────────────────────────────────── */
+
+.responder-rodape {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    padding: 14px 20px;
+    box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.06);
+    z-index: 50;
+}
+
+.responder-rodape-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.responder-rodape-status {
+    flex: 1;
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.btn-enviar {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #1e40af 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    flex-shrink: 0;
+}
+
+.btn-enviar:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(30, 64, 175, 0.3);
+}
+
+.btn-enviar:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* ─── TELA 3: AGRADECIMENTO ───────────────────────────────────────────── */
+
+.tela-agradecimento {
+    background: white;
+    border-radius: 16px;
+    padding: 60px 32px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+    margin-top: 60px;
+}
+
+.tela-agradecimento-icone {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e40af 0%, #059669 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 8px 28px rgba(5, 150, 105, 0.3);
+}
+
+.tela-agradecimento-icone svg {
+    width: 40px;
+    height: 40px;
+}
+
+.tela-agradecimento h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+}
+
+.tela-agradecimento p {
+    font-size: 15px;
+    color: #475569;
+    margin-bottom: 8px;
+    line-height: 1.7;
+}
+
+.tela-agradecimento .clinica {
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 12.5px;
+    color: #64748b;
+}
+
+/* ─── ERROS ───────────────────────────────────────────────────────────── */
+
+.tela-erro {
+    background: white;
+    border-radius: 16px;
+    padding: 50px 32px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    border: 1px solid #fecaca;
+    margin-top: 50px;
+}
+
+.tela-erro-icone {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: #fee2e2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626;
+}
+
+.tela-erro h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #991b1b;
+    margin-bottom: 10px;
+}
+
+.tela-erro p {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+/* ─── LOADING ─────────────────────────────────────────────────────────── */
+
+.tela-loading {
+    text-align: center;
+    padding: 80px 20px;
+    color: #64748b;
+}
+
+.tela-loading-spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 16px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #1e40af;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── RESPONSIVO ─────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .responder-header-inner {
+        padding: 12px 16px;
+        gap: 12px;
+    }
+
+    .responder-logo-text {
+        display: none;
+    }
+
+    .responder-main {
+        padding: 18px 14px 90px;
+    }
+
+    .tela-consentimento {
+        padding: 24px 20px;
+    }
+
+    .tela-consentimento h1 {
+        font-size: 20px;
+    }
+
+    .item-pergunta {
+        padding: 16px 16px;
+    }
+
+    .item-texto {
+        font-size: 14px;
+    }
+
+    .item-opcao {
+        padding: 11px 14px;
+        font-size: 13.5px;
+    }
+
+    .btn-enviar {
+        padding: 11px 18px;
+        font-size: 13.5px;
+    }
+}

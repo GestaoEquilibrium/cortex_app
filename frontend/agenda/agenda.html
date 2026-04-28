@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda — CORTEX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="agenda.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <main class="app-main">
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Agenda</h1>
+                    <p id="agenda-subtitulo">Calendário de sessões</p>
+                </div>
+                <div class="page-actions" id="agenda-actions">
+                    <!-- preenchido via JS conforme permissão -->
+                </div>
+            </div>
+
+            <div id="agenda-conteudo">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando agenda...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de criar/editar sessão -->
+    <div id="modal-sessao" class="modal-overlay" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="modal-titulo">Nova sessão</h2>
+                <button class="modal-close" onclick="window.CortexAgenda.fecharModal()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- preenchido dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de detalhes (clicar em sessão) -->
+    <div id="modal-detalhes" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-detalhes-titulo">Detalhes</h2>
+                <button class="modal-close" onclick="window.CortexAgenda.fecharDetalhes()">×</button>
+            </div>
+            <div class="modal-body" id="modal-detalhes-body">
+                <!-- preenchido dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/supabase_client.js"></script>
+    <script src="../shared/auth_guard.js"></script>
+    <script src="../shared/audit.js"></script>
+    <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/sidebar.js"></script>
+    <script src="agenda.js"></script>
+</body>
+</html>

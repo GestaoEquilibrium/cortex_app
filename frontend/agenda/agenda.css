@@ -1,0 +1,449 @@
+/* ============================================================================
+   CORTEX_APP — Agenda CSS (Sprint C1)
+   Calendário mensal estilo Google Calendar com Estilo 1 (gradient)
+   ============================================================================ */
+
+/* ─── CONTROLS (mês nav + filtros) ────────────────────────────────────── */
+
+.agenda-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 12px 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.agenda-mes-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.agenda-mes-titulo {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-blue-dark);
+    letter-spacing: -0.01em;
+    min-width: 180px;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.agenda-filtros {
+    display: flex;
+    gap: 8px;
+}
+
+.agenda-filtros .form-select {
+    min-width: 220px;
+}
+
+/* ─── CALENDÁRIO ──────────────────────────────────────────────────────── */
+
+.agenda-calendario {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+    margin-bottom: 14px;
+}
+
+.cal-cabecalho {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: var(--gradient-softer);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.cal-dia-semana {
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary-blue-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.cal-celula {
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    min-height: 110px;
+    padding: 6px;
+    background: var(--color-surface);
+    position: relative;
+    transition: background var(--transition-fast);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cal-celula:nth-child(7n) {
+    border-right: none;
+}
+
+.cal-celula:hover:not(.cal-fora-mes) {
+    background: var(--gradient-softer);
+}
+
+.cal-fora-mes {
+    background: var(--slate-50);
+    color: var(--color-text-soft);
+    opacity: 0.55;
+}
+
+.cal-fora-mes .cal-numero {
+    color: var(--color-text-soft);
+}
+
+.cal-numero {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.cal-celula:not(.cal-fora-mes) .cal-numero:hover {
+    background: var(--primary-blue-100);
+    color: var(--primary-blue-dark);
+}
+
+.cal-hoje .cal-numero {
+    background: var(--gradient-primary);
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+}
+
+.cal-hoje .cal-numero:hover {
+    background: var(--gradient-hover);
+}
+
+/* ─── SESSÕES NO CALENDÁRIO ───────────────────────────────────────────── */
+
+.cal-sessoes {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.cal-sessao {
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+    border-left: 3px solid currentColor;
+}
+
+.cal-sessao:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
+}
+
+.cal-sessao-hora {
+    font-weight: 700;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.cal-sessao-nome {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cal-mais {
+    font-size: 10.5px;
+    color: var(--primary-blue);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background var(--transition-fast);
+}
+
+.cal-mais:hover {
+    background: var(--primary-blue-100);
+}
+
+/* ─── CORES POR STATUS ────────────────────────────────────────────────── */
+
+.sessao-agendada {
+    background: var(--primary-blue-100);
+    color: var(--primary-blue-dark);
+    border-color: var(--primary-blue) !important;
+}
+
+.sessao-realizada {
+    background: var(--primary-green-100);
+    color: var(--primary-green-dark);
+    border-color: var(--primary-green) !important;
+}
+
+.sessao-cancelada {
+    background: var(--slate-100);
+    color: var(--slate-600);
+    border-color: var(--slate-400) !important;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.sessao-remarcada {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    border-color: #d97706 !important;
+}
+
+.sessao-falta {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    border-color: #dc2626 !important;
+}
+
+/* Dot da legenda */
+.dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.dot.sessao-agendada { background: var(--primary-blue); }
+.dot.sessao-realizada { background: var(--primary-green); }
+.dot.sessao-cancelada { background: var(--slate-400); }
+.dot.sessao-remarcada { background: #d97706; }
+.dot.sessao-falta { background: #dc2626; }
+
+/* ─── LEGENDA ─────────────────────────────────────────────────────────── */
+
+.agenda-legenda {
+    display: flex;
+    gap: 16px;
+    padding: 10px 18px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    flex-wrap: wrap;
+}
+
+.agenda-legenda-item {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+}
+
+/* ─── MODAL GRANDE ────────────────────────────────────────────────────── */
+
+.modal-content.modal-large {
+    max-width: 640px;
+}
+
+/* ─── VINCULAÇÃO DE TESTES ────────────────────────────────────────────── */
+
+.vinculacao-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--slate-50);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.vinculacao-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 13px;
+    color: var(--color-text);
+}
+
+.vinculacao-item:hover {
+    background: var(--color-surface);
+}
+
+.vinculacao-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-blue);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.vinculacao-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    background: var(--primary-blue-100);
+    color: var(--primary-blue-dark);
+    font-weight: 600;
+}
+
+/* ─── DETALHES MODAL ──────────────────────────────────────────────────── */
+
+.detalhes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 18px;
+    margin-bottom: 18px;
+}
+
+.detalhes-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.detalhes-campo.span-2 {
+    grid-column: 1 / -1;
+}
+
+.detalhes-label {
+    font-size: 10.5px;
+    color: var(--color-text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.detalhes-valor {
+    font-size: 13.5px;
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+/* ─── LISTA DE SESSÕES (modal "ver todas do dia") ─────────────────────── */
+
+.lista-sessoes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.lista-sessao-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px solid var(--color-border);
+}
+
+.lista-sessao-item:hover {
+    border-color: var(--primary-blue-200);
+    box-shadow: var(--shadow-sm);
+    transform: translateX(2px);
+}
+
+.lista-sessao-hora {
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--primary-blue-dark);
+    flex-shrink: 0;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.lista-sessao-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lista-sessao-info strong {
+    font-size: 13.5px;
+    color: var(--color-text);
+}
+
+.lista-sessao-info span {
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+}
+
+/* ─── RESPONSIVO ──────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .agenda-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .agenda-mes-titulo {
+        font-size: 15px;
+        min-width: auto;
+        flex: 1;
+    }
+
+    .cal-celula {
+        min-height: 80px;
+        padding: 4px;
+    }
+
+    .cal-numero {
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+    }
+
+    .cal-sessao {
+        font-size: 10px;
+        padding: 2px 4px;
+    }
+
+    .cal-sessao-hora {
+        display: none;
+    }
+
+    .cal-dia-semana {
+        font-size: 10px;
+        padding: 6px 2px;
+    }
+
+    .detalhes-grid {
+        grid-template-columns: 1fr;
+    }
+}

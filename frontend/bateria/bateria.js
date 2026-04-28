@@ -17,6 +17,20 @@
 (function() {
     'use strict';
 
+    // ─── MAPEAMENTO DE CORRETORES (D4 — Onda 1) ────────────────────────────
+    // Sigla do instrumento → URL relativa da página de correção.
+    // Apenas instrumentos com norma cadastrada no banco aparecem aqui.
+    // Hoje implementado: RAADS-R (D4 Onda 1, teste 1/3)
+    const CORRETORES_DISPONIVEIS = {
+        'RAADS-R': '../correcao/raadsr/raadsr.html'
+    };
+
+    function getCorrigirUrl(sigla, aplicacaoId) {
+        const base = CORRETORES_DISPONIVEIS[sigla];
+        if (!base) return null;
+        return `${base}?aplicacao_id=${aplicacaoId}`;
+    }
+
     const state = {
         pacienteId: null,
         paciente: null,
@@ -395,6 +409,16 @@
                             <button class="btn btn-success btn-sm" onclick="window.CortexBateria.concluir('${apl.id}')">
                                 ✓ Concluir
                             </button>
+                        ` : ''}
+                        ${(apl.status === 'concluido_aplicacao' || apl.status === 'em_correcao') && getCorrigirUrl(inst.sigla, apl.id) ? `
+                            <a class="btn btn-primary btn-sm" href="${getCorrigirUrl(inst.sigla, apl.id)}">
+                                🔍 Corrigir
+                            </a>
+                        ` : ''}
+                        ${apl.status === 'corrigido' && getCorrigirUrl(inst.sigla, apl.id) ? `
+                            <a class="btn btn-secondary btn-sm" href="${getCorrigirUrl(inst.sigla, apl.id)}">
+                                ✎ Ver/Refazer correção
+                            </a>
                         ` : ''}
                         <button class="btn btn-ghost btn-sm" onclick="window.CortexBateria.abrirModal('${apl.id}')">
                             ✎ Editar

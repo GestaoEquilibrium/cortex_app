@@ -25,19 +25,32 @@
         // EQ-15 e SCARED virão nas próximas sprints
     };
 
+    // ─── PÁGINAS DE RESULTADO (Sprint D3) ──────────────────────────────────
+    // Sigla do instrumento → URL da página de visualização do resultado.
+    const PAGINAS_RESULTADO = {
+        'RAADS-R': '../correcao/raadsr/raadsr_resultado.html'
+    };
+
     function ehAutoaplicavel(sigla) {
         return TESTES_AUTOAPLICAVEIS.hasOwnProperty(sigla);
+    }
+
+    function temPaginaResultado(sigla) {
+        return PAGINAS_RESULTADO.hasOwnProperty(sigla);
     }
 
     function montarUrlPaciente(sigla, token) {
         const base = TESTES_AUTOAPLICAVEIS[sigla];
         if (!base) return null;
-        // Estamos em /bateria/bateria.html — sobe um nível e vai pra responder/
-        // Resultado: localhost:8000/responder/raadsr.html?token=xxx (em local)
-        //            site.com/cortex_app/frontend/responder/raadsr.html?token=xxx (em GH Pages)
         const a = document.createElement('a');
-        a.href = base;  // navegador resolve relativo automaticamente
+        a.href = base;
         return a.href + '?token=' + encodeURIComponent(token);
+    }
+
+    function montarUrlResultado(sigla, aplicacaoId) {
+        const base = PAGINAS_RESULTADO[sigla];
+        if (!base) return null;
+        return `${base}?aplicacao_id=${aplicacaoId}`;
     }
 
 
@@ -284,9 +297,14 @@
         });
 
         const lista = categoriasOrdenadas.map(cat => {
-            const filtrados = state.agrupado[cat].filter(a =>
-                state.filtroStatus === 'todos' || a.status === state.filtroStatus
-            );
+            const filtrados = state.agrupado[cat].filter(a => {
+                if (state.filtroStatus === 'todos') return true;
+                if (state.filtroStatus === 'concluido_aplicacao') {
+                    // "Concluídos" inclui também os já corrigidos automaticamente
+                    return a.status === 'concluido_aplicacao' || a.status === 'corrigido';
+                }
+                return a.status === state.filtroStatus;
+            });
             if (filtrados.length === 0) return '';
 
             return `
@@ -313,7 +331,12 @@
     function calcularStats() {
         const stats = { total: state.aplicacoes.length, aguardando: 0, em_aplicacao: 0, concluido_aplicacao: 0 };
         state.aplicacoes.forEach(a => {
-            if (stats[a.status] !== undefined) stats[a.status]++;
+            // 'corrigido' conta como 'concluido_aplicacao' nos stats
+            if (a.status === 'corrigido') {
+                stats.concluido_aplicacao++;
+            } else if (stats[a.status] !== undefined) {
+                stats[a.status]++;
+            }
         });
         return stats;
     }
@@ -424,6 +447,11 @@
                             <button class="btn btn-primary btn-sm" onclick="window.CortexBateria.gerarLink('${apl.id}', '${inst.sigla}')" style="background: linear-gradient(135deg, #1e40af 0%, #059669 100%);">
                                 📲 ${apl.link_unico ? 'Reenviar link' : 'Gerar link'}
                             </button>
+                        ` : ''}
+                        ${apl.status === 'corrigido' && temPaginaResultado(inst.sigla) ? `
+                            <a class="btn btn-primary btn-sm" href="${montarUrlResultado(inst.sigla, apl.id)}" style="background: linear-gradient(135deg, #1e40af 0%, #059669 100%);">
+                                📊 Ver resultado
+                            </a>
                         ` : ''}
                         <button class="btn btn-ghost btn-sm" onclick="window.CortexBateria.abrirModal('${apl.id}')">
                             ✎ Editar

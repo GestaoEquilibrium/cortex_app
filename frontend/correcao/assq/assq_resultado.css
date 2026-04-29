@@ -1,0 +1,278 @@
+/* ============================================================================
+   CORTEX_APP — Laudo AQ-ADOLESCENTE (AQ-50 Adolescente Heteroaplicação)
+   ============================================================================
+   Específico:
+     - Card destaque do score TOTAL (0-50, cutoff 32)
+     - Barra de progresso horizontal com marcador de cutoff
+     - Tabela "Subescalas" 5 linhas (cada uma 0-10)
+     - Gráfico de barras Chart.js
+     - Cards de detalhamento por subescala
+     - Item 30: indicado visualmente como "item de validação"
+   ============================================================================ */
+
+/* ─── CARD TOTAL DESTACADO ──────────────────────────────────────────────── */
+
+.assq-total-card {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border-left: 6px solid;
+}
+
+.assq-total-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.assq-total-card-numero {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.assq-total-card-de {
+    font-size: 18px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.assq-total-card-classif {
+    margin-left: auto;
+    padding: 8px 18px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.assq-total-card-desc {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 14px;
+    line-height: 1.55;
+}
+
+.assq-total-barra-wrap {
+    position: relative;
+    margin-top: 16px;
+}
+
+.assq-total-barra-bg {
+    height: 14px;
+    background: #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.assq-total-barra-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.4s;
+}
+
+.assq-total-cutoff-marker {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    background: #dc2626;
+}
+
+.assq-total-cutoff-label {
+    position: absolute;
+    top: 22px;
+    transform: translateX(-50%);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #dc2626;
+    white-space: nowrap;
+}
+
+.assq-total-barra-escala {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 36px;
+    font-size: 10.5px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* ─── TABELA DE SUBESCALAS ──────────────────────────────────────────────── */
+
+.assq-tab-subescalas {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.assq-tab-subescalas table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.assq-tab-subescalas th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.assq-tab-subescalas th.ctr,
+.assq-tab-subescalas td.ctr {
+    text-align: center;
+}
+
+.assq-tab-subescalas td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.assq-tab-subescalas tr:last-child td {
+    border-bottom: none;
+}
+
+.assq-tab-subescalas .nome-sub {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.assq-tab-subescalas .nome-sub-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.assq-tab-subescalas .escore-bruto {
+    font-weight: 800;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+/* ─── GRÁFICO ───────────────────────────────────────────────────────────── */
+
+.assq-grafico-wrap {
+    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.assq-grafico-canvas-container {
+    position: relative;
+    height: 260px;
+    width: 100%;
+}
+
+.assq-grafico-legenda {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 14px;
+    font-style: italic;
+}
+
+/* ─── CARDS POR SUBESCALA ───────────────────────────────────────────────── */
+
+.assq-sub-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    border-left: 4px solid;
+}
+
+.assq-sub-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.assq-sub-card-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.assq-sub-card-bullet {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.assq-sub-card-escore {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.assq-sub-card-corpo {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ─── BADGES DE CLASSIFICAÇÃO TOTAL ─────────────────────────────────────── */
+
+.assq-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.assq-badge-baixa            { background: #dcfce7; color: #166534; }
+.assq-badge-media            { background: #cffafe; color: #155e75; }
+.assq-badge-acima            { background: #fef3c7; color: #854d0e; }
+.assq-badge-limitrofe        { background: #ffedd5; color: #9a3412; }
+.assq-badge-clinico          { background: #fee2e2; color: #991b1b; }
+
+/* ─── NOTA TÉCNICA ──────────────────────────────────────────────────────── */
+
+.assq-nota-tecnica {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 18px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.65;
+}
+
+.assq-nota-tecnica strong {
+    color: #1e293b;
+}
+
+/* ─── RESPONSIVO ────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+    .assq-total-card-numero { font-size: 44px; }
+    .assq-total-card-classif { margin-left: 0; }
+    .assq-grafico-canvas-container { height: 220px; }
+    .assq-sub-card-header { flex-direction: column; align-items: flex-start; }
+}

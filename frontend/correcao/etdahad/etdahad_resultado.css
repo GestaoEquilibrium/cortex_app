@@ -1,0 +1,206 @@
+/* ============================================================================
+   CORTEX_APP — Laudo ETDAH-AD
+   ============================================================================
+   Reaproveita base do laudo RAADS-R/EQ-15 (header, seções, rodapé).
+   Específico ETDAH-AD:
+     - Tabela "Escores por Fator" com 5 colunas
+     - Gráfico de barras horizontais (Chart.js)
+     - Cards de detalhamento por fator com borda lateral colorida
+     - Nota técnica em caixa cinza ao final
+   ============================================================================ */
+
+/* ─── TABELA "ESCORES POR FATOR" ──────────────────────────────────────── */
+
+.etdah-tab-fatores {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.etdah-tab-fatores table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.etdah-tab-fatores th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.etdah-tab-fatores th.ctr,
+.etdah-tab-fatores td.ctr {
+    text-align: center;
+}
+
+.etdah-tab-fatores td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.etdah-tab-fatores tr:last-child td {
+    border-bottom: none;
+}
+
+.etdah-tab-fatores .nome-fator {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.etdah-tab-fatores .nome-fator-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.etdah-tab-fatores .escore-bruto {
+    font-weight: 800;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.etdah-tab-fatores .percentil {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1e40af;
+}
+
+/* ─── BADGES DE CLASSIFICAÇÃO (5 níveis) ──────────────────────────────── */
+
+.etdah-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.etdah-badge-superior        { background: #dcfce7; color: #166534; }
+.etdah-badge-medio-superior  { background: #bbf7d0; color: #14532d; }
+.etdah-badge-medio           { background: #fef9c3; color: #854d0e; }
+.etdah-badge-medio-inferior  { background: #fed7aa; color: #9a3412; }
+.etdah-badge-inferior        { background: #fee2e2; color: #991b1b; }
+.etdah-badge-vazio           { background: #f1f5f9; color: #94a3b8; }
+
+/* ─── GRÁFICO DE BARRAS (PERFIL) ──────────────────────────────────────── */
+
+.etdah-grafico-wrap {
+    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.etdah-grafico-canvas-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+
+.etdah-grafico-legenda {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 14px;
+    font-style: italic;
+}
+
+/* ─── CARDS DE DETALHAMENTO POR FATOR ─────────────────────────────────── */
+
+.etdah-fator-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    border-left: 4px solid;
+}
+
+.etdah-fator-card-desatencao  { border-left-color: #2563eb; }
+.etdah-fator-card-hiperati    { border-left-color: #dc2626; }
+.etdah-fator-card-impulsiv    { border-left-color: #d97706; }
+.etdah-fator-card-aspectos    { border-left-color: #7c3aed; }
+.etdah-fator-card-aama        { border-left-color: #059669; }
+
+.etdah-fator-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.etdah-fator-card-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.etdah-fator-card-bullet {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.etdah-fator-card-classif-meta {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+.etdah-fator-card-corpo {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ─── NOTA TÉCNICA ────────────────────────────────────────────────────── */
+
+.etdah-nota-tecnica {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 18px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.65;
+}
+
+.etdah-nota-tecnica strong {
+    color: #1e293b;
+}
+
+/* ─── HEADER (com idade e escolaridade) ───────────────────────────────── */
+
+.etdah-header-meta-extra {
+    margin-top: 4px;
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+/* ─── RESPONSIVO ─────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+    .etdah-grafico-canvas-container { height: 240px; }
+    .etdah-fator-card-header { flex-direction: column; align-items: flex-start; }
+}

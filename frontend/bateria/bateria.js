@@ -18,38 +18,95 @@
     'use strict';
 
     // ─── TESTES AUTOAPLICÁVEIS (Sprint D3) ─────────────────────────────────
-    // Testes onde o paciente responde via link público.
-    // Mapeamento: sigla do instrumento → URL relativa da página de resposta.
-    const TESTES_AUTOAPLICAVEIS = {
-        'RAADS-R': '../responder/raadsr.html'
-        // EQ-15 e SCARED virão nas próximas sprints
+    //
+    // Estratégia híbrida (deliberada — ver histórico do projeto):
+    //
+    //   1. Caminho NOVO (dirigido pelo catálogo do banco):
+    //      Um teste é autoaplicável quando, no `instrumentos_catalogo`,
+    //      ambas as flags são true:
+    //        - permite_aplicacao_online   = true
+    //        - permite_correcao_sistema   = true
+    //      Vale também pra exibir o botão "Ver resultado".
+    //      Para adicionar um teste novo no futuro, basta seedá-lo com essas
+    //      flags + criar os arquivos do frontend no padrão de naming abaixo.
+    //
+    //   2. WHITELIST de fallback:
+    //      Testes legados que estão no banco com as flags = false mas que
+    //      JÁ FUNCIONAM em produção. Mantemos hardcoded pra preservar
+    //      retrocompatibilidade sem mexer no banco.
+    //
+    // Convenção de naming (espelha o que está no disco hoje):
+    //   - Sigla → slug = lowercase, sem hífen, sem ponto, sem espaço
+    //     (RAADS-R → raadsr;  EQ-15 → eq15;  SCARED → scared)
+    //   - Página de resposta:    ../responder/<slug>.html
+    //   - Página de resultado:   ../correcao/<slug>/<slug>_resultado.html
+    //
+    // OVERRIDES (caso algum teste fuja da convenção):
+    //   Coloque a sigla aqui apontando pra URLs custom; o resolver
+    //   prioriza override sobre a convenção.
+    // ───────────────────────────────────────────────────────────────────────
+
+    // Whitelist de retrocompatibilidade (testes legados — não mexer)
+    const WHITELIST_AUTOAPLICAVEIS = ['RAADS-R'];
+    const WHITELIST_RESULTADO      = ['RAADS-R'];
+
+    // Overrides explícitos (vazio por enquanto — convenção atende todos)
+    const URL_OVERRIDES_RESPONDER  = {};
+    const URL_OVERRIDES_RESULTADO  = {
+        // SCARED-A e SCARED-H compartilham a mesma página de resultado
+        'SCARED-A': '../correcao/scared/scared_resultado.html',
+        'SCARED-H': '../correcao/scared/scared_resultado.html'
     };
 
-    // ─── PÁGINAS DE RESULTADO (Sprint D3) ──────────────────────────────────
-    // Sigla do instrumento → URL da página de visualização do resultado.
-    const PAGINAS_RESULTADO = {
-        'RAADS-R': '../correcao/raadsr/raadsr_resultado.html'
-    };
+    function siglaParaSlug(sigla) {
+        return String(sigla || '')
+            .toLowerCase()
+            .replace(/[-.\s_]/g, '');
+    }
+
+    function getInstrumentoPorSigla(sigla) {
+        return state.catalogo.find(i => i.sigla === sigla) || null;
+    }
 
     function ehAutoaplicavel(sigla) {
-        return TESTES_AUTOAPLICAVEIS.hasOwnProperty(sigla);
+        // Whitelist tem prioridade (preserva RAADS-R em produção)
+        if (WHITELIST_AUTOAPLICAVEIS.includes(sigla)) return true;
+        const inst = getInstrumentoPorSigla(sigla);
+        if (!inst) return false;
+        return inst.permite_aplicacao_online === true
+            && inst.permite_correcao_sistema === true;
     }
 
     function temPaginaResultado(sigla) {
-        return PAGINAS_RESULTADO.hasOwnProperty(sigla);
+        if (WHITELIST_RESULTADO.includes(sigla)) return true;
+        const inst = getInstrumentoPorSigla(sigla);
+        if (!inst) return false;
+        // Mesma regra: se o teste é autoaplicável e tem correção pelo
+        // sistema, então tem página de resultado.
+        return inst.permite_aplicacao_online === true
+            && inst.permite_correcao_sistema === true;
     }
 
     function montarUrlPaciente(sigla, token) {
-        const base = TESTES_AUTOAPLICAVEIS[sigla];
-        if (!base) return null;
+        // Override explícito vence a convenção
+        let base = URL_OVERRIDES_RESPONDER[sigla];
+        if (!base) {
+            const slug = siglaParaSlug(sigla);
+            if (!slug) return null;
+            base = `../responder/${slug}.html`;
+        }
         const a = document.createElement('a');
         a.href = base;
         return a.href + '?token=' + encodeURIComponent(token);
     }
 
     function montarUrlResultado(sigla, aplicacaoId) {
-        const base = PAGINAS_RESULTADO[sigla];
-        if (!base) return null;
+        let base = URL_OVERRIDES_RESULTADO[sigla];
+        if (!base) {
+            const slug = siglaParaSlug(sigla);
+            if (!slug) return null;
+            base = `../correcao/${slug}/${slug}_resultado.html`;
+        }
         return `${base}?aplicacao_id=${aplicacaoId}`;
     }
 
@@ -143,7 +200,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_label')
+            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_label, permite_aplicacao_online, permite_correcao_sistema')
             .order('sigla');
 
         if (error) throw new Error('Erro ao carregar catálogo: ' + error.message);

@@ -1,0 +1,360 @@
+/* ============================================================================
+   CORTEX_APP — Laudo SCARED unificado (Auto + Hetero)
+   ============================================================================
+   Reaproveita 100% do raadsr_resultado.css (header azul, seções, rodapé, etc).
+   Adiciona o que é específico do SCARED:
+     - Cards de status TOTAL (auto + hetero lado a lado)
+     - Linhas de barras horizontais por subescala com 2 trilhos (C/P)
+     - Tabela de concordância auto×hetero (≤1 verde / 2-3 amarelo / ≥4 vermelho)
+     - Tabela de subescalas com z-score e percentil
+   ============================================================================ */
+
+/* ─── CARDS DE TOTAL (Auto + Hetero lado a lado) ──────────────────────── */
+
+.scared-totais {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.scared-totais.solo {
+    grid-template-columns: 1fr;
+}
+
+.scared-card-total {
+    border-radius: 12px;
+    padding: 18px 20px;
+    color: white;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.10);
+}
+
+.scared-card-total-clin    { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
+.scared-card-total-naoClin { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+.scared-card-total-vazio   {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border: 1px dashed #cbd5e1;
+}
+
+.scared-card-total-titulo {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    font-weight: 700;
+    opacity: 0.92;
+    margin-bottom: 8px;
+}
+
+.scared-card-total-corpo {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.scared-card-total-valor {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.scared-card-total-max {
+    font-size: 12px;
+    opacity: 0.78;
+}
+
+.scared-card-total-status {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.scared-card-total-zinfo {
+    margin-top: 6px;
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+/* ─── BARRAS DAS SUBESCALAS (auto + hetero) ───────────────────────────── */
+
+.scared-subs {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 18px;
+}
+
+.scared-subs-titulo {
+    font-size: 11px;
+    text-align: center;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+}
+
+.scared-sub-bloco {
+    margin-bottom: 12px;
+}
+
+.scared-sub-bloco:last-child {
+    margin-bottom: 0;
+}
+
+.scared-sub-header {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1e3a5f;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+}
+
+.scared-sub-header-ref {
+    color: #94a3b8;
+    font-weight: 400;
+    font-size: 9.5px;
+    margin-left: 6px;
+}
+
+.scared-sub-linha {
+    display: grid;
+    grid-template-columns: 22px 1fr 38px 22px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.scared-sub-letra {
+    font-size: 11px;
+    font-weight: 800;
+    color: #475569;
+    text-align: center;
+}
+
+.scared-sub-trilho {
+    position: relative;
+    height: 18px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: visible;
+}
+
+.scared-sub-fill {
+    position: absolute;
+    left: 0;
+    top: 2px;
+    bottom: 2px;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.scared-sub-cutoff {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(220, 38, 38, 0.5);
+    z-index: 2;
+}
+
+.scared-sub-fill-clin    { background: #dc2626; }
+.scared-sub-fill-panico  { background: #3b82f6; }
+.scared-sub-fill-generaliz { background: #10b981; }
+.scared-sub-fill-separacao { background: #f59e0b; }
+.scared-sub-fill-social  { background: #ec4899; }
+.scared-sub-fill-escolar { background: #8b5cf6; }
+.scared-sub-fill-total   { background: #1a56db; }
+
+.scared-sub-fill-vazio {
+    background: transparent;
+    border: 1px dashed #cbd5e1;
+    width: 100% !important;
+    border-radius: 3px;
+}
+
+.scared-sub-valor {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+    text-align: right;
+}
+
+.scared-sub-status {
+    font-size: 13px;
+    text-align: center;
+}
+
+/* ─── TABELA DE Z-SCORES ──────────────────────────────────────────────── */
+
+.scared-tab-z {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.scared-tab-z-titulo {
+    background: #f8fafc;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #1e40af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.scared-tab-z table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.scared-tab-z th {
+    background: #f8fafc;
+    padding: 9px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.scared-tab-z th.ctr,
+.scared-tab-z td.ctr {
+    text-align: center;
+}
+
+.scared-tab-z td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.scared-tab-z tr:last-child td {
+    border-bottom: none;
+}
+
+.scared-tab-z tr.linha-total {
+    background: #dbeafe;
+}
+
+.scared-tab-z tr.linha-total td {
+    font-weight: 800;
+    color: #1e40af;
+}
+
+.scared-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.scared-badge-naoclin {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.scared-badge-clin {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ─── TABELA DE CONCORDÂNCIA (Auto × Hetero) ─────────────────────────── */
+
+.scared-comp {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.scared-comp-titulo {
+    background: #f8fafc;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #1e40af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.scared-comp table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.scared-comp th, .scared-comp td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: left;
+}
+
+.scared-comp th {
+    background: #f8fafc;
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.scared-comp th.ctr, .scared-comp td.ctr {
+    text-align: center;
+}
+
+.scared-comp .diff-concordante { color: #047857; font-weight: 700; }
+.scared-comp .diff-moderada    { color: #b45309; font-weight: 700; }
+.scared-comp .diff-importante  { color: #991b1b; font-weight: 800; }
+
+.scared-comp-legenda {
+    display: flex;
+    gap: 16px;
+    padding: 10px 14px;
+    font-size: 10px;
+    color: #64748b;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.scared-comp-legenda span {
+    font-weight: 700;
+}
+
+/* ─── AVISO DE CONTRAPARTE NÃO ENCONTRADA ─────────────────────────────── */
+
+.scared-aviso-contraparte {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #78350f;
+    margin-bottom: 14px;
+}
+
+.scared-aviso-contraparte strong {
+    color: #92400e;
+}
+
+/* ─── RESPONSIVO ─────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+    .scared-totais {
+        grid-template-columns: 1fr;
+    }
+
+    .scared-sub-linha {
+        grid-template-columns: 22px 1fr 38px 22px;
+    }
+}

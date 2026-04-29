@@ -1,0 +1,289 @@
+/* ============================================================================
+   CORTEX_APP — Laudo QA 16+ (AQ-50 Baron-Cohen)
+   ============================================================================
+   Específico:
+     - Card destaque do score TOTAL (0-50, cutoff 32)
+     - Barra de progresso horizontal com marcador de cutoff
+     - Tabela "Subescalas" 5 linhas (cada uma 0-10)
+     - Gráfico de barras Chart.js
+     - Cards de detalhamento por subescala
+     - Item 30: indicado visualmente como "item de validação"
+   ============================================================================ */
+
+/* ─── CARD TOTAL DESTACADO ──────────────────────────────────────────────── */
+
+.qa-total-card {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border-left: 6px solid;
+}
+
+.qa-total-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.qa-total-card-numero {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.qa-total-card-de {
+    font-size: 18px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.qa-total-card-classif {
+    margin-left: auto;
+    padding: 8px 18px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.qa-total-card-desc {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 14px;
+    line-height: 1.55;
+}
+
+.qa-total-barra-wrap {
+    position: relative;
+    margin-top: 16px;
+}
+
+.qa-total-barra-bg {
+    height: 14px;
+    background: #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.qa-total-barra-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.4s;
+}
+
+.qa-total-cutoff-marker {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    background: #dc2626;
+}
+
+.qa-total-cutoff-label {
+    position: absolute;
+    top: 22px;
+    transform: translateX(-50%);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #dc2626;
+    white-space: nowrap;
+}
+
+.qa-total-barra-escala {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 36px;
+    font-size: 10.5px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* ─── TABELA DE SUBESCALAS ──────────────────────────────────────────────── */
+
+.qa-tab-subescalas {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.qa-tab-subescalas table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.qa-tab-subescalas th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.qa-tab-subescalas th.ctr,
+.qa-tab-subescalas td.ctr {
+    text-align: center;
+}
+
+.qa-tab-subescalas td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.qa-tab-subescalas tr:last-child td {
+    border-bottom: none;
+}
+
+.qa-tab-subescalas .nome-sub {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qa-tab-subescalas .nome-sub-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.qa-tab-subescalas .escore-bruto {
+    font-weight: 800;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+/* ─── GRÁFICO ───────────────────────────────────────────────────────────── */
+
+.qa-grafico-wrap {
+    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.qa-grafico-canvas-container {
+    position: relative;
+    height: 260px;
+    width: 100%;
+}
+
+.qa-grafico-legenda {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 14px;
+    font-style: italic;
+}
+
+/* ─── CARDS POR SUBESCALA ───────────────────────────────────────────────── */
+
+.qa-sub-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    border-left: 4px solid;
+}
+
+.qa-sub-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.qa-sub-card-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.qa-sub-card-bullet {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.qa-sub-card-escore {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.qa-sub-card-corpo {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ─── BADGES DE CLASSIFICAÇÃO TOTAL ─────────────────────────────────────── */
+
+.qa-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.qa-badge-baixa            { background: #dcfce7; color: #166534; }
+.qa-badge-media            { background: #cffafe; color: #155e75; }
+.qa-badge-acima            { background: #fef3c7; color: #854d0e; }
+.qa-badge-limitrofe        { background: #ffedd5; color: #9a3412; }
+.qa-badge-clinico          { background: #fee2e2; color: #991b1b; }
+
+/* ─── NOTA TÉCNICA ──────────────────────────────────────────────────────── */
+
+.qa-nota-tecnica {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 18px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.65;
+}
+
+.qa-nota-tecnica strong {
+    color: #1e293b;
+}
+
+/* ─── ITEM 30 BADGE NO DETALHES ─────────────────────────────────────────── */
+
+.qa-item-30-badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* ─── RESPONSIVO ────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+    .qa-total-card-numero { font-size: 44px; }
+    .qa-total-card-classif { margin-left: 0; }
+    .qa-grafico-canvas-container { height: 220px; }
+    .qa-sub-card-header { flex-direction: column; align-items: flex-start; }
+}

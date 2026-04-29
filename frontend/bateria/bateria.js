@@ -36,7 +36,8 @@
     //      retrocompatibilidade sem mexer no banco.
     //
     // Convenção de naming (espelha o que está no disco hoje):
-    //   - Sigla → slug = lowercase, sem hífen, sem ponto, sem espaço
+    //   - Sigla → slug = lowercase, removendo TUDO que não for a-z ou 0-9
+    //     (hífen, ponto, espaço, underscore, +, /, etc — tudo vira nada)
     //     (RAADS-R → raadsr;  EQ-15 → eq15;  SCARED → scared)
     //   - Página de resposta:    ../responder/<slug>.html
     //   - Página de resultado:   ../correcao/<slug>/<slug>_resultado.html
@@ -61,7 +62,7 @@
     function siglaParaSlug(sigla) {
         return String(sigla || '')
             .toLowerCase()
-            .replace(/[-.\s_]/g, '');
+            .replace(/[^a-z0-9]/g, '');
     }
 
     function getInstrumentoPorSigla(sigla) {

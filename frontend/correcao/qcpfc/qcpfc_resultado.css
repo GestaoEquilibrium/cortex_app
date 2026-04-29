@@ -1,0 +1,204 @@
+/* ============================================================================
+   CORTEX_APP — Laudo QCP-FC
+   ============================================================================
+   Estrutura:
+     - Tabela "Escores por Escala" com 10 linhas (uma por transtorno)
+     - Gráfico SVG de barras horizontais com Z-score (linha de corte em Z=1)
+     - Cards de detalhamento por escala (descrição + crença central)
+     - Nota técnica
+   ============================================================================ */
+
+/* ─── TABELA "ESCORES POR ESCALA" ───────────────────────────────────────── */
+
+.qcpfc-tab-escalas {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.qcpfc-tab-escalas table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.qcpfc-tab-escalas th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.qcpfc-tab-escalas th.ctr,
+.qcpfc-tab-escalas td.ctr {
+    text-align: center;
+}
+
+.qcpfc-tab-escalas td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.qcpfc-tab-escalas tr:last-child td {
+    border-bottom: none;
+}
+
+.qcpfc-tab-escalas .nome-escala {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qcpfc-tab-escalas .nome-escala-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.qcpfc-tab-escalas .escore-bruto {
+    font-weight: 800;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.qcpfc-tab-escalas .z-score {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* ─── BADGES DE CLASSIFICAÇÃO (4 níveis) ────────────────────────────────── */
+
+.qcpfc-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.qcpfc-badge-abaixo            { background: #d1fae5; color: #065f46; }
+.qcpfc-badge-media             { background: #dbeafe; color: #1e40af; }
+.qcpfc-badge-elevado           { background: #fef3c7; color: #92400e; }
+.qcpfc-badge-significativo     { background: #fee2e2; color: #991b1b; }
+
+/* ─── GRÁFICO Z-SCORE ───────────────────────────────────────────────────── */
+
+.qcpfc-grafico-wrap {
+    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.qcpfc-grafico-canvas-container {
+    position: relative;
+    height: 380px;
+    width: 100%;
+}
+
+.qcpfc-grafico-legenda {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 14px;
+    font-style: italic;
+}
+
+/* ─── CARDS DE DETALHAMENTO POR ESCALA ──────────────────────────────────── */
+
+.qcpfc-escala-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    border-left: 4px solid;
+}
+
+.qcpfc-escala-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.qcpfc-escala-card-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.qcpfc-escala-card-bullet {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.qcpfc-escala-card-classif-meta {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+.qcpfc-escala-card-corpo {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.qcpfc-escala-card-crenca {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.6);
+    border-left: 2px solid currentColor;
+    font-size: 12.5px;
+    font-style: italic;
+    color: #475569;
+    border-radius: 4px;
+}
+
+.qcpfc-escala-card-crenca strong {
+    font-style: normal;
+    color: #1e293b;
+}
+
+/* ─── NOTA TÉCNICA ──────────────────────────────────────────────────────── */
+
+.qcpfc-nota-tecnica {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 18px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.65;
+}
+
+.qcpfc-nota-tecnica strong {
+    color: #1e293b;
+}
+
+/* ─── RESPONSIVO ────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+    .qcpfc-grafico-canvas-container { height: 320px; }
+    .qcpfc-escala-card-header { flex-direction: column; align-items: flex-start; }
+}

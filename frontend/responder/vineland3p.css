@@ -1,0 +1,77 @@
+/* ===== Vineland-3 — estilos específicos =====================================
+   Cabeçalhos de seção (COM, AVD, SOC, HMOT, INT, EXT, OTR), badges de tipo,
+   e blocos de "tip" (dica) por item.
+============================================================================= */
+
+.vineland-secao-header {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+    padding: 18px 22px;
+    margin: 28px 0 14px 0;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.vineland-secao-header:first-of-type { margin-top: 14px; }
+
+.vineland-secao-header h3 {
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.01em;
+    color: white;
+}
+
+.vineland-secao-header .vineland-secao-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* Cores por seção (border-left destaque) */
+.vineland-secao-header.sec-COM  { border-left: 5px solid #3b82f6; }
+.vineland-secao-header.sec-AVD  { border-left: 5px solid #10b981; }
+.vineland-secao-header.sec-SOC  { border-left: 5px solid #8b5cf6; }
+.vineland-secao-header.sec-HMOT { border-left: 5px solid #f59e0b; }
+.vineland-secao-header.sec-INT  { border-left: 5px solid #dc2626; }
+.vineland-secao-header.sec-EXT  { border-left: 5px solid #ef4444; }
+.vineland-secao-header.sec-OTR  { border-left: 5px solid #a855f7; }
+
+.vineland-secao-info-extra {
+    margin-top: 10px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Badge de tipo binário */
+.vineland-item-tipo-binary {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* Tip box (dica do item) */
+.vineland-item-tip {
+    background: #f0f9ff;
+    border-left: 3px solid #0ea5e9;
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #0c4a6e;
+    line-height: 1.5;
+}
+
+.vineland-item-tip strong {
+    color: #075985;
+}

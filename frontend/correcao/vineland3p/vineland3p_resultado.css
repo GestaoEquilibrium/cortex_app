@@ -1,0 +1,315 @@
+/* ============================================================================
+   CORTEX_APP — Laudo Vineland-3-P (Sparrow, Cicchetti & Saulnier 2016)
+   ============================================================================
+   Particularidades:
+     - Card destaque do CCA (Composto Comportamento Adaptativo) — score principal
+     - 4 cards de domínio (COM, AVD, SOC, HMOT) com PP + nível adaptativo
+     - 2 cards de comportamento (INT, EXT) com escore-v
+     - Tabelas com bruto + PP + classificação por nível
+     - Aviso quando HMOT não aplicável (idade ≥ 10)
+   ============================================================================ */
+
+/* ─── CARD CCA (composto principal) ─────────────────────────────────────── */
+
+.vineland-cca-card {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+    color: white;
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.15);
+}
+
+.vineland-cca-card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 10px;
+}
+
+.vineland-cca-card-numero {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.vineland-cca-card-titulo {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.vineland-cca-card-classif {
+    display: inline-block;
+    padding: 8px 22px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+.vineland-cca-card-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+    max-width: 620px;
+    margin: 0 auto;
+}
+
+.vineland-cca-card.cca-baixo {
+    background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+}
+
+.vineland-cca-card.cca-alto {
+    background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+}
+
+.vineland-cca-card.cca-na {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+}
+
+/* ─── CARDS DE DOMÍNIO ──────────────────────────────────────────────────── */
+
+.vineland-doms-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.vineland-dom-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    padding: 18px 22px;
+    border-left: 5px solid;
+}
+
+.vineland-dom-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.vineland-dom-card-nome {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.vineland-dom-card-pp {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.vineland-dom-card-bruto {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.vineland-dom-card-classif {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+}
+
+/* ─── CARDS COMPORTAMENTAIS (INT/EXT) ──────────────────────────────────── */
+
+.vineland-beh-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.vineland-beh-card {
+    background: #fefce8;
+    border-radius: 12px;
+    padding: 18px 22px;
+    border-left: 5px solid;
+}
+
+.vineland-beh-card.cor-int { border-left-color: #dc2626; }
+.vineland-beh-card.cor-ext { border-left-color: #ef4444; }
+
+.vineland-beh-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.vineland-beh-card-nome {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.vineland-beh-card-v {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.vineland-beh-card-bruto {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* ─── TABELA RESUMO ─────────────────────────────────────────────────────── */
+
+.vineland-tab-resumo {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.vineland-tab-resumo table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.vineland-tab-resumo th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.vineland-tab-resumo th.ctr,
+.vineland-tab-resumo td.ctr {
+    text-align: center;
+}
+
+.vineland-tab-resumo td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.vineland-tab-resumo tr:last-child td {
+    border-bottom: none;
+}
+
+.vineland-tab-resumo .nome-dom {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vineland-tab-resumo .nome-dom-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.vineland-tab-resumo .pp-valor {
+    font-weight: 800;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.vineland-tab-resumo .ic-valor {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* ─── AVISOS ────────────────────────────────────────────────────────────── */
+
+.vineland-aviso {
+    background: #fef3c7;
+    border-left: 4px solid #d97706;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    color: #78350f;
+    line-height: 1.55;
+}
+
+.vineland-aviso strong {
+    color: #78350f;
+}
+
+.vineland-itens-criticos {
+    background: #fee2e2;
+    border-left: 4px solid #dc2626;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 14px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #7f1d1d;
+    line-height: 1.55;
+}
+
+.vineland-itens-criticos strong {
+    color: #7f1d1d;
+}
+
+.vineland-itens-criticos ul {
+    margin: 8px 0 0 18px;
+    padding: 0;
+}
+
+.vineland-itens-criticos li {
+    margin-bottom: 4px;
+}
+
+/* ─── NOTA TÉCNICA ──────────────────────────────────────────────────────── */
+
+.vineland-nota-tecnica {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 18px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.65;
+}
+
+.vineland-nota-tecnica strong {
+    color: #1e293b;
+}
+
+/* ─── RESPONSIVO ────────────────────────────────────────────────────────── */
+
+@media (max-width: 800px) {
+    .vineland-doms-row,
+    .vineland-beh-row {
+        grid-template-columns: 1fr;
+    }
+    .vineland-cca-card-numero { font-size: 48px; }
+    .vineland-cca-card-titulo { font-size: 18px; }
+}

@@ -84,7 +84,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis')
+            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro')
             .order('dominio_principal')
             .order('sigla');
 
@@ -122,10 +122,21 @@
     }
 
     function filtrarECategorizar() {
-        // Filtra os instrumentos pela faixa do paciente
-        state.catalogoFiltrado = state.catalogo.filter(i =>
-            (i.faixas_aplicaveis || []).includes(state.faixaPaciente)
-        );
+        // Converte sexo do paciente ('Masculino'/'Feminino'/'Outro') para CHAR(1)
+        // usado no instrumentos_catalogo.sexo_filtro
+        let sexoChar = null;
+        if (state.paciente.sexo === 'Masculino') sexoChar = 'M';
+        else if (state.paciente.sexo === 'Feminino') sexoChar = 'F';
+        // 'Outro' ou null → fica null = só instrumentos sem filtro de sexo
+
+        // Filtra: faixa etária + (sexo_filtro NULL OU sexo_filtro = sexoChar)
+        state.catalogoFiltrado = state.catalogo.filter(i => {
+            const faixaOk = (i.faixas_aplicaveis || []).includes(state.faixaPaciente);
+            if (!faixaOk) return false;
+            // Sexo: NULL no instrumento = qualquer paciente. Caso contrário, precisa bater.
+            if (i.sexo_filtro === null || i.sexo_filtro === undefined) return true;
+            return i.sexo_filtro === sexoChar;
+        });
 
         // Agrupa por dominio_principal (categoria)
         state.agrupado = {};

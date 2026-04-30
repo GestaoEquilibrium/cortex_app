@@ -1,0 +1,264 @@
+/* ============================================================================
+   CORTEX_APP — Laudo BAARS-IV (Barkley 2011)
+   ============================================================================
+   Particularidades:
+     - 3 cards de SUBESCALA lado a lado, cada um com seu próprio status POS/NEG
+     - Card de SUBTIPO derivado em destaque (TDAH-C / TDAH-PI / TDAH-HI / Abaixo)
+     - Métrica de barra é "sintomas significativos" (0-9) com cutoff marcado
+   ============================================================================ */
+
+/* ─── 3 CARDS DE SUBESCALA ──────────────────────────────────────────────── */
+
+.baars-cards-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.baars-sub-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    padding: 18px 20px;
+    border-left: 5px solid;
+    display: flex;
+    flex-direction: column;
+}
+
+.baars-sub-card-titulo {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.baars-sub-card-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.baars-sub-card-numero {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.baars-sub-card-de {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.baars-sub-card-status {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 18px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+    align-self: flex-start;
+}
+
+.baars-status-positivo {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.baars-status-negativo {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.baars-status-relevante {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Barra horizontal com cutoff marker */
+.baars-sub-barra-wrap {
+    margin-top: auto;
+    position: relative;
+}
+
+.baars-sub-barra-bg {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.baars-sub-barra-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.4s;
+}
+
+.baars-sub-cutoff-marker {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: #1e293b;
+}
+
+.baars-sub-cutoff-label {
+    font-size: 10px;
+    color: #1e293b;
+    font-weight: 700;
+    margin-top: 6px;
+    text-align: center;
+}
+
+/* ─── CARD DE SUBTIPO DERIVADO ──────────────────────────────────────────── */
+
+.baars-subtipo-card {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+    color: white;
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.baars-subtipo-card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 10px;
+}
+
+.baars-subtipo-card-titulo {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 6px;
+}
+
+.baars-subtipo-card-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.55;
+}
+
+/* Variante para "Abaixo dos pontos de corte" — cor neutra */
+.baars-subtipo-card.subtipo-negativo {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+}
+
+/* ─── TABELA DE RESUMO ──────────────────────────────────────────────────── */
+
+.baars-tab-resumo {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.baars-tab-resumo table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.baars-tab-resumo th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.baars-tab-resumo th.ctr,
+.baars-tab-resumo td.ctr {
+    text-align: center;
+}
+
+.baars-tab-resumo td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.baars-tab-resumo tr:last-child td {
+    border-bottom: none;
+}
+
+.baars-tab-resumo .nome-sub {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.baars-tab-resumo .nome-sub-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.baars-tab-resumo .escore-sintomas {
+    font-weight: 800;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+/* ─── NOTA TÉCNICA + AVISO ──────────────────────────────────────────────── */
+
+.baars-nota-tecnica {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 18px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.65;
+}
+
+.baars-nota-tecnica strong {
+    color: #1e293b;
+}
+
+.baars-aviso-rastreio {
+    background: #fef3c7;
+    border-left: 4px solid #d97706;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    color: #78350f;
+    line-height: 1.55;
+}
+
+.baars-aviso-rastreio strong {
+    color: #78350f;
+}
+
+/* ─── RESPONSIVO ────────────────────────────────────────────────────────── */
+
+@media (max-width: 800px) {
+    .baars-cards-row {
+        grid-template-columns: 1fr;
+    }
+    .baars-sub-card-numero { font-size: 36px; }
+    .baars-subtipo-card-titulo { font-size: 20px; }
+}

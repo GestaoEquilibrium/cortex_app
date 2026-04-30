@@ -1,0 +1,1090 @@
+/* ============================================================================
+   CORTEX_APP — WAIS-III (estilo específico, complementa raadsr_resultado.css)
+   ============================================================================
+   Página tem 2 modos:
+     - MODO EDIÇÃO: form com 5 cards (profissional, examinando, brutos,
+       observações, recomendações)
+     - MODO LAUDO: tabela de QIs, matriz de conversão, perfil de subtestes,
+       discrepâncias, fortes/fracos
+   ============================================================================ */
+
+/* ─── HEADER específico — fundo amarelo escuro WAIS ──────────────────────── */
+/* Reusa .laudo-header do raadsr_resultado.css mas pode trocar gradient
+   se o WAIS quiser uma cor distintiva. Por padrão segue o padrão D3. */
+
+/* ─── MODO EDIÇÃO — página normal de admin (não A4) ──────────────────────── */
+
+.wais-aplicar-page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 8px 0 32px 0;
+}
+
+.wais-aplicar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 4px 4px 22px 4px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wais-aplicar-supratitulo {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.wais-aplicar-titulo {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+    line-height: 1.2;
+}
+
+.wais-aplicar-subtitulo {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.wais-aplicar-status {
+    padding: 6px 14px;
+    border-radius: 18px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ─── MODO EDIÇÃO: cards de form ─────────────────────────────────────────── */
+
+.wais-form-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 18px;
+}
+
+.wais-form-card-header {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.wais-form-card-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #1e40af;
+    color: #fff;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.wais-form-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.wais-form-card-desc {
+    font-size: 12.5px;
+    color: #64748b;
+}
+
+/* Grid de campos */
+.wais-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 18px;
+}
+
+.wais-form-grid-3col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px 18px;
+}
+
+.wais-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.wais-field label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.wais-field input,
+.wais-field select,
+.wais-field textarea {
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.wais-field input:focus,
+.wais-field select:focus,
+.wais-field textarea:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12);
+}
+
+.wais-field input[readonly] {
+    background: #f8fafc;
+    color: #475569;
+    cursor: not-allowed;
+}
+
+.wais-field textarea {
+    resize: vertical;
+    min-height: 70px;
+}
+
+.wais-field-hint {
+    font-size: 11.5px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.wais-field-hint.warn {
+    color: #b45309;
+}
+
+/* ─── Tabela de subtestes (form de brutos) ───────────────────────────────── */
+
+.wais-tab-brutos {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.wais-tab-brutos table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.wais-tab-brutos th {
+    background: #f1f5f9;
+    padding: 11px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wais-tab-brutos td {
+    padding: 9px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.wais-tab-brutos tr:last-child td {
+    border-bottom: none;
+}
+
+.wais-tab-brutos .wais-subnome {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.wais-tab-brutos .wais-subcodigo {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-left: 6px;
+    font-weight: 500;
+}
+
+.wais-tab-brutos input[type="number"] {
+    width: 90px;
+    padding: 7px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    color: #0f172a;
+    background: #fff;
+}
+
+.wais-tab-brutos input[type="number"]:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12);
+}
+
+.wais-tab-brutos input[type="number"].erro {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+
+.wais-tab-brutos input[type="number"].ok {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.wais-tab-brutos .col-pb {
+    width: 130px;
+    text-align: center;
+}
+
+.wais-tab-brutos .col-pp {
+    width: 100px;
+    text-align: center;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+/* ─── Chips de observações comportamentais ───────────────────────────────── */
+
+.wais-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.wais-chip {
+    background: #ede9fe;
+    color: #6d28d9;
+    border: none;
+    border-radius: 18px;
+    padding: 5px 13px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+
+.wais-chip:hover {
+    background: #ddd6fe;
+}
+
+/* ─── Action row (botões de ação no fim do form) ─────────────────────────── */
+
+.wais-action-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.wais-action-hint {
+    font-size: 12px;
+    color: #64748b;
+    margin-left: auto;
+}
+
+/* ─── MODO LAUDO: badge no header com QIT destacado ──────────────────────── */
+/* (reusa .laudo-header-pontuacao do raadsr_resultado.css) */
+
+/* ─── Tabela de QIs e Índices ────────────────────────────────────────────── */
+
+.wais-tab-qis {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.wais-tab-qis table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.wais-tab-qis th {
+    background: #f1f5f9;
+    padding: 11px 16px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wais-tab-qis th.ctr,
+.wais-tab-qis td.ctr {
+    text-align: center;
+}
+
+.wais-tab-qis td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.wais-tab-qis tr:last-child td {
+    border-bottom: none;
+}
+
+.wais-tab-qis tr.linha-qi-total {
+    background: #eff6ff;
+    font-weight: 700;
+}
+
+.wais-tab-qis .wais-escala-nome {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.wais-tab-qis .wais-escala-sigla {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 6px;
+}
+
+.wais-tab-qis .wais-soma {
+    font-weight: 700;
+    color: #475569;
+}
+
+.wais-tab-qis .wais-composto {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.wais-tab-qis .wais-pct {
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.wais-tab-qis .wais-ic {
+    font-size: 11.5px;
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ─── Matriz de conversão (14 subtestes × ponderados × contribuições) ────── */
+
+.wais-matriz {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.wais-matriz table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.wais-matriz th,
+.wais-matriz td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+}
+
+.wais-matriz th:last-child,
+.wais-matriz td:last-child {
+    border-right: none;
+}
+
+.wais-matriz thead th {
+    background: #f8fafc;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wais-matriz thead th.col-sub {
+    text-align: left;
+}
+
+.wais-matriz tbody td {
+    text-align: center;
+    color: #334155;
+}
+
+.wais-matriz tbody td.col-sub {
+    text-align: left;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 12.5px;
+}
+
+.wais-matriz tbody td.col-pb {
+    font-weight: 600;
+    color: #475569;
+}
+
+.wais-matriz tbody td.col-pp {
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.wais-matriz tfoot td {
+    background: #f1f5f9;
+    font-weight: 700;
+    color: #1e293b;
+    border-top: 2px solid #cbd5e1;
+}
+
+.wais-matriz tfoot td.sum-label {
+    text-align: right;
+    color: #475569;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.wais-pill {
+    display: inline-block;
+    background: #e0e7ff;
+    color: #1e3a8a;
+    padding: 1px 8px;
+    border-radius: 11px;
+    font-weight: 700;
+    font-size: 11.5px;
+    min-width: 22px;
+}
+
+.wais-pill.sup {
+    background: #f1f5f9;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ─── Gráfico de perfil dos 14 subtestes ─────────────────────────────────── */
+
+.wais-perfil-wrap {
+    background: #fafbfc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+}
+
+.wais-perfil-canvas-container {
+    position: relative;
+    height: 320px;
+    width: 100%;
+}
+
+/* ─── Cards de discrepâncias entre índices ───────────────────────────────── */
+
+.wais-discrep-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.wais-discrep-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 12px 14px;
+    font-size: 12px;
+}
+
+.wais-discrep-card.sig {
+    border-color: #fbbf24;
+    background: #fffbeb;
+}
+
+.wais-discrep-par {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.wais-discrep-stats {
+    display: flex;
+    justify-content: space-between;
+    color: #475569;
+    font-variant-numeric: tabular-nums;
+}
+
+.wais-discrep-sig-tag {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 9px;
+    border-radius: 11px;
+    font-size: 10.5px;
+    font-weight: 700;
+    background: #fef3c7;
+    color: #854d0e;
+}
+
+.wais-discrep-nosig {
+    color: #94a3b8;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+/* ─── Fortes e Fracos ────────────────────────────────────────────────────── */
+
+.wais-ff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.wais-ff-card {
+    border-radius: 10px;
+    padding: 14px 18px;
+    border: 1px solid;
+}
+
+.wais-ff-card-fortes {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.wais-ff-card-fracos {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.wais-ff-titulo {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+}
+
+.wais-ff-card-fortes .wais-ff-titulo { color: #166534; }
+.wais-ff-card-fracos  .wais-ff-titulo { color: #991b1b; }
+
+.wais-ff-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wais-ff-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 12.5px;
+}
+
+.wais-ff-item:last-child {
+    border-bottom: none;
+}
+
+.wais-ff-nome {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.wais-ff-ponderado {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.wais-ff-card-fortes .wais-ff-ponderado { color: #166534; }
+.wais-ff-card-fracos  .wais-ff-ponderado { color: #991b1b; }
+
+.wais-ff-vazio {
+    color: #94a3b8;
+    font-style: italic;
+    font-size: 12px;
+    text-align: center;
+    padding: 12px 0;
+}
+
+/* ─── Texto qualitativo no laudo ─────────────────────────────────────────── */
+
+.wais-texto-bloco {
+    background: #f8fafc;
+    border-left: 3px solid #cbd5e1;
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.65;
+    white-space: pre-wrap;
+}
+
+.wais-texto-bloco-vazio {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ─── Responsivo ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 800px) {
+    .wais-form-grid,
+    .wais-form-grid-3col {
+        grid-template-columns: 1fr;
+    }
+    .wais-ff-grid {
+        grid-template-columns: 1fr;
+    }
+    .wais-perfil-canvas-container {
+        height: 280px;
+    }
+}
+
+/* ============================================================================
+   MODO LAUDO — elementos novos (padrão sistema antigo)
+   ============================================================================ */
+
+/* ─── Hint nas seções (texto cinza ao lado do título) ───────────────────── */
+
+.laudo-secao-hint {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-left: 10px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* ─── BADGES de classificação ────────────────────────────────────────────── */
+
+.cl-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+.cl-badge.cl-vs  { background: #dcfce7; color: #14532d; }   /* Muito Superior */
+.cl-badge.cl-s   { background: #d1fae5; color: #166534; }   /* Superior */
+.cl-badge.cl-ms  { background: #dbeafe; color: #1e40af; }   /* Médio Superior */
+.cl-badge.cl-m   { background: #f1f5f9; color: #475569; }   /* Médio */
+.cl-badge.cl-mi  { background: #fef3c7; color: #92400e; }   /* Médio Inferior */
+.cl-badge.cl-l   { background: #ffedd5; color: #9a3412; }   /* Limítrofe */
+.cl-badge.cl-eb  { background: #fee2e2; color: #991b1b; }   /* Extremamente Baixo */
+.cl-badge.cl-inf { background: #fecaca; color: #7f1d1d; }   /* Inferior */
+
+/* ─── PERFIL DE SUBTESTES (4 grupos com barras horizontais) ──────────────── */
+
+.wais-perfil-bloco {
+    background: #fafbfc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+}
+
+.wais-bar-group {
+    margin-bottom: 18px;
+}
+
+.wais-bar-group:last-child {
+    margin-bottom: 0;
+}
+
+.wais-bar-group-titulo {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1e40af;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wais-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.wais-bar-code {
+    width: 38px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-align: right;
+    letter-spacing: 0.02em;
+}
+
+.wais-bar-track {
+    flex: 1;
+    position: relative;
+    height: 14px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.wais-bar-avg-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(59, 130, 246, 0.08);
+    border-left: 1px dashed rgba(59, 130, 246, 0.3);
+    border-right: 1px dashed rgba(59, 130, 246, 0.3);
+}
+
+.wais-bar-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.wais-bar-val {
+    width: 28px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
+    text-align: right;
+}
+
+.wais-bar-badge {
+    width: 110px;
+    text-align: left;
+}
+
+/* ─── GRÁFICO IC (Índices/QIs com IC95) ─────────────────────────────────── */
+
+.wais-ic-chart {
+    background: #fafbfc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 22px 18px 22px;
+    margin-bottom: 14px;
+}
+
+.wais-ic-scale {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 50px 6px 60px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #94a3b8;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 8px;
+}
+
+.wais-ic-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+}
+
+.wais-ic-label {
+    width: 50px;
+    font-size: 11.5px;
+    font-weight: 800;
+    text-align: right;
+}
+
+.wais-ic-track {
+    flex: 1;
+    position: relative;
+    height: 24px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.wais-ic-gridline {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+
+.wais-ic-bar {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 12px;
+    border-radius: 2px;
+}
+
+.wais-ic-whisker {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    width: 1.5px;
+}
+
+.wais-ic-dot {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 28px;
+    height: 18px;
+    border-radius: 9px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+.wais-ic-badge {
+    width: 110px;
+    text-align: left;
+}
+
+.wais-ic-legenda {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 10.5px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ─── TABELA DETALHADA DOS SUBTESTES ─────────────────────────────────────── */
+
+.wais-tab-detalhe {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.wais-tab-detalhe table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.wais-tab-detalhe th {
+    background: #f1f5f9;
+    padding: 10px 14px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wais-tab-detalhe th.ctr,
+.wais-tab-detalhe td.ctr {
+    text-align: center;
+}
+
+.wais-tab-detalhe td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.wais-tab-detalhe tr:last-child td {
+    border-bottom: none;
+}
+
+.wais-tab-detalhe .wais-detalhe-sub {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.wais-tab-detalhe tfoot td {
+    background: #f8fafc;
+    border-top: 2px solid #cbd5e1;
+}
+
+.wais-detalhe-mp-label {
+    text-align: right;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    font-weight: 700;
+}
+
+/* ─── TABELA DE DISCREPÂNCIAS ────────────────────────────────────────────── */
+
+.wais-tab-discrep {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.wais-tab-discrep table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.wais-tab-discrep th {
+    background: #f1f5f9;
+    padding: 10px 14px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.wais-tab-discrep th.ctr,
+.wais-tab-discrep td.ctr {
+    text-align: center;
+}
+
+.wais-tab-discrep td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.wais-tab-discrep tr:last-child td {
+    border-bottom: none;
+}
+
+.wais-disc-par {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.wais-disc-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.wais-disc-badge.nao     { background: #f1f5f9; color: #64748b; }
+.wais-disc-badge.notavel { background: #fef3c7; color: #92400e; }
+.wais-disc-badge.sig     { background: #fee2e2; color: #991b1b; }
+
+.wais-disc-legenda {
+    display: flex;
+    gap: 18px;
+    padding: 10px 14px;
+    background: #fafbfc;
+    border-top: 1px solid #e2e8f0;
+    font-size: 11px;
+    color: #64748b;
+    flex-wrap: wrap;
+}
+
+.wais-disc-legenda > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wais-disc-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.wais-disc-dot.nao     { background: #94a3b8; }
+.wais-disc-dot.notavel { background: #f59e0b; }
+.wais-disc-dot.sig     { background: #dc2626; }
+
+/* ─── PONTOS FORTES E FRACOS (cards refinados) ───────────────────────────── */
+/* Sobrescreve algumas regras das classes .wais-ff-* originais */
+
+.wais-ff-item {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+}
+
+.wais-ff-item:last-child {
+    margin-bottom: 0;
+}
+
+.wais-ff-item-titulo {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+
+.wais-ff-item-detalhe {
+    font-size: 11.5px;
+    color: #64748b;
+}
+
+/* ─── INTERPRETAÇÃO CLÍNICA (parágrafos por escala) ──────────────────────── */
+
+.wais-interp-bloco {
+    margin-bottom: 14px;
+}
+
+.wais-interp-par {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    line-height: 1.65;
+    color: #334155;
+    text-align: justify;
+}
+
+.wais-interp-par:last-child {
+    margin-bottom: 0;
+}
+
+.wais-interp-par strong {
+    color: #1e293b;
+    font-weight: 700;
+}
+
+/* ─── LINHA DE ASSINATURA (rodapé) ───────────────────────────────────────── */
+
+.wais-assinatura-linha {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #cbd5e1;
+    font-size: 11px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ─── Coluna sigla nas tabelas (compartilhado) ───────────────────────────── */
+
+.wais-ind-sigla {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 13px;
+}

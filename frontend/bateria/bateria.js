@@ -82,10 +82,22 @@
         if (WHITELIST_RESULTADO.includes(sigla)) return true;
         const inst = getInstrumentoPorSigla(sigla);
         if (!inst) return false;
-        // Mesma regra: se o teste é autoaplicável e tem correção pelo
-        // sistema, então tem página de resultado.
+        // Online: precisa permitir aplicação online + correção pelo sistema (D3)
+        // Presencial: basta ter correção pelo sistema (Fase D pesada — WAIS, etc)
+        if (inst.tipo_aplicacao === 'presencial') {
+            return inst.permite_correcao_sistema === true;
+        }
         return inst.permite_aplicacao_online === true
             && inst.permite_correcao_sistema === true;
+    }
+
+    /**
+     * Retorna true se o instrumento é PRESENCIAL (aplicador digita brutos
+     * direto na tela de correção). Ex: WAIS-III. Diferente dos D3 online.
+     */
+    function ehPresencial(sigla) {
+        const inst = getInstrumentoPorSigla(sigla);
+        return inst?.tipo_aplicacao === 'presencial';
     }
 
     function montarUrlPaciente(sigla, token) {
@@ -201,7 +213,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_label, permite_aplicacao_online, permite_correcao_sistema')
+            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_label, permite_aplicacao_online, permite_correcao_sistema, tipo_aplicacao')
             .order('sigla');
 
         if (error) throw new Error('Erro ao carregar catálogo: ' + error.message);
@@ -491,12 +503,17 @@
                 ` : ''}
                 ${podeEditar ? `
                     <div class="bateria-item-acoes">
-                        ${apl.status === 'aguardando' ? `
+                        ${ehPresencial(inst.sigla) && (apl.status === 'aguardando' || apl.status === 'em_aplicacao') ? `
+                            <a class="btn btn-primary btn-sm" href="${montarUrlResultado(inst.sigla, apl.id)}" style="background: linear-gradient(135deg, #1e40af 0%, #059669 100%);">
+                                📝 Aplicar / Corrigir
+                            </a>
+                        ` : ''}
+                        ${!ehPresencial(inst.sigla) && apl.status === 'aguardando' ? `
                             <button class="btn btn-primary btn-sm" onclick="window.CortexBateria.iniciar('${apl.id}')">
                                 ▶ Iniciar aplicação
                             </button>
                         ` : ''}
-                        ${apl.status === 'em_aplicacao' ? `
+                        ${!ehPresencial(inst.sigla) && apl.status === 'em_aplicacao' ? `
                             <button class="btn btn-success btn-sm" onclick="window.CortexBateria.concluir('${apl.id}')">
                                 ✓ Concluir
                             </button>

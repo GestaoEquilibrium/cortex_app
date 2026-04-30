@@ -1088,3 +1088,68 @@
     color: #0f172a;
     font-size: 13px;
 }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   PATCH VISUAL v5 — APENAS faixa azul-claro (#d6eaf8) no topo de cada bloco
+   ════════════════════════════════════════════════════════════════════════
+   - Fundo dos blocos: continua o original (branco/quase branco)
+   - Cabeçalhos de tabela: continuam originais
+   - Cores de divisor: continuam originais
+   
+   ÚNICA mudança: barrinha decorativa de 8px no topo de cada container,
+   pra destacar visualmente cada seção do laudo.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Containers que ganham a barrinha azul no topo */
+.wais-perfil-bloco,
+.wais-ic-chart,
+.wais-matriz,
+.wais-tab-qis,
+.wais-tab-detalhe,
+.wais-tab-discrep,
+.wais-interp-bloco {
+    position: relative;
+}
+
+.wais-perfil-bloco::before,
+.wais-ic-chart::before,
+.wais-matriz::before,
+.wais-tab-qis::before,
+.wais-tab-detalhe::before,
+.wais-tab-discrep::before,
+.wais-interp-bloco::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: #d6eaf8;
+    z-index: 1;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+/* Acomoda os 8px da barrinha sem sobrepor o conteúdo */
+.wais-perfil-bloco { padding-top: 26px; }
+.wais-ic-chart     { padding-top: 22px; }
+
+/* Tabelas: thead já tem padding interno suficiente, então só pequeno ajuste */
+.wais-matriz,
+.wais-tab-qis,
+.wais-tab-detalhe,
+.wais-tab-discrep {
+    padding-top: 8px;
+    overflow: hidden;             /* faz a barrinha respeitar o border-radius */
+}
+
+/* Interp-bloco originalmente não tem container; precisa virar um agora */
+.wais-interp-bloco {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 24px 18px 16px 18px;   /* 24 = 16 normal + 8 da barrinha */
+    overflow: hidden;
+}
+

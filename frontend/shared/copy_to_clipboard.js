@@ -37,18 +37,60 @@
         scale: 3,                              // Alta resolução (3x)
         backgroundColor: '#ffffff',            // Fundo branco fixo (ignora transparência)
         rootSelector: '.laudo, .laudo-body, main', // Onde varrer
-        // Padrão de seletores que viram copiáveis
+        // Padrão de seletores que viram copiáveis.
+        // Cobre WAIS, WISC, SRS-2 (já funcionavam) + D3: RAADS-R, BAARS-IV,
+        // CAT-Q, ETDAH-AD, EQ-15, e mais alguns por arrasto.
         seletores: [
-            'canvas',                          // Todos os Chart.js
-            '[class*="-perfil-"]',             // Perfis de subtestes/escalas
-            '[class*="-ic-chart"]',            // Gráficos IC95 (WAIS)
-            '[class*="-tab-"]',                // Tabelas de resultados/QIs
-            '[class*="-matriz"]',              // Matriz de conversão
-            '[class*="-detalhe-card"]',        // Cards de detalhamento
-            '[class*="-ff-"]',                 // Fortes/fracos (grid)
-            '[class*="-discrep"]',             // Discrepâncias
-            '[class*="-interp"]',              // Interpretação
-            '.laudo-body > table',             // Tabelas soltas direto no body
+            // ─── Genéricos (funcionam em qualquer laudo) ───
+            'canvas',                              // Todos os Chart.js
+            '[class*="-perfil-"]',                 // Perfis de subtestes/escalas
+            '[class*="-ic-chart"]',                // Gráficos IC95 (WAIS, WISC)
+            '[class*="-tab-"]',                    // Tabelas de resultados/QIs
+            '[class*="-matriz"]',                  // Matriz de conversão (WAIS, WISC)
+            '[class*="-detalhe-card"]',            // Cards de detalhamento
+            '[class*="-ff-"]',                     // Fortes/fracos (grid)
+            '[class*="-discrep"]',                 // Discrepâncias
+            '[class*="-interp"]',                  // Interpretação clínica
+            '.laudo-body > table',                 // Tabelas soltas direto no body
+
+            // ─── D3: containers comuns com prefixo `.laudo-` ───
+            '.laudo-cards',                        // Grid de cards (RAADS-R)
+            '.laudo-card-total-bloco',             // Card de pontuação total (EQ-15)
+            '.laudo-fatores-cards',                // Grid de fatores (EQ-15)
+            '.laudo-fator-card',                   // Card individual de fator (EQ-15)
+            '.laudo-grafico-fatores',              // Gráfico de fatores (EQ-15)
+            '.laudo-detalhes-tabela',              // Tabela "Ver detalhes" (todos D3)
+            '.laudo-barra-container',              // Barra de pontuação (RAADS-R, EQ-15)
+
+            // ─── BAARS-IV ───
+            '.baars-cards-row',                    // Linha de cards principais
+            '.baars-sub-card',                     // Card de subtipo
+            '.baars-subtipo-card',                 // Card de subtipo (variante)
+
+            // ─── CAT-Q ───
+            '.catq-perfil',                        // Gráfico de perfil
+            '.catq-detalhe-card',                  // Card de domínio (já casa com [class*="-detalhe-card"], mas explícito por clareza)
+
+            // ─── ETDAH-AD ───
+            '.etdah-fator-card',                   // Card de fator (desatenção/hiperativ)
+            '.etdah-grafico-wrap',                 // Wrapper do gráfico
+
+            // ─── QCP-FC, QA 16+, AQ-Adolescente, ASSQ, VINELAND-3-P, SCARED ───
+            // (já cobertos por [class*="-tab-"] e [class*="-perfil-"]; as classes
+            //  específicas como .qa-grafico-wrap, .aq-grafico-wrap, .assq-grafico-wrap,
+            //  .qcpfc-grafico-wrap, .vineland-cca-card, .scared-card-total
+            //  são adicionadas abaixo por completude)
+            '.qa-grafico-wrap',
+            '.qa-sub-card',
+            '.aq-grafico-wrap',
+            '.aq-sub-card',
+            '.assq-grafico-wrap',
+            '.assq-sub-card',
+            '.qcpfc-grafico-wrap',
+            '.qcpfc-escala-card',
+            '.vineland-cca-card',
+            '.vineland-beh-card',
+            '.scared-card-total',
         ].join(', '),
         // Seletores a IGNORAR (mesmo se baterem com os anteriores)
         ignorar: [

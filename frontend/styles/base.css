@@ -72,6 +72,7 @@
        ════════════════════════════════════════════════════════════════════════ */
     --gradient-primary: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-green) 100%);
     --gradient-primary-vertical: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-green) 100%);
+    --gradient-primary-fem: linear-gradient(135deg, #F472B6 0%, var(--primary-green) 100%);
     --gradient-soft: linear-gradient(135deg, var(--primary-blue-100) 0%, var(--primary-green-100) 100%);
     --gradient-softer: linear-gradient(135deg, var(--primary-blue-50) 0%, var(--primary-green-50) 100%);
     --gradient-hover: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-green-dark) 100%);

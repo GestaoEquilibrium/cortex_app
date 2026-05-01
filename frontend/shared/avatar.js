@@ -2,8 +2,12 @@
 // CORTEX_APP — Helper de Avatar
 // ============================================================================
 // Gera o HTML do avatar do paciente:
-//  - Se tem foto_url: imagem real (via signed URL do Supabase Storage)
-//  - Se não tem foto: ícone SVG por sexo (♀/♂/⊙) em fundo colorido sutil
+//  - Se tem foto: imagem real (via signed URL do Supabase Storage)
+//  - Se não tem foto: iniciais (ex: "AM" pra "André Marques")
+//                     com gradient por sexo:
+//                       Masculino  → azul → verde   (--gradient-primary)
+//                       Feminino   → rosa → verde   (--gradient-primary-fem)
+//                       Outro/null → azul → verde   (default)
 // ============================================================================
 
 window.CortexAvatar = (function() {
@@ -12,7 +16,7 @@ window.CortexAvatar = (function() {
     /**
      * Gera HTML de um avatar para um paciente
      * @param {Object} paciente - { foto_url, sexo, nome_completo }
-     * @param {Object} opcoes - { tamanho: 'sm'|'md'|'lg', signedUrl: string }
+     * @param {Object} opcoes - { tamanho: 'sm'|'md'|'lg'|'xl', signedUrl: string }
      */
     function render(paciente, opcoes = {}) {
         const tamanho = opcoes.tamanho || 'md';
@@ -30,61 +34,55 @@ window.CortexAvatar = (function() {
             `;
         }
 
-        // Senão, exibe ícone por sexo
-        return renderIconePorSexo(paciente.sexo, tamanhoClass, altText);
+        // Sem foto: iniciais com gradient por sexo
+        return renderIniciais(paciente.nome_completo, paciente.sexo, tamanhoClass, altText);
     }
 
-    function renderIconePorSexo(sexo, tamanhoClass, altText) {
-        let icone, corClass;
-
-        switch (sexo) {
-            case 'Masculino':
-                icone = svgMasculino();
-                corClass = 'avatar-masculino';
-                break;
-            case 'Feminino':
-                icone = svgFeminino();
-                corClass = 'avatar-feminino';
-                break;
-            default:
-                icone = svgOutro();
-                corClass = 'avatar-outro';
-        }
-
+    function renderIniciais(nomeCompleto, sexo, tamanhoClass, altText) {
+        const iniciais = extrairIniciais(nomeCompleto);
+        const sexoClass = classeGradientPorSexo(sexo);
         return `
-            <div class="avatar ${tamanhoClass} avatar-icone ${corClass}" title="${altText}">
-                ${icone}
+            <div class="avatar ${tamanhoClass} avatar-iniciais ${sexoClass}" title="${altText}">
+                <span>${iniciais}</span>
             </div>
         `;
     }
 
-    function svgMasculino() {
-        return `
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="11" cy="13" r="5.5" stroke="currentColor" stroke-width="1.8"/>
-                <line x1="14.9" y1="9.1" x2="20" y2="4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                <polyline points="15,4 20,4 20,9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            </svg>
-        `;
+    /**
+     * Retorna a classe CSS do gradient baseado no sexo.
+     *  - Feminino → avatar-iniciais-fem  (rosa → verde)
+     *  - Masculino e qualquer outro → sem classe extra (usa --gradient-primary default)
+     */
+    function classeGradientPorSexo(sexo) {
+        if (sexo === 'Feminino') return 'avatar-iniciais-fem';
+        return '';
     }
 
-    function svgFeminino() {
-        return `
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="9" r="5.5" stroke="currentColor" stroke-width="1.8"/>
-                <line x1="12" y1="14.5" x2="12" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                <line x1="9" y1="19" x2="15" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-        `;
-    }
+    /**
+     * Extrai 1 ou 2 letras iniciais de um nome completo.
+     *
+     * Regras:
+     *  - "André Marques"           → "AM"
+     *  - "André"                   → "A"
+     *  - "André Felipe Marques"    → "AM"  (primeiro + último, ignora meio)
+     *  - "André de Marques"        → "AM"  (ignora preposições do tipo "de", "da", "dos")
+     *  - "" ou null                → "?"
+     */
+    function extrairIniciais(nome) {
+        if (!nome || typeof nome !== 'string') return '?';
+        const PREPOSICOES = new Set(['de', 'da', 'do', 'das', 'dos', 'e']);
+        const palavras = nome
+            .trim()
+            .split(/\s+/)
+            .filter(p => p.length > 0 && !PREPOSICOES.has(p.toLowerCase()));
 
-    function svgOutro() {
-        return `
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.8"/>
-                <circle cx="12" cy="12" r="2" fill="currentColor"/>
-            </svg>
-        `;
+        if (palavras.length === 0) return '?';
+        if (palavras.length === 1) return palavras[0][0].toUpperCase();
+
+        // 2+ palavras: pega primeira letra da primeira e da última
+        const inicial1 = palavras[0][0];
+        const inicial2 = palavras[palavras.length - 1][0];
+        return (inicial1 + inicial2).toUpperCase();
     }
 
     /**
@@ -95,7 +93,6 @@ window.CortexAvatar = (function() {
         if (!fotoUrl || !window.cortexClient) return null;
 
         try {
-            // fotoUrl no banco é o path relativo (ex: "abc123.../perfil.jpg")
             const { data, error } = await window.cortexClient
                 .storage
                 .from('pacientes-fotos')
@@ -111,6 +108,7 @@ window.CortexAvatar = (function() {
 
     return {
         render,
-        buscarUrlAssinada
+        buscarUrlAssinada,
+        extrairIniciais
     };
 })();

@@ -827,3 +827,37 @@
         padding: 10px 8px;
     }
 }
+/* ============================================================================
+   AVATAR-INICIAIS — fallback quando paciente não tem foto
+   ============================================================================
+   Substitui o antigo .avatar-icone (SVG ♂/♀). Mostra iniciais (1-2 letras)
+   com fundo gradient e letras em branco. Variante por sexo:
+     - .avatar-iniciais        → masculino/null: azul → verde
+     - .avatar-iniciais-fem    → feminino:       rosa → verde
+   ========================================================================== */
+
+.avatar-iniciais {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    overflow: hidden;
+}
+
+.avatar-iniciais.avatar-iniciais-fem {
+    background: var(--gradient-primary-fem);
+}
+
+.avatar-iniciais span {
+    display: block;
+    line-height: 1;
+}
+
+.avatar-sm.avatar-iniciais span { font-size: 12px; }
+.avatar-md.avatar-iniciais span { font-size: 16px; }
+.avatar-lg.avatar-iniciais span { font-size: 22px; }
+.avatar-xl.avatar-iniciais span { font-size: 32px; }

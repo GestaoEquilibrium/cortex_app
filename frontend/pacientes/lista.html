@@ -212,6 +212,35 @@
                 window.location.href = `pasta.html?id=${id}`;
             });
         });
+
+        // Em background, busca URLs assinadas e troca os avatares de iniciais por fotos
+        carregarFotosEmBackground(filtrados);
+    }
+
+    /**
+     * Pra cada paciente com foto_url, busca a URL assinada e substitui o
+     * avatar-iniciais pela imagem. Funciona em background sem bloquear a UI.
+     */
+    async function carregarFotosEmBackground(lista) {
+        for (const p of lista) {
+            if (!p.foto_url) continue;
+            try {
+                const signedUrl = await window.CortexAvatar.buscarUrlAssinada(p.id, p.foto_url);
+                if (!signedUrl) continue;
+                // Substitui só o conteúdo do avatar deste paciente
+                const card = document.querySelector(`[data-paciente-id="${p.id}"]`);
+                if (!card) continue;
+                const avatarEl = card.querySelector('.avatar');
+                if (!avatarEl) continue;
+                avatarEl.classList.remove('avatar-iniciais');
+                avatarEl.classList.add('avatar-com-foto');
+                const altText = (p.nome_completo || 'Paciente').replace(/"/g, '&quot;');
+                avatarEl.innerHTML = `<img src="${signedUrl}" alt="${altText}" loading="lazy" />`;
+            } catch (e) {
+                // Silencioso: se falhar, mantém as iniciais como fallback
+                console.warn('Erro ao carregar foto do paciente', p.id, e);
+            }
+        }
     }
 
     function renderEmpty() {

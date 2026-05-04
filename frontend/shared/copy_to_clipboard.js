@@ -332,8 +332,15 @@
     function init() {
         // Tenta imediatamente
         aplicar();
-        // E observa mudanças no DOM por 30s (laudos renderizam dinamicamente
-        // depois de fetch de dados — pode levar 1-3 segundos)
+
+        // Polling rápido nos primeiros 5s — laudo renderiza após fetch (1-3s)
+        // Faz reaplicar a cada 300ms; quando achar elementos, marca aplicado=true
+        // e o intervalo continua só pra capturar elementos novos (idempotente).
+        const pollInt = setInterval(() => aplicar(), 300);
+        setTimeout(() => clearInterval(pollInt), 5000);
+
+        // E observa mudanças no DOM por 30s (caso laudo demore além de 5s, ou
+        // o usuário troque modo edição ↔ laudo dinamicamente)
         const observer = new MutationObserver(() => {
             aplicar();
         });

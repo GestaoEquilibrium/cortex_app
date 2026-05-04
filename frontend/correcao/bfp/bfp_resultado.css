@@ -1,0 +1,256 @@
+/* ============================================================================
+   CORTEX_APP — BFP (estilos específicos do BFP)
+   Reutiliza .laudo, .laudo-header, .laudo-secao-titulo do raadsr_resultado.css
+   ============================================================================ */
+
+/* ════════════════════════════════════════════════════════════════════════
+   MODO EDIÇÃO (form)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.bfp-aplicar-page {
+    max-width: 980px;
+    margin: 0 auto 60px;
+}
+
+.bfp-aplicar-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 20px; margin-bottom: 24px;
+    padding: 22px 26px; background: white; border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+.bfp-aplicar-supratitulo {
+    font-size: 11px; font-weight: 700; color: #1a56db;
+    text-transform: uppercase; letter-spacing: .08em;
+}
+.bfp-aplicar-titulo {
+    font-size: 24px; font-weight: 800; color: #1e293b;
+    margin: 4px 0 4px 0;
+}
+.bfp-aplicar-subtitulo {
+    font-size: 13px; color: #64748b;
+}
+.bfp-aplicar-status {
+    padding: 8px 14px; border-radius: 8px;
+    font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+
+.bfp-form-card {
+    background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+    padding: 22px 26px; margin-bottom: 18px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+.bfp-form-card-header {
+    display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px;
+}
+.bfp-form-card-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px; border-radius: 9px;
+    background: #1a56db; color: white;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800;
+}
+.bfp-form-card-title {
+    font-size: 16px; font-weight: 700; color: #1e293b;
+}
+.bfp-form-card-desc {
+    font-size: 12px; color: #64748b; margin-top: 2px;
+}
+
+.bfp-form-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px;
+}
+.bfp-field { display: flex; flex-direction: column; }
+.bfp-field label {
+    font-size: 11px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px;
+}
+.bfp-field input, .bfp-field textarea {
+    padding: 10px 14px; border: 1.5px solid #e2e8f0;
+    border-radius: 10px; font-size: 14px; font-family: inherit;
+    background: white; color: #1e293b; transition: all .15s;
+    resize: vertical;
+}
+.bfp-field input:focus, .bfp-field textarea:focus {
+    outline: none; border-color: #1a56db;
+    box-shadow: 0 0 0 3px rgba(26,86,219,.1);
+}
+.bfp-field input[readonly] {
+    background: #f8fafc; color: #64748b;
+}
+.bfp-field-hint {
+    font-size: 11px; color: #64748b; margin-top: 4px;
+}
+.bfp-field-hint.warn { color: #dc2626; font-weight: 600; }
+
+.bfp-chips {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+}
+.bfp-chip {
+    background: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8;
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all .15s;
+}
+.bfp-chip:hover {
+    background: #dbeafe; transform: translateY(-1px);
+}
+
+/* Itens Likert 126 */
+.bfp-progress-text {
+    font-size: 12px; color: #64748b; font-weight: 600;
+    text-align: right; margin-bottom: 6px;
+}
+.bfp-progress {
+    background: #e2e8f0; border-radius: 8px;
+    height: 8px; overflow: hidden; margin-bottom: 16px;
+}
+.bfp-progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #1a56db, #3b82f6);
+    border-radius: 8px; transition: width .3s ease;
+}
+
+.bfp-legend {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    padding: 12px 16px; background: #f8fafc;
+    border-radius: 10px; border: 1px solid #e2e8f0;
+    margin-bottom: 14px;
+}
+.bfp-leg-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700;
+}
+.bfp-leg-dot {
+    width: 14px; height: 14px; border-radius: 4px; display: inline-block;
+}
+
+.bfp-itens {
+    display: flex; flex-direction: column; gap: 6px;
+}
+.bfp-item-row {
+    background: #fafcff; border: 1.5px solid #e2e8f0;
+    border-left-width: 4px; border-radius: 10px;
+    padding: 10px 14px; display: flex; gap: 12px; align-items: center;
+    transition: all .15s;
+}
+.bfp-item-row:hover { background: white; border-color: #cbd5e1; }
+.bfp-item-row.filled {
+    background: #f0fdf4; border-color: #059669;
+}
+.bfp-item-num {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 12px; color: white;
+}
+.bfp-item-body { flex: 1; min-width: 0; }
+.bfp-item-text {
+    font-size: 13px; font-weight: 600; color: #1e293b;
+}
+.bfp-inv {
+    color: #ef4444; font-size: 10px; font-weight: 700; margin-left: 4px;
+}
+.bfp-item-meta {
+    font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;
+}
+.bfp-item-meta-faint { opacity: .55; }
+
+.bfp-item-input { flex-shrink: 0; width: 64px; }
+.bfp-item-input input {
+    width: 100%; padding: 7px 8px; border: 1.5px solid #e2e8f0;
+    border-radius: 8px; font-size: 14px; font-weight: 700;
+    text-align: center; font-family: inherit; transition: all .15s;
+}
+.bfp-item-input input:focus {
+    outline: none; border-color: #1a56db;
+    box-shadow: 0 0 0 3px rgba(26,86,219,.1);
+}
+.bfp-item-input input.invalid {
+    border-color: #ef4444; background: #fef2f2;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MODO LAUDO (overrides do raadsr_resultado.css)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.bfp-texto-bloco {
+    background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 16px;
+    font-size: 13px; line-height: 1.65; color: #1e293b;
+}
+.bfp-texto-bloco p { margin: 0 0 10px 0; }
+.bfp-texto-bloco p:last-child { margin-bottom: 0; }
+.bfp-obs-bloco { background: #fffbeb; border-color: #fde68a; }
+
+.bfp-perfil-bloco {
+    background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 18px; margin-bottom: 16px; text-align: center;
+}
+
+.bfp-tab-resultados {
+    background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 0; margin-bottom: 16px; overflow: hidden;
+}
+.bfp-tab-resultados table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.bfp-tab-resultados th {
+    background: #f1f5f9; padding: 10px 14px; text-align: left;
+    font-weight: 700; color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+}
+.bfp-tab-resultados th.ctr,
+.bfp-tab-resultados td.ctr { text-align: center; }
+.bfp-tab-resultados td {
+    padding: 9px 14px; border-bottom: 1px solid #f1f5f9; color: #1e293b;
+}
+.bfp-tab-resultados tr.bfp-row-fator { background: #e8f0fe; font-weight: 700; }
+.bfp-class-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 16px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+
+/* Cards de fator/faceta na seção interpretação */
+.bfp-interp-bloco { display: flex; flex-direction: column; gap: 14px; }
+.bfp-fator-card {
+    background: white; border: 1px solid #e2e8f0;
+    border-radius: 12px; overflow: hidden;
+}
+.bfp-fator-header {
+    padding: 14px 22px; color: white;
+}
+.bfp-fator-title { font-size: 16px; font-weight: 800; }
+.bfp-fator-sub { font-size: 12px; opacity: .85; margin-top: 4px; }
+.bfp-fator-body { padding: 16px 22px; }
+.bfp-fator-body > p {
+    font-size: 13px; line-height: 1.65; color: #475569; margin: 0 0 14px 0;
+}
+.bfp-faceta-card {
+    border-left: 3px solid;
+    padding: 10px 14px; margin: 10px 0;
+    background: #fafcff; border-radius: 0 8px 8px 0;
+}
+.bfp-faceta-title {
+    font-size: 13px; font-weight: 700; margin-bottom: 4px;
+}
+.bfp-faceta-meta {
+    font-size: 11px; color: #64748b; margin-bottom: 6px;
+}
+.bfp-faceta-interp {
+    font-size: 12px; color: #334155; line-height: 1.6;
+}
+
+/* Responsivo */
+@media (max-width: 720px) {
+    .bfp-form-grid { grid-template-columns: 1fr; }
+    .bfp-aplicar-page { padding: 0 12px; }
+    .bfp-aplicar-header { flex-direction: column; }
+    .bfp-aplicar-status { align-self: flex-start; }
+}
+
+/* PDF — esconder coisas no body.exportando */
+body.exportando .resultado-acoes-topo,
+body.exportando #back-link {
+    display: none !important;
+}

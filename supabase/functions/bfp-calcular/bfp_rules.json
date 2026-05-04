@@ -1,0 +1,1813 @@
+{
+  "meta": {
+    "teste": "BFP",
+    "nome": "Bateria Fatorial de Personalidade",
+    "autores": "Carlos Henrique S. S. Nunes, Claudio Simon Hutz, Maiana Farias Oliveira Nunes",
+    "editora": "Casa do Psicólogo / Hogrefe",
+    "ano": 2010,
+    "totalItens": 126,
+    "escala": {
+      "min": 1,
+      "max": 7
+    },
+    "publicoAlvo": "18 a 75 anos, a partir do Ensino Fundamental completo",
+    "satepsi": "Aprovado — validade até 01/08/2029"
+  },
+  "escalaLabels": {
+    "1": "Absolutamente não me identifico com a frase",
+    "2": "Não me identifico com a frase",
+    "3": "Pouco me identifico com a frase",
+    "4": "Identifico-me mais ou menos com a frase",
+    "5": "Identifico-me com a frase",
+    "6": "Identifico-me muito com a frase",
+    "7": "Descreve-me perfeitamente"
+  },
+  "classificacao": [
+    {
+      "min": 0,
+      "max": 14,
+      "label": "Muito Baixo",
+      "cor": "#e74c3c",
+      "corRGB": [
+        231,
+        76,
+        60
+      ]
+    },
+    {
+      "min": 15,
+      "max": 29,
+      "label": "Baixo",
+      "cor": "#e67e22",
+      "corRGB": [
+        230,
+        126,
+        34
+      ]
+    },
+    {
+      "min": 30,
+      "max": 70,
+      "label": "Médio",
+      "cor": "#27ae60",
+      "corRGB": [
+        39,
+        174,
+        96
+      ]
+    },
+    {
+      "min": 71,
+      "max": 85,
+      "label": "Alto",
+      "cor": "#2980b9",
+      "corRGB": [
+        41,
+        128,
+        185
+      ]
+    },
+    {
+      "min": 86,
+      "max": 100,
+      "label": "Muito Alto",
+      "cor": "#8e44ad",
+      "corRGB": [
+        142,
+        68,
+        173
+      ]
+    }
+  ],
+  "fatores": {
+    "N": {
+      "nome": "Neuroticismo",
+      "cor": "#e74c3c",
+      "corRGB": [
+        231,
+        76,
+        60
+      ],
+      "corLight": "#fce4ec",
+      "facetas": [
+        "N1",
+        "N2",
+        "N3",
+        "N4"
+      ],
+      "descricaoAlto": "Maior vulnerabilidade ao sofrimento psicológico, instabilidade emocional, vivência intensa de emoções negativas, tendência à passividade e a estados depressivos.",
+      "descricaoBaixo": "Maior estabilidade emocional, capacidade de lidar com estresse, equilíbrio afetivo e resiliência frente a adversidades.",
+      "norma": {
+        "media": 3.19,
+        "dp": 1.01
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 3.06,
+          "dp": 1.0
+        },
+        "feminino": {
+          "media": 3.3,
+          "dp": 1.01
+        },
+        "geral": {
+          "media": 3.19,
+          "dp": 1.01
+        }
+      }
+    },
+    "E": {
+      "nome": "Extroversão",
+      "cor": "#f39c12",
+      "corRGB": [
+        243,
+        156,
+        18
+      ],
+      "corLight": "#fff8e1",
+      "facetas": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "descricaoAlto": "Facilidade na comunicação, assertividade elevada, energia, dinamismo e busca ativa de interações sociais.",
+      "descricaoBaixo": "Reserva social, preferência por atividades solitárias, menor expressividade verbal e menor busca por estimulação social.",
+      "norma": {
+        "media": 4.32,
+        "dp": 0.86
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.28,
+          "dp": 0.83
+        },
+        "feminino": {
+          "media": 4.36,
+          "dp": 0.88
+        },
+        "geral": {
+          "media": 4.32,
+          "dp": 0.86
+        }
+      }
+    },
+    "S": {
+      "nome": "Socialização",
+      "cor": "#27ae60",
+      "corRGB": [
+        39,
+        174,
+        96
+      ],
+      "corLight": "#e8f5e9",
+      "facetas": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "descricaoAlto": "Amabilidade, preocupação com o bem-estar alheio, cooperação, confiança nos outros e pró-sociabilidade.",
+      "descricaoBaixo": "Tendência à competitividade, menor empatia, desconfiança interpessoal e postura mais individualista.",
+      "norma": {
+        "media": 5.35,
+        "dp": 0.7
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 5.21,
+          "dp": 0.72
+        },
+        "feminino": {
+          "media": 5.43,
+          "dp": 0.68
+        },
+        "geral": {
+          "media": 5.35,
+          "dp": 0.7
+        }
+      }
+    },
+    "R": {
+      "nome": "Realização",
+      "cor": "#2980b9",
+      "corRGB": [
+        41,
+        128,
+        185
+      ],
+      "corLight": "#e3f2fd",
+      "facetas": [
+        "R1",
+        "R2",
+        "R3"
+      ],
+      "descricaoAlto": "Organização, disciplina, perseverança, comprometimento com metas, prudência e senso de competência.",
+      "descricaoBaixo": "Impulsividade, menor organização, dificuldade em manter foco em objetivos de longo prazo e menor autodisciplina.",
+      "norma": {
+        "media": 4.99,
+        "dp": 0.83
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.94,
+          "dp": 0.84
+        },
+        "feminino": {
+          "media": 5.05,
+          "dp": 0.82
+        },
+        "geral": {
+          "media": 4.99,
+          "dp": 0.83
+        }
+      }
+    },
+    "A": {
+      "nome": "Abertura",
+      "cor": "#8e44ad",
+      "corRGB": [
+        142,
+        68,
+        173
+      ],
+      "corLight": "#f3e5f5",
+      "facetas": [
+        "A1",
+        "A2",
+        "A3"
+      ],
+      "descricaoAlto": "Curiosidade intelectual, criatividade, interesse por novidades, flexibilidade de valores e imaginação.",
+      "descricaoBaixo": "Preferência por rotina, pragmatismo, conservadorismo e menor interesse por exploração de novas experiências.",
+      "norma": {
+        "media": 4.67,
+        "dp": 0.73
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.65,
+          "dp": 0.75
+        },
+        "feminino": {
+          "media": 4.69,
+          "dp": 0.71
+        },
+        "geral": {
+          "media": 4.67,
+          "dp": 0.73
+        }
+      }
+    }
+  },
+  "facetas": {
+    "N1": {
+      "nome": "Vulnerabilidade",
+      "fator": "N",
+      "descricao": "Avalia a fragilidade emocional, o sofrimento decorrente da percepção de aceitação alheia, dependência emocional e dificuldade decisória por medo de decepcionar.",
+      "norma": {
+        "media": 3.46,
+        "dp": 1.22
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A escala de Vulnerabilidade avalia a fragilidade emocional, o sofrimento decorrente da percepção de aceitação alheia e a dependência emocional nas decisões. Escores muito baixos caracterizam grande independência emocional em relação aos outros. O(a) avaliando(a) tende a ser pouco preocupado(a) com as opiniões alheias e usualmente toma decisões e enfrenta problemas sem considerar os demais, o que pode afetar a qualidade de suas relações interpessoais. Essa postura de elevada autonomia, embora funcional em muitos contextos, pode resultar em dificuldade para perceber o impacto de suas ações sobre os outros.",
+        "Baixo": "A escala de Vulnerabilidade avalia a fragilidade emocional, o sofrimento decorrente da percepção de aceitação alheia e a dependência emocional nas decisões. Escores baixos sugerem independência emocional significativa. O(a) avaliando(a) demonstra relativa autonomia nas decisões e menor preocupação com a aprovação dos outros, embora ainda mantenha alguma sensibilidade ao contexto social. Essa postura pode indicar boa capacidade de enfrentamento, porém com possível minimização do impacto emocional das relações interpessoais.",
+        "Médio": "A escala de Vulnerabilidade avalia a fragilidade emocional, o sofrimento decorrente da percepção de aceitação alheia e a dependência emocional nas decisões. Escores próximos da média indicam que o(a) avaliando(a) apresenta padrões de vulnerabilidade emocional comuns à maior parte da população, com flexibilidade situacional — em algumas situações pode demonstrar maior sensibilidade emocional e em outras maior independência. Esse padrão adaptativo permite equilíbrio entre considerar as opiniões alheias e manter autonomia decisória.",
+        "Alto": "A escala de Vulnerabilidade avalia a fragilidade emocional, o sofrimento decorrente da percepção de aceitação alheia e a dependência emocional nas decisões. Escores altos indicam tendência a vivenciar sofrimento emocional significativo relacionado à percepção de rejeição ou desaprovação. O(a) avaliando(a) pode apresentar dependência das opiniões alheias para tomada de decisões e medo moderado de decepcionar pessoas importantes, o que pode gerar insegurança em situações que exijam posicionamento autônomo.",
+        "Muito Alto": "A escala de Vulnerabilidade avalia a fragilidade emocional, o sofrimento decorrente da percepção de aceitação alheia e a dependência emocional nas decisões. Escores muito altos indicam que o(a) avaliando(a) tende a apresentar baixa autoestima e relata grande medo de que pessoas importantes o(a) deixem em decorrência de seus erros. Usualmente é capaz de ter atitudes que vão contra a sua vontade, com o objetivo de agradar os outros. Relata ser inseguro(a), muito dependente das pessoas próximas e ter dificuldades em tomar decisões, mesmo em situações triviais do dia a dia."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 3.25,
+          "dp": 1.18
+        },
+        "feminino": {
+          "media": 3.68,
+          "dp": 1.24
+        },
+        "geral": {
+          "media": 3.46,
+          "dp": 1.22
+        }
+      }
+    },
+    "N2": {
+      "nome": "Instabilidade Emocional",
+      "fator": "N",
+      "descricao": "Avalia irritabilidade, nervosismo e variações de humor, incluindo impulsividade e tolerância à frustração.",
+      "norma": {
+        "media": 3.57,
+        "dp": 1.39
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Instabilidade Emocional avalia irritabilidade, nervosismo e variações de humor, incluindo impulsividade e tolerância à frustração. Escores muito baixos indicam pouquíssimas variações de humor. O(a) avaliando(a) geralmente não toma decisões de forma impulsiva e apresenta alta tolerância a frustrações. Esse padrão de estabilidade emocional consistente pode representar um recurso importante de regulação afetiva.",
+        "Baixo": "A faceta Instabilidade Emocional avalia irritabilidade, nervosismo e variações de humor. Escores baixos indicam boa estabilidade de humor e capacidade adequada de lidar com frustrações. O(a) avaliando(a) tende a manter equilíbrio emocional na maioria das situações, com decisões geralmente ponderadas.",
+        "Médio": "A faceta Instabilidade Emocional avalia irritabilidade, nervosismo e variações de humor. Escores próximos da média indicam padrões de variação de humor comuns à maior parte da população, com flexibilidade situacional — em algumas situações pode demonstrar maior reatividade emocional e em outras maior estabilidade.",
+        "Alto": "A faceta Instabilidade Emocional avalia irritabilidade, nervosismo e variações de humor. Escores altos indicam tendência a agir impulsivamente diante de desconforto psicológico, com decisões precipitadas em algumas situações. O(a) avaliando(a) pode apresentar oscilações de humor perceptíveis e alguma dificuldade para controlar sentimentos negativos.",
+        "Muito Alto": "A faceta Instabilidade Emocional avalia irritabilidade, nervosismo e variações de humor. Escores muito altos indicam forte tendência a agir impulsivamente quando sente algum desconforto psicológico, tomando decisões precipitadas com relativa frequência. O(a) avaliando(a) apresenta grandes oscilações de humor sem motivo aparente e tem dificuldade para controlar seus sentimentos negativos, além de apresentar baixa tolerância à frustração."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 3.43,
+          "dp": 1.37
+        },
+        "feminino": {
+          "media": 3.74,
+          "dp": 1.41
+        },
+        "geral": {
+          "media": 3.57,
+          "dp": 1.39
+        }
+      }
+    },
+    "N3": {
+      "nome": "Passividade / Falta de Energia",
+      "fator": "N",
+      "descricao": "Avalia o nível de atividade, empenho para resolver situações e velocidade de decisão.",
+      "norma": {
+        "media": 3.54,
+        "dp": 1.21
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Passividade/Falta de Energia avalia o nível de atividade e empenho para resolver situações. Escores muito baixos indicam que o(a) avaliando(a) costuma ser proativo(a), inicia e conclui tarefas com agilidade e apresenta forte motivação intrínseca, sem precisar de estímulos externos para levar adiante seus planos.",
+        "Baixo": "A faceta Passividade/Falta de Energia avalia o nível de atividade e empenho para resolver situações. Escores baixos indicam boa iniciativa e energia para tarefas. O(a) avaliando(a) consegue manter motivação na maioria das situações e tende a iniciar e concluir atividades com razoável agilidade.",
+        "Médio": "A faceta Passividade/Falta de Energia avalia o nível de atividade e empenho para resolver situações. Escores próximos da média indicam nível de atividade e iniciativa dentro do esperado, com variação conforme a situação e o contexto.",
+        "Alto": "A faceta Passividade/Falta de Energia avalia o nível de atividade e empenho para resolver situações. Escores altos indicam tendência à procrastinação e dificuldade para iniciar tarefas. O(a) avaliando(a) pode necessitar de estímulo externo para manter a motivação em atividades mais longas ou desafiadoras.",
+        "Muito Alto": "A faceta Passividade/Falta de Energia avalia o nível de atividade e empenho para resolver situações. Escores muito altos indicam que o(a) avaliando(a) tende a apresentar comportamento de procrastinação marcante, com grande dificuldade para iniciar tarefas, mesmo que simples. Tem dificuldade para manter a motivação em afazeres longos ou difíceis, tendendo a abandoná-los antes da conclusão. Necessita de estímulo externo para levar adiante seus planos e frequentemente se abstém de tomar decisões mesmo sobre assuntos de seu interesse."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 3.47,
+          "dp": 1.22
+        },
+        "feminino": {
+          "media": 3.63,
+          "dp": 1.2
+        },
+        "geral": {
+          "media": 3.54,
+          "dp": 1.21
+        }
+      }
+    },
+    "N4": {
+      "nome": "Depressão",
+      "fator": "N",
+      "descricao": "Avalia padrões interpretativos sobre eventos de vida, expectativas de futuro e percepção de capacidade para lidar com dificuldades.",
+      "norma": {
+        "media": 2.49,
+        "dp": 1.17
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A escala de Depressão avalia os padrões interpretativos sobre eventos de vida, expectativas de futuro e percepção de capacidade de enfrentamento. Escores muito baixos podem indicar dificuldade para reconhecer eventos negativos, minimizando problemas reais. O(a) avaliando(a) tende a ter expectativa muito positiva sobre o futuro, o que em níveis extremos pode prejudicá-lo(a) por não tomar atitudes necessárias frente a problemas concretos.",
+        "Baixo": "A escala de Depressão avalia os padrões interpretativos sobre eventos de vida e expectativas de futuro. Escores baixos indicam perspectiva predominantemente positiva sobre o futuro e boa confiança na própria capacidade de enfrentamento. O(a) avaliando(a) tende a avaliar as situações de forma equilibrada, com viés ligeiramente otimista.",
+        "Médio": "A escala de Depressão avalia os padrões interpretativos sobre eventos de vida e expectativas de futuro. Escores próximos da média indicam padrões de expectativa e percepção de futuro dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A escala de Depressão avalia os padrões interpretativos sobre eventos de vida e expectativas de futuro. Escores altos indicam tendência a interpretar eventos de forma mais negativa e alguma dificuldade em perceber perspectivas positivas. O(a) avaliando(a) pode relatar desânimo e percepção reduzida de capacidade para lidar com desafios cotidianos.",
+        "Muito Alto": "A escala de Depressão avalia os padrões interpretativos sobre eventos de vida e expectativas de futuro. Escores muito altos indicam que o(a) avaliando(a) tende a relatar expectativas negativas em relação ao seu futuro e indica ter uma vida monótona e sem emoção. Tende a sentir-se solitário(a), sem objetivos claros, considera-se incapaz de lidar com as dificuldades do cotidiano e relata uma expectativa negativa em relação ao próprio futuro, o que caracteriza desesperança."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 2.36,
+          "dp": 1.14
+        },
+        "feminino": {
+          "media": 2.6,
+          "dp": 1.19
+        },
+        "geral": {
+          "media": 2.49,
+          "dp": 1.17
+        }
+      }
+    },
+    "E1": {
+      "nome": "Comunicação",
+      "fator": "E",
+      "descricao": "Avalia o quão comunicativas e expansivas as pessoas se percebem, incluindo facilidade para falar em público e expressar-se.",
+      "norma": {
+        "media": 4.28,
+        "dp": 1.27
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Nível de Comunicação avalia o quão comunicativas e expansivas as pessoas se percebem. Escores muito baixos sugerem que o(a) avaliando(a) prefere não se expressar em público, pode se constranger em situações de maior exposição e fala pouco sobre si mesmo(a). Essa característica impacta diretamente na forma como estabelece relações sociais e se posiciona em grupos.",
+        "Baixo": "A faceta Nível de Comunicação avalia o quão comunicativas as pessoas se percebem. Escores baixos sugerem menor facilidade para expressar opiniões em grupo e tendência a evitar situações de exposição comunicativa.",
+        "Médio": "A faceta Nível de Comunicação avalia o quão comunicativas as pessoas se percebem. Escores próximos da média indicam padrões de comunicação dentro do esperado, com variação conforme o contexto social.",
+        "Alto": "A faceta Nível de Comunicação avalia o quão comunicativas as pessoas se percebem. Escores altos indicam boa facilidade para comunicar-se, expressar opiniões e conforto em situações de exposição social.",
+        "Muito Alto": "A faceta Nível de Comunicação avalia o quão comunicativas as pessoas se percebem. Escores muito altos indicam que o(a) avaliando(a) usualmente apresenta facilidade para falar em público, para conhecer novas pessoas e tende a apresentar um maior senso de intimidade, rapidamente avaliando como profundas relações relativamente recentes. Tende a iniciar conversas, expressar opiniões em grupo e raramente sente constrangimento social."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.24,
+          "dp": 1.22
+        },
+        "feminino": {
+          "media": 4.31,
+          "dp": 1.31
+        },
+        "geral": {
+          "media": 4.28,
+          "dp": 1.27
+        }
+      }
+    },
+    "E2": {
+      "nome": "Altivez",
+      "fator": "E",
+      "descricao": "Avalia a percepção de capacidade e valor pessoal, incluindo necessidade de atenção e reconhecimento.",
+      "norma": {
+        "media": 3.67,
+        "dp": 1.06
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Altivez avalia a percepção de capacidade e valor pessoal. Escores muito baixos revelam marcante tendência à humildade e pouca necessidade de receber atenção dos outros. O(a) avaliando(a) pode ter dificuldade para reconhecer suas capacidades e atributos favoráveis, mesmo que sejam evidentes para os demais.",
+        "Baixo": "A faceta Altivez avalia a percepção de capacidade e valor pessoal. Escores baixos revelam tendência à humildade e pouca necessidade de reconhecimento externo. O(a) avaliando(a) pode subestimar as próprias qualidades em alguns contextos.",
+        "Médio": "A faceta Altivez avalia a percepção de capacidade e valor pessoal. Escores próximos da média indicam equilíbrio entre humildade e reconhecimento das próprias capacidades, com flexibilidade situacional.",
+        "Alto": "A faceta Altivez avalia a percepção de capacidade e valor pessoal. Escores altos indicam boa percepção de valor pessoal e alguma necessidade de reconhecimento externo.",
+        "Muito Alto": "A faceta Altivez avalia a percepção de capacidade e valor pessoal. Escores muito altos indicam que o(a) avaliando(a) relata a necessidade de receber atenção dos outros, a crença de que os demais o(a) invejam e uma predisposição para falar excessivamente sobre si, suas qualidades e suas posses."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 3.67,
+          "dp": 1.04
+        },
+        "feminino": {
+          "media": 3.67,
+          "dp": 1.08
+        },
+        "geral": {
+          "media": 3.67,
+          "dp": 1.06
+        }
+      }
+    },
+    "E3": {
+      "nome": "Dinamismo",
+      "fator": "E",
+      "descricao": "Avalia iniciativa, facilidade para colocar ideias em prática e nível geral de atividade.",
+      "norma": {
+        "media": 4.79,
+        "dp": 1.02
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Dinamismo/Assertividade avalia iniciativa, facilidade para colocar ideias em prática e nível de atividade. Escores muito baixos indicam que o(a) avaliando(a) tende a concentrar-se em poucas atividades simultâneas, não precisa estar constantemente envolvido(a) em atividades para sentir-se bem e pode demorar mais para colocar ideias em prática e tomar iniciativa.",
+        "Baixo": "A faceta Dinamismo/Assertividade avalia iniciativa e nível de atividade. Escores baixos indicam menor nível de atividade e iniciativa, com preferência por ritmo mais lento e menos atividades simultâneas.",
+        "Médio": "A faceta Dinamismo/Assertividade avalia iniciativa e nível de atividade. Escores próximos da média indicam nível de dinamismo dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Dinamismo/Assertividade avalia iniciativa e nível de atividade. Escores altos indicam bom nível de energia e iniciativa, com tendência a envolver-se em várias atividades.",
+        "Muito Alto": "A faceta Dinamismo/Assertividade avalia iniciativa e nível de atividade. Escores muito altos indicam que o(a) avaliando(a) é muito dinâmico(a), envolve-se em várias atividades simultaneamente e prefere, mesmo em folga ou férias, manter-se ocupado(a). Altos níveis de dinamismo também são associados a tendência à liderança e alto nível de assertividade."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.78,
+          "dp": 0.99
+        },
+        "feminino": {
+          "media": 4.79,
+          "dp": 1.04
+        },
+        "geral": {
+          "media": 4.79,
+          "dp": 1.02
+        }
+      }
+    },
+    "E4": {
+      "nome": "Interações Sociais",
+      "fator": "E",
+      "descricao": "Avalia o desejo e necessidade por interações sociais e a busca ativa por situações que as proporcionem.",
+      "norma": {
+        "media": 4.8,
+        "dp": 1.1
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Interações Sociais avalia o desejo e necessidade por contato social. Escores muito baixos indicam que o(a) avaliando(a) geralmente prefere ficar sozinho(a) ou em grupos pequenos e demora mais para desenvolver novas relações. Apresenta necessidade reduzida de viver situações intensas e de frequentar lugares ricos em estímulos e possibilidades de contatos sociais.",
+        "Baixo": "A faceta Interações Sociais avalia o desejo por contato social. Escores baixos indicam menor necessidade de interação social frequente e preferência por ambientes mais calmos e grupos reduzidos.",
+        "Médio": "A faceta Interações Sociais avalia o desejo por contato social. Escores próximos da média indicam necessidade de interação social dentro do esperado, com variação conforme contexto.",
+        "Alto": "A faceta Interações Sociais avalia o desejo por contato social. Escores altos indicam boa disposição para interações e busca ativa por contatos e atividades em grupo.",
+        "Muito Alto": "A faceta Interações Sociais avalia o desejo por contato social. Escores muito altos indicam que o(a) avaliando(a) tende a ser gregário(a) e se esforça para manter contato com seus conhecidos. Relata preferir atividades em grupo e se envolve rapidamente com as pessoas."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.74,
+          "dp": 1.08
+        },
+        "feminino": {
+          "media": 4.86,
+          "dp": 1.12
+        },
+        "geral": {
+          "media": 4.8,
+          "dp": 1.1
+        }
+      }
+    },
+    "S1": {
+      "nome": "Amabilidade",
+      "fator": "S",
+      "descricao": "Avalia atenção, compreensão, empatia e disposição para ser agradável com os demais.",
+      "norma": {
+        "media": 5.64,
+        "dp": 0.89
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Amabilidade avalia atenção, compreensão, empatia e disposição para ser agradável com os demais. Escores muito baixos indicam que o(a) avaliando(a) tende a apresentar pouca disponibilidade para com os demais, sendo autocentrado(a) e indiferente às necessidades alheias. Pode tratar assuntos delicados de forma insensível, chegando a ser hostil.",
+        "Baixo": "A faceta Amabilidade avalia atenção, compreensão e empatia. Escores baixos indicam menor disponibilidade interpessoal e tendência a priorizar os próprios interesses sobre os dos outros.",
+        "Médio": "A faceta Amabilidade avalia atenção, compreensão e empatia. Escores próximos da média indicam padrões de amabilidade dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Amabilidade avalia atenção, compreensão e empatia. Escores altos indicam boa disposição para com os outros, com atenção e empatia presentes nas interações.",
+        "Muito Alto": "A faceta Amabilidade avalia atenção, compreensão e empatia. Escores muito altos indicam que o(a) avaliando(a) tende a ser muito atencioso(a) e amável, demonstrando preocupação ativa com as necessidades alheias. É proativo(a) para resolver problemas dos outros, expressar apreço e esforçar-se para que se sintam bem."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 5.55,
+          "dp": 0.93
+        },
+        "feminino": {
+          "media": 5.73,
+          "dp": 0.87
+        },
+        "geral": {
+          "media": 5.64,
+          "dp": 0.89
+        }
+      }
+    },
+    "S2": {
+      "nome": "Pró-sociabilidade",
+      "fator": "S",
+      "descricao": "Avalia comportamentos de risco, concordância com leis e regras sociais, moralidade e padrões de agressividade.",
+      "norma": {
+        "media": 5.67,
+        "dp": 0.95
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Pró-sociabilidade avalia comportamentos de risco, concordância com leis e regras sociais e moralidade. Escores muito baixos indicam que o(a) avaliando(a) tende a envolver-se em situações de risco e apresenta pouca preocupação em seguir leis e regras sociais. Pode ser manipulador(a) e apresentar padrão hostil ou desrespeitoso de interação.",
+        "Baixo": "A faceta Pró-sociabilidade avalia comportamentos de risco e concordância com normas sociais. Escores baixos indicam menor preocupação com normas sociais e alguma tendência a comportamentos de risco ou confronto com regras.",
+        "Médio": "A faceta Pró-sociabilidade avalia comportamentos de risco e concordância com normas sociais. Escores próximos da média indicam padrões de pró-sociabilidade dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Pró-sociabilidade avalia comportamentos de risco e concordância com normas sociais. Escores altos indicam boa adesão a normas sociais e tendência a evitar situações de risco.",
+        "Muito Alto": "A faceta Pró-sociabilidade avalia comportamentos de risco e concordância com normas sociais. Escores muito altos indicam que o(a) avaliando(a) tende a evitar fortemente situações de risco e transgressões a leis ou regras sociais. Apresenta postura franca com os demais, evitando pressioná-los ou induzi-los a fazerem algo que não queiram."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 5.53,
+          "dp": 0.97
+        },
+        "feminino": {
+          "media": 5.77,
+          "dp": 0.91
+        },
+        "geral": {
+          "media": 5.67,
+          "dp": 0.95
+        }
+      }
+    },
+    "S3": {
+      "nome": "Confiança nas Pessoas",
+      "fator": "S",
+      "descricao": "Avalia o quanto as pessoas confiam nos outros e acreditam que não serão prejudicadas.",
+      "norma": {
+        "media": 4.69,
+        "dp": 1.02
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Confiança nas Pessoas avalia o quanto se confia nos outros e se acredita que não será prejudicado(a). Escores muito baixos indicam que o(a) avaliando(a) frequentemente relata percepção constante de que as pessoas podem estar tentando prejudicá-lo(a). Tende a ser muito ciumento(a) em relações amorosas e a apresentar grande dificuldade em desenvolver intimidade com outros.",
+        "Baixo": "A faceta Confiança nas Pessoas avalia a confiança interpessoal. Escores baixos indicam menor confiança nos outros e tendência a manter cautela e distância nos relacionamentos.",
+        "Médio": "A faceta Confiança nas Pessoas avalia a confiança interpessoal. Escores próximos da média indicam nível de confiança dentro do esperado, com avaliação situacional adequada das intenções alheias.",
+        "Alto": "A faceta Confiança nas Pessoas avalia a confiança interpessoal. Escores altos indicam boa confiança nos outros e facilidade para desenvolver vínculos e intimidade.",
+        "Muito Alto": "A faceta Confiança nas Pessoas avalia a confiança interpessoal. Escores muito altos indicam que o(a) avaliando(a) pode apresentar postura ingênua com os demais, chegando a colocar-se em situações nas quais facilmente pode ser prejudicado(a) ou enganado(a) por pessoas mal intencionadas e manipuladoras."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.57,
+          "dp": 1.05
+        },
+        "feminino": {
+          "media": 4.8,
+          "dp": 1.0
+        },
+        "geral": {
+          "media": 4.69,
+          "dp": 1.02
+        }
+      }
+    },
+    "R1": {
+      "nome": "Competência",
+      "fator": "R",
+      "descricao": "Avalia a busca ativa por objetivos, disposição para sacrifícios pessoais e autopercepção de capacidade.",
+      "norma": {
+        "media": 5.25,
+        "dp": 0.92
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Competência avalia a busca ativa por objetivos e a percepção de capacidade pessoal. Escores muito baixos sugerem pouca disposição para atingir objetivos, com tendência a desistir frente a obstáculos. O(a) avaliando(a) pode apresentar percepção desfavorável sobre sua capacidade, evitar atividades complexas e desafiadoras e não possuir objetivos bem definidos.",
+        "Baixo": "A faceta Competência avalia a busca por objetivos e a percepção de capacidade. Escores baixos indicam menor disposição para investimento em metas desafiadoras e tendência a evitar situações que exijam esforço prolongado.",
+        "Médio": "A faceta Competência avalia a busca por objetivos e a percepção de capacidade. Escores próximos da média indicam padrões de competência percebida dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Competência avalia a busca por objetivos e a percepção de capacidade. Escores altos indicam boa percepção de capacidade e disposição para buscar objetivos desafiadores.",
+        "Muito Alto": "A faceta Competência avalia a busca por objetivos e a percepção de capacidade. Escores muito altos indicam que o(a) avaliando(a) tende a acreditar no seu potencial para realizar várias tarefas ao mesmo tempo, a gostar de atividades complexas e desafiadoras e a possuir clareza sobre seus objetivos de vida."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 5.19,
+          "dp": 0.93
+        },
+        "feminino": {
+          "media": 5.3,
+          "dp": 0.91
+        },
+        "geral": {
+          "media": 5.25,
+          "dp": 0.92
+        }
+      }
+    },
+    "R2": {
+      "nome": "Ponderação / Prudência",
+      "fator": "R",
+      "descricao": "Avalia o cuidado na expressão de opiniões, avaliação de consequências e planejamento antes de agir.",
+      "norma": {
+        "media": 5.05,
+        "dp": 1.16
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Ponderação/Prudência avalia o cuidado na expressão de opiniões e avaliação de consequências. Escores muito baixos indicam que o(a) avaliando(a) tende a falar sem pensar antes, a agir antes de fazer algum planejamento e a ser impulsivo(a) — não por reação emocional negativa, mas sim por falta de planejamento e organização de modo geral.",
+        "Baixo": "A faceta Ponderação/Prudência avalia o cuidado na expressão de opiniões e planejamento antes de agir. Escores baixos indicam menor tendência ao planejamento prévio e alguma impulsividade nas ações.",
+        "Médio": "A faceta Ponderação/Prudência avalia o cuidado na expressão de opiniões e planejamento. Escores próximos da média indicam padrões de ponderação dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Ponderação/Prudência avalia o cuidado na expressão de opiniões e planejamento. Escores altos indicam boa capacidade de reflexão antes de agir e tendência a avaliar consequências.",
+        "Muito Alto": "A faceta Ponderação/Prudência avalia o cuidado na expressão de opiniões e planejamento. Escores muito altos indicam que o(a) avaliando(a) tende a ser muito ponderado(a) quanto ao que diz e faz, tentando controlar sua impulsividade ao resolver problemas."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.99,
+          "dp": 1.17
+        },
+        "feminino": {
+          "media": 5.1,
+          "dp": 1.15
+        },
+        "geral": {
+          "media": 5.05,
+          "dp": 1.16
+        }
+      }
+    },
+    "R3": {
+      "nome": "Empenho / Comprometimento",
+      "fator": "R",
+      "descricao": "Avalia detalhismo na execução de trabalhos e nível de exigência pessoal com a qualidade das tarefas.",
+      "norma": {
+        "media": 4.73,
+        "dp": 1.06
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Empenho/Comprometimento avalia detalhismo e exigência pessoal com a qualidade das tarefas. Escores muito baixos indicam que o(a) avaliando(a) é pouco comprometido(a) com tarefas e compromissos, usualmente descuidado(a) com a qualidade e conclusão de trabalhos. Coloca pouca energia nas atividades, resultando em qualidade frequentemente insuficiente.",
+        "Baixo": "A faceta Empenho/Comprometimento avalia detalhismo e exigência pessoal. Escores baixos indicam menor investimento de energia na qualidade das tarefas e tendência a ser menos detalhista.",
+        "Médio": "A faceta Empenho/Comprometimento avalia detalhismo e exigência pessoal. Escores próximos da média indicam padrões de empenho dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Empenho/Comprometimento avalia detalhismo e exigência pessoal. Escores altos indicam bom investimento em qualidade e tendência a ser detalhista e comprometido com resultados.",
+        "Muito Alto": "A faceta Empenho/Comprometimento avalia detalhismo e exigência pessoal. Escores muito altos indicam que o(a) avaliando(a) tende a dedicar-se bastante às suas atividades profissionais/acadêmicas, gosta de obter reconhecimento por seu esforço e usualmente é perfeccionista. Planeja detalhadamente os passos para realização de atividades e necessita realizar revisões cuidadosas antes de expor trabalhos a outras pessoas."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.65,
+          "dp": 1.06
+        },
+        "feminino": {
+          "media": 4.8,
+          "dp": 1.05
+        },
+        "geral": {
+          "media": 4.73,
+          "dp": 1.06
+        }
+      }
+    },
+    "A1": {
+      "nome": "Abertura a Ideias",
+      "fator": "A",
+      "descricao": "Avalia interesse por conceitos novos, questões filosóficas, arte, cultura e uso de imaginação e fantasia.",
+      "norma": {
+        "media": 4.58,
+        "dp": 1.02
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Abertura a Ideias avalia interesse por novos conceitos, questões filosóficas, arte e expressões culturais. Escores muito baixos indicam que o(a) avaliando(a) é pouco curioso(a) para conhecer novos temas, mais conservador(a) e fiel a seus gostos artísticos, com postura rígida quanto a conceitos e novas ideias.",
+        "Baixo": "A faceta Abertura a Ideias avalia interesse por novos conceitos e expressões culturais. Escores baixos indicam menor interesse por novidades conceituais e culturais, com preferência por temas familiares.",
+        "Médio": "A faceta Abertura a Ideias avalia interesse por novos conceitos e expressões culturais. Escores próximos da média indicam padrões de abertura a ideias dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Abertura a Ideias avalia interesse por novos conceitos e expressões culturais. Escores altos indicam bom interesse por ideias novas, arte e discussões intelectuais.",
+        "Muito Alto": "A faceta Abertura a Ideias avalia interesse por novos conceitos e expressões culturais. Escores muito altos indicam que o(a) avaliando(a) gosta de participar de atividades que exijam imaginação ou fantasia, tem interesse por ideias abstratas, discussões filosóficas, arte, curiosidade sobre novas tendências musicais e áreas afins."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.59,
+          "dp": 1.04
+        },
+        "feminino": {
+          "media": 4.57,
+          "dp": 1.01
+        },
+        "geral": {
+          "media": 4.58,
+          "dp": 1.02
+        }
+      }
+    },
+    "A2": {
+      "nome": "Liberalismo",
+      "fator": "A",
+      "descricao": "Avalia como a pessoa lida com diferentes valores morais e sociais e a noção de que podem ser relativizados ao longo do tempo e entre culturas.",
+      "norma": {
+        "media": 4.81,
+        "dp": 1.02
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Liberalismo avalia como a pessoa lida com diferentes valores morais e sociais e a noção de que podem ser relativizados. Escores muito baixos indicam que o(a) avaliando(a) não costuma relativizar valores e conceitos sociais, sendo mais dogmático(a). Usualmente defende que os valores adotados não devem ser mudados com o passar do tempo.",
+        "Baixo": "A faceta Liberalismo avalia a flexibilidade em relação a valores morais e sociais. Escores baixos indicam menor flexibilidade, com tendência a posições mais tradicionais e conservadoras.",
+        "Médio": "A faceta Liberalismo avalia a flexibilidade em relação a valores morais e sociais. Escores próximos da média indicam posicionamento dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Liberalismo avalia a flexibilidade em relação a valores morais e sociais. Escores altos indicam boa flexibilidade em relação a valores diferentes e reconhecimento de que perspectivas podem variar entre culturas.",
+        "Muito Alto": "A faceta Liberalismo avalia a flexibilidade em relação a valores morais e sociais. Escores muito altos estão associados a uma concepção de que muitos valores sociais, éticos e legais podem ser relativizados. O(a) avaliando(a) usualmente apresenta uma compreensão de que não existem verdades absolutas ou valores inquestionáveis."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.74,
+          "dp": 1.05
+        },
+        "feminino": {
+          "media": 4.88,
+          "dp": 0.99
+        },
+        "geral": {
+          "media": 4.81,
+          "dp": 1.02
+        }
+      }
+    },
+    "A3": {
+      "nome": "Busca por Novidades",
+      "fator": "A",
+      "descricao": "Avalia o quanto a pessoa gosta e busca vivenciar novos eventos e como lida com a rotina.",
+      "norma": {
+        "media": 4.61,
+        "dp": 1.03
+      },
+      "interpretacoes": {
+        "Muito Baixo": "A faceta Busca por Novidades avalia o interesse em vivenciar novos eventos e como lida com a rotina. Escores muito baixos indicam que o(a) avaliando(a) relata sentir-se desconfortável com a quebra de rotina, possui pouco interesse para fazer coisas que nunca fez antes, conhecer lugares novos ou se colocar em situações diferentes das habituais.",
+        "Baixo": "A faceta Busca por Novidades avalia o interesse em novos eventos. Escores baixos indicam preferência por rotinas e ambientes familiares, com menor disposição para experiências novas.",
+        "Médio": "A faceta Busca por Novidades avalia o interesse em novos eventos. Escores próximos da média indicam relação com novidades e rotina dentro do esperado, com flexibilidade situacional.",
+        "Alto": "A faceta Busca por Novidades avalia o interesse em novos eventos. Escores altos indicam boa disposição para experiências novas e algum desconforto com rotinas muito rígidas.",
+        "Muito Alto": "A faceta Busca por Novidades avalia o interesse em novos eventos. Escores muito altos indicam que o(a) avaliando(a) busca ativamente novidades, relata não gostar de rotinas em contextos variados, tem pouca motivação para tarefas repetitivas e fica facilmente entediado(a) quando não pode vivenciar novos eventos."
+      },
+      "normasPorSexo": {
+        "masculino": {
+          "media": 4.61,
+          "dp": 1.02
+        },
+        "feminino": {
+          "media": 4.62,
+          "dp": 1.03
+        },
+        "geral": {
+          "media": 4.61,
+          "dp": 1.03
+        }
+      }
+    }
+  },
+  "itens": [
+    {
+      "num": 1,
+      "faceta": "A2",
+      "inv": true,
+      "texto": "Insira o texto do item 1 do Caderno de Aplicação"
+    },
+    {
+      "num": 2,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 2 do Caderno de Aplicação"
+    },
+    {
+      "num": 3,
+      "faceta": "E2",
+      "inv": false,
+      "texto": "Insira o texto do item 3 do Caderno de Aplicação"
+    },
+    {
+      "num": 4,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 4 do Caderno de Aplicação"
+    },
+    {
+      "num": 5,
+      "faceta": "E2",
+      "inv": false,
+      "texto": "Insira o texto do item 5 do Caderno de Aplicação"
+    },
+    {
+      "num": 6,
+      "faceta": "A3",
+      "inv": false,
+      "texto": "Insira o texto do item 6 do Caderno de Aplicação"
+    },
+    {
+      "num": 7,
+      "faceta": "S3",
+      "inv": false,
+      "texto": "Insira o texto do item 7 do Caderno de Aplicação"
+    },
+    {
+      "num": 8,
+      "faceta": "E4",
+      "inv": false,
+      "texto": "Insira o texto do item 8 do Caderno de Aplicação"
+    },
+    {
+      "num": 9,
+      "faceta": "R2",
+      "inv": false,
+      "texto": "Insira o texto do item 9 do Caderno de Aplicação"
+    },
+    {
+      "num": 10,
+      "faceta": "S3",
+      "inv": true,
+      "texto": "Insira o texto do item 10 do Caderno de Aplicação"
+    },
+    {
+      "num": 11,
+      "faceta": "E4",
+      "inv": false,
+      "texto": "Insira o texto do item 11 do Caderno de Aplicação"
+    },
+    {
+      "num": 12,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 12 do Caderno de Aplicação"
+    },
+    {
+      "num": 13,
+      "faceta": "N3",
+      "inv": false,
+      "texto": "Insira o texto do item 13 do Caderno de Aplicação"
+    },
+    {
+      "num": 14,
+      "faceta": "E2",
+      "inv": false,
+      "texto": "Insira o texto do item 14 do Caderno de Aplicação"
+    },
+    {
+      "num": 15,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 15 do Caderno de Aplicação"
+    },
+    {
+      "num": 16,
+      "faceta": "N4",
+      "inv": true,
+      "texto": "Insira o texto do item 16 do Caderno de Aplicação"
+    },
+    {
+      "num": 17,
+      "faceta": "E1",
+      "inv": true,
+      "texto": "Insira o texto do item 17 do Caderno de Aplicação"
+    },
+    {
+      "num": 18,
+      "faceta": "S2",
+      "inv": true,
+      "texto": "Insira o texto do item 18 do Caderno de Aplicação"
+    },
+    {
+      "num": 19,
+      "faceta": "R2",
+      "inv": true,
+      "texto": "Insira o texto do item 19 do Caderno de Aplicação"
+    },
+    {
+      "num": 20,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 20 do Caderno de Aplicação"
+    },
+    {
+      "num": 21,
+      "faceta": "E3",
+      "inv": false,
+      "texto": "Insira o texto do item 21 do Caderno de Aplicação"
+    },
+    {
+      "num": 22,
+      "faceta": "N3",
+      "inv": false,
+      "texto": "Insira o texto do item 22 do Caderno de Aplicação"
+    },
+    {
+      "num": 23,
+      "faceta": "A1",
+      "inv": true,
+      "texto": "Insira o texto do item 23 do Caderno de Aplicação"
+    },
+    {
+      "num": 24,
+      "faceta": "S2",
+      "inv": true,
+      "texto": "Insira o texto do item 24 do Caderno de Aplicação"
+    },
+    {
+      "num": 25,
+      "faceta": "N2",
+      "inv": false,
+      "texto": "Insira o texto do item 25 do Caderno de Aplicação"
+    },
+    {
+      "num": 26,
+      "faceta": "E3",
+      "inv": false,
+      "texto": "Insira o texto do item 26 do Caderno de Aplicação"
+    },
+    {
+      "num": 27,
+      "faceta": "S2",
+      "inv": true,
+      "texto": "Insira o texto do item 27 do Caderno de Aplicação"
+    },
+    {
+      "num": 28,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 28 do Caderno de Aplicação"
+    },
+    {
+      "num": 29,
+      "faceta": "N4",
+      "inv": false,
+      "texto": "Insira o texto do item 29 do Caderno de Aplicação"
+    },
+    {
+      "num": 30,
+      "faceta": "S3",
+      "inv": true,
+      "texto": "Insira o texto do item 30 do Caderno de Aplicação"
+    },
+    {
+      "num": 31,
+      "faceta": "A2",
+      "inv": false,
+      "texto": "Insira o texto do item 31 do Caderno de Aplicação"
+    },
+    {
+      "num": 32,
+      "faceta": "E3",
+      "inv": false,
+      "texto": "Insira o texto do item 32 do Caderno de Aplicação"
+    },
+    {
+      "num": 33,
+      "faceta": "A1",
+      "inv": true,
+      "texto": "Insira o texto do item 33 do Caderno de Aplicação"
+    },
+    {
+      "num": 34,
+      "faceta": "R3",
+      "inv": false,
+      "texto": "Insira o texto do item 34 do Caderno de Aplicação"
+    },
+    {
+      "num": 35,
+      "faceta": "N3",
+      "inv": false,
+      "texto": "Insira o texto do item 35 do Caderno de Aplicação"
+    },
+    {
+      "num": 36,
+      "faceta": "A1",
+      "inv": false,
+      "texto": "Insira o texto do item 36 do Caderno de Aplicação"
+    },
+    {
+      "num": 37,
+      "faceta": "N3",
+      "inv": false,
+      "texto": "Insira o texto do item 37 do Caderno de Aplicação"
+    },
+    {
+      "num": 38,
+      "faceta": "E1",
+      "inv": true,
+      "texto": "Insira o texto do item 38 do Caderno de Aplicação"
+    },
+    {
+      "num": 39,
+      "faceta": "S3",
+      "inv": true,
+      "texto": "Insira o texto do item 39 do Caderno de Aplicação"
+    },
+    {
+      "num": 40,
+      "faceta": "N4",
+      "inv": false,
+      "texto": "Insira o texto do item 40 do Caderno de Aplicação"
+    },
+    {
+      "num": 41,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 41 do Caderno de Aplicação"
+    },
+    {
+      "num": 42,
+      "faceta": "A1",
+      "inv": true,
+      "texto": "Insira o texto do item 42 do Caderno de Aplicação"
+    },
+    {
+      "num": 43,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 43 do Caderno de Aplicação"
+    },
+    {
+      "num": 44,
+      "faceta": "A3",
+      "inv": false,
+      "texto": "Insira o texto do item 44 do Caderno de Aplicação"
+    },
+    {
+      "num": 45,
+      "faceta": "R2",
+      "inv": false,
+      "texto": "Insira o texto do item 45 do Caderno de Aplicação"
+    },
+    {
+      "num": 46,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 46 do Caderno de Aplicação"
+    },
+    {
+      "num": 47,
+      "faceta": "E4",
+      "inv": false,
+      "texto": "Insira o texto do item 47 do Caderno de Aplicação"
+    },
+    {
+      "num": 48,
+      "faceta": "N4",
+      "inv": false,
+      "texto": "Insira o texto do item 48 do Caderno de Aplicação"
+    },
+    {
+      "num": 49,
+      "faceta": "A3",
+      "inv": false,
+      "texto": "Insira o texto do item 49 do Caderno de Aplicação"
+    },
+    {
+      "num": 50,
+      "faceta": "E4",
+      "inv": false,
+      "texto": "Insira o texto do item 50 do Caderno de Aplicação"
+    },
+    {
+      "num": 51,
+      "faceta": "N2",
+      "inv": false,
+      "texto": "Insira o texto do item 51 do Caderno de Aplicação"
+    },
+    {
+      "num": 52,
+      "faceta": "E4",
+      "inv": false,
+      "texto": "Insira o texto do item 52 do Caderno de Aplicação"
+    },
+    {
+      "num": 53,
+      "faceta": "A1",
+      "inv": false,
+      "texto": "Insira o texto do item 53 do Caderno de Aplicação"
+    },
+    {
+      "num": 54,
+      "faceta": "R3",
+      "inv": false,
+      "texto": "Insira o texto do item 54 do Caderno de Aplicação"
+    },
+    {
+      "num": 55,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 55 do Caderno de Aplicação"
+    },
+    {
+      "num": 56,
+      "faceta": "A1",
+      "inv": true,
+      "texto": "Insira o texto do item 56 do Caderno de Aplicação"
+    },
+    {
+      "num": 57,
+      "faceta": "S3",
+      "inv": true,
+      "texto": "Insira o texto do item 57 do Caderno de Aplicação"
+    },
+    {
+      "num": 58,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 58 do Caderno de Aplicação"
+    },
+    {
+      "num": 59,
+      "faceta": "A2",
+      "inv": false,
+      "texto": "Insira o texto do item 59 do Caderno de Aplicação"
+    },
+    {
+      "num": 60,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 60 do Caderno de Aplicação"
+    },
+    {
+      "num": 61,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 61 do Caderno de Aplicação"
+    },
+    {
+      "num": 62,
+      "faceta": "A1",
+      "inv": true,
+      "texto": "Insira o texto do item 62 do Caderno de Aplicação"
+    },
+    {
+      "num": 63,
+      "faceta": "S2",
+      "inv": true,
+      "texto": "Insira o texto do item 63 do Caderno de Aplicação"
+    },
+    {
+      "num": 64,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 64 do Caderno de Aplicação"
+    },
+    {
+      "num": 65,
+      "faceta": "N2",
+      "inv": false,
+      "texto": "Insira o texto do item 65 do Caderno de Aplicação"
+    },
+    {
+      "num": 66,
+      "faceta": "E1",
+      "inv": true,
+      "texto": "Insira o texto do item 66 do Caderno de Aplicação"
+    },
+    {
+      "num": 67,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 67 do Caderno de Aplicação"
+    },
+    {
+      "num": 68,
+      "faceta": "S3",
+      "inv": false,
+      "texto": "Insira o texto do item 68 do Caderno de Aplicação"
+    },
+    {
+      "num": 69,
+      "faceta": "A2",
+      "inv": false,
+      "texto": "Insira o texto do item 69 do Caderno de Aplicação"
+    },
+    {
+      "num": 70,
+      "faceta": "N4",
+      "inv": false,
+      "texto": "Insira o texto do item 70 do Caderno de Aplicação"
+    },
+    {
+      "num": 71,
+      "faceta": "E4",
+      "inv": false,
+      "texto": "Insira o texto do item 71 do Caderno de Aplicação"
+    },
+    {
+      "num": 72,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 72 do Caderno de Aplicação"
+    },
+    {
+      "num": 73,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 73 do Caderno de Aplicação"
+    },
+    {
+      "num": 74,
+      "faceta": "A2",
+      "inv": false,
+      "texto": "Insira o texto do item 74 do Caderno de Aplicação"
+    },
+    {
+      "num": 75,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 75 do Caderno de Aplicação"
+    },
+    {
+      "num": 76,
+      "faceta": "S2",
+      "inv": false,
+      "texto": "Insira o texto do item 76 do Caderno de Aplicação"
+    },
+    {
+      "num": 77,
+      "faceta": "N2",
+      "inv": false,
+      "texto": "Insira o texto do item 77 do Caderno de Aplicação"
+    },
+    {
+      "num": 78,
+      "faceta": "E2",
+      "inv": false,
+      "texto": "Insira o texto do item 78 do Caderno de Aplicação"
+    },
+    {
+      "num": 79,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 79 do Caderno de Aplicação"
+    },
+    {
+      "num": 80,
+      "faceta": "R3",
+      "inv": false,
+      "texto": "Insira o texto do item 80 do Caderno de Aplicação"
+    },
+    {
+      "num": 81,
+      "faceta": "A1",
+      "inv": true,
+      "texto": "Insira o texto do item 81 do Caderno de Aplicação"
+    },
+    {
+      "num": 82,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 82 do Caderno de Aplicação"
+    },
+    {
+      "num": 83,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 83 do Caderno de Aplicação"
+    },
+    {
+      "num": 84,
+      "faceta": "A3",
+      "inv": true,
+      "texto": "Insira o texto do item 84 do Caderno de Aplicação"
+    },
+    {
+      "num": 85,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 85 do Caderno de Aplicação"
+    },
+    {
+      "num": 86,
+      "faceta": "N2",
+      "inv": false,
+      "texto": "Insira o texto do item 86 do Caderno de Aplicação"
+    },
+    {
+      "num": 87,
+      "faceta": "S2",
+      "inv": true,
+      "texto": "Insira o texto do item 87 do Caderno de Aplicação"
+    },
+    {
+      "num": 88,
+      "faceta": "A1",
+      "inv": false,
+      "texto": "Insira o texto do item 88 do Caderno de Aplicação"
+    },
+    {
+      "num": 89,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 89 do Caderno de Aplicação"
+    },
+    {
+      "num": 90,
+      "faceta": "E4",
+      "inv": false,
+      "texto": "Insira o texto do item 90 do Caderno de Aplicação"
+    },
+    {
+      "num": 91,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 91 do Caderno de Aplicação"
+    },
+    {
+      "num": 92,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 92 do Caderno de Aplicação"
+    },
+    {
+      "num": 93,
+      "faceta": "E2",
+      "inv": false,
+      "texto": "Insira o texto do item 93 do Caderno de Aplicação"
+    },
+    {
+      "num": 94,
+      "faceta": "A3",
+      "inv": false,
+      "texto": "Insira o texto do item 94 do Caderno de Aplicação"
+    },
+    {
+      "num": 95,
+      "faceta": "N3",
+      "inv": false,
+      "texto": "Insira o texto do item 95 do Caderno de Aplicação"
+    },
+    {
+      "num": 96,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 96 do Caderno de Aplicação"
+    },
+    {
+      "num": 97,
+      "faceta": "E1",
+      "inv": false,
+      "texto": "Insira o texto do item 97 do Caderno de Aplicação"
+    },
+    {
+      "num": 98,
+      "faceta": "S3",
+      "inv": true,
+      "texto": "Insira o texto do item 98 do Caderno de Aplicação"
+    },
+    {
+      "num": 99,
+      "faceta": "E2",
+      "inv": false,
+      "texto": "Insira o texto do item 99 do Caderno de Aplicação"
+    },
+    {
+      "num": 100,
+      "faceta": "N3",
+      "inv": false,
+      "texto": "Insira o texto do item 100 do Caderno de Aplicação"
+    },
+    {
+      "num": 101,
+      "faceta": "R2",
+      "inv": false,
+      "texto": "Insira o texto do item 101 do Caderno de Aplicação"
+    },
+    {
+      "num": 102,
+      "faceta": "N2",
+      "inv": false,
+      "texto": "Insira o texto do item 102 do Caderno de Aplicação"
+    },
+    {
+      "num": 103,
+      "faceta": "R3",
+      "inv": false,
+      "texto": "Insira o texto do item 103 do Caderno de Aplicação"
+    },
+    {
+      "num": 104,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 104 do Caderno de Aplicação"
+    },
+    {
+      "num": 105,
+      "faceta": "E1",
+      "inv": false,
+      "texto": "Insira o texto do item 105 do Caderno de Aplicação"
+    },
+    {
+      "num": 106,
+      "faceta": "N4",
+      "inv": false,
+      "texto": "Insira o texto do item 106 do Caderno de Aplicação"
+    },
+    {
+      "num": 107,
+      "faceta": "S2",
+      "inv": true,
+      "texto": "Insira o texto do item 107 do Caderno de Aplicação"
+    },
+    {
+      "num": 108,
+      "faceta": "E3",
+      "inv": false,
+      "texto": "Insira o texto do item 108 do Caderno de Aplicação"
+    },
+    {
+      "num": 109,
+      "faceta": "S2",
+      "inv": false,
+      "texto": "Insira o texto do item 109 do Caderno de Aplicação"
+    },
+    {
+      "num": 110,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 110 do Caderno de Aplicação"
+    },
+    {
+      "num": 111,
+      "faceta": "E2",
+      "inv": false,
+      "texto": "Insira o texto do item 111 do Caderno de Aplicação"
+    },
+    {
+      "num": 112,
+      "faceta": "R3",
+      "inv": false,
+      "texto": "Insira o texto do item 112 do Caderno de Aplicação"
+    },
+    {
+      "num": 113,
+      "faceta": "A3",
+      "inv": false,
+      "texto": "Insira o texto do item 113 do Caderno de Aplicação"
+    },
+    {
+      "num": 114,
+      "faceta": "R3",
+      "inv": false,
+      "texto": "Insira o texto do item 114 do Caderno de Aplicação"
+    },
+    {
+      "num": 115,
+      "faceta": "A1",
+      "inv": true,
+      "texto": "Insira o texto do item 115 do Caderno de Aplicação"
+    },
+    {
+      "num": 116,
+      "faceta": "R3",
+      "inv": false,
+      "texto": "Insira o texto do item 116 do Caderno de Aplicação"
+    },
+    {
+      "num": 117,
+      "faceta": "E3",
+      "inv": false,
+      "texto": "Insira o texto do item 117 do Caderno de Aplicação"
+    },
+    {
+      "num": 118,
+      "faceta": "N1",
+      "inv": false,
+      "texto": "Insira o texto do item 118 do Caderno de Aplicação"
+    },
+    {
+      "num": 119,
+      "faceta": "S3",
+      "inv": true,
+      "texto": "Insira o texto do item 119 do Caderno de Aplicação"
+    },
+    {
+      "num": 120,
+      "faceta": "E1",
+      "inv": false,
+      "texto": "Insira o texto do item 120 do Caderno de Aplicação"
+    },
+    {
+      "num": 121,
+      "faceta": "N4",
+      "inv": false,
+      "texto": "Insira o texto do item 121 do Caderno de Aplicação"
+    },
+    {
+      "num": 122,
+      "faceta": "R1",
+      "inv": false,
+      "texto": "Insira o texto do item 122 do Caderno de Aplicação"
+    },
+    {
+      "num": 123,
+      "faceta": "A2",
+      "inv": false,
+      "texto": "Insira o texto do item 123 do Caderno de Aplicação"
+    },
+    {
+      "num": 124,
+      "faceta": "N4",
+      "inv": false,
+      "texto": "Insira o texto do item 124 do Caderno de Aplicação"
+    },
+    {
+      "num": 125,
+      "faceta": "S1",
+      "inv": false,
+      "texto": "Insira o texto do item 125 do Caderno de Aplicação"
+    },
+    {
+      "num": 126,
+      "faceta": "A2",
+      "inv": false,
+      "texto": "Insira o texto do item 126 do Caderno de Aplicação"
+    }
+  ],
+  "normasPorSexo": {
+    "masculino": {
+      "N": {
+        "media": 3.06,
+        "dp": 1.0
+      },
+      "E": {
+        "media": 4.28,
+        "dp": 0.83
+      },
+      "S": {
+        "media": 5.21,
+        "dp": 0.72
+      },
+      "R": {
+        "media": 4.94,
+        "dp": 0.84
+      },
+      "A": {
+        "media": 4.65,
+        "dp": 0.75
+      },
+      "N1": {
+        "media": 3.25,
+        "dp": 1.18
+      },
+      "N2": {
+        "media": 3.43,
+        "dp": 1.37
+      },
+      "N3": {
+        "media": 3.47,
+        "dp": 1.22
+      },
+      "N4": {
+        "media": 2.36,
+        "dp": 1.14
+      },
+      "E1": {
+        "media": 4.24,
+        "dp": 1.22
+      },
+      "E2": {
+        "media": 3.67,
+        "dp": 1.04
+      },
+      "E3": {
+        "media": 4.78,
+        "dp": 0.99
+      },
+      "E4": {
+        "media": 4.74,
+        "dp": 1.08
+      },
+      "S1": {
+        "media": 5.55,
+        "dp": 0.93
+      },
+      "S2": {
+        "media": 5.53,
+        "dp": 0.97
+      },
+      "S3": {
+        "media": 4.57,
+        "dp": 1.05
+      },
+      "R1": {
+        "media": 5.19,
+        "dp": 0.93
+      },
+      "R2": {
+        "media": 4.99,
+        "dp": 1.17
+      },
+      "R3": {
+        "media": 4.65,
+        "dp": 1.06
+      },
+      "A1": {
+        "media": 4.59,
+        "dp": 1.04
+      },
+      "A2": {
+        "media": 4.74,
+        "dp": 1.05
+      },
+      "A3": {
+        "media": 4.61,
+        "dp": 1.02
+      }
+    },
+    "feminino": {
+      "N": {
+        "media": 3.3,
+        "dp": 1.01
+      },
+      "E": {
+        "media": 4.36,
+        "dp": 0.88
+      },
+      "S": {
+        "media": 5.43,
+        "dp": 0.68
+      },
+      "R": {
+        "media": 5.05,
+        "dp": 0.82
+      },
+      "A": {
+        "media": 4.69,
+        "dp": 0.71
+      },
+      "N1": {
+        "media": 3.68,
+        "dp": 1.24
+      },
+      "N2": {
+        "media": 3.74,
+        "dp": 1.41
+      },
+      "N3": {
+        "media": 3.63,
+        "dp": 1.2
+      },
+      "N4": {
+        "media": 2.6,
+        "dp": 1.19
+      },
+      "E1": {
+        "media": 4.31,
+        "dp": 1.31
+      },
+      "E2": {
+        "media": 3.67,
+        "dp": 1.08
+      },
+      "E3": {
+        "media": 4.79,
+        "dp": 1.04
+      },
+      "E4": {
+        "media": 4.86,
+        "dp": 1.12
+      },
+      "S1": {
+        "media": 5.73,
+        "dp": 0.87
+      },
+      "S2": {
+        "media": 5.77,
+        "dp": 0.91
+      },
+      "S3": {
+        "media": 4.8,
+        "dp": 1.0
+      },
+      "R1": {
+        "media": 5.3,
+        "dp": 0.91
+      },
+      "R2": {
+        "media": 5.1,
+        "dp": 1.15
+      },
+      "R3": {
+        "media": 4.8,
+        "dp": 1.05
+      },
+      "A1": {
+        "media": 4.57,
+        "dp": 1.01
+      },
+      "A2": {
+        "media": 4.88,
+        "dp": 0.99
+      },
+      "A3": {
+        "media": 4.62,
+        "dp": 1.03
+      }
+    },
+    "geral": {
+      "N": {
+        "media": 3.19,
+        "dp": 1.01
+      },
+      "E": {
+        "media": 4.32,
+        "dp": 0.86
+      },
+      "S": {
+        "media": 5.35,
+        "dp": 0.7
+      },
+      "R": {
+        "media": 4.99,
+        "dp": 0.83
+      },
+      "A": {
+        "media": 4.67,
+        "dp": 0.73
+      },
+      "N1": {
+        "media": 3.46,
+        "dp": 1.22
+      },
+      "N2": {
+        "media": 3.57,
+        "dp": 1.39
+      },
+      "N3": {
+        "media": 3.54,
+        "dp": 1.21
+      },
+      "N4": {
+        "media": 2.49,
+        "dp": 1.17
+      },
+      "E1": {
+        "media": 4.28,
+        "dp": 1.27
+      },
+      "E2": {
+        "media": 3.67,
+        "dp": 1.06
+      },
+      "E3": {
+        "media": 4.79,
+        "dp": 1.02
+      },
+      "E4": {
+        "media": 4.8,
+        "dp": 1.1
+      },
+      "S1": {
+        "media": 5.64,
+        "dp": 0.89
+      },
+      "S2": {
+        "media": 5.67,
+        "dp": 0.95
+      },
+      "S3": {
+        "media": 4.69,
+        "dp": 1.02
+      },
+      "R1": {
+        "media": 5.25,
+        "dp": 0.92
+      },
+      "R2": {
+        "media": 5.05,
+        "dp": 1.16
+      },
+      "R3": {
+        "media": 4.73,
+        "dp": 1.06
+      },
+      "A1": {
+        "media": 4.58,
+        "dp": 1.02
+      },
+      "A2": {
+        "media": 4.81,
+        "dp": 1.02
+      },
+      "A3": {
+        "media": 4.61,
+        "dp": 1.03
+      }
+    }
+  },
+  "notaCorrecao": {
+    "tabelaUsada": "normasPorSexo",
+    "prioridade": "Sempre usar norma por sexo (masculino/feminino). Usar 'geral' apenas quando sexo não informado.",
+    "formulaZ": "Z = (EB - media) / dp",
+    "formulaPercentil": "percentil = Φ(Z) × 100  [distribuição normal acumulada]",
+    "inversao": "Para itens com inv=true: valor_corrigido = 8 - valor_marcado",
+    "ebFaceta": "EB = soma(valores_corrigidos) / n_itens",
+    "ebFator": "EB_fator = media_aritmetica(EB_subfatores)",
+    "fonte": "Nunes, Hutz & Nunes (2010). BFP - Bateria Fatorial de Personalidade. Manual. Casa do Psicólogo."
+  }
+}

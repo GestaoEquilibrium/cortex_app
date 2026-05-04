@@ -51,6 +51,8 @@
             '[class*="-ff-"]',                     // Fortes/fracos (grid)
             '[class*="-discrep"]',                 // Discrepâncias
             '[class*="-interp"]',                  // Interpretação clínica
+            '[class*="-curva-"]',                  // Curva de aprendizagem (RAVLT) — qualquer instrumento que tenha curva
+            '[class*="-grafico-"]',                // Outros wrappers de gráfico
             '.laudo-body > table',                 // Tabelas soltas direto no body
 
             // ─── D3: containers comuns com prefixo `.laudo-` ───

@@ -1,0 +1,1643 @@
+{
+  "meta": {
+    "teste": "RAVLT",
+    "nome": "Teste de Aprendizagem Auditivo-Verbal de Rey",
+    "nomeEN": "Rey Auditory Verbal Learning Test",
+    "descricao": "Avalia aprendizagem verbal, memória imediata e tardia, reconhecimento, susceptibilidade à interferência e velocidade de esquecimento.",
+    "publicoAlvo": "Crianças, adolescentes e adultos (6-80+ anos)",
+    "totalPalavras": 15,
+    "tentativas": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5"
+    ],
+    "distrator": "B1",
+    "evocacaoImediata": "A6",
+    "evocacaoTardia": "A7",
+    "reconhecimento": "Reconhecimento"
+  },
+  "listaA": [
+    "BALÃO",
+    "FLOR",
+    "SALA",
+    "BOCA",
+    "CHUVA",
+    "MÃE",
+    "CIRCO",
+    "PEIXE",
+    "LUA",
+    "CORPO",
+    "CESTA",
+    "LÁPIS",
+    "MESA",
+    "CHAPÉU",
+    "MILHO"
+  ],
+  "listaB": [
+    "CARRO",
+    "MEIA",
+    "PATO",
+    "FOGO",
+    "SOFÁ",
+    "DOCE",
+    "PONTO",
+    "VASO",
+    "LIVRO",
+    "PORTA",
+    "ÍNDIO",
+    "RUA",
+    "ROUPA",
+    "DENTE",
+    "RIO"
+  ],
+  "listaReconhecimento": [
+    {
+      "palavra": "LUA",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "GALO",
+      "tipo": "D-SB",
+      "categoriaErro": "SB"
+    },
+    {
+      "palavra": "FOGO",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "CHAPÉU",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "VASO",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "MESA",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "LAGO",
+      "tipo": "D-SB",
+      "categoriaErro": "SB"
+    },
+    {
+      "palavra": "PORTA",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "DENTE",
+      "tipo": "D-SA",
+      "categoriaErro": "SA"
+    },
+    {
+      "palavra": "RIO",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "COR",
+      "tipo": "D-FA",
+      "categoriaErro": "FA"
+    },
+    {
+      "palavra": "ÍNDIO",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "BALÃO",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "RUA",
+      "tipo": "D-FA",
+      "categoriaErro": "FA"
+    },
+    {
+      "palavra": "ISCA",
+      "tipo": "D-SA",
+      "categoriaErro": "SA"
+    },
+    {
+      "palavra": "PLANTA",
+      "tipo": "D-SA/SB",
+      "categoriaErro": "SA/SB"
+    },
+    {
+      "palavra": "ROUPA",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "CORPO",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "ROSA",
+      "tipo": "D-SA",
+      "categoriaErro": "SA"
+    },
+    {
+      "palavra": "LÁPIS",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "PONTO",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "FLOR",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "BOCA",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "CIRCO",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "CHUVA",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "BOLO",
+      "tipo": "D-SB",
+      "categoriaErro": "SB"
+    },
+    {
+      "palavra": "PEIXE",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "BOTÃO",
+      "tipo": "D-FA",
+      "categoriaErro": "FA"
+    },
+    {
+      "palavra": "LEITE",
+      "tipo": "D-SA",
+      "categoriaErro": "SA"
+    },
+    {
+      "palavra": "CARRO",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "SALA",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "BOLA",
+      "tipo": "D-SA",
+      "categoriaErro": "SA"
+    },
+    {
+      "palavra": "AULA",
+      "tipo": "D-SA",
+      "categoriaErro": "SA"
+    },
+    {
+      "palavra": "MILHO",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "CAIXA",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "BALÃO",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "PATO",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "MÃE",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "SOFÁ",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "DOCE",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "SOL",
+      "tipo": "D-SA",
+      "categoriaErro": "SA"
+    },
+    {
+      "palavra": "MAR",
+      "tipo": "D-SB",
+      "categoriaErro": "SB"
+    },
+    {
+      "palavra": "PAPEL",
+      "tipo": "D-FA",
+      "categoriaErro": "FA"
+    },
+    {
+      "palavra": "VENTO",
+      "tipo": "D-FB",
+      "categoriaErro": "FB"
+    },
+    {
+      "palavra": "LIVRO",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "VACA",
+      "tipo": "B",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "FILHO",
+      "tipo": "D-SA/FA",
+      "categoriaErro": "SA/FA"
+    },
+    {
+      "palavra": "MILHO",
+      "tipo": "A",
+      "categoriaErro": null
+    },
+    {
+      "palavra": "JARDIM",
+      "tipo": "D-SA",
+      "categoriaErro": "SA"
+    },
+    {
+      "palavra": "FESTA",
+      "tipo": "D-FA",
+      "categoriaErro": "FA"
+    }
+  ],
+  "indices": {
+    "A1": {
+      "label": "Tentativa A1",
+      "grupo": "Primeiras etapas da aprendizagem"
+    },
+    "A2": {
+      "label": "Tentativa A2",
+      "grupo": "Primeiras etapas da aprendizagem"
+    },
+    "A3": {
+      "label": "Tentativa A3",
+      "grupo": "Primeiras etapas da aprendizagem"
+    },
+    "A4": {
+      "label": "Tentativa A4",
+      "grupo": "Primeiras etapas da aprendizagem"
+    },
+    "A5": {
+      "label": "Tentativa A5",
+      "grupo": "Primeiras etapas da aprendizagem"
+    },
+    "B1": {
+      "label": "Lista B (Distrator)",
+      "grupo": "Distrator"
+    },
+    "A6": {
+      "label": "Evocação Imediata (A6)",
+      "grupo": "Evocação imediata"
+    },
+    "A7": {
+      "label": "Evocação Tardia (A7)",
+      "grupo": "Evocação tardia"
+    },
+    "Recon": {
+      "label": "Reconhecimento",
+      "grupo": "Reconhecimento",
+      "formula": "Acertos - 35"
+    },
+    "Total": {
+      "label": "Escore Total",
+      "grupo": "Índices de aprendizagem",
+      "formula": "A1+A2+A3+A4+A5"
+    },
+    "ALT": {
+      "label": "Aprendizagem ao Longo das Tentativas",
+      "grupo": "Índices de aprendizagem",
+      "formula": "Escore Total - (5×A1)"
+    },
+    "Esquec": {
+      "label": "Velocidade de Esquecimento",
+      "grupo": "Índice de retenção",
+      "formula": "A7/A6"
+    },
+    "Proat": {
+      "label": "Interferência Proativa",
+      "grupo": "Índices de interferência",
+      "formula": "B1/A1"
+    },
+    "Retro": {
+      "label": "Interferência Retroativa",
+      "grupo": "Índices de interferência",
+      "formula": "A6/A5"
+    }
+  },
+  "normativoModelo": "percentil_empirico",
+  "normativoDescricao": "Percentis empíricos por faixa etária. Classificação por interpolação entre pontos de corte Pc5/Pc25/Pc50/Pc75/Pc95.",
+  "classificacao": [
+    {
+      "label": "Superior",
+      "cor": "#047857",
+      "pcMin": 96,
+      "pcMax": 100
+    },
+    {
+      "label": "Médio Superior",
+      "cor": "#059669",
+      "pcMin": 76,
+      "pcMax": 95
+    },
+    {
+      "label": "Médio",
+      "cor": "#3b82f6",
+      "pcMin": 26,
+      "pcMax": 75
+    },
+    {
+      "label": "Médio Inferior",
+      "cor": "#f59e0b",
+      "pcMin": 6,
+      "pcMax": 25
+    },
+    {
+      "label": "Inferior",
+      "cor": "#dc2626",
+      "pcMin": 0,
+      "pcMax": 5
+    }
+  ],
+  "normas": [
+    {
+      "faixa": "6-8",
+      "idadeMin": 6,
+      "idadeMax": 8,
+      "A1": {
+        "pc95": 8.0,
+        "pc75": 5.0,
+        "pc50": 4.0,
+        "pc25": 3.0,
+        "pc5": 2.0
+      },
+      "A2": {
+        "pc95": 10.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 5.0,
+        "pc5": 3.0
+      },
+      "A3": {
+        "pc95": 12.0,
+        "pc75": 9.0,
+        "pc50": 7.0,
+        "pc25": 5.0,
+        "pc5": 4.0
+      },
+      "A4": {
+        "pc95": 13.0,
+        "pc75": 10.0,
+        "pc50": 8.0,
+        "pc25": 6.0,
+        "pc5": 4.0
+      },
+      "A5": {
+        "pc95": 13.0,
+        "pc75": 10.0,
+        "pc50": 8.0,
+        "pc25": 7.0,
+        "pc5": 4.0
+      },
+      "B1": {
+        "pc95": 7.0,
+        "pc75": 5.0,
+        "pc50": 4.0,
+        "pc25": 3.0,
+        "pc5": 2.0
+      },
+      "A6": {
+        "pc95": 13.0,
+        "pc75": 8.0,
+        "pc50": 7.0,
+        "pc25": 5.0,
+        "pc5": 3.0
+      },
+      "A7": {
+        "pc95": 13.0,
+        "pc75": 9.0,
+        "pc50": 7.0,
+        "pc25": 6.0,
+        "pc5": 3.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 15.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": -2.0
+      },
+      "Total": {
+        "pc95": 52.0,
+        "pc75": 40.0,
+        "pc50": 33.0,
+        "pc25": 26.0,
+        "pc5": 19.0
+      },
+      "ALT": {
+        "pc95": 23.0,
+        "pc75": 16.0,
+        "pc50": 12.0,
+        "pc25": 6.0,
+        "pc5": -4.0
+      },
+      "Esquec": {
+        "pc95": 1.75,
+        "pc75": 1.2,
+        "pc50": 1.0,
+        "pc25": 0.89,
+        "pc5": 0.67
+      },
+      "Proat": {
+        "pc95": 2.0,
+        "pc75": 1.29,
+        "pc50": 1.0,
+        "pc25": 0.75,
+        "pc5": 0.5
+      },
+      "Retro": {
+        "pc95": 1.25,
+        "pc75": 1.0,
+        "pc50": 0.88,
+        "pc25": 0.71,
+        "pc5": 0.5
+      }
+    },
+    {
+      "faixa": "9-11",
+      "idadeMin": 9,
+      "idadeMax": 11,
+      "A1": {
+        "pc95": 8.0,
+        "pc75": 7.0,
+        "pc50": 5.0,
+        "pc25": 4.0,
+        "pc5": 3.0
+      },
+      "A2": {
+        "pc95": 11.0,
+        "pc75": 9.0,
+        "pc50": 7.0,
+        "pc25": 6.0,
+        "pc5": 4.0
+      },
+      "A3": {
+        "pc95": 13.0,
+        "pc75": 11.0,
+        "pc50": 9.0,
+        "pc25": 6.0,
+        "pc5": 3.0
+      },
+      "A4": {
+        "pc95": 14.0,
+        "pc75": 11.0,
+        "pc50": 9.0,
+        "pc25": 8.0,
+        "pc5": 4.0
+      },
+      "A5": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 5.0
+      },
+      "B1": {
+        "pc95": 8.0,
+        "pc75": 6.0,
+        "pc50": 5.0,
+        "pc25": 4.0,
+        "pc5": 3.0
+      },
+      "A6": {
+        "pc95": 12.0,
+        "pc75": 11.0,
+        "pc50": 9.0,
+        "pc25": 7.0,
+        "pc5": 4.0
+      },
+      "A7": {
+        "pc95": 13.0,
+        "pc75": 11.0,
+        "pc50": 9.0,
+        "pc25": 7.0,
+        "pc5": 4.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 15.0,
+        "pc50": 14.0,
+        "pc25": 11.0,
+        "pc5": 2.0
+      },
+      "Total": {
+        "pc95": 58.0,
+        "pc75": 46.0,
+        "pc50": 40.0,
+        "pc25": 32.0,
+        "pc5": 24.0
+      },
+      "ALT": {
+        "pc95": 26.0,
+        "pc75": 19.0,
+        "pc50": 13.0,
+        "pc25": 8.0,
+        "pc5": -1.0
+      },
+      "Esquec": {
+        "pc95": 1.33,
+        "pc75": 1.11,
+        "pc50": 1.0,
+        "pc25": 0.9,
+        "pc5": 0.75
+      },
+      "Proat": {
+        "pc95": 2.0,
+        "pc75": 1.2,
+        "pc50": 0.86,
+        "pc25": 0.71,
+        "pc5": 0.5
+      },
+      "Retro": {
+        "pc95": 1.38,
+        "pc75": 1.0,
+        "pc50": 0.85,
+        "pc25": 0.73,
+        "pc5": 0.56
+      }
+    },
+    {
+      "faixa": "12-14",
+      "idadeMin": 12,
+      "idadeMax": 14,
+      "A1": {
+        "pc95": 9.0,
+        "pc75": 8.0,
+        "pc50": 6.0,
+        "pc25": 5.0,
+        "pc5": 4.0
+      },
+      "A2": {
+        "pc95": 12.0,
+        "pc75": 10.0,
+        "pc50": 8.0,
+        "pc25": 6.0,
+        "pc5": 4.0
+      },
+      "A3": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 7.0,
+        "pc5": 4.0
+      },
+      "A4": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 9.0,
+        "pc5": 3.0
+      },
+      "A5": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 10.0,
+        "pc5": 6.0
+      },
+      "B1": {
+        "pc95": 9.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 4.0,
+        "pc5": 3.0
+      },
+      "A6": {
+        "pc95": 13.0,
+        "pc75": 11.0,
+        "pc50": 10.0,
+        "pc25": 9.0,
+        "pc5": 5.0
+      },
+      "A7": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 7.0,
+        "pc5": 5.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 15.0,
+        "pc50": 15.0,
+        "pc25": 12.0,
+        "pc5": 0.0
+      },
+      "Total": {
+        "pc95": 59.0,
+        "pc75": 51.0,
+        "pc50": 46.0,
+        "pc25": 39.0,
+        "pc5": 28.0
+      },
+      "ALT": {
+        "pc95": 25.0,
+        "pc75": 20.0,
+        "pc50": 13.0,
+        "pc25": 7.0,
+        "pc5": -2.0
+      },
+      "Esquec": {
+        "pc95": 1.4,
+        "pc75": 1.11,
+        "pc50": 1.0,
+        "pc25": 0.89,
+        "pc5": 0.6
+      },
+      "Proat": {
+        "pc95": 1.5,
+        "pc75": 1.13,
+        "pc50": 0.88,
+        "pc25": 0.73,
+        "pc5": 0.5
+      },
+      "Retro": {
+        "pc95": 1.22,
+        "pc75": 1.0,
+        "pc50": 0.9,
+        "pc25": 0.8,
+        "pc5": 0.6
+      }
+    },
+    {
+      "faixa": "15-17",
+      "idadeMin": 15,
+      "idadeMax": 17,
+      "A1": {
+        "pc95": 8.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 5.0,
+        "pc5": 4.0
+      },
+      "A2": {
+        "pc95": 11.0,
+        "pc75": 9.0,
+        "pc50": 8.0,
+        "pc25": 7.0,
+        "pc5": 4.0
+      },
+      "A3": {
+        "pc95": 13.0,
+        "pc75": 11.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 4.0
+      },
+      "A4": {
+        "pc95": 14.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 10.0,
+        "pc5": 6.0
+      },
+      "A5": {
+        "pc95": 14.0,
+        "pc75": 14.0,
+        "pc50": 11.0,
+        "pc25": 10.0,
+        "pc5": 7.0
+      },
+      "B1": {
+        "pc95": 9.0,
+        "pc75": 6.0,
+        "pc50": 5.0,
+        "pc25": 4.0,
+        "pc5": 3.0
+      },
+      "A6": {
+        "pc95": 14.0,
+        "pc75": 13.0,
+        "pc50": 10.0,
+        "pc25": 9.0,
+        "pc5": 5.0
+      },
+      "A7": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 15.0,
+        "pc50": 13.0,
+        "pc25": 11.0,
+        "pc5": 4.0
+      },
+      "Total": {
+        "pc95": 58.0,
+        "pc75": 53.0,
+        "pc50": 46.0,
+        "pc25": 41.0,
+        "pc5": 34.0
+      },
+      "ALT": {
+        "pc95": 26.0,
+        "pc75": 21.0,
+        "pc50": 17.0,
+        "pc25": 13.0,
+        "pc5": 2.0
+      },
+      "Esquec": {
+        "pc95": 1.35,
+        "pc75": 1.11,
+        "pc50": 1.0,
+        "pc25": 0.9,
+        "pc5": 0.79
+      },
+      "Proat": {
+        "pc95": 1.42,
+        "pc75": 1.06,
+        "pc50": 0.86,
+        "pc25": 0.69,
+        "pc5": 0.54
+      },
+      "Retro": {
+        "pc95": 1.23,
+        "pc75": 1.0,
+        "pc50": 0.93,
+        "pc25": 0.82,
+        "pc5": 0.64
+      }
+    },
+    {
+      "faixa": "18-20",
+      "idadeMin": 18,
+      "idadeMax": 20,
+      "A1": {
+        "pc95": 10.0,
+        "pc75": 8.0,
+        "pc50": 7.0,
+        "pc25": 6.0,
+        "pc5": 4.0
+      },
+      "A2": {
+        "pc95": 13.0,
+        "pc75": 11.0,
+        "pc50": 9.0,
+        "pc25": 8.0,
+        "pc5": 6.0
+      },
+      "A3": {
+        "pc95": 14.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 10.0,
+        "pc5": 8.0
+      },
+      "A4": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 12.0,
+        "pc25": 10.0,
+        "pc5": 8.0
+      },
+      "A5": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 12.0,
+        "pc25": 11.0,
+        "pc5": 8.0
+      },
+      "B1": {
+        "pc95": 9.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 5.0,
+        "pc5": 4.0
+      },
+      "A6": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 12.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "A7": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 15.0,
+        "pc50": 13.0,
+        "pc25": 5.0,
+        "pc5": -1.0
+      },
+      "Total": {
+        "pc95": 65.0,
+        "pc75": 58.0,
+        "pc50": 52.0,
+        "pc25": 46.0,
+        "pc5": 36.0
+      },
+      "ALT": {
+        "pc95": 29.0,
+        "pc75": 22.0,
+        "pc50": 18.0,
+        "pc25": 12.0,
+        "pc5": 6.0
+      },
+      "Esquec": {
+        "pc95": 1.33,
+        "pc75": 1.1,
+        "pc50": 1.0,
+        "pc25": 0.91,
+        "pc5": 0.75
+      },
+      "Proat": {
+        "pc95": 1.5,
+        "pc75": 1.1,
+        "pc50": 0.89,
+        "pc25": 0.73,
+        "pc5": 0.56
+      },
+      "Retro": {
+        "pc95": 1.18,
+        "pc75": 1.0,
+        "pc50": 0.92,
+        "pc25": 0.82,
+        "pc5": 0.63
+      }
+    },
+    {
+      "faixa": "21-30",
+      "idadeMin": 21,
+      "idadeMax": 30,
+      "A1": {
+        "pc95": 9.0,
+        "pc75": 8.0,
+        "pc50": 7.0,
+        "pc25": 5.0,
+        "pc5": 4.0
+      },
+      "A2": {
+        "pc95": 12.0,
+        "pc75": 10.0,
+        "pc50": 9.0,
+        "pc25": 7.0,
+        "pc5": 5.0
+      },
+      "A3": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "A4": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 12.0,
+        "pc25": 10.0,
+        "pc5": 7.0
+      },
+      "A5": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 13.0,
+        "pc25": 11.0,
+        "pc5": 8.0
+      },
+      "B1": {
+        "pc95": 9.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 4.0,
+        "pc5": 3.0
+      },
+      "A6": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "A7": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 13.0,
+        "pc25": 11.0,
+        "pc5": 1.0
+      },
+      "Total": {
+        "pc95": 63.0,
+        "pc75": 56.0,
+        "pc50": 50.0,
+        "pc25": 44.0,
+        "pc5": 34.0
+      },
+      "ALT": {
+        "pc95": 27.0,
+        "pc75": 21.0,
+        "pc50": 17.0,
+        "pc25": 13.0,
+        "pc5": 5.0
+      },
+      "Esquec": {
+        "pc95": 1.33,
+        "pc75": 1.09,
+        "pc50": 1.0,
+        "pc25": 0.91,
+        "pc5": 0.75
+      },
+      "Proat": {
+        "pc95": 1.5,
+        "pc75": 1.0,
+        "pc50": 0.86,
+        "pc25": 0.68,
+        "pc5": 0.5
+      },
+      "Retro": {
+        "pc95": 1.1,
+        "pc75": 1.0,
+        "pc50": 0.91,
+        "pc25": 0.8,
+        "pc5": 0.63
+      }
+    },
+    {
+      "faixa": "31-40",
+      "idadeMin": 31,
+      "idadeMax": 40,
+      "A1": {
+        "pc95": 9.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 5.0,
+        "pc5": 4.0
+      },
+      "A2": {
+        "pc95": 12.0,
+        "pc75": 10.0,
+        "pc50": 9.0,
+        "pc25": 7.0,
+        "pc5": 5.0
+      },
+      "A3": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "A4": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 10.0,
+        "pc5": 7.0
+      },
+      "A5": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 12.0,
+        "pc25": 11.0,
+        "pc5": 8.0
+      },
+      "B1": {
+        "pc95": 8.0,
+        "pc75": 6.0,
+        "pc50": 5.0,
+        "pc25": 4.0,
+        "pc5": 2.0
+      },
+      "A6": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "A7": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 13.0,
+        "pc25": 10.0,
+        "pc5": -2.0
+      },
+      "Total": {
+        "pc95": 60.0,
+        "pc75": 54.0,
+        "pc50": 49.0,
+        "pc25": 43.0,
+        "pc5": 35.0
+      },
+      "ALT": {
+        "pc95": 29.0,
+        "pc75": 23.0,
+        "pc50": 18.0,
+        "pc25": 14.0,
+        "pc5": 6.0
+      },
+      "Esquec": {
+        "pc95": 1.29,
+        "pc75": 1.08,
+        "pc50": 0.93,
+        "pc25": 0.86,
+        "pc5": 0.75
+      },
+      "Proat": {
+        "pc95": 1.5,
+        "pc75": 1.0,
+        "pc50": 0.86,
+        "pc25": 0.67,
+        "pc5": 0.5
+      },
+      "Retro": {
+        "pc95": 1.18,
+        "pc75": 0.93,
+        "pc50": 0.91,
+        "pc25": 0.8,
+        "pc5": 0.58
+      }
+    },
+    {
+      "faixa": "41-50",
+      "idadeMin": 41,
+      "idadeMax": 50,
+      "A1": {
+        "pc95": 9.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 5.0,
+        "pc5": 4.0
+      },
+      "A2": {
+        "pc95": 12.0,
+        "pc75": 10.0,
+        "pc50": 8.0,
+        "pc25": 7.0,
+        "pc5": 5.0
+      },
+      "A3": {
+        "pc95": 14.0,
+        "pc75": 11.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 5.0
+      },
+      "A4": {
+        "pc95": 15.0,
+        "pc75": 12.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 6.0
+      },
+      "A5": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 12.0,
+        "pc25": 10.0,
+        "pc5": 7.0
+      },
+      "B1": {
+        "pc95": 8.0,
+        "pc75": 6.0,
+        "pc50": 5.0,
+        "pc25": 4.0,
+        "pc5": 3.0
+      },
+      "A6": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 5.0
+      },
+      "A7": {
+        "pc95": 14.0,
+        "pc75": 11.0,
+        "pc50": 10.0,
+        "pc25": 7.0,
+        "pc5": 5.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 12.0,
+        "pc25": 8.0,
+        "pc5": -3.0
+      },
+      "Total": {
+        "pc95": 61.0,
+        "pc75": 53.0,
+        "pc50": 49.0,
+        "pc25": 40.0,
+        "pc5": 29.0
+      },
+      "ALT": {
+        "pc95": 27.0,
+        "pc75": 22.0,
+        "pc50": 17.0,
+        "pc25": 12.0,
+        "pc5": 5.0
+      },
+      "Esquec": {
+        "pc95": 1.38,
+        "pc75": 1.1,
+        "pc50": 1.0,
+        "pc25": 0.85,
+        "pc5": 0.71
+      },
+      "Proat": {
+        "pc95": 1.5,
+        "pc75": 1.0,
+        "pc50": 0.8,
+        "pc25": 0.67,
+        "pc5": 0.4
+      },
+      "Retro": {
+        "pc95": 1.13,
+        "pc75": 0.97,
+        "pc50": 0.86,
+        "pc25": 0.73,
+        "pc5": 0.54
+      }
+    },
+    {
+      "faixa": "51-60",
+      "idadeMin": 51,
+      "idadeMax": 60,
+      "A1": {
+        "pc95": 9.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 5.0,
+        "pc5": 3.0
+      },
+      "A2": {
+        "pc95": 12.0,
+        "pc75": 10.0,
+        "pc50": 8.0,
+        "pc25": 6.0,
+        "pc5": 5.0
+      },
+      "A3": {
+        "pc95": 14.0,
+        "pc75": 11.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 5.0
+      },
+      "A4": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 7.0
+      },
+      "A5": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 12.0,
+        "pc25": 10.0,
+        "pc5": 8.0
+      },
+      "B1": {
+        "pc95": 8.0,
+        "pc75": 6.0,
+        "pc50": 5.0,
+        "pc25": 4.0,
+        "pc5": 2.0
+      },
+      "A6": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 7.0,
+        "pc5": 5.0
+      },
+      "A7": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 4.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 14.0,
+        "pc50": 13.0,
+        "pc25": 10.0,
+        "pc5": -2.0
+      },
+      "Total": {
+        "pc95": 61.0,
+        "pc75": 53.0,
+        "pc50": 47.0,
+        "pc25": 37.0,
+        "pc5": 31.0
+      },
+      "ALT": {
+        "pc95": 26.0,
+        "pc75": 19.0,
+        "pc50": 15.0,
+        "pc25": 12.0,
+        "pc5": 4.0
+      },
+      "Esquec": {
+        "pc95": 1.38,
+        "pc75": 1.11,
+        "pc50": 1.0,
+        "pc25": 0.9,
+        "pc5": 0.8
+      },
+      "Proat": {
+        "pc95": 1.4,
+        "pc75": 1.0,
+        "pc50": 0.8,
+        "pc25": 0.63,
+        "pc5": 0.4
+      },
+      "Retro": {
+        "pc95": 1.08,
+        "pc75": 1.0,
+        "pc50": 0.84,
+        "pc25": 0.67,
+        "pc5": 0.45
+      }
+    },
+    {
+      "faixa": "61-70",
+      "idadeMin": 61,
+      "idadeMax": 70,
+      "A1": {
+        "pc95": 8.0,
+        "pc75": 6.0,
+        "pc50": 5.0,
+        "pc25": 5.0,
+        "pc5": 3.0
+      },
+      "A2": {
+        "pc95": 11.0,
+        "pc75": 9.0,
+        "pc50": 8.0,
+        "pc25": 6.0,
+        "pc5": 5.0
+      },
+      "A3": {
+        "pc95": 12.0,
+        "pc75": 10.0,
+        "pc50": 9.0,
+        "pc25": 8.0,
+        "pc5": 6.0
+      },
+      "A4": {
+        "pc95": 13.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 9.0,
+        "pc5": 7.0
+      },
+      "A5": {
+        "pc95": 14.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 10.0,
+        "pc5": 8.0
+      },
+      "B1": {
+        "pc95": 7.0,
+        "pc75": 5.0,
+        "pc50": 5.0,
+        "pc25": 4.0,
+        "pc5": 2.0
+      },
+      "A6": {
+        "pc95": 13.0,
+        "pc75": 11.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 4.0
+      },
+      "A7": {
+        "pc95": 14.0,
+        "pc75": 11.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 5.0
+      },
+      "Recon": {
+        "pc95": 15.0,
+        "pc75": 13.0,
+        "pc50": 11.0,
+        "pc25": 9.0,
+        "pc5": 3.0
+      },
+      "Total": {
+        "pc95": 58.0,
+        "pc75": 49.0,
+        "pc50": 44.0,
+        "pc25": 40.0,
+        "pc5": 30.0
+      },
+      "ALT": {
+        "pc95": 27.0,
+        "pc75": 20.0,
+        "pc50": 17.0,
+        "pc25": 13.0,
+        "pc5": 6.0
+      },
+      "Esquec": {
+        "pc95": 1.38,
+        "pc75": 1.1,
+        "pc50": 1.0,
+        "pc25": 0.9,
+        "pc5": 0.78
+      },
+      "Proat": {
+        "pc95": 1.4,
+        "pc75": 1.0,
+        "pc50": 0.83,
+        "pc25": 0.67,
+        "pc5": 0.5
+      },
+      "Retro": {
+        "pc95": 1.04,
+        "pc75": 0.93,
+        "pc50": 0.86,
+        "pc25": 0.74,
+        "pc5": 0.55
+      }
+    },
+    {
+      "faixa": "71-79",
+      "idadeMin": 71,
+      "idadeMax": 79,
+      "A1": {
+        "pc95": 8.0,
+        "pc75": 6.0,
+        "pc50": 5.0,
+        "pc25": 4.0,
+        "pc5": 3.0
+      },
+      "A2": {
+        "pc95": 10.0,
+        "pc75": 8.0,
+        "pc50": 7.0,
+        "pc25": 6.0,
+        "pc5": 5.0
+      },
+      "A3": {
+        "pc95": 11.0,
+        "pc75": 9.0,
+        "pc50": 8.0,
+        "pc25": 7.0,
+        "pc5": 5.0
+      },
+      "A4": {
+        "pc95": 13.0,
+        "pc75": 11.0,
+        "pc50": 9.0,
+        "pc25": 8.0,
+        "pc5": 5.0
+      },
+      "A5": {
+        "pc95": 14.0,
+        "pc75": 12.0,
+        "pc50": 10.0,
+        "pc25": 9.0,
+        "pc5": 7.0
+      },
+      "B1": {
+        "pc95": 7.0,
+        "pc75": 5.0,
+        "pc50": 4.0,
+        "pc25": 3.0,
+        "pc5": 1.0
+      },
+      "A6": {
+        "pc95": 12.0,
+        "pc75": 10.0,
+        "pc50": 8.0,
+        "pc25": 7.0,
+        "pc5": 3.0
+      },
+      "A7": {
+        "pc95": 12.0,
+        "pc75": 9.0,
+        "pc50": 8.0,
+        "pc25": 7.0,
+        "pc5": 4.0
+      },
+      "Recon": {
+        "pc95": 14.0,
+        "pc75": 10.0,
+        "pc50": 7.0,
+        "pc25": 6.0,
+        "pc5": 1.0
+      },
+      "Total": {
+        "pc95": 55.0,
+        "pc75": 44.0,
+        "pc50": 39.0,
+        "pc25": 35.0,
+        "pc5": 25.0
+      },
+      "ALT": {
+        "pc95": 24.0,
+        "pc75": 18.0,
+        "pc50": 14.0,
+        "pc25": 10.0,
+        "pc5": 4.0
+      },
+      "Esquec": {
+        "pc95": 1.75,
+        "pc75": 1.0,
+        "pc50": 0.8,
+        "pc25": 0.6,
+        "pc5": 0.25
+      },
+      "Proat": {
+        "pc95": 1.11,
+        "pc75": 0.91,
+        "pc50": 0.8,
+        "pc25": 0.73,
+        "pc5": 0.46
+      },
+      "Retro": {
+        "pc95": 1.5,
+        "pc75": 1.11,
+        "pc50": 1.0,
+        "pc25": 0.88,
+        "pc5": 0.73
+      }
+    },
+    {
+      "faixa": "80+",
+      "idadeMin": 80,
+      "idadeMax": 100,
+      "A1": {
+        "pc95": 6.0,
+        "pc75": 5.0,
+        "pc50": 4.0,
+        "pc25": 3.0,
+        "pc5": 2.0
+      },
+      "A2": {
+        "pc95": 9.0,
+        "pc75": 7.0,
+        "pc50": 6.0,
+        "pc25": 5.0,
+        "pc5": 4.0
+      },
+      "A3": {
+        "pc95": 10.0,
+        "pc75": 7.0,
+        "pc50": 7.0,
+        "pc25": 6.0,
+        "pc5": 5.0
+      },
+      "A4": {
+        "pc95": 11.0,
+        "pc75": 9.0,
+        "pc50": 8.0,
+        "pc25": 7.0,
+        "pc5": 6.0
+      },
+      "A5": {
+        "pc95": 13.0,
+        "pc75": 11.0,
+        "pc50": 10.0,
+        "pc25": 8.0,
+        "pc5": 7.0
+      },
+      "B1": {
+        "pc95": 6.0,
+        "pc75": 4.0,
+        "pc50": 3.0,
+        "pc25": 2.0,
+        "pc5": 0.0
+      },
+      "A6": {
+        "pc95": 11.0,
+        "pc75": 9.0,
+        "pc50": 8.0,
+        "pc25": 6.0,
+        "pc5": 4.0
+      },
+      "A7": {
+        "pc95": 10.0,
+        "pc75": 8.0,
+        "pc50": 7.0,
+        "pc25": 6.0,
+        "pc5": 4.0
+      },
+      "Recon": {
+        "pc95": 14.0,
+        "pc75": 9.0,
+        "pc50": 6.0,
+        "pc25": 3.0,
+        "pc5": -2.0
+      },
+      "Total": {
+        "pc95": 47.0,
+        "pc75": 36.0,
+        "pc50": 34.0,
+        "pc25": 31.0,
+        "pc5": 24.0
+      },
+      "ALT": {
+        "pc95": 22.0,
+        "pc75": 17.0,
+        "pc50": 13.0,
+        "pc25": 11.0,
+        "pc5": 5.0
+      },
+      "Esquec": {
+        "pc95": 1.2,
+        "pc75": 1.0,
+        "pc50": 0.89,
+        "pc25": 0.75,
+        "pc5": 0.64
+      },
+      "Proat": {
+        "pc95": 1.5,
+        "pc75": 1.0,
+        "pc50": 0.8,
+        "pc25": 0.57,
+        "pc5": 0.0
+      },
+      "Retro": {
+        "pc95": 1.13,
+        "pc75": 0.89,
+        "pc50": 0.78,
+        "pc25": 0.67,
+        "pc5": 0.45
+      }
+    }
+  ]
+}

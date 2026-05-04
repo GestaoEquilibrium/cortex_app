@@ -1,0 +1,657 @@
+/* ============================================================================
+   CORTEX_APP — Correção RAVLT
+   ============================================================================
+   - Modo edição: form com seções numeradas (igual ao print do user)
+   - Modo laudo:  A4 com curva SVG + tabela 14 medidas + interpretação
+   - Barrinha azul-clara (#d6eaf8) no topo dos blocos do laudo (padrão v5)
+   - Estrutura: roda dentro do app-shell padrão CORTEX (com sidebar)
+   ============================================================================ */
+
+/* ─── Layout da área principal ─────────────────────────────────────────── */
+
+.resultado-acoes-topo {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+    justify-content: flex-end;
+}
+
+#laudo-conteudo {
+    max-width: 920px;
+    margin: 0 auto;
+}
+
+#laudo-conteudo .loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+
+.laudo-erro {
+    text-align: center;
+    padding: 40px;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+}
+
+/* ============================================================================
+   MODO EDIÇÃO — form com seções numeradas
+   ============================================================================ */
+
+.ravlt-edicao-header {
+    margin-bottom: 24px;
+}
+
+.ravlt-edicao-breadcrumb {
+    font-size: 13px;
+    color: #1e40af;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.ravlt-edicao-titulo {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+/* Card de seção do form */
+.ravlt-form-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.ravlt-form-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.ravlt-form-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #1e40af;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ravlt-form-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.ravlt-form-card-desc {
+    font-size: 12.5px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+/* Grids de campos */
+.ravlt-form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.ravlt-form-grid-3 {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 720px) {
+    .ravlt-form-grid-2,
+    .ravlt-form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ravlt-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.ravlt-field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ravlt-field input,
+.ravlt-field textarea {
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #0f172a;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+    background: #fff;
+}
+
+.ravlt-field input:focus,
+.ravlt-field textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+
+.ravlt-field input:disabled {
+    background: #f8fafc;
+    color: #475569;
+    cursor: not-allowed;
+}
+
+.ravlt-field textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.ravlt-hint-idade {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #334155;
+}
+
+.ravlt-hint-idade.warn {
+    color: #dc2626;
+}
+
+/* Grupos de inputs de brutos */
+.ravlt-grupo-titulo {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e40af;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 18px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.ravlt-grupo-titulo:first-of-type {
+    margin-top: 0;
+}
+
+.ravlt-inputs-row {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.ravlt-inputs-5 { grid-template-columns: repeat(5, 1fr); }
+.ravlt-inputs-2 { grid-template-columns: repeat(2, 1fr); max-width: 380px; margin-left: auto; margin-right: auto; }
+.ravlt-inputs-1 { grid-template-columns: 1fr; max-width: 200px; margin-left: auto; margin-right: auto; }
+
+@media (max-width: 720px) {
+    .ravlt-inputs-5 { grid-template-columns: repeat(3, 1fr); }
+}
+
+.ravlt-input-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ravlt-input-block label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e40af;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+}
+
+.ravlt-input-block input {
+    width: 90px;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    color: #0f172a;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+}
+
+.ravlt-input-block input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+
+.ravlt-input-hint {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Chips de observações */
+.ravlt-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.ravlt-chip {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    font-family: inherit;
+}
+
+.ravlt-chip:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+/* ============================================================================
+   MODO LAUDO — A4 com seções
+   ============================================================================ */
+
+.modo-laudo {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0 0 32px 0;
+    overflow: hidden;
+}
+
+/* Header (faixa azul escura no topo do laudo) */
+.ravlt-header-laudo {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    color: #fff;
+    padding: 22px 32px 26px 32px;
+}
+
+.ravlt-header-brand {
+    font-size: 11px;
+    font-weight: 600;
+    color: #bfdbfe;
+    letter-spacing: 0.16em;
+    margin-bottom: 14px;
+}
+
+.ravlt-header-titulo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.ravlt-header-sigla {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.ravlt-header-subtitulo {
+    font-size: 14px;
+    font-weight: 500;
+    color: #dbeafe;
+    margin-top: 6px;
+}
+
+.ravlt-header-en {
+    font-size: 11px;
+    color: #93c5fd;
+    margin-top: 2px;
+    font-style: italic;
+}
+
+.ravlt-header-faixa {
+    text-align: right;
+}
+
+.ravlt-header-faixa-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #bfdbfe;
+    letter-spacing: 0.16em;
+}
+
+.ravlt-header-faixa-valor {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+    margin-top: 4px;
+}
+
+.ravlt-header-faixa-idade {
+    font-size: 11px;
+    color: #93c5fd;
+    margin-top: 2px;
+}
+
+/* Seções do laudo */
+.ravlt-secao {
+    padding: 22px 32px 0 32px;
+}
+
+.ravlt-secao-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.ravlt-secao-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: #1e40af;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ravlt-secao-titulo {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Identificação (tabela 2 colunas) */
+.ravlt-identif-bloco {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    padding-top: 8px;
+}
+
+.ravlt-identif-bloco::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 8px;
+    background: #d6eaf8;
+    z-index: 1;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+.ravlt-tab-identif {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.ravlt-tab-identif td {
+    padding: 8px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.ravlt-tab-identif tr:last-child td {
+    border-bottom: none;
+}
+
+.ravlt-tab-identif tr.sep td {
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 12px;
+}
+
+.ravlt-tab-identif .lbl {
+    width: 35%;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ravlt-tab-identif .val {
+    color: #0f172a;
+}
+
+/* Curva de aprendizagem */
+.ravlt-curva-bloco {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    padding: 22px 14px 8px 14px;
+}
+
+.ravlt-curva-bloco::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 8px;
+    background: #d6eaf8;
+    z-index: 1;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+.ravlt-curva-svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.ravlt-curva-hint {
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: #64748b;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Tabela de Resultados */
+.ravlt-tab-resultados {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    padding-top: 8px;
+}
+
+.ravlt-tab-resultados::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 8px;
+    background: #d6eaf8;
+    z-index: 1;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+.ravlt-tab-resultados table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.ravlt-tab-resultados th {
+    text-align: left;
+    background: #eff6ff;
+    color: #1e40af;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 10px 14px;
+    border-bottom: 1px solid #dbeafe;
+}
+
+.ravlt-tab-resultados th.ctr {
+    text-align: center;
+}
+
+.ravlt-tab-resultados td {
+    padding: 8px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #0f172a;
+}
+
+.ravlt-tab-resultados td.ctr {
+    text-align: center;
+}
+
+.ravlt-tab-resultados td.medida {
+    color: #1e40af;
+    font-weight: 500;
+}
+
+.ravlt-tab-resultados tr.grupo-row td {
+    background: #f8fafc;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.ravlt-badge-cls {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Interpretação */
+.ravlt-interp-bloco {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    padding: 24px 22px 18px 22px;
+    font-size: 12.5px;
+    color: #334155;
+    line-height: 1.75;
+}
+
+.ravlt-interp-bloco::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 8px;
+    background: #d6eaf8;
+    z-index: 1;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+}
+
+.ravlt-interp-bloco p {
+    margin: 0 0 12px 0;
+}
+
+.ravlt-interp-bloco p:last-child {
+    margin-bottom: 0;
+}
+
+/* Rodapé */
+.ravlt-rodape {
+    margin: 28px 32px 0 32px;
+    padding-top: 18px;
+    border-top: 2px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+}
+
+.ravlt-rodape-prof {
+    flex-shrink: 0;
+}
+
+.ravlt-rodape-prof .prof-nome {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.ravlt-rodape-prof .prof-crp {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.ravlt-rodape-prof .prof-assinatura {
+    margin-top: 22px;
+    border-top: 1px solid #0f172a;
+    width: 220px;
+    padding-top: 4px;
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+.ravlt-rodape-data {
+    text-align: right;
+    flex-shrink: 0;
+    max-width: 280px;
+}
+
+.ravlt-rodape-data > div:first-child {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.ravlt-rodape-data .conf {
+    font-size: 9.5px;
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin-top: 8px;
+}
+
+/* ─── Print (PDF) ──────────────────────────────────────────────────────── */
+@media print {
+    #sidebar-container,
+    #back-link,
+    .resultado-acoes-topo,
+    .cortex-copy-btn {
+        display: none !important;
+    }
+    .app-main {
+        padding: 0 !important;
+    }
+    #laudo-conteudo {
+        max-width: none;
+    }
+    .modo-laudo {
+        border: none;
+        border-radius: 0;
+    }
+    body { background: #fff; }
+}

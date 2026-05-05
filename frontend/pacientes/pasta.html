@@ -231,6 +231,9 @@
                     </div>
                     <div class="pasta-actions">
                         <span class="badge ${statusClass}">${statusLabel}</span>
+                        <a class="btn btn-secondary btn-sm" href="novo.html?id=${pacienteId}">
+                            ✏️ Editar dados
+                        </a>
                         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
                             ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
                         </button>

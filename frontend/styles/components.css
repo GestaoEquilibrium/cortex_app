@@ -258,6 +258,19 @@
     flex-shrink: 0;
     letter-spacing: 0.02em;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.sidebar-user-avatar-foto {
+    background: transparent;
+    padding: 0;
+}
+.sidebar-user-avatar-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
 }
 
 .sidebar-user-info {

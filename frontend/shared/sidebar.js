@@ -116,6 +116,24 @@ window.CortexSidebar = (function() {
         const iniciais = pegarIniciais(nomeExibido);
         const perfilLabel = (window.CortexUI && window.CortexUI.PERFIL_LABELS[prof.perfil]) || prof.perfil;
 
+        // Busca URL assinada da foto do profissional logado (se existir)
+        let fotoSignedUrl = null;
+        if (prof.foto_url) {
+            try {
+                const { data } = await window.cortexClient
+                    .storage
+                    .from('profissionais-fotos')
+                    .createSignedUrl(prof.foto_url, 600);
+                fotoSignedUrl = data?.signedUrl || null;
+            } catch (_) {
+                fotoSignedUrl = null;
+            }
+        }
+
+        const avatarHtml = fotoSignedUrl
+            ? `<div class="sidebar-user-avatar sidebar-user-avatar-foto"><img src="${fotoSignedUrl}" alt="${escapeHtml(nomeExibido)}"/></div>`
+            : `<div class="sidebar-user-avatar">${iniciais}</div>`;
+
         // Recupera estado de colapso (preferência salva)
         const colapsada = localStorage.getItem('cortex_sidebar_collapsed') === 'true';
 
@@ -148,7 +166,7 @@ window.CortexSidebar = (function() {
                 </nav>
 
                 <div class="sidebar-user">
-                    <div class="sidebar-user-avatar">${iniciais}</div>
+                    ${avatarHtml}
                     <div class="sidebar-user-info">
                         <div class="sidebar-user-name">${escapeHtml(nomeExibido)}</div>
                         <div class="sidebar-user-perfil">${escapeHtml(perfilLabel)}</div>

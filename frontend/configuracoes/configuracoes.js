@@ -855,7 +855,24 @@
             .order('ativo', { ascending: false })
             .order('nome_completo');
         if (error) throw error;
-        state.profissionaisLista = data || [];
+        const profs = data || [];
+
+        // Busca URLs assinadas pras fotos em paralelo (só pra quem tem foto)
+        await Promise.all(profs.map(async (p) => {
+            if (p.foto_url) {
+                try {
+                    const { data: signed } = await window.cortexClient
+                        .storage
+                        .from('profissionais-fotos')
+                        .createSignedUrl(p.foto_url, 600);
+                    p._signedUrl = signed?.signedUrl || null;
+                } catch (_) {
+                    p._signedUrl = null;
+                }
+            }
+        }));
+
+        state.profissionaisLista = profs;
     }
 
     function renderProfissionais() {
@@ -961,10 +978,14 @@
         const ehVoce = p.id === state.profissional.id;
         const inicial = (p.nome_completo || p.email || '?').charAt(0).toUpperCase();
 
+        const avatarHtml = p._signedUrl
+            ? `<div class="cfg-prof-avatar cfg-prof-avatar-foto"><img src="${p._signedUrl}" alt="${escapeAttr(p.nome_completo || p.email)}"/></div>`
+            : `<div class="cfg-prof-avatar">${escapeHtml(inicial)}</div>`;
+
         return `
             <div class="cfg-conv-item ${p.ativo ? '' : 'inativo'}">
                 <div class="cfg-conv-info" style="display: flex; align-items: center; gap: 12px;">
-                    <div class="cfg-prof-avatar">${escapeHtml(inicial)}</div>
+                    ${avatarHtml}
                     <div style="min-width: 0; flex: 1;">
                         <div class="cfg-conv-nome">
                             ${escapeHtml(p.nome_completo || '— sem nome —')}

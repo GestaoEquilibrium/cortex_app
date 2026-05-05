@@ -12,7 +12,9 @@
     const state = {
         profissional: null,
         convenios: [],
+        profissionaisLista: [],
         abaAtiva: 'perfil',
+        ehAdmin: false,
         fotoSignedUrl: null,
         assinaturaSignedUrl: null,
     };
@@ -21,6 +23,14 @@
         await CortexSidebar.render('configuracoes');
 
         state.profissional = window.cortexProfissional;
+        const perfil = state.profissional?.perfil;
+        state.ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
+
+        // Mostra aba Profissionais só pra admin
+        if (state.ehAdmin) {
+            const tab = document.getElementById('tab-profissionais');
+            if (tab) tab.style.display = '';
+        }
 
         // Bind das abas
         document.querySelectorAll('.cfg-tab').forEach(btn => {
@@ -51,6 +61,14 @@
                 await carregarConvenios();
                 cont.innerHTML = renderConvenios();
                 bindConvenios();
+            } else if (aba === 'profissionais') {
+                if (!state.ehAdmin) {
+                    cont.innerHTML = `<div class="cfg-erro">Acesso restrito a administradores.</div>`;
+                    return;
+                }
+                await carregarProfissionais();
+                cont.innerHTML = renderProfissionais();
+                bindProfissionais();
             }
         } catch (err) {
             console.error('[cfg] erro:', err);
@@ -816,6 +834,394 @@
             }
         },
         fecharModal: fecharModal,
+    };
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PROFISSIONAIS (só admin) — Sprint 9
+    // ════════════════════════════════════════════════════════════════════════
+
+    const PERFIS_DISPONIVEIS = {
+        'admin_clinico':            'Admin Clínico',
+        'admin_gestor':             'Admin Gestor',
+        'neuropsicologo_aplicador': 'Neuropsicólogo Aplicador',
+        'estagiario':               'Estagiário',
+        'corretor':                 'Corretor',
+    };
+
+    async function carregarProfissionais() {
+        const { data, error } = await window.cortexClient
+            .from('profissionais')
+            .select('id, nome_completo, email, crp, perfil, ativo, foto_url, created_at, telefone')
+            .order('ativo', { ascending: false })
+            .order('nome_completo');
+        if (error) throw error;
+        state.profissionaisLista = data || [];
+    }
+
+    function renderProfissionais() {
+        const ativos = state.profissionaisLista.filter(p => p.ativo);
+        const inativos = state.profissionaisLista.filter(p => !p.ativo);
+
+        return `
+            <div class="cfg-card">
+                <div class="cfg-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                    <div>
+                        <h3>Profissionais cadastrados</h3>
+                        <p>Gerencie quem tem acesso ao sistema. Apenas admins veem esta aba.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-novo-prof">+ Novo profissional</button>
+                </div>
+
+                ${ativos.length === 0 && inativos.length === 0 ? `
+                    <div class="cfg-empty"><p>Nenhum profissional cadastrado ainda.</p></div>
+                ` : ''}
+
+                ${ativos.length > 0 ? `
+                    <h4 class="cfg-grupo-titulo">✅ Ativos <span class="cfg-grupo-contador">${ativos.length}</span></h4>
+                    <div class="cfg-conv-lista">
+                        ${ativos.map(p => renderProfLinha(p)).join('')}
+                    </div>
+                ` : ''}
+
+                ${inativos.length > 0 ? `
+                    <h4 class="cfg-grupo-titulo" style="margin-top: 18px; color: var(--color-text-muted);">
+                        💤 Inativos <span class="cfg-grupo-contador">${inativos.length}</span>
+                    </h4>
+                    <div class="cfg-conv-lista">
+                        ${inativos.map(p => renderProfLinha(p)).join('')}
+                    </div>
+                ` : ''}
+            </div>
+
+            <!-- Modal -->
+            <div id="modal-prof" class="cfg-modal" style="display:none;">
+                <div class="cfg-modal-box">
+                    <div class="cfg-modal-header">
+                        <h3 id="modal-prof-titulo">Novo profissional</h3>
+                        <button class="cfg-modal-close" onclick="window.CortexCfgProf.fecharModal()">✕</button>
+                    </div>
+                    <form id="form-prof">
+                        <input type="hidden" name="id" id="prof-id">
+                        <div class="cfg-form-grid">
+                            <div class="cfg-field span-full">
+                                <label>Nome completo <span class="required">*</span></label>
+                                <input type="text" name="nome_completo" id="prof-nome" required maxlength="200">
+                            </div>
+
+                            <div class="cfg-field">
+                                <label>E-mail <span class="required">*</span></label>
+                                <input type="email" name="email" id="prof-email" required maxlength="200">
+                                <span class="cfg-hint" id="prof-email-hint">Será usado para login</span>
+                            </div>
+
+                            <div class="cfg-field">
+                                <label>Perfil <span class="required">*</span></label>
+                                <select name="perfil" id="prof-perfil" required>
+                                    ${Object.entries(PERFIS_DISPONIVEIS).map(([v, l]) =>
+                                        `<option value="${v}">${l}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+
+                            <div class="cfg-field">
+                                <label>CRP</label>
+                                <input type="text" name="crp" id="prof-crp" maxlength="20" placeholder="04/12345">
+                            </div>
+
+                            <div class="cfg-field">
+                                <label>Telefone</label>
+                                <input type="text" name="telefone" id="prof-telefone" maxlength="20" placeholder="(34) 99999-8888">
+                            </div>
+
+                            <!-- Senha aparece só na criação -->
+                            <div class="cfg-field span-full" id="prof-bloco-senha">
+                                <label>Senha provisória <span class="required">*</span></label>
+                                <input type="text" id="prof-senha" maxlength="50" placeholder="Mínimo 8 caracteres" autocomplete="off">
+                                <span class="cfg-hint">⚠ Anote esta senha — você precisará passar pra ela. O profissional pode trocar depois.</span>
+                            </div>
+                        </div>
+
+                        <div id="prof-erro" class="cfg-erro" style="display:none;"></div>
+
+                        <div class="cfg-actions">
+                            <button type="button" class="btn btn-ghost" onclick="window.CortexCfgProf.fecharModal()">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="btn-salvar-prof">
+                                <span class="btn-text">💾 Salvar</span>
+                                <span class="btn-loading" style="display:none;">Salvando...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderProfLinha(p) {
+        const perfilLabel = PERFIS_DISPONIVEIS[p.perfil] || p.perfil;
+        const ehVoce = p.id === state.profissional.id;
+        const inicial = (p.nome_completo || p.email || '?').charAt(0).toUpperCase();
+
+        return `
+            <div class="cfg-conv-item ${p.ativo ? '' : 'inativo'}">
+                <div class="cfg-conv-info" style="display: flex; align-items: center; gap: 12px;">
+                    <div class="cfg-prof-avatar">${escapeHtml(inicial)}</div>
+                    <div style="min-width: 0; flex: 1;">
+                        <div class="cfg-conv-nome">
+                            ${escapeHtml(p.nome_completo || '— sem nome —')}
+                            ${ehVoce ? '<span class="cfg-conv-codigo" style="background:#dbeafe; color:#1d4ed8;">VOCÊ</span>' : ''}
+                            <span class="cfg-conv-codigo">${escapeHtml(perfilLabel)}</span>
+                        </div>
+                        <div class="cfg-conv-meta">
+                            ${escapeHtml(p.email)}${p.crp ? ' · CRP ' + escapeHtml(p.crp) : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="cfg-conv-acoes">
+                    <button class="btn btn-secondary btn-sm" onclick="window.CortexCfgProf.editar('${p.id}')">✏️ Editar</button>
+                    ${ehVoce ? '' : (p.ativo ? `
+                        <button class="btn btn-ghost btn-sm" onclick="window.CortexCfgProf.toggleAtivo('${p.id}', false)">Desativar</button>
+                    ` : `
+                        <button class="btn btn-ghost btn-sm" onclick="window.CortexCfgProf.toggleAtivo('${p.id}', true)">Ativar</button>
+                    `)}
+                </div>
+            </div>
+        `;
+    }
+
+    function bindProfissionais() {
+        document.getElementById('btn-novo-prof').addEventListener('click', () => abrirModalProf(null));
+        document.getElementById('form-prof').addEventListener('submit', salvarProf);
+    }
+
+    function abrirModalProf(p) {
+        const ehNovo = !p;
+        document.getElementById('modal-prof-titulo').textContent = ehNovo
+            ? 'Novo profissional'
+            : `Editar: ${p.nome_completo || p.email}`;
+
+        document.getElementById('prof-id').value = p?.id || '';
+        document.getElementById('prof-nome').value = p?.nome_completo || '';
+        document.getElementById('prof-email').value = p?.email || '';
+        document.getElementById('prof-crp').value = p?.crp || '';
+        document.getElementById('prof-telefone').value = p?.telefone || '';
+        document.getElementById('prof-perfil').value = p?.perfil || 'neuropsicologo_aplicador';
+
+        const blocoSenha = document.getElementById('prof-bloco-senha');
+        const inpSenha = document.getElementById('prof-senha');
+        const inpEmail = document.getElementById('prof-email');
+        const hintEmail = document.getElementById('prof-email-hint');
+
+        if (ehNovo) {
+            blocoSenha.style.display = '';
+            inpSenha.value = '';
+            inpSenha.required = true;
+            inpEmail.readOnly = false;
+            hintEmail.textContent = 'Será usado para login';
+        } else {
+            blocoSenha.style.display = 'none';
+            inpSenha.required = false;
+            inpEmail.readOnly = true;
+            hintEmail.textContent = '🔒 E-mail não pode ser alterado depois do cadastro';
+        }
+
+        document.getElementById('prof-erro').style.display = 'none';
+        document.getElementById('modal-prof').style.display = 'flex';
+    }
+
+    async function salvarProf(e) {
+        e.preventDefault();
+        const form = e.target;
+        const btn = document.getElementById('btn-salvar-prof');
+        const btnText = btn.querySelector('.btn-text');
+        const btnLoading = btn.querySelector('.btn-loading');
+        const erro = document.getElementById('prof-erro');
+        erro.style.display = 'none';
+
+        const formData = new FormData(form);
+        const dados = {};
+        formData.forEach((v, k) => {
+            const val = v && v.trim ? v.trim() : v;
+            if (val) dados[k] = val;
+            else if (k !== 'id') dados[k] = null;
+        });
+
+        const id = dados.id;
+        delete dados.id;
+        const senha = document.getElementById('prof-senha').value;
+
+        if (!dados.nome_completo) { mostrarErroProf(erro, 'Nome é obrigatório.'); return; }
+        if (!dados.email) { mostrarErroProf(erro, 'E-mail é obrigatório.'); return; }
+        if (!dados.perfil) { mostrarErroProf(erro, 'Perfil é obrigatório.'); return; }
+
+        const ehNovo = !id;
+        if (ehNovo) {
+            if (!senha || senha.length < 8) {
+                mostrarErroProf(erro, 'Senha provisória precisa ter no mínimo 8 caracteres.');
+                return;
+            }
+        }
+
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+
+        try {
+            if (ehNovo) {
+                await criarProfissional(dados, senha);
+                window.CortexUI.toast(`✓ Profissional cadastrado. Senha: ${senha}`, 'success');
+            } else {
+                // Edita só campos do registro em profissionais (e-mail não muda)
+                const update = {
+                    nome_completo: dados.nome_completo,
+                    crp: dados.crp,
+                    telefone: dados.telefone,
+                    perfil: dados.perfil,
+                };
+                const { error } = await window.cortexClient
+                    .from('profissionais')
+                    .update(update)
+                    .eq('id', id);
+                if (error) throw error;
+                window.CortexUI.toast('Profissional atualizado.', 'success');
+            }
+
+            await CortexAudit.log(ehNovo ? 'criacao' : 'atualizacao', 'profissionais', id || null, {
+                detalhes: { nome: dados.nome_completo, perfil: dados.perfil }
+            });
+
+            fecharModalProf();
+            await renderAba('profissionais');
+
+        } catch (err) {
+            console.error('[cfg] salvar prof:', err);
+            let msg = err.message || 'Erro';
+            if (msg.includes('User already registered') || msg.includes('already been registered')) {
+                msg = 'Este e-mail já está cadastrado no sistema.';
+            } else if (msg.includes('duplicate key')) {
+                if (msg.includes('email')) msg = 'Este e-mail já está cadastrado.';
+                else if (msg.includes('cpf')) msg = 'Este CPF já está cadastrado.';
+                else msg = 'Dados duplicados detectados.';
+            } else if (msg.includes('Password should be')) {
+                msg = 'Senha muito fraca. Use no mínimo 8 caracteres com letras e números.';
+            }
+            mostrarErroProf(erro, msg);
+        } finally {
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+        }
+    }
+
+    /**
+     * Cria profissional usando supabase.auth.signUp.
+     *
+     * Truque pra preservar a sessão do admin: signUp normalmente troca a sessão
+     * pro novo usuário. Pra evitar isso, salvamos a sessão atual antes,
+     * fazemos o signUp e restauramos a sessão depois.
+     */
+    async function criarProfissional(dados, senha) {
+        // 1. Salva sessão atual (admin)
+        const { data: { session: sessaoAdmin } } = await window.cortexClient.auth.getSession();
+        if (!sessaoAdmin) throw new Error('Sessão de admin perdida. Faça login novamente.');
+
+        // 2. signUp do novo usuário (pode trocar sessão temporariamente)
+        const { data: signUpData, error: signUpErr } = await window.cortexClient.auth.signUp({
+            email: dados.email,
+            password: senha,
+            options: {
+                // emailRedirectTo: undefined — não queremos enviar email de confirmação
+            }
+        });
+        if (signUpErr) throw signUpErr;
+        if (!signUpData?.user) throw new Error('Falha ao criar usuário (sem retorno).');
+
+        // 3. Restaura sessão do admin imediatamente (pra recuperar permissões)
+        const { error: restErr } = await window.cortexClient.auth.setSession({
+            access_token: sessaoAdmin.access_token,
+            refresh_token: sessaoAdmin.refresh_token,
+        });
+        if (restErr) {
+            console.warn('Não foi possível restaurar sessão do admin:', restErr);
+            // Tenta continuar — pode ser que ainda tenha permissão
+        }
+
+        // 4. Trigger handle_new_user já criou o registro em `profissionais` com perfil padrão.
+        //    Atualiza com os dados completos.
+        const authUserId = signUpData.user.id;
+
+        // Aguarda um pouco pra garantir que o trigger rodou
+        await new Promise(r => setTimeout(r, 500));
+
+        const { error: updErr } = await window.cortexClient
+            .from('profissionais')
+            .update({
+                nome_completo: dados.nome_completo,
+                crp: dados.crp,
+                telefone: dados.telefone,
+                perfil: dados.perfil,
+                ativo: true,
+            })
+            .eq('auth_user_id', authUserId);
+
+        if (updErr) {
+            // Se o trigger ainda não rodou, tenta INSERT direto (fallback)
+            console.warn('Update falhou, tentando INSERT direto:', updErr);
+            const { error: insErr } = await window.cortexClient
+                .from('profissionais')
+                .insert({
+                    auth_user_id: authUserId,
+                    email: dados.email,
+                    nome_completo: dados.nome_completo,
+                    crp: dados.crp,
+                    telefone: dados.telefone,
+                    perfil: dados.perfil,
+                    ativo: true,
+                });
+            if (insErr) throw insErr;
+        }
+    }
+
+    function fecharModalProf() {
+        const m = document.getElementById('modal-prof');
+        if (m) m.style.display = 'none';
+    }
+
+    function mostrarErroProf(el, msg) {
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    window.CortexCfgProf = {
+        editar: function(id) {
+            const p = state.profissionaisLista.find(x => x.id === id);
+            if (p) abrirModalProf(p);
+        },
+        toggleAtivo: async function(id, novoStatus) {
+            const p = state.profissionaisLista.find(x => x.id === id);
+            if (!p) return;
+            if (p.id === state.profissional.id) {
+                window.CortexUI.toast('Você não pode desativar a si mesmo.', 'danger');
+                return;
+            }
+            const acao = novoStatus ? 'ativar' : 'desativar';
+            if (!confirm(`${acao.charAt(0).toUpperCase() + acao.slice(1)} ${p.nome_completo || p.email}?`)) return;
+            try {
+                const { error } = await window.cortexClient
+                    .from('profissionais')
+                    .update({ ativo: novoStatus })
+                    .eq('id', id);
+                if (error) throw error;
+                await CortexAudit.log('atualizacao', 'profissionais', id, {
+                    detalhes: { campo: 'ativo', valor: novoStatus }
+                });
+                window.CortexUI.toast(`Profissional ${novoStatus ? 'ativado' : 'desativado'}.`, 'success');
+                await renderAba('profissionais');
+            } catch (err) {
+                console.error('[cfg] toggle prof:', err);
+                window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+        fecharModal: fecharModalProf,
     };
 
     // Helpers

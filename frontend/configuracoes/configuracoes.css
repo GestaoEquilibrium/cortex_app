@@ -112,6 +112,7 @@
 .cfg-field .required { color: #dc2626; }
 
 .cfg-field input,
+.cfg-field select,
 .cfg-field textarea {
     padding: 10px 14px;
     border: 1.5px solid var(--color-border);
@@ -122,8 +123,27 @@
     color: var(--color-text);
     transition: border-color .15s, box-shadow .15s;
     resize: vertical;
+    width: 100%;
+    box-sizing: border-box;
+    line-height: 1.4;
+    height: 42px;
+}
+.cfg-field textarea {
+    height: auto;
+    min-height: 60px;
+}
+.cfg-field select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1,1 6,6 11,1'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
 }
 .cfg-field input:focus,
+.cfg-field select:focus,
 .cfg-field textarea:focus {
     outline: none;
     border-color: #1a56db;
@@ -254,13 +274,18 @@
 }
 
 .cfg-modal-header {
-    padding: 18px 24px;
+    padding: 20px 28px;
     border-bottom: 1px solid var(--color-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
 }
-.cfg-modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.cfg-modal-header h3 { margin: 0; font-size: 17px; font-weight: 700; }
 
 .cfg-modal-close {
     background: none;
@@ -274,14 +299,37 @@
 }
 .cfg-modal-close:hover { background: #f1f5f9; }
 
-#form-convenio {
-    padding: 20px 24px 22px;
+/* Padding interno pros forms dentro de modais (afeta novo convênio + novo profissional) */
+.cfg-modal-box form {
+    padding: 24px 28px 24px;
+}
+
+/* Mais respiro vertical entre campos */
+.cfg-modal-box .cfg-form-grid {
+    gap: 18px 20px;
+}
+
+/* Ações do form sempre com borda superior e respiro */
+.cfg-modal-box .cfg-actions {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Erro dentro do modal não cola no botão */
+.cfg-modal-box .cfg-erro {
+    margin-top: 14px;
 }
 
 @media (max-width: 720px) {
     .cfg-form-grid { grid-template-columns: 1fr; }
     .cfg-conv-item { flex-direction: column; align-items: stretch; }
     .cfg-conv-acoes { width: 100%; }
+    .cfg-modal-box form { padding: 18px 20px; }
+    .cfg-modal-header { padding: 16px 20px; }
 }
 
 /* ============================================================================
@@ -455,4 +503,23 @@
     .cfg-foto-preview {
         align-self: center;
     }
+}
+
+/* ============================================================================
+   PROFISSIONAIS — Sprint 9
+   ============================================================================ */
+
+.cfg-prof-avatar {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #1a56db, #1e40af);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.cfg-conv-item.inativo .cfg-prof-avatar {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
 }

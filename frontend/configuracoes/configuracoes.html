@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações — CORTEX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="configuracoes.css">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <main class="app-main">
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Configurações</h1>
+                    <p>Gerencie seu perfil e os convênios atendidos.</p>
+                </div>
+            </div>
+
+            <!-- Abas -->
+            <div class="cfg-tabs">
+                <button class="cfg-tab active" data-tab="perfil">
+                    <span class="cfg-tab-icone">👤</span>
+                    <span>Meu Perfil</span>
+                </button>
+                <button class="cfg-tab" data-tab="convenios">
+                    <span class="cfg-tab-icone">🏥</span>
+                    <span>Convênios</span>
+                </button>
+            </div>
+
+            <div id="cfg-conteudo">
+                <div class="cfg-loading">
+                    <div class="spinner"></div>
+                    <p>Carregando...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/supabase_client.js"></script>
+    <script src="../shared/auth_guard.js"></script>
+    <script src="../shared/audit.js"></script>
+    <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/sidebar.js"></script>
+    <script src="../shared/avatar.js"></script>
+    <script src="configuracoes.js"></script>
+</body>
+</html>

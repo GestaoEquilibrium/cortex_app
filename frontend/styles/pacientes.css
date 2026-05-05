@@ -724,3 +724,205 @@
     .correcao-item { flex-direction: column; align-items: flex-start; }
     .correcao-item-acoes { width: 100%; }
 }
+
+/* ============================================================================
+   LAUDO — Upload PDF + visualização + histórico (Sprint 3)
+   ============================================================================ */
+
+.laudo-page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* Topo */
+.laudo-topo {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+}
+
+/* Empty state */
+.laudo-empty {
+    background: white;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--color-text-muted);
+}
+.laudo-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.laudo-empty h4 { margin: 0 0 6px 0; color: var(--color-text); }
+.laudo-empty p { margin: 0; font-size: 13px; }
+
+/* Versão atual (em destaque) */
+.laudo-versao-atual {
+    background: white;
+    border: 2px solid #1a56db;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+.laudo-versao-atual-header {
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    border-bottom: 1px solid #dbeafe;
+}
+.laudo-badge-atual {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #1a56db;
+    color: white;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+}
+.laudo-versao-atual-titulo {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+.laudo-versao-atual-meta {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+.laudo-versao-atual-acoes {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Histórico */
+.laudo-historico {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 16px 22px;
+}
+.laudo-historico-titulo {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-muted);
+}
+.laudo-historico-contador {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.laudo-historico-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.laudo-historico-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #fafcff;
+    transition: background .15s;
+}
+.laudo-historico-item:hover { background: white; }
+
+.laudo-historico-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    flex: 1;
+}
+.laudo-historico-versao {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #e2e8f0;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+}
+.laudo-historico-detalhes { min-width: 0; }
+.laudo-historico-nome {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+.laudo-historico-meta {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+.laudo-historico-acoes {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* Modal de visualização */
+.laudo-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .92);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(2px);
+}
+.laudo-modal-header {
+    background: white;
+    border-bottom: 1px solid var(--color-border);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+.laudo-modal-titulo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.laudo-modal-meta {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.laudo-modal-acoes { display: flex; gap: 8px; flex-shrink: 0; }
+.laudo-modal-iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #525659;
+}
+
+@media (max-width: 720px) {
+    .laudo-topo { flex-direction: column; align-items: stretch; }
+    .laudo-versao-atual-header { flex-direction: column; }
+    .laudo-versao-atual-acoes { width: 100%; }
+    .laudo-historico-item { flex-direction: column; align-items: stretch; }
+    .laudo-historico-acoes { justify-content: flex-start; }
+}

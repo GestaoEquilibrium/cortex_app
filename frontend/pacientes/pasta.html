@@ -15,6 +15,176 @@
     <link rel="stylesheet" href="../relatorio_escolar/relatorio_escolar.css">
     <link rel="stylesheet" href="../checklist/checklist.css">
     <link rel="stylesheet" href="../bateria/bateria.css">
+    <style>
+    /* Sprint 8: Modais Agendar Sessão + Designar Aplicador */
+    .sprint8-modal {
+        position: fixed; inset: 0;
+        background: rgba(15, 23, 42, .55);
+        backdrop-filter: blur(2px);
+        z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .sprint8-modal-box {
+        background: white;
+        border-radius: 14px;
+        max-width: 760px; width: 100%;
+        max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+    .sprint8-modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 14px;
+        position: sticky; top: 0; background: white; z-index: 1;
+    }
+    .sprint8-modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+    .sprint8-modal-close {
+        background: none; border: none; font-size: 18px;
+        color: #64748b; cursor: pointer;
+        padding: 4px 10px; border-radius: 6px;
+        transition: background .15s;
+    }
+    .sprint8-modal-close:hover { background: #f1f5f9; }
+
+    #sprint8-form-sessao { padding: 18px 24px 22px; }
+
+    .sprint8-bloco { margin-bottom: 18px; }
+    .sprint8-bloco-label {
+        font-size: 11px; font-weight: 700; color: #64748b;
+        text-transform: uppercase; letter-spacing: .07em;
+        margin-bottom: 10px; display: block;
+    }
+    .sprint8-form-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .sprint8-field { display: flex; flex-direction: column; }
+    .sprint8-field label {
+        font-size: 12px; color: #475569; margin-bottom: 4px; font-weight: 600;
+    }
+    .sprint8-field input,
+    .sprint8-field select,
+    .sprint8-field textarea {
+        padding: 9px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color .15s, box-shadow .15s;
+        resize: vertical;
+    }
+    .sprint8-field input:focus,
+    .sprint8-field select:focus,
+    .sprint8-field textarea:focus {
+        outline: none; border-color: #1a56db;
+        box-shadow: 0 0 0 3px rgba(26,86,219,.1);
+    }
+
+    /* Cards de data (calendário simples) */
+    .sprint8-datas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+        gap: 8px;
+    }
+    .sprint8-data-card {
+        background: white; border: 1.5px solid #e2e8f0;
+        border-radius: 10px; padding: 10px 6px;
+        cursor: pointer;
+        transition: all .15s;
+        font-family: inherit;
+        display: flex; flex-direction: column; align-items: center; gap: 2px;
+        position: relative;
+    }
+    .sprint8-data-card:hover { border-color: #1a56db; transform: translateY(-1px); }
+    .sprint8-data-card.active {
+        background: #1a56db; color: white; border-color: #1a56db;
+        box-shadow: 0 4px 10px rgba(26,86,219,.3);
+    }
+    .sprint8-data-dia-semana { font-size: 10px; font-weight: 700; text-transform: uppercase; opacity: .8; }
+    .sprint8-data-numero { font-size: 20px; font-weight: 800; line-height: 1; }
+    .sprint8-data-mes { font-size: 10px; opacity: .8; text-transform: uppercase; }
+    .sprint8-data-hoje {
+        position: absolute; top: 3px; right: 3px;
+        font-size: 8px; font-weight: 800;
+        background: #fbbf24; color: white;
+        padding: 1px 4px; border-radius: 4px;
+    }
+    .sprint8-data-card.active .sprint8-data-hoje { background: #fbbf24; }
+
+    /* Lista de horários ocupados */
+    .sprint8-ocupados-lista {
+        display: flex; flex-direction: column; gap: 6px;
+        max-height: 200px; overflow-y: auto;
+        background: #fef3c7; border: 1px solid #fde68a;
+        border-radius: 8px; padding: 10px;
+    }
+    .sprint8-ocupado-item {
+        display: flex; gap: 12px; align-items: center;
+        background: white; border-radius: 6px; padding: 8px 10px;
+        font-size: 12px;
+    }
+    .sprint8-ocupado-hora {
+        font-weight: 800; color: #92400e;
+        flex-shrink: 0; min-width: 80px;
+    }
+    .sprint8-ocupado-info { flex: 1; min-width: 0; }
+    .sprint8-ocupado-meta { font-size: 11px; color: #78716c; margin-top: 1px; }
+
+    .sprint8-erro {
+        padding: 10px 14px;
+        background: #fef2f2; color: #b91c1c;
+        border-radius: 8px; font-size: 13px;
+        margin: 12px 0; border-left: 3px solid #b91c1c;
+    }
+    .sprint8-actions {
+        display: flex; justify-content: flex-end; gap: 8px;
+        margin-top: 18px; padding-top: 14px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* Modal Designar — lista de aplicadores */
+    .sprint8-aplicadores-lista {
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .sprint8-aplicador-opcao {
+        display: flex; align-items: center; gap: 12px;
+        width: 100%; text-align: left;
+        background: white; border: 1.5px solid #e2e8f0;
+        border-radius: 10px; padding: 12px 14px;
+        cursor: pointer; font-family: inherit;
+        transition: all .15s;
+    }
+    .sprint8-aplicador-opcao:hover:not(:disabled) {
+        border-color: #1a56db; background: #f8fafc;
+        transform: translateX(2px);
+    }
+    .sprint8-aplicador-opcao.atual { background: #f0fdf4; border-color: #059669; cursor: default; }
+    .sprint8-aplicador-opcao:disabled { opacity: 1; }
+    .sprint8-aplicador-avatar {
+        flex-shrink: 0; width: 38px; height: 38px;
+        background: #e2e8f0; color: #475569;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 14px;
+    }
+    .sprint8-aplicador-info { flex: 1; min-width: 0; }
+    .sprint8-aplicador-nome { font-size: 13px; font-weight: 700; color: #1e293b; }
+    .sprint8-aplicador-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .sprint8-aplicador-tag {
+        font-size: 10px; font-weight: 800;
+        background: #059669; color: white;
+        padding: 3px 8px; border-radius: 10px;
+        flex-shrink: 0;
+    }
+    .sprint8-aplicador-acao {
+        font-size: 11px; font-weight: 700; color: #1a56db;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 720px) {
+        .sprint8-form-grid { grid-template-columns: 1fr; }
+    }
+    </style>
 </head>
 <body>
     <div class="app-shell">
@@ -55,6 +225,8 @@
     let relatorioEscolarExistente = null;
     let checklistInfo = null;
     let bateriaInfo = null;
+    let ehAdmin = false;          // Sprint 8: controla botão Designar
+    let aplicadorAtivo = null;    // Sprint 8: vínculo paciente↔aplicador atual
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -69,6 +241,10 @@
 
     window.addEventListener('cortex:auth-ready', async () => {
         await CortexSidebar.render('pacientes');
+
+        // Sprint 8: detecta admin pra mostrar botão Designar
+        const perfil = window.cortexProfissional?.perfil;
+        ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
 
         const urlParams = new URLSearchParams(window.location.search);
         pacienteId = urlParams.get('id');
@@ -101,9 +277,30 @@
             carregarHipotese(),
             carregarRelatorioEscolar(),
             carregarChecklistInfo(),
-            carregarBateriaInfo()
+            carregarBateriaInfo(),
+            carregarAplicadorAtivo()
         ]);
         renderizarPasta();
+    }
+
+    // Sprint 8: carrega vínculo ativo paciente↔aplicador
+    async function carregarAplicadorAtivo() {
+        const { data, error } = await window.cortexClient
+            .from('vinculos_paciente_aplicador')
+            .select(`
+                id, paciente_id, aplicador_id, data_inicio, motivo_atribuicao, ativo, atribuido_por,
+                aplicador:profissionais!vinculos_paciente_aplicador_aplicador_id_fkey (
+                    id, nome_completo, crp, email, foto_url
+                )
+            `)
+            .eq('paciente_id', pacienteId)
+            .eq('ativo', true)
+            .order('data_inicio', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (!error && data) aplicadorAtivo = data;
+        else aplicadorAtivo = null;
     }
 
     async function carregarAnamnese() {
@@ -222,19 +419,28 @@
                                 <span class="pasta-meta-valor">${escapeHtml(paciente.convenio_nome)}</span>
                             </div>
                         ` : ''}
-                        ${paciente.aplicador_nome ? `
+                        ${aplicadorAtivo?.aplicador ? `
                             <div class="pasta-meta-item">
                                 <span class="pasta-meta-label">Aplicador:</span>
-                                <span class="pasta-meta-valor">${escapeHtml(paciente.aplicador_nome)}</span>
+                                <span class="pasta-meta-valor">${escapeHtml(aplicadorAtivo.aplicador.nome_completo)}${aplicadorAtivo.aplicador.crp ? ` — ${escapeHtml(aplicadorAtivo.aplicador.crp)}` : ''}</span>
                             </div>
-                        ` : ''}
+                        ` : `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Aplicador:</span>
+                                <span class="pasta-meta-valor" style="color: var(--color-text-muted); font-style: italic;">— não designado —</span>
+                            </div>
+                        `}
                     </div>
                     <div class="pasta-actions">
                         <span class="badge ${statusClass}">${statusLabel}</span>
+                        <a class="btn btn-secondary btn-sm" href="novo.html?id=${pacienteId}">
+                            ✏️ Editar dados
+                        </a>
                         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
                             ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
                         </button>
-                        <button class="btn btn-ghost btn-sm" onclick="window.CortexUI.toast('Em breve — Sprint C1', 'info')">+ Agendar sessão</button>
+                        <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
+                        ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalDesignar()">👤 Designar aplicador</button>` : ''}
                     </div>
                 </div>
             </div>
@@ -299,6 +505,17 @@
                 </div>
             `;
         }
+        if (etapaId === 'laudo') {
+            setTimeout(() => carregarERenderLaudo(), 0);
+            return `
+                <div class="etapa-content" id="laudo-container">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">⏳</div>
+                        <h3>Carregando laudos...</h3>
+                    </div>
+                </div>
+            `;
+        }
         if (etapaId === 'devolutiva') {
             return `
                 <div class="etapa-content">
@@ -311,10 +528,8 @@
             `;
         }
 
-        // laudo (Sprint 3 — em breve) e qualquer outra
-        const sprints = {
-            'laudo': 'Sprint 3'
-        };
+        // Qualquer outra etapa não mapeada
+        const sprints = {};
 
         const labelEtapa = ETAPAS.find(e => e.id === etapaId)?.label || etapaId;
         const sprintInfo = sprints[etapaId] || 'próximo sprint';
@@ -585,6 +800,343 @@
                 </div>
             </div>
         `;
+    }
+
+    // ============================================================================
+    // LAUDO — Upload PDF + visualização + histórico versionado (Sprint 3)
+    // ============================================================================
+
+    let laudosCache = null;  // Lista carregada (refresh ao alterar)
+
+    async function carregarERenderLaudo() {
+        const container = document.getElementById('laudo-container');
+        if (!container) return;
+
+        try {
+            const { data, error } = await window.cortexClient
+                .from('laudos_paciente')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('versao', { ascending: false });
+
+            if (error) throw error;
+
+            laudosCache = data || [];
+            container.innerHTML = renderLaudo(laudosCache);
+            bindLaudoUpload();
+        } catch (err) {
+            console.error('[laudo] erro ao carregar:', err);
+            container.innerHTML = `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">⚠</div>
+                    <h3>Erro ao carregar laudos</h3>
+                    <p>${escapeHtml(err.message || 'erro desconhecido')}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderLaudo(laudos) {
+        const ativo = laudos.find(l => l.ativo) || laudos[0] || null;
+        const historicas = laudos.filter(l => !ativo || l.id !== ativo.id);
+
+        return `
+            <div class="laudo-page">
+
+                <!-- Topo: upload + título -->
+                <div class="laudo-topo">
+                    <div>
+                        <h3 style="margin: 0 0 4px 0;">Laudo do Paciente</h3>
+                        <p style="margin: 0; color: var(--color-text-muted); font-size: 13px;">
+                            Faça upload do PDF do laudo final. Cada envio gera uma nova versão automaticamente.
+                        </p>
+                    </div>
+                    <div>
+                        <input type="file" id="laudo-file-input" accept="application/pdf" style="display: none;">
+                        <button class="btn btn-primary" id="btn-laudo-upload">
+                            📤 Enviar laudo (PDF)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Versão atual -->
+                ${ativo ? renderLaudoVersaoAtual(ativo) : `
+                    <div class="laudo-empty">
+                        <div class="laudo-empty-icon">📄</div>
+                        <h4>Nenhum laudo enviado ainda</h4>
+                        <p>Clique em "Enviar laudo" para fazer upload do primeiro PDF.</p>
+                    </div>
+                `}
+
+                <!-- Histórico (versões antigas) -->
+                ${historicas.length > 0 ? `
+                    <div class="laudo-historico">
+                        <h4 class="laudo-historico-titulo">
+                            📚 Histórico de versões
+                            <span class="laudo-historico-contador">${historicas.length}</span>
+                        </h4>
+                        <div class="laudo-historico-lista">
+                            ${historicas.map(l => renderLaudoVersaoHistorica(l)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+            </div>
+        `;
+    }
+
+    function renderLaudoVersaoAtual(laudo) {
+        return `
+            <div class="laudo-versao-atual">
+                <div class="laudo-versao-atual-header">
+                    <div>
+                        <span class="laudo-badge-atual">VERSÃO ATUAL</span>
+                        <h4 class="laudo-versao-atual-titulo">Laudo v${laudo.versao}</h4>
+                        <div class="laudo-versao-atual-meta">
+                            ${escapeHtml(laudo.arquivo_nome_original || '—')}
+                            · ${formatarBytes(laudo.arquivo_tamanho_bytes)}
+                            · Enviado em ${formatarDataHora(laudo.created_at)}
+                        </div>
+                    </div>
+                    <div class="laudo-versao-atual-acoes">
+                        <button class="btn btn-primary btn-sm" onclick="window.CortexLaudo.visualizar('${laudo.id}')">
+                            👁 Visualizar
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">
+                            ⬇ Baixar
+                        </button>
+                        <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
+                            🗑 Remover
+                        </button>
+                    </div>
+                </div>
+                <div class="laudo-versao-atual-viewer" id="laudo-viewer-${laudo.id}"></div>
+            </div>
+        `;
+    }
+
+    function renderLaudoVersaoHistorica(laudo) {
+        return `
+            <div class="laudo-historico-item">
+                <div class="laudo-historico-info">
+                    <div class="laudo-historico-versao">v${laudo.versao}</div>
+                    <div class="laudo-historico-detalhes">
+                        <div class="laudo-historico-nome">${escapeHtml(laudo.arquivo_nome_original || '—')}</div>
+                        <div class="laudo-historico-meta">
+                            ${formatarBytes(laudo.arquivo_tamanho_bytes)}
+                            · Enviado em ${formatarDataHora(laudo.created_at)}
+                        </div>
+                    </div>
+                </div>
+                <div class="laudo-historico-acoes">
+                    <button class="btn btn-ghost btn-sm" onclick="window.CortexLaudo.visualizar('${laudo.id}')">
+                        👁 Visualizar
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">
+                        ⬇ Baixar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.definirAtual('${laudo.id}')">
+                        ⭐ Definir como atual
+                    </button>
+                    <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
+                        🗑
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function bindLaudoUpload() {
+        const btn = document.getElementById('btn-laudo-upload');
+        const input = document.getElementById('laudo-file-input');
+        if (!btn || !input) return;
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', uploadLaudo);
+    }
+
+    async function uploadLaudo(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validações
+        if (file.type !== 'application/pdf') {
+            window.CortexUI.toast('Apenas arquivos PDF são aceitos.', 'danger');
+            event.target.value = '';
+            return;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            window.CortexUI.toast('Arquivo muito grande. Máximo: 20MB.', 'danger');
+            event.target.value = '';
+            return;
+        }
+
+        const btn = document.getElementById('btn-laudo-upload');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳ Enviando...';
+
+        try {
+            // Path: <paciente_id>/v<timestamp>.pdf
+            const ts = Date.now();
+            const path = `${pacienteId}/v${ts}.pdf`;
+
+            // 1. Upload no Storage
+            const { error: uploadError } = await window.cortexClient
+                .storage
+                .from('laudos')
+                .upload(path, file, { contentType: 'application/pdf', upsert: false });
+            if (uploadError) throw uploadError;
+
+            // 2. INSERT em laudos_paciente (versao auto via trigger; ativo=true por default)
+            const { data: { user } } = await window.cortexClient.auth.getUser();
+            const { error: insertError } = await window.cortexClient
+                .from('laudos_paciente')
+                .insert({
+                    paciente_id: pacienteId,
+                    arquivo_path: path,
+                    arquivo_nome_original: file.name,
+                    arquivo_tamanho_bytes: file.size,
+                    ativo: true,
+                    created_by: user?.id || null,
+                });
+            if (insertError) throw insertError;
+
+            await CortexAudit.log('upload', 'laudos_paciente', pacienteId, {
+                pacienteId,
+                detalhes: { nome: file.name, tamanho: file.size }
+            });
+
+            window.CortexUI.toast('Laudo enviado com sucesso!', 'success');
+
+            // Reload da lista
+            await carregarERenderLaudo();
+
+        } catch (err) {
+            console.error('[laudo] erro upload:', err);
+            window.CortexUI.toast('Erro ao enviar laudo: ' + (err.message || 'desconhecido'), 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = orig;
+            event.target.value = '';
+        }
+    }
+
+    // API global pros botões inline (visualizar/baixar/definir/remover)
+    window.CortexLaudo = {
+        visualizar: async function(laudoId) {
+            try {
+                const laudo = (laudosCache || []).find(l => l.id === laudoId);
+                if (!laudo) throw new Error('Laudo não encontrado');
+
+                const { data, error } = await window.cortexClient
+                    .storage
+                    .from('laudos')
+                    .createSignedUrl(laudo.arquivo_path, 600);  // 10 min
+                if (error || !data) throw error || new Error('URL não gerada');
+
+                // Abre modal com iframe do PDF
+                abrirModalLaudo(laudo, data.signedUrl);
+            } catch (err) {
+                console.error('[laudo] visualizar:', err);
+                window.CortexUI.toast('Erro ao visualizar: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        baixar: async function(laudoId) {
+            try {
+                const laudo = (laudosCache || []).find(l => l.id === laudoId);
+                if (!laudo) throw new Error('Laudo não encontrado');
+
+                const { data, error } = await window.cortexClient
+                    .storage
+                    .from('laudos')
+                    .createSignedUrl(laudo.arquivo_path, 60, { download: laudo.arquivo_nome_original || 'laudo.pdf' });
+                if (error || !data) throw error || new Error('URL não gerada');
+
+                window.location.href = data.signedUrl;
+            } catch (err) {
+                console.error('[laudo] baixar:', err);
+                window.CortexUI.toast('Erro ao baixar: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        definirAtual: async function(laudoId) {
+            if (!confirm('Definir esta versão como a atual? A versão atual passa a ser histórico.')) return;
+            try {
+                // Trigger laudos_unique_ativo cuida de marcar as outras como false
+                const { error } = await window.cortexClient
+                    .from('laudos_paciente')
+                    .update({ ativo: true })
+                    .eq('id', laudoId);
+                if (error) throw error;
+
+                window.CortexUI.toast('Versão definida como atual.', 'success');
+                await carregarERenderLaudo();
+            } catch (err) {
+                console.error('[laudo] definirAtual:', err);
+                window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        remover: async function(laudoId) {
+            const laudo = (laudosCache || []).find(l => l.id === laudoId);
+            if (!laudo) return;
+            if (!confirm(`Remover permanentemente a versão v${laudo.versao}? Esta ação não pode ser desfeita.`)) return;
+            try {
+                // 1. Remove do Storage
+                await window.cortexClient.storage.from('laudos').remove([laudo.arquivo_path]);
+                // 2. Remove da tabela
+                const { error } = await window.cortexClient
+                    .from('laudos_paciente')
+                    .delete()
+                    .eq('id', laudoId);
+                if (error) throw error;
+
+                await CortexAudit.log('remocao', 'laudos_paciente', pacienteId, {
+                    pacienteId,
+                    detalhes: { versao: laudo.versao }
+                });
+
+                window.CortexUI.toast('Versão removida.', 'success');
+                await carregarERenderLaudo();
+            } catch (err) {
+                console.error('[laudo] remover:', err);
+                window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        }
+    };
+
+    function abrirModalLaudo(laudo, signedUrl) {
+        // Cria modal full-screen com iframe do PDF
+        const modal = document.createElement('div');
+        modal.className = 'laudo-modal';
+        modal.innerHTML = `
+            <div class="laudo-modal-header">
+                <div class="laudo-modal-titulo">
+                    <strong>Laudo v${laudo.versao}</strong>
+                    <span class="laudo-modal-meta">${escapeHtml(laudo.arquivo_nome_original || '')}</span>
+                </div>
+                <div class="laudo-modal-acoes">
+                    <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">⬇ Baixar</button>
+                    <button class="btn btn-ghost btn-sm" onclick="this.closest('.laudo-modal').remove()">✕ Fechar</button>
+                </div>
+            </div>
+            <iframe class="laudo-modal-iframe" src="${signedUrl}" title="Laudo PDF"></iframe>
+        `;
+        document.body.appendChild(modal);
+
+        // ESC fecha
+        const escHandler = (e) => {
+            if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function formatarBytes(bytes) {
+        if (bytes == null) return '—';
+        const kb = bytes / 1024;
+        if (kb < 1024) return `${kb.toFixed(0)} KB`;
+        return `${(kb / 1024).toFixed(2)} MB`;
     }
 
     function renderVisaoGeral() {
@@ -1021,6 +1573,498 @@
         } catch (err) {
             console.error('Erro no upload:', err);
             window.CortexUI.toast('Erro ao enviar foto: ' + err.message, 'danger');
+        }
+    }
+
+    // ============================================================================
+    // SPRINT 8: Modal Agendar Sessão (calendário simples, dentro da pasta)
+    //          + Modal Designar Aplicador (só admin)
+    // ============================================================================
+
+    const SPRINT8_TIPOS_SESSAO = {
+        'avaliacao': 'Avaliação',
+        'devolutiva': 'Devolutiva',
+        'reavaliacao': 'Reavaliação',
+        'orientacao': 'Orientação',
+        'aplicacao_teste': 'Aplicação de teste',
+    };
+
+    const SPRINT8_HORA_INICIO = 8;   // expediente: 8h às 19h (mostra horários ocupados nesse range)
+    const SPRINT8_HORA_FIM    = 19;
+
+    let _sprint8Profissionais = [];
+    let _sprint8SessoesDoDia = [];
+    let _sprint8DataSelecionada = null;
+
+    window.CortexPasta = {
+        abrirModalAgendar: async function () {
+            await sprint8AbrirModalAgendar();
+        },
+        abrirModalDesignar: async function () {
+            await sprint8AbrirModalDesignar();
+        },
+        fecharModal: function () {
+            const m = document.getElementById('sprint8-modal');
+            if (m) m.remove();
+        },
+        selecionarData: async function (dataISO) {
+            _sprint8DataSelecionada = dataISO;
+            await sprint8CarregarSessoesDoDia(dataISO);
+            sprint8RenderHorariosOcupados();
+            // Marca card de data ativo
+            document.querySelectorAll('.sprint8-data-card').forEach(c => {
+                c.classList.toggle('active', c.dataset.data === dataISO);
+            });
+            document.getElementById('sprint8-data-aplicacao').value = dataISO;
+        },
+        salvarSessao: async function (event) {
+            event.preventDefault();
+            await sprint8SalvarSessao(event.target);
+        },
+        designarAplicador: async function (aplicadorId) {
+            await sprint8DesignarAplicador(aplicadorId);
+        },
+        removerAplicador: async function () {
+            await sprint8RemoverAplicador();
+        }
+    };
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MODAL AGENDAR SESSÃO
+    // ────────────────────────────────────────────────────────────────────────
+
+    async function sprint8AbrirModalAgendar() {
+        // Carrega profissionais ativos
+        try {
+            const { data, error } = await window.cortexClient
+                .from('profissionais')
+                .select('id, nome_completo, perfil')
+                .eq('ativo', true)
+                .order('nome_completo');
+            if (error) throw error;
+            _sprint8Profissionais = data || [];
+        } catch (err) {
+            window.CortexUI.toast('Erro ao carregar profissionais: ' + err.message, 'danger');
+            return;
+        }
+
+        // Próximos 14 dias
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const dias = [];
+        for (let i = 0; i < 14; i++) {
+            const d = new Date(hoje); d.setDate(d.getDate() + i);
+            dias.push(d);
+        }
+
+        const profDefault = ehAdmin
+            ? (aplicadorAtivo?.aplicador_id || (window.cortexProfissional?.id ?? ''))
+            : window.cortexProfissional?.id;
+
+        const html = `
+            <div id="sprint8-modal" class="sprint8-modal">
+                <div class="sprint8-modal-box">
+                    <div class="sprint8-modal-header">
+                        <h3>📅 Agendar sessão — ${escapeHtml(paciente.nome_completo)}</h3>
+                        <button class="sprint8-modal-close" onclick="window.CortexPasta.fecharModal()">✕</button>
+                    </div>
+
+                    <form id="sprint8-form-sessao" onsubmit="window.CortexPasta.salvarSessao(event)">
+
+                        <!-- Calendário simples (próximos 14 dias) -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">1. Escolha a data</label>
+                            <div class="sprint8-datas-grid">
+                                ${dias.map(d => sprint8RenderCardData(d)).join('')}
+                            </div>
+                            <input type="hidden" id="sprint8-data-aplicacao" name="data" required>
+                        </div>
+
+                        <!-- Horários ocupados naquele dia -->
+                        <div class="sprint8-bloco" id="sprint8-bloco-ocupados" style="display:none;">
+                            <label class="sprint8-bloco-label">Sessões já marcadas neste dia</label>
+                            <div id="sprint8-ocupados-lista" class="sprint8-ocupados-lista"></div>
+                        </div>
+
+                        <!-- Hora + duração -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">2. Horário</label>
+                            <div class="sprint8-form-grid">
+                                <div class="sprint8-field">
+                                    <label>Hora de início <span style="color:#dc2626">*</span></label>
+                                    <input type="time" id="sprint8-hora-inicio" name="hora_inicio" required>
+                                </div>
+                                <div class="sprint8-field">
+                                    <label>Hora de fim <span style="color:#dc2626">*</span></label>
+                                    <input type="time" id="sprint8-hora-fim" name="hora_fim" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profissional + Tipo -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">3. Detalhes</label>
+                            <div class="sprint8-form-grid">
+                                <div class="sprint8-field">
+                                    <label>Profissional <span style="color:#dc2626">*</span></label>
+                                    <select name="profissional_id" required ${ehAdmin ? '' : 'disabled'}>
+                                        ${ehAdmin ? '<option value="">— Selecione —</option>' : ''}
+                                        ${_sprint8Profissionais.map(p =>
+                                            `<option value="${p.id}" ${p.id === profDefault ? 'selected' : ''}>${escapeHtml(p.nome_completo)}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                                <div class="sprint8-field">
+                                    <label>Tipo de sessão <span style="color:#dc2626">*</span></label>
+                                    <select name="tipo" required>
+                                        <option value="">— Selecione —</option>
+                                        ${Object.entries(SPRINT8_TIPOS_SESSAO).map(([v, l]) =>
+                                            `<option value="${v}">${l}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sprint8-bloco">
+                            <div class="sprint8-field">
+                                <label>Observações (opcional)</label>
+                                <textarea name="observacoes" rows="2" placeholder="Anotações sobre a sessão..."></textarea>
+                            </div>
+                        </div>
+
+                        <div id="sprint8-erro" class="sprint8-erro" style="display:none;"></div>
+
+                        <div class="sprint8-actions">
+                            <button type="button" class="btn btn-ghost" onclick="window.CortexPasta.fecharModal()">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="sprint8-btn-salvar">
+                                <span class="btn-text">📅 Agendar sessão</span>
+                                <span class="btn-loading" style="display:none;">Salvando...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        // Pré-seleciona hoje
+        const hojeISO = sprint8DataParaISO(hoje);
+        await window.CortexPasta.selecionarData(hojeISO);
+
+        // ESC fecha
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                window.CortexPasta.fecharModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function sprint8RenderCardData(d) {
+        const iso = sprint8DataParaISO(d);
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const eHoje = d.getTime() === hoje.getTime();
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+        return `
+            <button type="button" class="sprint8-data-card" data-data="${iso}"
+                    onclick="window.CortexPasta.selecionarData('${iso}')">
+                <div class="sprint8-data-dia-semana">${diasSemana[d.getDay()]}</div>
+                <div class="sprint8-data-numero">${String(d.getDate()).padStart(2, '0')}</div>
+                <div class="sprint8-data-mes">${meses[d.getMonth()]}</div>
+                ${eHoje ? '<div class="sprint8-data-hoje">HOJE</div>' : ''}
+            </button>
+        `;
+    }
+
+    function sprint8DataParaISO(d) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    async function sprint8CarregarSessoesDoDia(dataISO) {
+        const inicio = new Date(dataISO + 'T00:00:00');
+        const fim = new Date(dataISO + 'T23:59:59');
+
+        const { data, error } = await window.cortexClient
+            .from('sessoes')
+            .select(`
+                id, data_hora_inicio, data_hora_fim, tipo, status, profissional_id,
+                paciente:pacientes!sessoes_paciente_id_fkey ( nome_completo ),
+                profissional:profissionais!sessoes_profissional_id_fkey ( nome_completo )
+            `)
+            .gte('data_hora_inicio', inicio.toISOString())
+            .lt('data_hora_inicio', fim.toISOString())
+            .neq('status', 'cancelada')
+            .order('data_hora_inicio');
+
+        _sprint8SessoesDoDia = (error ? [] : data) || [];
+    }
+
+    function sprint8RenderHorariosOcupados() {
+        const bloco = document.getElementById('sprint8-bloco-ocupados');
+        const lista = document.getElementById('sprint8-ocupados-lista');
+        if (_sprint8SessoesDoDia.length === 0) {
+            bloco.style.display = 'none';
+            return;
+        }
+        bloco.style.display = 'block';
+        lista.innerHTML = _sprint8SessoesDoDia.map(s => {
+            const di = new Date(s.data_hora_inicio);
+            const df = new Date(s.data_hora_fim);
+            const hi = `${String(di.getHours()).padStart(2,'0')}:${String(di.getMinutes()).padStart(2,'0')}`;
+            const hf = `${String(df.getHours()).padStart(2,'0')}:${String(df.getMinutes()).padStart(2,'0')}`;
+            return `
+                <div class="sprint8-ocupado-item">
+                    <div class="sprint8-ocupado-hora">${hi}–${hf}</div>
+                    <div class="sprint8-ocupado-info">
+                        <div>${escapeHtml(s.paciente?.nome_completo || '—')}</div>
+                        <div class="sprint8-ocupado-meta">${escapeHtml(SPRINT8_TIPOS_SESSAO[s.tipo] || s.tipo)} · ${escapeHtml(s.profissional?.nome_completo || '—')}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function sprint8SalvarSessao(form) {
+        const erro = document.getElementById('sprint8-erro');
+        erro.style.display = 'none';
+        const btn = document.getElementById('sprint8-btn-salvar');
+        const btnText = btn.querySelector('.btn-text');
+        const btnLoading = btn.querySelector('.btn-loading');
+
+        const data = form.elements['data'].value;
+        const horaInicio = form.elements['hora_inicio'].value;
+        const horaFim = form.elements['hora_fim'].value;
+        const profissionalId = form.elements['profissional_id'].value;
+        const tipo = form.elements['tipo'].value;
+        const observacoes = form.elements['observacoes'].value || null;
+
+        // Validações
+        if (!data) { sprint8MostrarErro(erro, 'Escolha uma data.'); return; }
+        if (!horaInicio || !horaFim) { sprint8MostrarErro(erro, 'Preencha hora de início e fim.'); return; }
+        if (horaFim <= horaInicio) { sprint8MostrarErro(erro, 'Hora de fim deve ser depois da hora de início.'); return; }
+        if (!profissionalId) { sprint8MostrarErro(erro, 'Selecione um profissional.'); return; }
+        if (!tipo) { sprint8MostrarErro(erro, 'Selecione o tipo de sessão.'); return; }
+
+        const dtInicio = new Date(`${data}T${horaInicio}:00`);
+        const dtFim = new Date(`${data}T${horaFim}:00`);
+
+        // Checa conflito local (na lista que carregamos)
+        const conflito = _sprint8SessoesDoDia.find(s => {
+            if (s.profissional_id !== profissionalId) return false;
+            const sI = new Date(s.data_hora_inicio);
+            const sF = new Date(s.data_hora_fim);
+            return dtInicio < sF && dtFim > sI;
+        });
+        if (conflito) {
+            const di = new Date(conflito.data_hora_inicio);
+            const df = new Date(conflito.data_hora_fim);
+            const hi = `${String(di.getHours()).padStart(2,'0')}:${String(di.getMinutes()).padStart(2,'0')}`;
+            const hf = `${String(df.getHours()).padStart(2,'0')}:${String(df.getMinutes()).padStart(2,'0')}`;
+            if (!confirm(`⚠ Conflito: o profissional já tem sessão das ${hi} às ${hf}. Deseja continuar mesmo assim?`)) {
+                return;
+            }
+        }
+
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+
+        try {
+            const { error } = await window.cortexClient
+                .from('sessoes')
+                .insert({
+                    paciente_id: pacienteId,
+                    profissional_id: profissionalId,
+                    tipo: tipo,
+                    status: 'agendada',
+                    data_hora_inicio: dtInicio.toISOString(),
+                    data_hora_fim: dtFim.toISOString(),
+                    observacoes: observacoes,
+                });
+            if (error) throw error;
+
+            await CortexAudit.log('criacao', 'sessoes', null, {
+                pacienteId,
+                detalhes: { data: dtInicio.toISOString(), tipo }
+            });
+
+            window.CortexUI.toast('✓ Sessão agendada com sucesso!', 'success');
+            window.CortexPasta.fecharModal();
+        } catch (err) {
+            console.error('[sprint8] salvar sessão:', err);
+            sprint8MostrarErro(erro, 'Erro ao agendar: ' + (err.message || 'desconhecido'));
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+        }
+    }
+
+    function sprint8MostrarErro(el, msg) {
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MODAL DESIGNAR APLICADOR (só admin)
+    // ────────────────────────────────────────────────────────────────────────
+
+    async function sprint8AbrirModalDesignar() {
+        let aplicadores = [];
+        try {
+            const { data, error } = await window.cortexClient
+                .from('profissionais')
+                .select('id, nome_completo, crp, perfil, foto_url')
+                .eq('ativo', true)
+                .in('perfil', ['neuropsicologo_aplicador', 'admin_clinico', 'admin_gestor'])
+                .order('nome_completo');
+            if (error) throw error;
+            aplicadores = data || [];
+        } catch (err) {
+            window.CortexUI.toast('Erro ao carregar profissionais: ' + err.message, 'danger');
+            return;
+        }
+
+        const atualId = aplicadorAtivo?.aplicador_id || null;
+        const atualNome = aplicadorAtivo?.aplicador?.nome_completo || null;
+
+        const html = `
+            <div id="sprint8-modal" class="sprint8-modal">
+                <div class="sprint8-modal-box" style="max-width: 560px;">
+                    <div class="sprint8-modal-header">
+                        <h3>👤 Designar aplicador</h3>
+                        <button class="sprint8-modal-close" onclick="window.CortexPasta.fecharModal()">✕</button>
+                    </div>
+
+                    <div style="padding: 20px 24px;">
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--color-text-muted);">
+                            Defina o profissional responsável por <strong>${escapeHtml(paciente.nome_completo)}</strong>.
+                            ${atualNome ? `<br>Atual: <strong>${escapeHtml(atualNome)}</strong>` : ''}
+                        </p>
+
+                        <div class="sprint8-aplicadores-lista">
+                            ${aplicadores.map(a => sprint8RenderAplicadorOpcao(a, atualId)).join('')}
+                        </div>
+
+                        ${atualId ? `
+                            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--color-border); text-align: right;">
+                                <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);"
+                                        onclick="window.CortexPasta.removerAplicador()">
+                                    🗑 Remover designação atual
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                window.CortexPasta.fecharModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function sprint8RenderAplicadorOpcao(a, atualId) {
+        const ehAtual = a.id === atualId;
+        const inicial = (a.nome_completo || '?').charAt(0).toUpperCase();
+        return `
+            <button type="button" class="sprint8-aplicador-opcao ${ehAtual ? 'atual' : ''}"
+                    onclick="window.CortexPasta.designarAplicador('${a.id}')"
+                    ${ehAtual ? 'disabled' : ''}>
+                <div class="sprint8-aplicador-avatar">${escapeHtml(inicial)}</div>
+                <div class="sprint8-aplicador-info">
+                    <div class="sprint8-aplicador-nome">${escapeHtml(a.nome_completo)}</div>
+                    <div class="sprint8-aplicador-meta">
+                        ${a.crp ? `CRP ${escapeHtml(a.crp)} · ` : ''}${escapeHtml(sprint8PerfilLabel(a.perfil))}
+                    </div>
+                </div>
+                ${ehAtual ? '<div class="sprint8-aplicador-tag">ATUAL</div>' : '<div class="sprint8-aplicador-acao">Designar →</div>'}
+            </button>
+        `;
+    }
+
+    function sprint8PerfilLabel(p) {
+        return (window.CortexUI?.PERFIL_LABELS?.[p]) || p;
+    }
+
+    async function sprint8DesignarAplicador(novoAplicadorId) {
+        if (aplicadorAtivo?.aplicador_id === novoAplicadorId) return;
+
+        const profAtualId = window.cortexProfissional?.id;
+        if (!profAtualId) {
+            window.CortexUI.toast('Erro: profissional logado não identificado.', 'danger');
+            return;
+        }
+
+        try {
+            // 1. Encerra vínculo atual (se houver)
+            if (aplicadorAtivo?.id) {
+                const { error: errEnc } = await window.cortexClient
+                    .from('vinculos_paciente_aplicador')
+                    .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0], motivo_encerramento: 'Substituído via designação manual' })
+                    .eq('id', aplicadorAtivo.id);
+                if (errEnc) throw errEnc;
+            }
+
+            // 2. Cria novo vínculo
+            const { error: errIns } = await window.cortexClient
+                .from('vinculos_paciente_aplicador')
+                .insert({
+                    paciente_id: pacienteId,
+                    aplicador_id: novoAplicadorId,
+                    atribuido_por: profAtualId,
+                    ativo: true,
+                    motivo_atribuicao: aplicadorAtivo ? 'Substituição via designação' : 'Designação inicial'
+                });
+            if (errIns) throw errIns;
+
+            await CortexAudit.log('atualizacao', 'vinculos_paciente_aplicador', pacienteId, {
+                pacienteId,
+                detalhes: { aplicador_anterior: aplicadorAtivo?.aplicador_id || null, aplicador_novo: novoAplicadorId }
+            });
+
+            window.CortexUI.toast('✓ Aplicador designado.', 'success');
+            window.CortexPasta.fecharModal();
+
+            // Recarrega vínculo e re-renderiza
+            await carregarAplicadorAtivo();
+            renderizarPasta();
+        } catch (err) {
+            console.error('[sprint8] designar:', err);
+            window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+        }
+    }
+
+    async function sprint8RemoverAplicador() {
+        if (!aplicadorAtivo?.id) return;
+        if (!confirm('Remover a designação atual? O paciente ficará sem aplicador responsável.')) return;
+
+        try {
+            const { error } = await window.cortexClient
+                .from('vinculos_paciente_aplicador')
+                .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0], motivo_encerramento: 'Removido via interface' })
+                .eq('id', aplicadorAtivo.id);
+            if (error) throw error;
+
+            await CortexAudit.log('remocao', 'vinculos_paciente_aplicador', pacienteId, {
+                pacienteId,
+                detalhes: { aplicador_anterior: aplicadorAtivo.aplicador_id }
+            });
+
+            window.CortexUI.toast('Designação removida.', 'success');
+            window.CortexPasta.fecharModal();
+            await carregarAplicadorAtivo();
+            renderizarPasta();
+        } catch (err) {
+            console.error('[sprint8] remover designação:', err);
+            window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
         }
     }
 

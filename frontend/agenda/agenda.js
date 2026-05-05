@@ -87,6 +87,23 @@
             ]);
             await carregarSessoes();
             renderizar();
+
+            // Se URL tem ?novaSessao=1 (com ou sem paciente_id), abre modal
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('novaSessao') === '1' && state.podeEditar) {
+                const pacIdPre = params.get('paciente_id');
+                await window.CortexAgenda.novaSessao();
+                // Pré-seleciona paciente no select se veio na URL
+                if (pacIdPre) {
+                    const sel = document.getElementById('modal-paciente');
+                    if (sel) sel.value = pacIdPre;
+                }
+                // Limpa URL pra não reabrir ao recarregar
+                const urlLimpa = new URL(window.location.href);
+                urlLimpa.searchParams.delete('novaSessao');
+                urlLimpa.searchParams.delete('paciente_id');
+                window.history.replaceState({}, '', urlLimpa.toString());
+            }
         } catch (err) {
             console.error('Erro ao carregar:', err);
             mostrarErro('Erro: ' + (err.message || 'desconhecido'));
@@ -349,8 +366,8 @@
             renderizar();
         },
 
-        novaSessao: function() {
-            this.abrirModal(null, null);
+        novaSessao: async function() {
+            await this.abrirModal(null, null);
         },
 
         novaSessaoNaData: function(dataKey) {

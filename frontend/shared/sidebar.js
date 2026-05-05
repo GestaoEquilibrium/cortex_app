@@ -54,16 +54,22 @@ window.CortexSidebar = (function() {
     ];
 
     // SVG do cérebro (estilo geométrico moderno)
-    const BRAIN_SVG = `<svg class="sidebar-brand-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M16 5 C11 5, 7 8, 6.5 12.5 C5 13, 4 14.5, 4 16.5 C4 18.5, 5 20, 6.5 20.5 C7 24, 9.5 26, 12 26.5 L12 22 C10.5 22, 9 21, 9 19"/>
-        <path d="M16 5 C21 5, 25 8, 25.5 12.5 C27 13, 28 14.5, 28 16.5 C28 18.5, 27 20, 25.5 20.5 C25 24, 22.5 26, 20 26.5 L20 22 C21.5 22, 23 21, 23 19"/>
-        <line x1="16" y1="5" x2="16" y2="28"/>
-        <path d="M11 11 C12 12, 13 12, 14 11"/>
-        <path d="M18 11 C19 12, 20 12, 21 11"/>
-        <line x1="10" y1="16" x2="13" y2="16"/>
-        <line x1="19" y1="16" x2="22" y2="16"/>
-        <path d="M11 21 C12 22, 13 22, 14 21"/>
-        <path d="M18 21 C19 22, 20 22, 21 21"/>
+    const BRAIN_SVG = `<svg class="sidebar-brand-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="currentColor" fill="currentColor" stroke-linecap="round">
+            <line x1="16" y1="16" x2="9"  y2="9"  stroke-width="1"/>
+            <line x1="16" y1="16" x2="23" y2="9"  stroke-width="1"/>
+            <line x1="16" y1="16" x2="9"  y2="23" stroke-width="1"/>
+            <line x1="16" y1="16" x2="23" y2="23" stroke-width="1"/>
+            <line x1="16" y1="16" x2="16" y2="7"  stroke-width="1"/>
+            <line x1="16" y1="16" x2="16" y2="25" stroke-width="1"/>
+            <circle cx="16" cy="16" r="2.8"/>
+            <circle cx="9"  cy="9"  r="1.6"/>
+            <circle cx="23" cy="9"  r="1.6"/>
+            <circle cx="9"  cy="23" r="1.6"/>
+            <circle cx="23" cy="23" r="1.6"/>
+            <circle cx="16" cy="7"  r="1.4"/>
+            <circle cx="16" cy="25" r="1.4"/>
+        </g>
     </svg>`;
 
     const CHEVRON_LEFT_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
@@ -77,9 +83,17 @@ window.CortexSidebar = (function() {
     }
 
     function getRelativePath(itemHref) {
-        // Sidebar.js está em shared/, mas as páginas que a usam estão em pacientes/
-        // Por simplicidade: assumimos que as páginas autenticadas estão em frontend/pacientes/
-        // Os links são relativos a pacientes/
+        // Detecta se está na raiz (frontend/dashboard.html) ou em subpasta (frontend/pacientes/lista.html).
+        // Os hrefs em NAV_ITEMS estão escritos como se a página atual fosse uma subpasta (../pacientes/lista.html).
+        // Se a página atual está na raiz, removemos o ../ inicial.
+        const path = window.location.pathname;
+        const ultimoSegmento = path.split('/').filter(s => s).pop() || '';
+        const segmentos = path.split('/').filter(s => s);
+        const naRaizFrontend = segmentos.length <= 1 || segmentos[segmentos.length - 2] === 'frontend';
+
+        if (naRaizFrontend && itemHref.startsWith('../')) {
+            return itemHref.substring(3);
+        }
         return itemHref;
     }
 
@@ -105,25 +119,14 @@ window.CortexSidebar = (function() {
         // Recupera estado de colapso (preferência salva)
         const colapsada = localStorage.getItem('cortex_sidebar_collapsed') === 'true';
 
-        // Detecta se estamos na raiz (/dashboard.html, /index.html) ou em subpasta
-        // Se o pathname tiver mais de uma '/' antes do arquivo final, estamos em subpasta
-        const path = window.location.pathname;
-        const segments = path.split('/').filter(s => s.length > 0);
-        // segments inclui o nome do arquivo. Se for ['dashboard.html'] = raiz; se for ['pacientes', 'lista.html'] = subpasta
-        const naRaiz = segments.length <= 1;
-
         const navHtml = NAV_ITEMS.map(item => {
             const ativa = item.id === itemAtivoId ? 'active' : '';
+            const hrefFinal = item.disabled ? item.href : getRelativePath(item.href);
             const onclick = item.disabled
                 ? `onclick="event.preventDefault(); ${item.disabledLabel ? `window.CortexUI && window.CortexUI.toast('${item.disabledLabel}', 'info');` : ''} return false;"`
                 : '';
-            // Ajusta href: se estamos na raiz e o link começa com '../', remove o '../'
-            let href = item.href;
-            if (naRaiz && href.startsWith('../')) {
-                href = href.replace(/^\.\.\//, '');
-            }
             return `
-                <a href="${href}" class="nav-item ${ativa}" ${onclick} title="${item.label}">
+                <a href="${hrefFinal}" class="nav-item ${ativa}" ${onclick} title="${item.label}">
                     <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg>
                     <span class="sidebar-text">${item.label}</span>
                 </a>

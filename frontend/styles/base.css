@@ -10,22 +10,28 @@
 }
 
 :root {
-    /* Cores primárias — equilíbrio azul + verde */
-    --primary-blue: #1E40AF;
-    --primary-blue-dark: #1E3A8A;
-    --primary-blue-light: #3B82F6;
-    --primary-blue-50: #EFF6FF;
-    --primary-blue-100: #DBEAFE;
-    --primary-blue-200: #BFDBFE;
-    --primary-blue-300: #93C5FD;
+    /* ════════════════════════════════════════════════════════════════════════
+       PALETA ÚNICA — #0c1f3f (azul navy sólido)
+       Todo o sistema usa essa cor. Sem gradientes.
+       Verde foi removido conceitualmente (mas mantemos as vars apontando
+       pro azul pra não quebrar nada).
+       ════════════════════════════════════════════════════════════════════════ */
+    --primary-blue:        #0c1f3f;
+    --primary-blue-dark:   #061833;
+    --primary-blue-light:  #1e3a6f;
+    --primary-blue-50:     #eff2f7;
+    --primary-blue-100:    #d6dde9;
+    --primary-blue-200:    #adbbd2;
+    --primary-blue-300:    #6f80a3;
 
-    --primary-green: #059669;
-    --primary-green-dark: #047857;
-    --primary-green-light: #10B981;
-    --primary-green-50: #ECFDF5;
-    --primary-green-100: #D1FAE5;
-    --primary-green-200: #A7F3D0;
-    --primary-green-300: #6EE7B7;
+    /* "Verde" agora aponta pro mesmo azul (pra retrocompat com vars antigas) */
+    --primary-green:       #0c1f3f;
+    --primary-green-dark:  #061833;
+    --primary-green-light: #1e3a6f;
+    --primary-green-50:    #eff2f7;
+    --primary-green-100:   #d6dde9;
+    --primary-green-200:   #adbbd2;
+    --primary-green-300:   #6f80a3;
 
     /* Neutros (slate) */
     --slate-50: #F8FAFC;
@@ -50,8 +56,8 @@
     --color-border-strong: var(--slate-300);
 
     /* Status semânticos */
-    --color-info-bg: #DBEAFE;
-    --color-info-text: #1E40AF;
+    --color-info-bg: #d6dde9;
+    --color-info-text: #0c1f3f;
     --color-success-bg: #D1FAE5;
     --color-success-text: #065F46;
     --color-warning-bg: #FEF3C7;
@@ -59,38 +65,39 @@
     --color-danger-bg: #FEE2E2;
     --color-danger-text: #991B1B;
 
-    /* Avatares por sexo */
-    --avatar-masc-bg: #DBEAFE;
-    --avatar-masc-fg: #1E40AF;
-    --avatar-fem-bg: #FCE7F3;
-    --avatar-fem-fg: #9D174D;
-    --avatar-outro-bg: #E0E7FF;
-    --avatar-outro-fg: #3730A3;
+    /* Avatares por sexo (única exceção da paleta única — feminino é rosa) */
+    --avatar-masc-bg:   #d6dde9;
+    --avatar-masc-fg:   #0c1f3f;
+    --avatar-fem-bg:    #FCE7F3;
+    --avatar-fem-fg:    #9D174D;
+    --avatar-outro-bg:  #d6dde9;
+    --avatar-outro-fg:  #0c1f3f;
 
     /* ════════════════════════════════════════════════════════════════════════
-       NOVO — Gradientes do Estilo 1
+       "Gradientes" — agora todos sólidos (#0c1f3f).
+       Mantemos as variáveis pra não quebrar usos antigos pelo CSS.
        ════════════════════════════════════════════════════════════════════════ */
-    --gradient-primary: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-green) 100%);
-    --gradient-primary-vertical: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-green) 100%);
-    --gradient-primary-fem: linear-gradient(135deg, #F472B6 0%, var(--primary-green) 100%);
-    --gradient-soft: linear-gradient(135deg, var(--primary-blue-100) 0%, var(--primary-green-100) 100%);
-    --gradient-softer: linear-gradient(135deg, var(--primary-blue-50) 0%, var(--primary-green-50) 100%);
-    --gradient-hover: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-green-dark) 100%);
+    --gradient-primary:           #0c1f3f;
+    --gradient-primary-vertical:  #0c1f3f;
+    --gradient-primary-fem:       linear-gradient(135deg, #F472B6 0%, #9D174D 100%);
+    --gradient-soft:              #d6dde9;
+    --gradient-softer:            #eff2f7;
+    --gradient-hover:             #061833;
 
-    /* Sombras — agora com mais variação para hovers ricos */
+    /* Sombras */
     --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
     --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.06);
-    --shadow-md: 0 4px 12px rgba(30, 64, 175, 0.08);
-    --shadow-lg: 0 8px 24px rgba(30, 64, 175, 0.12);
+    --shadow-md: 0 4px 12px rgba(12, 31, 63, 0.08);
+    --shadow-lg: 0 8px 24px rgba(12, 31, 63, 0.12);
     --shadow-xl: 0 18px 38px rgba(15, 23, 42, 0.18);
-    --shadow-card-hover: 0 6px 16px rgba(30, 64, 175, 0.10);
+    --shadow-card-hover: 0 6px 16px rgba(12, 31, 63, 0.10);
 
-    /* NOVO — Sombras coloridas (glow) pra hover */
-    --shadow-glow-blue: 0 8px 22px rgba(30, 64, 175, 0.25);
-    --shadow-glow-green: 0 8px 22px rgba(5, 150, 105, 0.25);
-    --shadow-glow-mixed: 0 8px 22px rgba(30, 64, 175, 0.18), 0 8px 22px rgba(5, 150, 105, 0.10);
-    --shadow-ring-blue: 0 0 0 4px rgba(30, 64, 175, 0.15);
-    --shadow-ring-green: 0 0 0 4px rgba(5, 150, 105, 0.15);
+    /* Sombras coloridas (glow) — agora todas baseadas em #0c1f3f */
+    --shadow-glow-blue:  0 8px 22px rgba(12, 31, 63, 0.25);
+    --shadow-glow-green: 0 8px 22px rgba(12, 31, 63, 0.25);
+    --shadow-glow-mixed: 0 8px 22px rgba(12, 31, 63, 0.25);
+    --shadow-ring-blue:  0 0 0 4px rgba(12, 31, 63, 0.15);
+    --shadow-ring-green: 0 0 0 4px rgba(12, 31, 63, 0.15);
 
     /* Tipografia */
     --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -107,7 +114,7 @@
     --sidebar-width: 232px;
     --sidebar-width-collapsed: 68px;
 
-    /* Transições — agora com curvas suaves */
+    /* Transições */
     --transition-fast: 0.15s ease;
     --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -121,7 +128,7 @@ html, body {
     background-color: var(--color-bg);
 
     /* Pattern de dots azul opaco */
-    background-image: radial-gradient(circle, rgba(30, 64, 175, 0.10) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(12, 31, 63, 0.10) 1px, transparent 1px);
     background-size: 22px 22px;
     background-attachment: fixed;
 
@@ -196,8 +203,8 @@ input, select, textarea {
 }
 
 @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(30, 64, 175, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(30, 64, 175, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(12, 31, 63, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(12, 31, 63, 0); }
 }
 
 @keyframes slide-in-up {

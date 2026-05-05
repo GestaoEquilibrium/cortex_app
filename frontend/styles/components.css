@@ -19,7 +19,7 @@
 
 .sidebar {
     width: var(--sidebar-width);
-    background: var(--gradient-primary-vertical);
+    background: #0c1f3f;
     color: white;
     border-right: none;
     display: flex;
@@ -183,15 +183,24 @@
 }
 
 .nav-item.active {
-    background: rgba(255, 255, 255, 0.22);
-    color: white;
+    background: white;
+    color: #1e2d4c;
     font-weight: 600;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
 }
 
 .nav-item.active::before {
-    height: 70%;
+    height: 0;
+}
+
+.nav-item.active:hover {
+    background: white;
+    color: #1e2d4c;
+    transform: none;
+}
+
+.nav-item.active .nav-item-icon {
+    color: #1e2d4c;
 }
 
 .nav-item-icon {
@@ -212,8 +221,8 @@
 }
 
 .nav-item.active .sidebar-badge {
-    background: white;
-    color: var(--primary-blue-dark);
+    background: #1e2d4c;
+    color: white;
 }
 
 /* User card no rodapé */

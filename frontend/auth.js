@@ -2,7 +2,7 @@
 // CORTEX_APP — Lógica de autenticação (atualizada para Sprint B1)
 // ============================================================================
 // Mudança em relação ao Sprint A2:
-//   - Após login, redireciona para pacientes/lista.html (em vez de dashboard.html)
+//   - Após login, redireciona para dashboard.html (em vez de dashboard.html)
 //   - O dashboard.html continua existindo como fallback, mas a página
 //     principal pós-login agora é a lista de pacientes.
 // ============================================================================
@@ -20,7 +20,7 @@ async function checkExistingSession() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
         // Já está logado, redireciona pra lista de pacientes
-        window.location.href = 'pacientes/lista.html';
+        window.location.href = 'dashboard.html';
     }
 }
 
@@ -61,7 +61,7 @@ function setupLoginForm() {
             await registerLoginAudit(data.user);
 
             // Redireciona para a lista de pacientes
-            window.location.href = 'pacientes/lista.html';
+            window.location.href = 'dashboard.html';
 
         } catch (error) {
             let mensagemErro = 'Não foi possível fazer login. ';

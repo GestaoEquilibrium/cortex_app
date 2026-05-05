@@ -22,8 +22,7 @@ window.CortexSidebar = (function() {
         {
             id: 'dashboard',
             label: 'Dashboard',
-            href: '#',
-            disabled: true,
+            href: '../dashboard.html',
             icon: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'
         },
         {
@@ -108,13 +107,25 @@ window.CortexSidebar = (function() {
         // Recupera estado de colapso (preferência salva)
         const colapsada = localStorage.getItem('cortex_sidebar_collapsed') === 'true';
 
+        // Detecta se estamos na raiz (/dashboard.html, /index.html) ou em subpasta
+        // Se o pathname tiver mais de uma '/' antes do arquivo final, estamos em subpasta
+        const path = window.location.pathname;
+        const segments = path.split('/').filter(s => s.length > 0);
+        // segments inclui o nome do arquivo. Se for ['dashboard.html'] = raiz; se for ['pacientes', 'lista.html'] = subpasta
+        const naRaiz = segments.length <= 1;
+
         const navHtml = NAV_ITEMS.map(item => {
             const ativa = item.id === itemAtivoId ? 'active' : '';
             const onclick = item.disabled
                 ? `onclick="event.preventDefault(); ${item.disabledLabel ? `window.CortexUI && window.CortexUI.toast('${item.disabledLabel}', 'info');` : ''} return false;"`
                 : '';
+            // Ajusta href: se estamos na raiz e o link começa com '../', remove o '../'
+            let href = item.href;
+            if (naRaiz && href.startsWith('../')) {
+                href = href.replace(/^\.\.\//, '');
+            }
             return `
-                <a href="${item.href}" class="nav-item ${ativa}" ${onclick} title="${item.label}">
+                <a href="${href}" class="nav-item ${ativa}" ${onclick} title="${item.label}">
                     <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg>
                     <span class="sidebar-text">${item.label}</span>
                 </a>

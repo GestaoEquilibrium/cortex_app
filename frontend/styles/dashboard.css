@@ -1,0 +1,315 @@
+/* ============================================================================
+   CORTEX_APP — Dashboard (Sprint 4)
+   ============================================================================ */
+
+.dash-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--color-text-muted);
+}
+.dash-loading .spinner {
+    margin: 0 auto 16px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Cards superiores (4 métricas)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.dash-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.dash-card {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+    position: relative;
+    overflow: hidden;
+}
+.dash-card[href]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, .08);
+    border-color: #cbd5e1;
+}
+
+.dash-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--barra-cor, #94a3b8);
+}
+.dash-card-azul    { --barra-cor: #1a56db; }
+.dash-card-roxo    { --barra-cor: #7c3aed; }
+.dash-card-laranja { --barra-cor: #f59e0b; }
+.dash-card-verde   { --barra-cor: #059669; }
+
+.dash-card-icone {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.dash-card-info {
+    min-width: 0;
+}
+
+.dash-card-num {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--color-text);
+    line-height: 1;
+}
+
+.dash-card-label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 600;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Grid 2 colunas (principal + lateral)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.dash-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+.dash-col-principal,
+.dash-col-lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Bloco genérico (próximas sessões, pacientes, atalhos)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.dash-bloco {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+}
+
+.dash-bloco-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.dash-bloco-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.dash-link {
+    font-size: 12px;
+    color: #1a56db;
+    text-decoration: none;
+    font-weight: 600;
+}
+.dash-link:hover { text-decoration: underline; }
+
+.dash-empty {
+    padding: 22px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+.dash-empty p { margin: 0 0 12px 0; }
+
+/* ────────────────────────────────────────────────────────────────────────
+   Lista de sessões
+   ──────────────────────────────────────────────────────────────────────── */
+
+.dash-sessoes-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dash-sessao-item {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-left-width: 3px;
+    border-left-color: #7c3aed;
+    border-radius: var(--radius-md);
+    background: #fafcff;
+    text-decoration: none;
+    color: inherit;
+    transition: background .15s, border-color .15s;
+}
+.dash-sessao-item:hover {
+    background: white;
+    border-color: #cbd5e1;
+    border-left-color: #7c3aed;
+}
+
+.dash-sessao-data {
+    flex-shrink: 0;
+    text-align: center;
+    width: 70px;
+    padding: 6px 0;
+    background: #f5f3ff;
+    border-radius: var(--radius-sm);
+    border: 1px solid #e9d5ff;
+}
+.dash-sessao-dia {
+    font-size: 11px;
+    font-weight: 700;
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.dash-sessao-hora {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--color-text);
+    margin-top: 2px;
+}
+
+.dash-sessao-info { min-width: 0; flex: 1; }
+.dash-sessao-paciente {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+}
+.dash-sessao-meta {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Grid de pacientes ativos
+   ──────────────────────────────────────────────────────────────────────── */
+
+.dash-pacientes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.dash-paciente-card {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #fafcff;
+    text-decoration: none;
+    color: inherit;
+    transition: background .15s, border-color .15s;
+}
+.dash-paciente-card:hover {
+    background: white;
+    border-color: #cbd5e1;
+}
+
+.dash-paciente-avatar { flex-shrink: 0; }
+.dash-paciente-info { min-width: 0; flex: 1; }
+.dash-paciente-nome {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dash-paciente-meta {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin: 2px 0 4px 0;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Atalhos (lateral)
+   ──────────────────────────────────────────────────────────────────────── */
+
+.dash-atalhos {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dash-atalho {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #fafcff;
+    text-decoration: none;
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 600;
+    transition: background .15s, border-color .15s, transform .15s;
+}
+.dash-atalho:hover {
+    background: white;
+    border-color: #1a56db;
+    transform: translateX(2px);
+}
+
+.dash-atalho-icone { font-size: 18px; }
+
+/* ────────────────────────────────────────────────────────────────────────
+   Mini perfil
+   ──────────────────────────────────────────────────────────────────────── */
+
+.dash-perfil-mini {
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+}
+.dash-perfil-nome {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+.dash-perfil-meta {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+    word-break: break-all;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Responsivo
+   ──────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+    .dash-cards { grid-template-columns: repeat(2, 1fr); }
+    .dash-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .dash-cards { grid-template-columns: 1fr; }
+    .dash-pacientes-grid { grid-template-columns: 1fr; }
+}

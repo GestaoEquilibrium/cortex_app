@@ -11,8 +11,6 @@
 *.pem
 *.key
 
-# Configuração do frontend com credenciais Supabase
-frontend/config.js
 
 # Credenciais Supabase (chaves anônima e service_role)
 supabase/.env

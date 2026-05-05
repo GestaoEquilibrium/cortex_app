@@ -606,3 +606,121 @@
         display: none;
     }
 }
+/* ============================================================================
+   CORREÇÃO — Dashboard de status (Sprint 2)
+   ============================================================================ */
+
+.correcao-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* Resumo no topo */
+.correcao-resumo {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+}
+.correcao-resumo-info { flex-shrink: 0; }
+.correcao-resumo-progress {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 320px;
+}
+.correcao-resumo-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #1a56db, #059669);
+    border-radius: 4px;
+    transition: width .4s ease;
+}
+
+/* Grupos (Corrigidos / Pendentes / Online) */
+.correcao-grupo {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 16px 22px;
+}
+.correcao-grupo-titulo {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.correcao-grupo-contador {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Lista de instrumentos */
+.correcao-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.correcao-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-left-width: 4px;
+    border-radius: var(--radius-md);
+    background: #fafcff;
+    transition: background .15s;
+}
+.correcao-item:hover { background: white; }
+
+.correcao-item-ok     { border-left-color: #059669; }
+.correcao-item-pend   { border-left-color: #d97706; }
+.correcao-item-online { border-left-color: #1d4ed8; }
+
+.correcao-item-info {
+    flex: 1;
+    min-width: 0;
+}
+.correcao-item-sigla {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--color-text);
+    letter-spacing: .02em;
+}
+.correcao-item-nome {
+    font-size: 13px;
+    color: #475569;
+    margin-top: 1px;
+}
+.correcao-item-meta {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 3px;
+}
+.correcao-item-acoes {
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+@media (max-width: 720px) {
+    .correcao-resumo { flex-direction: column; align-items: flex-start; }
+    .correcao-resumo-progress { max-width: none; width: 100%; }
+    .correcao-item { flex-direction: column; align-items: flex-start; }
+    .correcao-item-acoes { width: 100%; }
+}

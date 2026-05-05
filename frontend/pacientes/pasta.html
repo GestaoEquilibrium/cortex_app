@@ -231,9 +231,6 @@
                     </div>
                     <div class="pasta-actions">
                         <span class="badge ${statusClass}">${statusLabel}</span>
-                        <a class="btn btn-secondary btn-sm" href="novo.html?id=${pacienteId}">
-                            ✏️ Editar dados
-                        </a>
                         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
                             ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
                         </button>
@@ -290,11 +287,33 @@
         if (etapaId === 'hipoteses') return renderHipoteses();
         if (etapaId === 'checklist') return renderChecklist();
         if (etapaId === 'bateria') return renderBateria();
+        if (etapaId === 'correcao') {
+            // Dispara carga assíncrona; substitui o conteúdo quando pronto
+            setTimeout(() => carregarERenderCorrecao(), 0);
+            return `
+                <div class="etapa-content" id="correcao-container">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">⏳</div>
+                        <h3>Carregando dashboard de correção...</h3>
+                    </div>
+                </div>
+            `;
+        }
+        if (etapaId === 'devolutiva') {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">🚧</div>
+                        <h3>Em construção</h3>
+                        <p>A etapa de Devolutiva estará disponível em breve.</p>
+                    </div>
+                </div>
+            `;
+        }
 
+        // laudo (Sprint 3 — em breve) e qualquer outra
         const sprints = {
-            'correcao': 'Sprint D4',
-            'laudo': 'Sprint D5',
-            'devolutiva': 'Sprint C2'
+            'laudo': 'Sprint 3'
         };
 
         const labelEtapa = ETAPAS.find(e => e.id === etapaId)?.label || etapaId;
@@ -311,6 +330,258 @@
                     </div>
                     <h3>${labelEtapa}</h3>
                     <p>Esta etapa será construída no <strong>${sprintInfo}</strong>.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================================================
+    // CORREÇÃO — Dashboard de status dos instrumentos da bateria
+    // ============================================================================
+
+    // Helpers (espelham bateria.js — mesma convenção de URL)
+    function correcaoSiglaParaSlug(sigla) {
+        return String(sigla || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+    const CORRECAO_URL_OVERRIDES_RESULTADO = {
+        'SCARED-A': '../correcao/scared/scared_resultado.html',
+        'SCARED-H': '../correcao/scared/scared_resultado.html'
+    };
+    // Whitelist de retrocompatibilidade (espelha bateria.js — testes legados)
+    const CORRECAO_WHITELIST_RESULTADO = ['RAADS-R'];
+
+    function correcaoMontarUrlResultado(sigla, aplicacaoId) {
+        let base = CORRECAO_URL_OVERRIDES_RESULTADO[sigla];
+        if (!base) {
+            const slug = correcaoSiglaParaSlug(sigla);
+            if (!slug) return null;
+            base = `../correcao/${slug}/${slug}_resultado.html`;
+        }
+        return `${base}?aplicacao_id=${aplicacaoId}`;
+    }
+
+    function correcaoTemPaginaResultado(inst) {
+        if (!inst) return false;
+        if (CORRECAO_WHITELIST_RESULTADO.includes(inst.sigla)) return true;
+        if (inst.tipo_aplicacao === 'presencial') {
+            return inst.permite_correcao_sistema === true;
+        }
+        return inst.permite_aplicacao_online === true
+            && inst.permite_correcao_sistema === true;
+    }
+
+    async function carregarERenderCorrecao() {
+        const container = document.getElementById('correcao-container');
+        if (!container) return;
+
+        try {
+            const { data, error } = await window.cortexClient
+                .from('aplicacoes_instrumento')
+                .select(`
+                    id, status, modalidade, data_aplicacao, data_conclusao,
+                    link_unico, link_acessado_em, updated_at, created_at,
+                    instrumentos_catalogo (
+                        sigla, nome_completo, tipo_aplicacao,
+                        permite_aplicacao_online, permite_correcao_sistema
+                    )
+                `)
+                .eq('paciente_id', pacienteId)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            container.innerHTML = renderCorrecao(data || []);
+        } catch (err) {
+            console.error('[correcao] erro ao carregar:', err);
+            container.innerHTML = `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">⚠</div>
+                    <h3>Erro ao carregar</h3>
+                    <p>${escapeHtml(err.message || 'erro desconhecido')}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderCorrecao(aplicacoes) {
+        if (aplicacoes.length === 0) {
+            return `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">📋</div>
+                    <h3>Nenhum instrumento na bateria</h3>
+                    <p style="margin-bottom: 18px;">Selecione testes no Checklist e inicie a Bateria para ver o status aqui.</p>
+                    <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">Ir para Checklist</a>
+                </div>
+            `;
+        }
+
+        // Classifica cada aplicação em um dos 3 grupos
+        const corrigidos = [];
+        const aguardandoCorrecao = [];
+        const onlineAguardando = [];
+
+        for (const apl of aplicacoes) {
+            const inst = apl.instrumentos_catalogo;
+            const sigla = inst?.sigla || '?';
+            const ehOnline = apl.modalidade === 'online'
+                || (inst?.permite_aplicacao_online && inst?.tipo_aplicacao !== 'presencial');
+
+            if (apl.status === 'corrigido' || apl.status === 'integrado_laudo') {
+                corrigidos.push(apl);
+            } else if (ehOnline && (apl.status === 'aguardando' || apl.status === 'em_aplicacao')) {
+                onlineAguardando.push(apl);
+            } else {
+                aguardandoCorrecao.push(apl);
+            }
+        }
+
+        const total = aplicacoes.length;
+        const pctConcluido = Math.round((corrigidos.length / total) * 100);
+
+        return `
+            <div class="correcao-dashboard">
+
+                <!-- Resumo -->
+                <div class="correcao-resumo">
+                    <div class="correcao-resumo-info">
+                        <h3 style="margin: 0 0 6px 0;">Instrumentos da bateria (${total})</h3>
+                        <p style="margin: 0; color: var(--color-text-muted); font-size: 13px;">
+                            ${corrigidos.length} de ${total} já corrigidos (${pctConcluido}%)
+                        </p>
+                    </div>
+                    <div class="correcao-resumo-progress">
+                        <div class="correcao-resumo-progress-bar" style="width: ${pctConcluido}%;"></div>
+                    </div>
+                </div>
+
+                <!-- ✅ Corrigidos -->
+                ${corrigidos.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #059669;">
+                            ✅ Corrigidos
+                            <span class="correcao-grupo-contador">${corrigidos.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${corrigidos.map(apl => renderCorrecaoLinhaCorrigido(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- ⏳ Aguardando correção (presencial / sem link) -->
+                ${aguardandoCorrecao.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #d97706;">
+                            ⏳ Aguardando correção
+                            <span class="correcao-grupo-contador">${aguardandoCorrecao.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${aguardandoCorrecao.map(apl => renderCorrecaoLinhaPendente(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- 📲 Online aguardando paciente -->
+                ${onlineAguardando.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #1d4ed8;">
+                            📲 Online — aguardando paciente
+                            <span class="correcao-grupo-contador">${onlineAguardando.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${onlineAguardando.map(apl => renderCorrecaoLinhaOnline(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Atalho para Bateria -->
+                <div style="margin-top: 22px; text-align: center;">
+                    <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-secondary">
+                        🎯 Ir para a Bateria
+                    </a>
+                </div>
+
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaCorrigido(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+        const dataConcl = apl.data_conclusao
+            ? formatarDataHora(apl.data_conclusao)
+            : (apl.updated_at ? formatarDataHora(apl.updated_at) : '—');
+
+        const podeVer = correcaoTemPaginaResultado(inst);
+        const url = podeVer ? correcaoMontarUrlResultado(sigla, apl.id) : null;
+
+        return `
+            <div class="correcao-item correcao-item-ok">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">Corrigido em ${dataConcl}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    ${url ? `
+                        <a class="btn btn-primary btn-sm" href="${url}">📊 Ver resultado</a>
+                    ` : `
+                        <span style="font-size: 12px; color: var(--color-text-muted); font-style: italic;">Sem página de resultado</span>
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaPendente(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+        const tipo = inst?.tipo_aplicacao === 'presencial' ? 'Presencial' : 'Online';
+        const statusLabel = {
+            'aguardando': 'Aguardando aplicação',
+            'em_aplicacao': 'Em aplicação',
+            'concluido_aplicacao': 'Aplicado — aguardando correção',
+            'em_correcao': 'Em correção',
+        }[apl.status] || apl.status;
+
+        return `
+            <div class="correcao-item correcao-item-pend">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">${tipo} — ${escapeHtml(statusLabel)}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    <a class="btn btn-secondary btn-sm" href="../bateria/bateria.html?paciente=${pacienteId}">Ir para a Bateria</a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaOnline(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+
+        let metaTxt = '';
+        if (apl.link_acessado_em) {
+            metaTxt = `Link acessado em ${formatarDataHora(apl.link_acessado_em)}`;
+        } else if (apl.link_unico) {
+            metaTxt = `Link enviado em ${formatarDataHora(apl.updated_at || apl.created_at)}`;
+        } else {
+            metaTxt = 'Aguardando geração de link';
+        }
+
+        return `
+            <div class="correcao-item correcao-item-online">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">${escapeHtml(metaTxt)}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    <a class="btn btn-secondary btn-sm" href="../bateria/bateria.html?paciente=${pacienteId}">Gerenciar link</a>
                 </div>
             </div>
         `;

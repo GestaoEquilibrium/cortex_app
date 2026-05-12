@@ -213,6 +213,9 @@
     <input type="file" id="foto-input-hidden" accept="image/jpeg,image/png,image/webp" style="display:none">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Sprint 17 — pra gerar PDF de anamnese remota -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../config.js"></script>
     <script src="../shared/supabase_client.js"></script>
     <script src="../shared/auth_guard.js"></script>
@@ -232,6 +235,7 @@
     let bateriaInfo = null;
     let ehAdmin = false;          // Sprint 8: controla botão Designar
     let aplicadorAtivo = null;    // Sprint 8: vínculo paciente↔aplicador atual
+    let respostasRemotas = [];    // Sprint 17: anamneses_remotas pendentes/respondidas
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -283,9 +287,23 @@
             carregarRelatorioEscolar(),
             carregarChecklistInfo(),
             carregarBateriaInfo(),
-            carregarAplicadorAtivo()
+            carregarAplicadorAtivo(),
+            carregarRespostasRemotas()
         ]);
         renderizarPasta();
+    }
+
+    // Sprint 17: carrega anamneses remotas pendentes/respondidas pra mostrar na aba Anamnese
+    async function carregarRespostasRemotas() {
+        const { data, error } = await window.cortexClient
+            .from('anamneses_remotas')
+            .select('id, status, respostas, quem_respondeu, nome_respondente, data_envio, data_resposta')
+            .eq('paciente_id', pacienteId)
+            .in('status', ['aguardando_resposta', 'respondida'])
+            .order('data_envio', { ascending: false });
+        if (!error && Array.isArray(data)) {
+            respostasRemotas = data;
+        }
     }
 
     // Sprint 8: carrega vínculo ativo paciente↔aplicador
@@ -1172,6 +1190,18 @@
     }
 
     function renderCardAnamnese() {
+        // Sprint 17: cards de respostas remotas SEMPRE no topo, independente do estado da anamnese
+        const cardsRemotos = renderCardsAnamnesesRemotas();
+
+        // Botão "Enviar formulário remoto" também SEMPRE disponível
+        const btnEnviarRemoto = `
+            <div class="anamnese-acoes-topo">
+                <button class="btn btn-secondary btn-sm" onclick="enviarAnamneseRemota()" title="Gera link pra paciente preencher antes da sessão">
+                    📧 Enviar formulário remoto
+                </button>
+            </div>
+        `;
+
         if (!anamneseExistente) {
             const idadeAnos = paciente.idade_anos;
             let faixaSugerida = 'Adulto';
@@ -1182,6 +1212,8 @@
             else faixaSugerida = 'Idoso (50+ anos)';
 
             return `
+                ${btnEnviarRemoto}
+                ${cardsRemotos}
                 <div class="etapa-placeholder">
                     <div class="etapa-placeholder-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -1214,6 +1246,8 @@
 
         if (isFinalizada) {
             return `
+                ${btnEnviarRemoto}
+                ${cardsRemotos}
                 <div class="anamnese-card-resumo">
                     <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-success">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -1233,6 +1267,8 @@
         }
 
         return `
+            ${btnEnviarRemoto}
+            ${cardsRemotos}
             <div class="anamnese-card-resumo">
                 <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-warning">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -1252,6 +1288,377 @@
                 </div>
             </div>
         `;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Sprint 17 — Anamnese Remota
+    // ════════════════════════════════════════════════════════════════════
+    function renderCardsAnamnesesRemotas() {
+        if (!respostasRemotas || respostasRemotas.length === 0) return '';
+
+        return respostasRemotas.map(ar => {
+            const isResp = ar.status === 'respondida';
+            const dataEnv = new Date(ar.data_envio).toLocaleDateString('pt-BR');
+            const dataResp = ar.data_resposta ? new Date(ar.data_resposta).toLocaleDateString('pt-BR') : null;
+            const respondente = ar.nome_respondente || ar.quem_respondeu || '—';
+
+            if (isResp) {
+                return `
+                    <div class="anamnese-card-remoto-pasta anamnese-card-remoto-respondida">
+                        <div class="anamnese-card-remoto-pasta-info">
+                            <div class="anamnese-card-remoto-pasta-titulo">📬 Formulário remoto respondido em ${dataResp}</div>
+                            <div class="anamnese-card-remoto-pasta-sub">Respondido por: ${escapeHtml(respondente)}${ar.quem_respondeu ? ` (${escapeHtml(ar.quem_respondeu)})` : ''}</div>
+                        </div>
+                        <div class="anamnese-card-remoto-pasta-acoes">
+                            <button class="btn btn-primary btn-sm" onclick="visualizarPdfAnamneseRemota('${ar.id}')">📄 Visualizar PDF</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="anamnese-card-remoto-pasta anamnese-card-remoto-pendente">
+                        <div class="anamnese-card-remoto-pasta-info">
+                            <div class="anamnese-card-remoto-pasta-titulo">⏳ Formulário enviado em ${dataEnv} — aguardando resposta</div>
+                            <div class="anamnese-card-remoto-pasta-sub">Quando o responsável preencher, as respostas aparecem aqui.</div>
+                        </div>
+                        <div class="anamnese-card-remoto-pasta-acoes">
+                            <button class="btn btn-secondary btn-sm" onclick="copiarLinkRemoto('${ar.id}')">Copiar link</button>
+                            <button class="btn btn-secondary btn-sm" onclick="cancelarRemotaPasta('${ar.id}')">Cancelar</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }).join('');
+    }
+
+    // Mantém os tokens em cache pra reuso ao "Copiar link"
+    const _tokensRemotosCache = {};
+
+    async function enviarAnamneseRemota() {
+        try {
+            const { data, error } = await window.cortexClient
+                .rpc('criar_anamnese_remota', { p_paciente_id: pacienteId });
+            if (error) throw error;
+            const linha = Array.isArray(data) ? data[0] : data;
+            if (!linha || !linha.novo_token) throw new Error('Não retornou token');
+
+            const base = window.location.origin + window.location.pathname.replace(/pacientes\/pasta\.html$/, '');
+            const link = `${base}responder/anamnese_remota.html?token=${linha.novo_token}`;
+
+            // Guarda o token pra reuso (Copiar link no card pendente)
+            _tokensRemotosCache[linha.anamnese_remota_id] = linha.novo_token;
+
+            mostrarModalLinkRemoto(link);
+
+            // Recarrega lista pra mostrar o card "aguardando resposta"
+            await carregarRespostasRemotas();
+            renderizarPasta();
+        } catch (err) {
+            console.error('Erro ao gerar link remoto:', err);
+            window.CortexUI.toast('Erro ao gerar link: ' + (err.message || ''), 'danger');
+        }
+    }
+
+    async function copiarLinkRemoto(arId) {
+        // Se temos o token em cache (mesma sessão), usa; senão, regenera não dá — token só vem na criação.
+        // Solução: como o token está só no banco do paciente que vai abrir, não dá pra recuperar pelo painel.
+        // Avisa o usuário se não temos cache.
+        const token = _tokensRemotosCache[arId];
+        if (!token) {
+            alert('Não consigo recuperar o link desta sessão antiga. Por segurança, o token só está disponível no momento da geração.\n\nSe precisar enviar de novo, cancele este envio e gere um novo formulário remoto.');
+            return;
+        }
+        const base = window.location.origin + window.location.pathname.replace(/pacientes\/pasta\.html$/, '');
+        const link = `${base}responder/anamnese_remota.html?token=${token}`;
+        mostrarModalLinkRemoto(link);
+    }
+
+    function mostrarModalLinkRemoto(link) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+        const msgWhats = encodeURIComponent(
+            'Olá! Aqui está o link do formulário pré-avaliação que falamos. Preencha com calma:\n\n' + link
+        );
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Link do formulário remoto</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin: 0 0 14px; color: #475569; font-size: 14px;">Copie o link abaixo e envie ao paciente ou responsável:</p>
+                    <input type="text" class="form-input" id="link-remoto-input" readonly value="${escapeHtml(link)}" style="width: 100%; font-size: 13px;">
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button class="btn btn-secondary" id="btn-copiar-remoto" style="flex: 1;">📋 Copiar link</button>
+                        <a class="btn btn-primary" style="flex: 1; text-decoration: none; text-align: center;"
+                           href="https://wa.me/?text=${msgWhats}" target="_blank" rel="noopener">📱 Enviar por WhatsApp</a>
+                    </div>
+                    <p style="margin: 18px 0 0; color: #64748b; font-size: 12.5px; font-style: italic;">
+                        💡 O link não expira. Só pode ser usado uma vez. Se precisar reenviar, gere um novo.
+                    </p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        document.getElementById('btn-copiar-remoto').addEventListener('click', () => {
+            const inp = document.getElementById('link-remoto-input');
+            inp.select();
+            document.execCommand('copy');
+            window.CortexUI.toast('Link copiado!', 'success');
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Sprint 17 — mapeamento de chaves técnicas pra rótulos humanos
+    // (espelhado do anamnese_remota_perguntas.js)
+    // ════════════════════════════════════════════════════════════════════
+    const ROTULOS_ANAMNESE_REMOTA = {
+        // queixa
+        motivo: 'Motivo da avaliação',
+        impacto: 'Impacto no dia a dia',
+        tempo_queixa: 'Há quanto tempo existem',
+        encaminhado_por: 'Quem indicou a avaliação',
+        // gestação
+        tipo_parto: 'Tipo de parto',
+        gestacao_risco: 'Gestação de alto risco',
+        tempo_gestacao: 'Semanas de gestação ao nascer',
+        peso_nascimento: 'Peso aproximado ao nascer',
+        intercorrencias_gestacao: 'Intercorrências durante gestação/parto',
+        // desenvolvimento
+        idade_andou: 'Idade que começou a andar sozinha',
+        idade_falou: 'Idade das primeiras palavras',
+        controle_esfincter: 'Idade do controle do xixi/cocô',
+        desenvolvimento_obs: 'Observações sobre o desenvolvimento',
+        // escola
+        serie_escolar: 'Série / ano escolar',
+        tipo_escola: 'Tipo de escola',
+        desempenho_escolar: 'Desempenho escolar',
+        dificuldades_escolares: 'Dificuldades específicas',
+        queixa_escola: 'Preocupação da escola',
+        // comportamento
+        comportamentos_observados: 'Comportamentos observados',
+        amigos: 'Relacionamento com outras crianças / amigos',
+        // trabalho/vida pessoal
+        ocupacao: 'Profissão / ocupação',
+        situacao_trabalho: 'Situação de trabalho',
+        escolaridade: 'Escolaridade',
+        dificuldades_trabalho: 'Dificuldades no trabalho',
+        estado_civil: 'Estado civil',
+        tem_filhos: 'Filhos',
+        // idoso
+        com_quem_mora: 'Com quem mora',
+        autonomia: 'Atividades que precisa de ajuda',
+        inicio_queixas: 'Quando as queixas começaram',
+        piora: 'Estão piorando',
+        // saúde
+        medicacoes: 'Medicamentos em uso',
+        diagnosticos_anteriores: 'Diagnósticos anteriores',
+        acompanhamentos: 'Acompanhamentos atuais',
+        doencas_cronicas: 'Doenças crônicas',
+        sono: 'Padrão de sono',
+        // família
+        hist_familiar: 'Casos na família',
+        hist_familiar_detalhes: 'Detalhes do histórico familiar',
+        // final
+        expectativas: 'Expectativas com a avaliação',
+        informacoes_extras: 'Informações adicionais',
+    };
+
+    function rotulo(chave) {
+        return ROTULOS_ANAMNESE_REMOTA[chave] || chave.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+    }
+
+    function renderValorResposta(v) {
+        if (v === null || v === undefined || v === '') return '<em style="color:#94a3b8;">— em branco —</em>';
+        if (Array.isArray(v)) {
+            if (v.length === 0) return '<em style="color:#94a3b8;">— em branco —</em>';
+            return v.map(escapeHtml).join(' · ');
+        }
+        return escapeHtml(String(v)).replace(/\n/g, '<br>');
+    }
+
+    function montarDocumentoAnamneseRemotaHTML(ar) {
+        const meta = (ar.respostas && ar.respostas._metadata) || {};
+        const respostasLimpas = { ...ar.respostas };
+        delete respostasLimpas._metadata;
+
+        const dataResp = ar.data_resposta
+            ? new Date(ar.data_resposta).toLocaleDateString('pt-BR') + ' às ' + new Date(ar.data_resposta).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+            : '—';
+        const dataEnv = new Date(ar.data_envio).toLocaleDateString('pt-BR');
+
+        const linhas = Object.entries(respostasLimpas).map(([k, v]) => `
+            <div style="margin: 0 0 12px; padding: 0 0 10px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">
+                    ${escapeHtml(rotulo(k))}
+                </div>
+                <div style="font-size: 13px; color: #0f172a; line-height: 1.5;">
+                    ${renderValorResposta(v)}
+                </div>
+            </div>
+        `).join('');
+
+        const idade = paciente.idade_humanizada || '';
+        const cpf = paciente.cpf ? `<br>CPF: ${escapeHtml(paciente.cpf)}` : '';
+
+        // Documento todo dentro de uma div A4-like pra html2canvas + jsPDF
+        return `
+            <div id="pdf-anamnese-remota-conteudo" style="
+                width: 720px;
+                background: #fff;
+                padding: 40px 48px;
+                font-family: 'Inter', -apple-system, sans-serif;
+                color: #0f172a;
+                box-sizing: border-box;
+            ">
+                <!-- Cabeçalho -->
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    padding-bottom: 18px;
+                    border-bottom: 2px solid #0c1f3f;
+                    margin-bottom: 24px;
+                ">
+                    <div>
+                        <div style="font-size: 22px; font-weight: 800; color: #0c1f3f; letter-spacing: -0.01em;">
+                            Equilibrium <span style="font-weight: 400; color: #64748b;">Neuropsicologia</span>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase;">
+                            Formulário Pré-Avaliação
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 11px; color: #64748b;">
+                        Gerado em ${new Date().toLocaleDateString('pt-BR')}
+                    </div>
+                </div>
+
+                <!-- Identificação -->
+                <h2 style="font-size: 16px; font-weight: 700; color: #0c1f3f; margin: 0 0 14px;">Identificação</h2>
+                <div style="background: #f8fafc; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; line-height: 1.7; color: #1e293b;">
+                    <strong>Paciente:</strong> ${escapeHtml(paciente.nome_completo)}${cpf}<br>
+                    <strong>Idade:</strong> ${escapeHtml(idade)}<br>
+                    <strong>Respondido por:</strong> ${escapeHtml(ar.nome_respondente || '—')}${ar.quem_respondeu ? ' (' + escapeHtml(ar.quem_respondeu) + ')' : ''}${meta.relacao_outro ? '<br><strong>Relação:</strong> ' + escapeHtml(meta.relacao_outro) : ''}<br>
+                    <strong>Link enviado em:</strong> ${escapeHtml(dataEnv)}<br>
+                    <strong>Respondido em:</strong> ${escapeHtml(dataResp)}
+                </div>
+
+                <!-- Respostas -->
+                <h2 style="font-size: 16px; font-weight: 700; color: #0c1f3f; margin: 0 0 14px;">Respostas</h2>
+                <div>
+                    ${linhas}
+                </div>
+
+                <!-- Rodapé -->
+                <div style="margin-top: 36px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center;">
+                    Este documento é um relato de pré-avaliação preenchido remotamente. Deve ser revisado e
+                    complementado em sessão presencial com o profissional responsável.
+                </div>
+            </div>
+        `;
+    }
+
+    function visualizarPdfAnamneseRemota(arId) {
+        const ar = respostasRemotas.find(r => r.id === arId);
+        if (!ar) {
+            window.CortexUI.toast('Resposta não encontrada.', 'danger');
+            return;
+        }
+
+        const documentoHtml = montarDocumentoAnamneseRemotaHTML(ar);
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+            <div class="modal-content" style="max-width: 820px; max-height: 92vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h2>Formulário Pré-Avaliação</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" id="btn-baixar-pdf-anamnese-remota">📥 Baixar PDF</button>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                    </div>
+                </div>
+                <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 24px; background: #f1f5f9;">
+                    ${documentoHtml}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('btn-baixar-pdf-anamnese-remota').addEventListener('click', async () => {
+            await gerarPdfAnamneseRemota(ar);
+        });
+    }
+
+    async function gerarPdfAnamneseRemota(ar) {
+        if (!window.html2canvas || !window.jspdf) {
+            window.CortexUI.toast('Biblioteca de PDF ainda carregando, tente em 2 segundos...', 'info');
+            return;
+        }
+
+        const btn = document.getElementById('btn-baixar-pdf-anamnese-remota');
+        const txtOriginal = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+
+        try {
+            const el = document.getElementById('pdf-anamnese-remota-conteudo');
+            if (!el) throw new Error('Elemento do documento não encontrado');
+
+            const canvas = await window.html2canvas(el, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false
+            });
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const pdfWidth = 210, pdfHeight = 297;
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            if (imgHeight <= pdfHeight) {
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight);
+            } else {
+                let posY = 0, restante = imgHeight;
+                while (restante > 0) {
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, -posY, pdfWidth, imgHeight);
+                    restante -= pdfHeight;
+                    posY += pdfHeight;
+                    if (restante > 0) pdf.addPage();
+                }
+            }
+
+            const nomeAbreviado = (paciente.nome_completo || 'PACIENTE').toUpperCase()
+                .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
+            const d = new Date();
+            const dataStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const nomeArquivo = `Anamnese Remota - ${nomeAbreviado}_${dataStr}.pdf`;
+
+            pdf.save(nomeArquivo);
+            window.CortexUI.toast('PDF gerado com sucesso', 'success');
+        } catch (err) {
+            console.error('Erro ao gerar PDF:', err);
+            window.CortexUI.toast('Erro ao gerar PDF: ' + err.message, 'danger');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = txtOriginal; }
+        }
+    }
+
+    async function cancelarRemotaPasta(arId) {
+        if (!confirm('Cancelar este envio? O link parará de funcionar e não será mais possível receber as respostas.')) return;
+        try {
+            const { error } = await window.cortexClient
+                .from('anamneses_remotas')
+                .update({ status: 'cancelada' })
+                .eq('id', arId);
+            if (error) throw error;
+            await carregarRespostasRemotas();
+            renderizarPasta();
+            window.CortexUI.toast('Envio cancelado.', 'info');
+        } catch (err) {
+            window.CortexUI.toast('Erro: ' + err.message, 'danger');
+        }
     }
 
     function renderCardRelatorioEscolar() {

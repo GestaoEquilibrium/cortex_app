@@ -27,8 +27,7 @@
         // uma chave por coluna JSONB do banco
         dados: {},
         salvando: false,
-        editado: false,
-        respostasRemotas: []  // anamneses_remotas pendentes/respondidas pra este paciente
+        editado: false
     };
 
     let autoSaveTimeout = null;
@@ -55,9 +54,6 @@
                 await iniciarNovaAnamnese();
             }
 
-            // Sprint 17: carrega anamneses_remotas pendentes/respondidas
-            await carregarRespostasRemotas();
-
             atualizarLinkVoltar();
             renderizar();
 
@@ -66,21 +62,6 @@
             mostrarErro('Erro: ' + (err.message || 'desconhecido'));
         }
     });
-
-    async function carregarRespostasRemotas() {
-        if (!state.pacienteId) return;
-        try {
-            const { data, error } = await window.cortexClient
-                .from('anamneses_remotas')
-                .select('id, status, respostas, quem_respondeu, nome_respondente, data_envio, data_resposta, importada_em')
-                .eq('paciente_id', state.pacienteId)
-                .in('status', ['aguardando_resposta', 'respondida'])
-                .order('data_envio', { ascending: false });
-            if (!error && Array.isArray(data)) {
-                state.respostasRemotas = data;
-            }
-        } catch (_) { /* não-fatal */ }
-    }
 
     function atualizarLinkVoltar() {
         const link = document.getElementById('back-link');
@@ -189,9 +170,6 @@
                     <p class="anamnese-cabecalho-sub">${state.form.icon} ${state.form.tt} · ${state.form.rg}</p>
                 </div>
                 <div class="anamnese-cabecalho-acoes">
-                    <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.enviarRemoto()" title="Gera link pra paciente preencher antes da sessão">
-                        📧 Enviar formulário remoto
-                    </button>
                     ${!finalizada ? `
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.trocarFaixa()">
                             Trocar faixa etária
@@ -202,7 +180,6 @@
                     <span id="indicador-save" class="indicador-save"></span>
                 </div>
             </div>
-            ${renderCardsRespostasRemotas()}
         `;
 
         const progressBar = `
@@ -647,245 +624,8 @@
                 console.error('Erro ao finalizar:', err);
                 window.CortexUI.toast('Erro ao finalizar: ' + err.message, 'danger');
             }
-        },
-
-        // ════════════════════════════════════════════════════════════════════
-        // Sprint 17 — Anamnese Remota
-        // ════════════════════════════════════════════════════════════════════
-
-        enviarRemoto: async function() {
-            try {
-                const { data, error } = await window.cortexClient
-                    .rpc('criar_anamnese_remota', { p_paciente_id: state.pacienteId });
-                if (error) throw error;
-                const linha = Array.isArray(data) ? data[0] : data;
-                if (!linha || !linha.novo_token) throw new Error('Não retornou token');
-
-                const base = window.location.origin + window.location.pathname.replace(/anamnese\/anamnese\.html$/, '');
-                const link = `${base}responder/anamnese_remota.html?token=${linha.novo_token}`;
-
-                mostrarModalLink(link);
-
-                // Recarrega lista pra mostrar o card "aguardando resposta"
-                await carregarRespostasRemotas();
-                renderizar();
-            } catch (err) {
-                console.error('Erro ao gerar link:', err);
-                window.CortexUI.toast('Erro ao gerar link: ' + (err.message || ''), 'danger');
-            }
-        },
-
-        verRespostasRemotas: async function(id) {
-            const ar = state.respostasRemotas.find(r => r.id === id);
-            if (!ar) return;
-            mostrarModalRespostas(ar);
-        },
-
-        importarRespostasRemotas: async function(id) {
-            const ar = state.respostasRemotas.find(r => r.id === id);
-            if (!ar || ar.status !== 'respondida') return;
-            if (!confirm('Importar essas respostas pra anamnese?\n\nElas vão pré-preencher os campos correspondentes. Você poderá editar à vontade.')) return;
-
-            try {
-                // Importa: preenche o campo "observacoes" da seção apropriada da anamnese atual
-                // com um resumo formatado pra o profissional revisar
-                const resumo = formatarRespostasRemotasParaTexto(ar);
-                // Coloca no campo "informacoes_extras" do form atual ou nas observações genéricas
-                if (!state.dados.outros_profissionais) state.dados.outros_profissionais = {};
-                const existente = state.dados.outros_profissionais.add || '';
-                state.dados.outros_profissionais.add =
-                    (existente ? existente + '\n\n' : '') +
-                    '═══ Respostas do formulário remoto ═══\n' + resumo;
-
-                state.editado = true;
-                await salvarSilencioso();
-
-                // Marca como importada no banco
-                await window.cortexClient
-                    .from('anamneses_remotas')
-                    .update({
-                        status: 'importada',
-                        importada_em: new Date().toISOString(),
-                        importada_por: window.cortexProfissional.id,
-                        anamnese_id: state.anamneseId
-                    })
-                    .eq('id', id);
-
-                await carregarRespostasRemotas();
-                renderizar();
-
-                window.CortexUI.toast('Respostas importadas pra anamnese ✓', 'success');
-            } catch (err) {
-                console.error('Erro ao importar:', err);
-                window.CortexUI.toast('Erro ao importar: ' + (err.message || ''), 'danger');
-            }
-        },
-
-        cancelarRemoto: async function(id) {
-            if (!confirm('Cancelar este envio? O link parará de funcionar.')) return;
-            try {
-                await window.cortexClient
-                    .from('anamneses_remotas')
-                    .update({ status: 'cancelada' })
-                    .eq('id', id);
-                await carregarRespostasRemotas();
-                renderizar();
-                window.CortexUI.toast('Envio cancelado', 'info');
-            } catch (err) {
-                window.CortexUI.toast('Erro: ' + err.message, 'danger');
-            }
         }
     };
-
-    // ============================================================================
-    // Sprint 17 — helpers
-    // ============================================================================
-
-    function renderCardsRespostasRemotas() {
-        if (!state.respostasRemotas || state.respostasRemotas.length === 0) return '';
-
-        const cards = state.respostasRemotas.map(ar => {
-            const isResp = ar.status === 'respondida';
-            const dataEnv = new Date(ar.data_envio).toLocaleDateString('pt-BR');
-            const dataResp = ar.data_resposta ? new Date(ar.data_resposta).toLocaleDateString('pt-BR') : null;
-            const respondente = ar.nome_respondente || ar.quem_respondeu || '—';
-
-            if (isResp) {
-                return `
-                    <div class="anamnese-card-remoto anamnese-card-remoto-respondida">
-                        <div class="anamnese-card-remoto-info">
-                            <div class="anamnese-card-remoto-titulo">📬 Formulário remoto respondido em ${dataResp}</div>
-                            <div class="anamnese-card-remoto-sub">Respondido por: ${escapeHtml(respondente)}${ar.quem_respondeu ? ` (${escapeHtml(ar.quem_respondeu)})` : ''}</div>
-                        </div>
-                        <div class="anamnese-card-remoto-acoes">
-                            <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.verRespostasRemotas('${ar.id}')">Ver respostas</button>
-                            ${state.anamneseId ? `
-                                <button class="btn btn-primary btn-sm" onclick="window.CortexAnamnese.importarRespostasRemotas('${ar.id}')">Importar pra anamnese</button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="anamnese-card-remoto anamnese-card-remoto-pendente">
-                        <div class="anamnese-card-remoto-info">
-                            <div class="anamnese-card-remoto-titulo">⏳ Formulário enviado em ${dataEnv} — aguardando resposta</div>
-                            <div class="anamnese-card-remoto-sub">Quando o responsável preencher, as respostas aparecem aqui.</div>
-                        </div>
-                        <div class="anamnese-card-remoto-acoes">
-                            <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.cancelarRemoto('${ar.id}')">Cancelar envio</button>
-                        </div>
-                    </div>
-                `;
-            }
-        }).join('');
-
-        return cards;
-    }
-
-    function mostrarModalLink(link) {
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.style.display = 'flex';
-        const msgWhatsApp = encodeURIComponent(
-            'Olá! Aqui está o link do formulário pré-avaliação que falamos. Preencha com calma:\n\n' + link
-        );
-        overlay.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Link do formulário remoto</h2>
-                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <p style="margin: 0 0 14px; color: #475569; font-size: 14px;">Copie o link abaixo e envie pro paciente ou responsável:</p>
-                    <input type="text" class="form-input" id="link-anamnese-input" readonly value="${escapeHtml(link)}" style="width: 100%; font-size: 13px;">
-                    <div style="display: flex; gap: 10px; margin-top: 16px;">
-                        <button class="btn btn-secondary" id="btn-copiar-link" style="flex: 1;">📋 Copiar link</button>
-                        <a class="btn btn-primary" style="flex: 1; text-decoration: none; text-align: center;"
-                           href="https://wa.me/?text=${msgWhatsApp}" target="_blank" rel="noopener">
-                            📱 Enviar por WhatsApp
-                        </a>
-                    </div>
-                    <p style="margin: 18px 0 0; color: #64748b; font-size: 12.5px; font-style: italic;">
-                        💡 O link não expira. Pode ser usado uma vez. Se precisar reenviar, gere um novo link.
-                    </p>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-
-        document.getElementById('btn-copiar-link').addEventListener('click', () => {
-            const inp = document.getElementById('link-anamnese-input');
-            inp.select();
-            document.execCommand('copy');
-            window.CortexUI.toast('Link copiado!', 'success');
-        });
-    }
-
-    function mostrarModalRespostas(ar) {
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.style.display = 'flex';
-
-        const meta = (ar.respostas && ar.respostas._metadata) || {};
-        const respostasLimpas = { ...ar.respostas };
-        delete respostasLimpas._metadata;
-
-        const respostasHtml = Object.entries(respostasLimpas).map(([k, v]) => {
-            const valorRender = Array.isArray(v)
-                ? (v.length === 0 ? '<em>vazio</em>' : v.map(escapeHtml).join(', '))
-                : (v === '' || v == null ? '<em>vazio</em>' : escapeHtml(String(v)));
-            return `
-                <div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
-                    <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">${escapeHtml(k)}</div>
-                    <div style="font-size: 14px; color: #0f172a; margin-top: 4px; white-space: pre-wrap;">${valorRender}</div>
-                </div>
-            `;
-        }).join('');
-
-        const dataResp = ar.data_resposta ? new Date(ar.data_resposta).toLocaleString('pt-BR') : '';
-
-        overlay.innerHTML = `
-            <div class="modal-content modal-large" style="max-width: 720px;">
-                <div class="modal-header">
-                    <h2>Respostas do formulário remoto</h2>
-                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div style="background: #f8fafc; padding: 14px 16px; border-radius: 8px; margin-bottom: 18px;">
-                        <div style="font-size: 13px; color: #475569;">
-                            <strong>Respondido em:</strong> ${escapeHtml(dataResp)}<br>
-                            <strong>Por:</strong> ${escapeHtml(ar.nome_respondente || '—')}${ar.quem_respondeu ? ' (' + escapeHtml(ar.quem_respondeu) + ')' : ''}
-                            ${meta.relacao_outro ? '<br><strong>Relação:</strong> ' + escapeHtml(meta.relacao_outro) : ''}
-                        </div>
-                    </div>
-                    ${respostasHtml || '<p><em>Sem respostas.</em></p>'}
-                </div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-    }
-
-    function formatarRespostasRemotasParaTexto(ar) {
-        const meta = (ar.respostas && ar.respostas._metadata) || {};
-        const lns = [];
-        lns.push(`Respondente: ${ar.nome_respondente || '—'}${ar.quem_respondeu ? ' (' + ar.quem_respondeu + ')' : ''}`);
-        if (meta.relacao_outro) lns.push(`Relação: ${meta.relacao_outro}`);
-        if (ar.data_resposta) lns.push(`Data: ${new Date(ar.data_resposta).toLocaleString('pt-BR')}`);
-        lns.push('');
-
-        const respostasLimpas = { ...ar.respostas };
-        delete respostasLimpas._metadata;
-
-        Object.entries(respostasLimpas).forEach(([k, v]) => {
-            const valor = Array.isArray(v) ? v.join(', ') : (v == null ? '' : String(v));
-            if (valor.trim()) {
-                lns.push(`• ${k}: ${valor}`);
-            }
-        });
-
-        return lns.join('\n');
-    }
 
     // ============================================================================
     // UTILS

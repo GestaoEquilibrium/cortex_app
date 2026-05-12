@@ -470,3 +470,62 @@
     .anamnese-card-remoto-acoes { width: 100%; }
     .anamnese-card-remoto-acoes .btn { flex: 1; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Sprint 17 — Cards de Anamnese Remota na PASTA do paciente
+   (Visual ligeiramente diferente dos cards mostrados dentro da anamnese
+    pra ficarem proporcionais ao card principal da pasta)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.anamnese-acoes-topo {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
+.anamnese-card-remoto-pasta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    border: 1px solid;
+    flex-wrap: wrap;
+}
+
+.anamnese-card-remoto-pasta.anamnese-card-remoto-pendente {
+    background: #fef9c3;
+    border-color: #fde047;
+}
+
+.anamnese-card-remoto-pasta.anamnese-card-remoto-respondida {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.anamnese-card-remoto-pasta-info { flex: 1; min-width: 280px; }
+
+.anamnese-card-remoto-pasta-titulo {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0c1f3f;
+    margin-bottom: 3px;
+}
+.anamnese-card-remoto-pasta-sub {
+    font-size: 13px;
+    color: #475569;
+}
+
+.anamnese-card-remoto-pasta-acoes {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+    .anamnese-card-remoto-pasta-acoes { width: 100%; }
+    .anamnese-card-remoto-pasta-acoes .btn { flex: 1; }
+}

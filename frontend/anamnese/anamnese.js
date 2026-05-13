@@ -171,11 +171,17 @@
                 </div>
                 <div class="anamnese-cabecalho-acoes">
                     ${!finalizada ? `
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.gerarLinkPublico()">
+                            🔗 Gerar link público
+                        </button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.trocarFaixa()">
                             Trocar faixa etária
                         </button>
                     ` : `
                         <span class="badge status-success">✓ Finalizada</span>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.baixarPDF()">
+                            📄 Baixar PDF
+                        </button>
                     `}
                     <span id="indicador-save" class="indicador-save"></span>
                 </div>
@@ -276,6 +282,52 @@
         const reqMark = f.req ? '<span class="required">*</span>' : '';
         const ph = f.ph || '';
 
+        // ---- NOVOS TIPOS Sprint 18 ----
+        if (f.tp === 'sn') {
+            return `
+                <div class="form-group ${fullClass}">
+                    <label class="form-label">${escapeHtml(f.lb)} ${reqMark}</label>
+                    <div class="ck-grupo">
+                        <label class="ck-item">
+                            <input type="radio" name="rd-${f.id}" data-campo="${f.id}" data-valor="Sim"><span>Sim</span>
+                        </label>
+                        <label class="ck-item">
+                            <input type="radio" name="rd-${f.id}" data-campo="${f.id}" data-valor="Não"><span>Não</span>
+                        </label>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (f.tp === 'sn_ta') {
+            return `
+                <div class="form-group ${fullClass}">
+                    <label class="form-label">${escapeHtml(f.lb)} ${reqMark}</label>
+                    <div class="ck-grupo">
+                        <label class="ck-item">
+                            <input type="radio" name="rd-${f.id}" data-campo="${f.id}" data-valor="Sim"><span>Sim</span>
+                        </label>
+                        <label class="ck-item">
+                            <input type="radio" name="rd-${f.id}" data-campo="${f.id}" data-valor="Não"><span>Não</span>
+                        </label>
+                    </div>
+                    <textarea class="form-textarea" data-campo="${f.id}_det" placeholder="${escapeHtml(ph || 'Se sim, descreva...')}" style="margin-top:8px; display:none;"></textarea>
+                </div>
+            `;
+        }
+
+        if (f.tp === 'sel_other') {
+            const ops = ['<option value="">Selecione...</option>',
+                ...(f.op || []).map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`)].join('');
+            return `
+                <div class="form-group ${fullClass}">
+                    <label class="form-label">${escapeHtml(f.lb)} ${reqMark}</label>
+                    <select class="form-select" data-campo="${f.id}">${ops}</select>
+                    <input type="text" class="form-input" data-campo="${f.id}_other" placeholder="Qual?" style="margin-top:8px; display:none;">
+                </div>
+            `;
+        }
+
         if (f.tp === 'cks') {
             const itens = (f.its || []).map((it, i) => `
                 <label class="ck-item">
@@ -349,11 +401,42 @@
             const valorSalvo = state.dados[col][f.id];
 
             if (f.tp === 'cks') {
-                const checkboxes = document.querySelectorAll(`input[data-campo="${f.id}"]`);
+                const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-campo="${f.id}"]`);
                 const valoresMarcados = Array.isArray(valorSalvo) ? valorSalvo : [];
                 checkboxes.forEach(cb => {
                     cb.checked = valoresMarcados.includes(cb.dataset.valor);
                 });
+                return;
+            }
+
+            // ---- NOVO Sprint 18: sn / sn_ta — radio Sim/Não ----
+            if (f.tp === 'sn' || f.tp === 'sn_ta') {
+                const radios = document.querySelectorAll(`input[type="radio"][data-campo="${f.id}"]`);
+                radios.forEach(r => {
+                    r.checked = r.dataset.valor === valorSalvo;
+                });
+                // sn_ta: mostrar campo de detalhe se valor = Sim
+                if (f.tp === 'sn_ta') {
+                    const det = document.querySelector(`[data-campo="${f.id}_det"]`);
+                    if (det) {
+                        det.style.display = (valorSalvo === 'Sim') ? '' : 'none';
+                        const detVal = state.dados[col][f.id + '_det'];
+                        if (detVal) det.value = detVal;
+                    }
+                }
+                return;
+            }
+
+            // ---- NOVO Sprint 18: sel_other ----
+            if (f.tp === 'sel_other') {
+                const sel = document.querySelector(`select[data-campo="${f.id}"]`);
+                const inp = document.querySelector(`input[data-campo="${f.id}_other"]`);
+                if (sel && valorSalvo !== undefined) sel.value = valorSalvo;
+                if (inp) {
+                    inp.style.display = (valorSalvo === 'Outro') ? '' : 'none';
+                    const otherVal = state.dados[col][f.id + '_other'];
+                    if (otherVal) inp.value = otherVal;
+                }
                 return;
             }
 
@@ -378,15 +461,61 @@
 
         (sec.g2 || sec.g3 || []).forEach(f => {
             if (f.tp === 'cks') {
-                document.querySelectorAll(`input[data-campo="${f.id}"]`).forEach(cb => {
+                document.querySelectorAll(`input[type="checkbox"][data-campo="${f.id}"]`).forEach(cb => {
                     cb.addEventListener('change', () => {
                         const marcados = Array.from(
-                            document.querySelectorAll(`input[data-campo="${f.id}"]:checked`)
+                            document.querySelectorAll(`input[type="checkbox"][data-campo="${f.id}"]:checked`)
                         ).map(c => c.dataset.valor);
                         state.dados[col][f.id] = marcados;
                         marcarEditado();
                     });
                 });
+                return;
+            }
+
+            // ---- NOVO Sprint 18: sn / sn_ta ----
+            if (f.tp === 'sn' || f.tp === 'sn_ta') {
+                document.querySelectorAll(`input[type="radio"][data-campo="${f.id}"]`).forEach(r => {
+                    r.addEventListener('change', () => {
+                        if (r.checked) {
+                            state.dados[col][f.id] = r.dataset.valor;
+                            marcarEditado();
+                            if (f.tp === 'sn_ta') {
+                                const det = document.querySelector(`[data-campo="${f.id}_det"]`);
+                                if (det) det.style.display = (r.dataset.valor === 'Sim') ? '' : 'none';
+                            }
+                        }
+                    });
+                });
+                if (f.tp === 'sn_ta') {
+                    const det = document.querySelector(`[data-campo="${f.id}_det"]`);
+                    if (det) {
+                        det.addEventListener('input', () => {
+                            state.dados[col][f.id + '_det'] = det.value.trim();
+                            marcarEditado();
+                        });
+                    }
+                }
+                return;
+            }
+
+            // ---- NOVO Sprint 18: sel_other ----
+            if (f.tp === 'sel_other') {
+                const sel = document.querySelector(`select[data-campo="${f.id}"]`);
+                const inp = document.querySelector(`input[data-campo="${f.id}_other"]`);
+                if (sel) {
+                    sel.addEventListener('change', () => {
+                        state.dados[col][f.id] = sel.value;
+                        marcarEditado();
+                        if (inp) inp.style.display = (sel.value === 'Outro') ? '' : 'none';
+                    });
+                }
+                if (inp) {
+                    inp.addEventListener('input', () => {
+                        state.dados[col][f.id + '_other'] = inp.value.trim();
+                        marcarEditado();
+                    });
+                }
                 return;
             }
 
@@ -623,6 +752,90 @@
             } catch (err) {
                 console.error('Erro ao finalizar:', err);
                 window.CortexUI.toast('Erro ao finalizar: ' + err.message, 'danger');
+            }
+        },
+
+        // ====================================================================
+        // SPRINT 18 — Gerar link público de resposta remota
+        // ====================================================================
+        gerarLinkPublico: async function() {
+            if (!state.anamneseId) {
+                // Salva primeiro pra ter ID
+                if (state.editado) await salvarSilencioso();
+                if (!state.anamneseId) {
+                    window.CortexUI.toast('Salve a anamnese antes de gerar o link', 'danger');
+                    return;
+                }
+            }
+
+            const confirma = confirm(
+                'Gerar link público de uso único?\n\n' +
+                'O link permite que o paciente/responsável responda a anamnese de casa. ' +
+                'Expira em 7 dias ou após o envio (o que vier primeiro).'
+            );
+            if (!confirma) return;
+
+            try {
+                const { data, error } = await window.cortexClient
+                    .from('anamneses_tokens_publicos')
+                    .insert({
+                        anamnese_id: state.anamneseId,
+                        paciente_id: state.pacienteId,
+                        profissional_id: window.cortexProfissional.id,
+                        paciente_nome: state.paciente.nome_completo,
+                        paciente_data_nascimento: state.paciente.data_nascimento,
+                        faixa_etaria: state.faixa,
+                        created_by: window.cortexProfissional.id
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                const baseOrigin = window.location.origin;
+                const basePath = window.location.pathname.replace(/\/anamnese\/[^/]*$/, '');
+                const url = `${baseOrigin}${basePath}/anamnese-publica/index.html?t=${data.token}`;
+
+                // Tenta copiar pro clipboard
+                let copiou = false;
+                try {
+                    await navigator.clipboard.writeText(url);
+                    copiou = true;
+                } catch (e) { /* segue sem copiar */ }
+
+                const msg = copiou
+                    ? `Link gerado e COPIADO para a área de transferência!\n\nVálido por 7 dias ou até o envio.\n\n${url}`
+                    : `Link gerado!\n\nVálido por 7 dias ou até o envio.\n\nCopie manualmente:\n${url}`;
+
+                alert(msg);
+                if (copiou) {
+                    window.CortexUI.toast('Link copiado!', 'success');
+                }
+            } catch (err) {
+                console.error('Erro ao gerar link:', err);
+                window.CortexUI.toast('Erro ao gerar link: ' + (err.message || err), 'danger');
+            }
+        },
+
+        // ====================================================================
+        // SPRINT 18 — Baixar PDF da anamnese (delega para pdf.js)
+        // ====================================================================
+        baixarPDF: async function() {
+            if (!state.anamneseId) {
+                window.CortexUI.toast('Salve a anamnese antes de gerar o PDF', 'danger');
+                return;
+            }
+            if (!window.CortexAnamnesePDF) {
+                window.CortexUI.toast('Módulo de PDF não carregado. Recarregue a página.', 'danger');
+                return;
+            }
+            try {
+                window.CortexUI.toast('Gerando PDF...', 'info');
+                await window.CortexAnamnesePDF.gerar(state.anamneseId);
+                window.CortexUI.toast('PDF gerado com sucesso!', 'success');
+            } catch (err) {
+                console.error('Erro ao gerar PDF:', err);
+                window.CortexUI.toast('Erro ao gerar PDF: ' + (err.message || err), 'danger');
             }
         }
     };

@@ -1,337 +1,526 @@
 // ============================================================================
-// CORTEX_APP — Definição dos Formulários de Anamnese
+// CORTEX_APP — Sprint 18 v2 — forms.js
+// Definição dos 5 formulários de anamnese (Estratégia 2 — Google Forms).
 // ============================================================================
-// 5 formulários por faixa etária. Mapeamento de seção → coluna JSONB do banco.
+// Faixas (chaves novas):
+//   primeira_infancia  (0–6 anos)
+//   segunda_infancia   (6–12 anos)
+//   adolescencia       (12–18 anos)
+//   jovens_adultos     (18–50 anos)
+//   cinquenta_mais     (50+ anos)
 //
-// IMPORTANTE: cada seção tem um campo `col` que indica em QUAL coluna JSONB
-// da tabela `anamneses` os dados dessa seção são gravados. As 8 colunas
-// disponíveis (criadas no Sprint A1):
-//   - identificacao
-//   - queixa_historico
-//   - desenvolvimento
-//   - contexto_familiar
-//   - historico_escolar
-//   - saude_medicacoes
-//   - social_emocional
-//   - outros_profissionais
+// DSL (mantém compatibilidade com anamnese.js antigo + extensões Sprint 18):
+//   Seção: { ic, tt, col, g2:[...] }  ou g3 para 3 colunas
+//   Campo: { id, lb, tp, ... }
+//     tp = 'text' | 'ta' | 'date' | 'num' | 'sel' | 'cks'
+//          | 'sn' (radio Sim/Não)     ← NOVO
+//          | 'sn_ta' (radio + detalhe) ← NOVO
+//          | 'sel_other' (sel + "qual?") ← NOVO
+//   Outros: req=1 (obrigatório), full=1 (ocupa linha inteira),
+//           today=1 (preenche com data de hoje), ph (placeholder),
+//           op=[...] (sel), its=[...] (cks), mn/mx (num min/max).
 // ============================================================================
 
 window.CortexAnamneseForms = (function() {
     'use strict';
 
-    const HF  = ['TDAH','TEA','Dislexia','Depressão','Ansiedade','Bipolaridade','Esquizofrenia','Demência'];
-    const HFI = ['Alzheimer/Demência','Parkinson','AVC','Depressão','Bipolaridade','Esquizofrenia','TDAH','TEA'];
+    // -----------------------------------------------------------------------
+    // Listas reutilizáveis
+    // -----------------------------------------------------------------------
+    const HF = ['TDAH','TEA / Autismo','Dislexia','Demência','Alzheimer','Depressão','Ansiedade','Bipolaridade','Esquizofrenia'];
+    const SUBST_PAIS = ['Álcool','Cigarro','Maconha','Cocaína','Crack'];
+    const SUBST_PAC  = ['Álcool','Cigarro','Maconha','Cocaína','Crack','Outros'];
+    const REL_INF    = ['Pai/Mãe','Responsável Legal','Outro'];
+    const REL_ADU    = ['Sou eu mesmo','Responsável Legal','Cônjuge','Outro'];
+    const TIPO_PARTO = ['Normal vaginal','Cesárea','Fórceps','Outro'];
+    const TAM_BEBE   = ['Grande','Normal','Pequeno','Não sei'];
+    const COMP_REP   = ['Andar na ponta dos pés','Balançar as mãos','Dar pulinhos','Girar em torno de si'];
+    const SELET      = ['Come de tudo','Pouco seletivo(a)','Bastante seletivo(a)','Muito seletivo(a)'];
+    const ALIM_QUAL  = ['Excelente','Boa','Regular','Ruim'];
+    const PERFIL_SOC = ['Muito tímido(a)','Reservado(a)','Equilibrado(a)','Falante','Muito falante'];
+    const TEMPER     = ['Muito calmo(a)','Calmo(a)','Equilibrado(a)','Irritado(a)','Muito irritado(a)'];
+    const ADAPT_ESC  = ['Com facilidade','Resistência leve','Resistência intensa','Ainda não frequenta'];
+    const ALFAB      = ['Sem dificuldades','Com dificuldades leves','Com dificuldades intensas','Ainda não alfabetizado(a)'];
+    const APROVEIT   = ['Notas altas','Notas médias','Notas baixas','Misto'];
+    const HABIL_EV   = ['Adora','Vai de boa','Evita','Recusa'];
+    const REGRAS_RES = ['Muito bem','Bem','Com dificuldade','Com muita dificuldade'];
+    const HIG        = ['Totalmente independente','Com lembretes','Precisa de ajuda'];
+    const AUTON      = ['Totalmente independente','Algumas dificuldades','Precisa de ajuda em várias','Muito dependente'];
+    const ACOMPS     = ['Psicólogo','Psiquiatra','Neurologista'];
+    const OUTROS_PRF = ['Fonoaudiólogo','Terapeuta Ocupacional','Fisioterapeuta','Pediatra'];
+    const DIF_BEBE   = ['Sono','Alimentação','Mudanças de rotina'];
+    const TRACOS_HUM = ['Sinais de depressão','Sinais de ansiedade'];
+    const DESFR      = ['Dia e noite','Só durante o dia','Não foi desfraldado ainda'];
+    const ENS_MED    = ['Sim','Não','Em andamento'];
+    const SITU_TRAB  = ['Aposentado(a)','Aposentado(a) mas trabalha','Em atividade','Nunca trabalhou'];
+    const EST_CIVIL  = ['Casado(a)','Solteiro(a)','Viúvo(a)','Divorciado(a)','União estável','Outro'];
+    const SATIS_TRAB = ['Adoro','Gosto','Indiferente','Não gosto','Detesto'];
 
-    const F = {
-        infantil: {
-            icon: '🍼', tt: 'Primeira Infância', rg: '0 – 6 anos',
-            sects: [
-                { ic:'🏥', tt:'Encaminhamento', col:'outros_profissionais', g2:[
-                    {id:'med', lb:'Médico solicitante', tp:'text', req:1},
-                    {id:'cli', lb:'Clínica / Telefone', tp:'text'}
-                ]},
-                { ic:'👤', tt:'Identificação', col:'identificacao', g2:[
-                    {id:'rel', lb:'Relação com a criança', tp:'sel', op:['Pai/Mãe','Responsável Legal','Outro']},
-                    {id:'nom', lb:'Nome da criança', tp:'text', req:1},
-                    {id:'nsc', lb:'Data de nascimento', tp:'date'},
-                    {id:'sex', lb:'Sexo', tp:'sel', op:['Masculino','Feminino']},
-                    {id:'pai', lb:'Nome dos pais', tp:'text', full:1},
-                    {id:'cid', lb:'Cidade de nascimento', tp:'text'},
-                    {id:'ava', lb:'Data da avaliação', tp:'date', today:1}
-                ]},
-                { ic:'🎯', tt:'Demanda', col:'queixa_historico', g2:[
-                    {id:'mot', lb:'Motivo da avaliação', tp:'ta', req:1, full:1, ph:'Descreva as principais preocupações e dificuldades...'},
-                    {id:'imp', lb:'Impacto no cotidiano', tp:'ta', full:1, ph:'Como as dificuldades afetam o dia a dia...'},
-                    {id:'tmq', lb:'Duração das queixas', tp:'sel', op:['Desde o nascimento','Menos de 6 meses','6 meses a 1 ano','1 a 2 anos','Mais de 2 anos']}
-                ]},
-                { ic:'🧬', tt:'Histórico Familiar', col:'contexto_familiar', g2:[
-                    {id:'hf', lb:'Transtornos na família', tp:'cks', its:HF, full:1},
-                    {id:'hfd', lb:'Detalhes (parentesco)', tp:'ta', full:1, ph:'Ex: pai com TDAH, tio materno com TEA...'}
-                ]},
-                { ic:'🤰', tt:'Histórico Gestacional e Perinatal', col:'desenvolvimento', g2:[
-                    {id:'par', lb:'Tipo de parto', tp:'sel', op:['Vaginal','Cesáriana eletiva','Cesáriana de emergência','Fórceps']},
-                    {id:'ris', lb:'Gestação de alto risco?', tp:'sel', op:['Sim','Não','Não sabe']},
-                    {id:'sem', lb:'Semanas de gestação', tp:'num', ph:'Ex: 38', mn:20, mx:45},
-                    {id:'pes', lb:'Peso ao nascer (g)', tp:'num', ph:'Ex: 3200'},
-                    {id:'ap1', lb:'Apgar 1º min', tp:'num', ph:'0–10', mn:0, mx:10},
-                    {id:'ap5', lb:'Apgar 5º min', tp:'num', ph:'0–10', mn:0, mx:10},
-                    {id:'ico', lb:'Intercorrências gestacionais', tp:'cks', full:1, its:['Hipertensão materna','Diabetes gestacional','Infecções','Prematuridade','Anóxia fetal','Uso de medicamentos','Álcool/substâncias']},
-                    {id:'obs', lb:'Outras observações perinatais', tp:'ta', full:1, ph:'UTI neonatal, icterícia, dificuldades de amamentação...'}
-                ]},
-                { ic:'📈', tt:'Marcos do Neurodesenvolvimento', col:'desenvolvimento', g3:[
-                    {id:'mc1', lb:'Sustentação da cabeça (meses)', tp:'num', ph:'~3m', mn:0, mx:24},
-                    {id:'mc2', lb:'Sentar sem apoio (meses)', tp:'num', ph:'~6m', mn:0, mx:24},
-                    {id:'mc3', lb:'Andar sem apoio (meses)', tp:'num', ph:'~12m', mn:0, mx:30},
-                    {id:'mc4', lb:'Primeiras palavras (meses)', tp:'num', ph:'~12m', mn:0, mx:48},
-                    {id:'mc5', lb:'Frases com 2+ palavras (meses)', tp:'num', ph:'~24m', mn:0, mx:60},
-                    {id:'mc6', lb:'Controle esfincteriano (meses)', tp:'num', ph:'~24–36m', mn:0, mx:72},
-                    {id:'reg', lb:'Regressão de habilidades?', tp:'sel', full:1, op:['Não houve regressão','Regressão de linguagem','Regressão motora','Regressão social (contato, interação)','Múltiplas áreas']},
-                    {id:'dob', lb:'Observações sobre o desenvolvimento', tp:'ta', full:1, ph:'Sono, alimentação, sensibilidades na primeira infância...'}
-                ]},
-                { ic:'💬', tt:'Linguagem e Comunicação', col:'desenvolvimento', g2:[
-                    {id:'lng', lb:'Nível de linguagem atual', tp:'sel', op:['Pré-verbal (sem palavras)','Palavras isoladas','Frases simples (2–3 palavras)','Frases elaboradas','Comunicação complexa para a idade']},
-                    {id:'cvi', lb:'Contato visual', tp:'sel', op:['Adequado','Reduzido','Ausente','Inconsistente']},
-                    {id:'clg', lb:'Características de linguagem', tp:'cks', full:1, its:['Ecolalia (repetição de palavras/frases)','Inversão pronominal ("você" por "eu")','Não aponta para pedir ou mostrar','Dificuldade em responder ao próprio nome','Atraso na linguagem expressiva','Dificuldade de compreensão']}
-                ]},
-                { ic:'🔍', tt:'Comportamento e Perfil Sensorial', col:'social_emocional', g2:[
-                    {id:'cmp', lb:'Comportamentos presentes', tp:'cks', full:1, its:['Estereotipias motoras (mão, corpo, voz)','Rituais / rotinas rígidas','Interesses restritos e intensos','Hiperatividade / agitação motora','Impulsividade','Birras intensas / difíceis de controlar','Agressividade ou autoagressão','Ansiedade / medos intensos']},
-                    {id:'sen', lb:'Perfil sensorial', tp:'cks', full:1, its:['Hipersensibilidade tátil (rejeita texturas, roupas)','Hipersensibilidade auditiva (ruídos, vozes)','Hipersensibilidade visual (luzes)','Seletividade alimentar intensa','Hipossensibilidade à dor','Busca excessiva por estímulos vestibulares (girar, balançar)']},
-                    {id:'cob', lb:'Observações comportamentais e sensoriais', tp:'ta', full:1, ph:'Padrões específicos, frequência, situações gatilho...'}
-                ]},
-                { ic:'💊', tt:'Saúde e Intervenções', col:'saude_medicacoes', g2:[
-                    {id:'med2', lb:'Uso de medicamentos', tp:'sel', op:['Não usa','Sim — psicotrópicos','Sim — outros']},
-                    {id:'son', lb:'Padrão de sono', tp:'sel', op:['Adequado para a idade','Dificuldade para adormecer','Despertares frequentes','Insônia significativa']},
-                    {id:'mdt', lb:'Medicamentos (nome, dose, tempo)', tp:'ta', full:1, ph:'Ex: Risperidona 0,5mg há 6 meses...'},
-                    {id:'int', lb:'Intervenções em andamento', tp:'cks', full:1, its:['Fonoaudiologia','Terapia Ocupacional','Psicologia / ABA','Neuropediatria','Psiquiatria','Fisioterapia']},
-                    {id:'dxs', lb:'Diagnósticos anteriores / Exames realizados', tp:'ta', full:1, ph:'Diagnósticos, EEG, neuroimagem, genética...'},
-                    {id:'add', lb:'Informações adicionais', tp:'ta', full:1, ph:'Qualquer informação adicional relevante...'}
-                ]}
-            ]
-        },
+    // -----------------------------------------------------------------------
+    // Seções genéricas (helpers)
+    // -----------------------------------------------------------------------
+    function secMedico() {
+        return { ic:'🏥', tt:'Encaminhamento', col:'outros_profissionais', g2:[
+            {id:'med', lb:'Médico solicitante', tp:'text', ph:'Nome do médico'},
+            {id:'cli', lb:'Clínica / Telefone', tp:'text', ph:'Clínica e contato'}
+        ]};
+    }
 
-        escolar: {
-            icon: '🎒', tt: 'Segunda Infância', rg: '6 – 12 anos',
-            sects: [
-                { ic:'🏥', tt:'Encaminhamento', col:'outros_profissionais', g2:[
-                    {id:'med', lb:'Médico solicitante', tp:'text', req:1},
-                    {id:'cli', lb:'Clínica / Telefone', tp:'text'}
-                ]},
-                { ic:'👤', tt:'Identificação', col:'identificacao', g2:[
-                    {id:'rel', lb:'Relação com a criança', tp:'sel', op:['Pai/Mãe','Responsável Legal','Outro']},
-                    {id:'nom', lb:'Nome da criança', tp:'text', req:1},
-                    {id:'nsc', lb:'Data de nascimento', tp:'date'},
-                    {id:'sex', lb:'Sexo', tp:'sel', op:['Masculino','Feminino']},
-                    {id:'pai', lb:'Nome dos pais', tp:'text', full:1},
-                    {id:'cid', lb:'Cidade de nascimento', tp:'text'},
-                    {id:'ava', lb:'Data da avaliação', tp:'date', today:1},
-                    {id:'ser', lb:'Série / Ano escolar', tp:'text', ph:'Ex: 3º ano do Ensino Fundamental'},
-                    {id:'esc', lb:'Nome da escola', tp:'text', ph:'Ex: Escola Municipal X'}
-                ]},
-                { ic:'🎯', tt:'Demanda', col:'queixa_historico', g2:[
-                    {id:'mot', lb:'Motivo da avaliação', tp:'ta', req:1, full:1, ph:'Descreva as queixas em detalhes...'},
-                    {id:'imp', lb:'Impacto na vida diária (escola, social, autonomia)', tp:'ta', full:1, ph:'Como as dificuldades afetam o desempenho, amizades...'},
-                    {id:'tmq', lb:'Início das dificuldades', tp:'sel', op:['Desde o pré-escolar','Início do Ensino Fundamental','Menos de 1 ano','Entre 1 e 2 anos','Mais de 2 anos']}
-                ]},
-                { ic:'🧬', tt:'Histórico Familiar', col:'contexto_familiar', g2:[
-                    {id:'hf', lb:'Transtornos na família', tp:'cks', its:HF, full:1},
-                    {id:'hfd', lb:'Detalhes (parentesco)', tp:'ta', full:1, ph:'Ex: mãe com TDAH, tio paterno com TEA...'}
-                ]},
-                { ic:'🌱', tt:'Desenvolvimento Precoce', col:'desenvolvimento', g2:[
-                    {id:'ges', lb:'Intercorrências gestacionais relevantes', tp:'ta', ph:'Prematuridade, complicações, Apgar...'},
-                    {id:'dev', lb:'Desenvolvimento neuropsicomotor precoce', tp:'sel', op:['Dentro do esperado','Atraso motor','Atraso de linguagem','Atraso em múltiplas áreas','Regressão de habilidades']},
-                    {id:'dob', lb:'Observações sobre a primeira infância', tp:'ta', full:1, ph:'Marcos, particularidades do desenvolvimento...'}
-                ]},
-                { ic:'📚', tt:'Histórico Escolar e Aprendizagem', col:'historico_escolar', g2:[
-                    {id:'des', lb:'Desempenho acadêmico geral', tp:'sel', op:['Acima da média','Na média','Abaixo da média','Muito abaixo — com reprovações']},
-                    {id:'rep', lb:'Já foi reprovado?', tp:'sel', op:['Não','Sim — 1 vez','Sim — 2 vezes ou mais']},
-                    {id:'ddc', lb:'Disciplinas com maior dificuldade', tp:'text', ph:'Ex: Português, Matemática'},
-                    {id:'bdc', lb:'Disciplinas com melhor desempenho', tp:'text', ph:'Ex: Ciências, Artes'},
-                    {id:'dap', lb:'Dificuldades específicas de aprendizagem', tp:'cks', full:1, its:['Leitura (decodificação, fluência)','Escrita (ortografia, produção textual)','Matemática (cálculo, raciocínio)','Atenção e concentração','Memória','Organização e planejamento']},
-                    {id:'ldo', lb:'Laudos / diagnósticos anteriores', tp:'ta', full:1, ph:'Laudos médicos, psicológicos, escolares...'}
-                ]},
-                { ic:'👫', tt:'Perfil Social e Comportamental', col:'social_emocional', g2:[
-                    {id:'soc', lb:'Relacionamento com colegas', tp:'sel', op:['Boa rede de amigos','Poucos amigos, mas relações estáveis','Dificuldades significativas de socialização','Isolamento social']},
-                    {id:'bul', lb:'Histórico de bullying', tp:'sel', op:['Sem histórico','Sim — vítima','Sim — autor','Sim — ambos']},
-                    {id:'cmp', lb:'Comportamentos presentes', tp:'cks', full:1, its:['Hiperatividade','Impulsividade','Desatenção frequente','Ansiedade','Instabilidade de humor','Comportamento opositor / desafiador','Perfeccionismo / rigidez','Retraimento social']}
-                ]},
-                { ic:'💊', tt:'Saúde e Intervenções', col:'saude_medicacoes', g2:[
-                    {id:'med2', lb:'Uso de medicamentos', tp:'sel', op:['Não usa','Sim — psicotrópicos','Sim — outros']},
-                    {id:'son', lb:'Padrão de sono', tp:'sel', op:['Adequado','Dificuldade para adormecer','Despertares frequentes','Insônia']},
-                    {id:'mdt', lb:'Medicamentos (nome, dose)', tp:'ta', full:1, ph:'Ex: Metilfenidato 10mg...'},
-                    {id:'int', lb:'Intervenções em andamento', tp:'cks', full:1, its:['Psicologia','Fonoaudiologia','Terapia Ocupacional','Psiquiatria','Neurologia','Reforço escolar']},
-                    {id:'add', lb:'Observações adicionais', tp:'ta', full:1, ph:'Qualquer informação adicional...'}
-                ]}
-            ]
-        },
+    function secIdentInf(labelNome) {
+        // Versão para crianças / adolescentes (sem estado civil aqui)
+        return { ic:'👤', tt:'Identificação', col:'identificacao', g2:[
+            {id:'rel', lb:'Relação com a pessoa avaliada', tp:'sel', op:REL_INF},
+            {id:'nom', lb:labelNome, tp:'text', req:1, full:1},
+            {id:'nsc', lb:'Data de nascimento', tp:'date'},
+            {id:'sex', lb:'Sexo', tp:'sel', op:['Masculino','Feminino']},
+            {id:'pai', lb:'Nome dos pais', tp:'text', full:1, ph:'Mãe e pai'},
+            {id:'cid', lb:'Cidade de nascimento', tp:'text'},
+            {id:'ava', lb:'Data da avaliação', tp:'date', today:1}
+        ]};
+    }
 
-        adolescente: {
-            icon: '🧑', tt: 'Adolescência', rg: '12 – 18 anos',
-            sects: [
-                { ic:'🏥', tt:'Encaminhamento', col:'outros_profissionais', g2:[
-                    {id:'med', lb:'Médico solicitante', tp:'text', req:1},
-                    {id:'cli', lb:'Clínica / Telefone', tp:'text'}
-                ]},
-                { ic:'👤', tt:'Identificação', col:'identificacao', g2:[
-                    {id:'rel', lb:'Relação com o adolescente', tp:'sel', op:['Pai/Mãe','Responsável Legal','Outro']},
-                    {id:'nom', lb:'Nome do adolescente', tp:'text', req:1},
-                    {id:'nsc', lb:'Data de nascimento', tp:'date'},
-                    {id:'sex', lb:'Sexo / Identidade de gênero', tp:'text', ph:'Ex: Feminino / ela-dela'},
-                    {id:'pai', lb:'Nome dos pais', tp:'text', full:1},
-                    {id:'cid', lb:'Cidade de nascimento', tp:'text'},
-                    {id:'ava', lb:'Data da avaliação', tp:'date', today:1},
-                    {id:'ser', lb:'Série / Ano escolar', tp:'text', ph:'Ex: 1º ano do Ensino Médio'}
-                ]},
-                { ic:'🎯', tt:'Demanda', col:'queixa_historico', g2:[
-                    {id:'mot', lb:'Motivo da avaliação', tp:'ta', req:1, full:1, ph:'Descreva as principais preocupações em detalhes...'},
-                    {id:'imp', lb:'Impacto na vida diária (escola, social, bem-estar)', tp:'ta', full:1, ph:'Como as dificuldades afetam os diferentes domínios...'}
-                ]},
-                { ic:'🧬', tt:'Histórico Familiar', col:'contexto_familiar', g2:[
-                    {id:'hf', lb:'Transtornos na família', tp:'cks', its:HF, full:1},
-                    {id:'hfd', lb:'Detalhes (parentesco)', tp:'ta', full:1, ph:'Ex: pai com TDAH, avó com depressão...'}
-                ]},
-                { ic:'📚', tt:'Histórico Escolar', col:'historico_escolar', g2:[
-                    {id:'des', lb:'Desempenho acadêmico', tp:'sel', op:['Acima da média','Na média','Abaixo da média','Muito abaixo / reprovações']},
-                    {id:'rep', lb:'Já foi reprovado?', tp:'sel', op:['Não','Sim — 1 vez','Sim — 2+ vezes']},
-                    {id:'ddc', lb:'Disciplinas com maior dificuldade', tp:'text', ph:'Ex: Português, Matemática'},
-                    {id:'bdc', lb:'Disciplinas com melhor desempenho', tp:'text', ph:'Ex: Biologia, Filosofia'},
-                    {id:'tra', lb:'Trajetória escolar', tp:'ta', full:1, ph:'Quando começaram as dificuldades? Houve mudanças no desempenho?'}
-                ]},
-                { ic:'🌱', tt:'Desenvolvimento Precoce', col:'desenvolvimento', g2:[
-                    {id:'ges', lb:'Intercorrências gestacionais/perinatais', tp:'ta', ph:'Prematuridade, complicações...'},
-                    {id:'dev', lb:'Desenvolvimento neuropsicomotor precoce', tp:'sel', op:['Dentro do esperado','Atraso motor','Atraso de linguagem','Atraso em múltiplas áreas','Não sabe informar']}
-                ]},
-                { ic:'🧠', tt:'Saúde Mental e Comportamento', col:'social_emocional', g2:[
-                    {id:'smt', lb:'Sintomas presentes', tp:'cks', full:1, its:['Ansiedade / ataques de pânico','Sintomas depressivos','Automutilação / comportamentos de risco','Transtorno alimentar','Distúrbios do sono','Isolamento social','Instabilidade de humor intensa','Comportamento opositor / desafiador']},
-                    {id:'sub', lb:'Uso de substâncias', tp:'sel', op:['Não','Uso experimental / esporádico','Uso regular','Abuso / dependência']},
-                    {id:'bul', lb:'Histórico de bullying', tp:'sel', op:['Sem histórico','Vítima de bullying','Cyberbullying','Ambos']},
-                    {id:'sob', lb:'Observações sobre saúde mental', tp:'ta', full:1, ph:'Contexto, episódios marcantes, busca anterior por ajuda...'}
-                ]},
-                { ic:'💊', tt:'Saúde e Intervenções', col:'saude_medicacoes', g2:[
-                    {id:'med2', lb:'Uso de medicamentos', tp:'sel', op:['Não usa','Sim — psicotrópicos','Sim — outros']},
-                    {id:'psa', lb:'Acompanhamento psicológico', tp:'sel', op:['Nunca','Sim — atualmente','Sim — anteriormente']},
-                    {id:'mdt', lb:'Medicamentos (nome, dose, tempo)', tp:'ta', full:1, ph:'Ex: Sertralina 50mg há 8 meses...'},
-                    {id:'dxs', lb:'Diagnósticos estabelecidos', tp:'ta', full:1, ph:'Diagnósticos médicos ou psicológicos anteriores...'},
-                    {id:'add', lb:'Observações adicionais', tp:'ta', full:1, ph:'Qualquer informação adicional...'}
-                ]}
-            ]
-        },
+    function secIdentAdu() {
+        return { ic:'👤', tt:'Identificação', col:'identificacao', g2:[
+            {id:'rel', lb:'Relação com a pessoa avaliada', tp:'sel', op:REL_ADU},
+            {id:'nom', lb:'Nome completo do avaliando', tp:'text', req:1, full:1},
+            {id:'nsc', lb:'Data de nascimento', tp:'date'},
+            {id:'sex', lb:'Sexo', tp:'sel', op:['Masculino','Feminino']},
+            {id:'pai', lb:'Nome dos pais', tp:'text', full:1, ph:'Mãe e pai'},
+            {id:'cid', lb:'Cidade de nascimento', tp:'text'},
+            {id:'ava', lb:'Data da avaliação', tp:'date', today:1}
+        ]};
+    }
 
-        adulto: {
-            icon: '🧑‍💼', tt: 'Adulto', rg: '18 – 50 anos',
-            sects: [
-                { ic:'🏥', tt:'Encaminhamento', col:'outros_profissionais', g2:[
-                    {id:'med', lb:'Médico solicitante', tp:'text', req:1},
-                    {id:'cli', lb:'Clínica / Telefone', tp:'text'}
-                ]},
-                { ic:'👤', tt:'Identificação', col:'identificacao', g2:[
-                    {id:'rel', lb:'Quem está respondendo?', tp:'sel', op:['Sou eu mesmo(a)','Responsável Legal','Cônjuge / Familiar','Outro']},
-                    {id:'nom', lb:'Nome do avaliando', tp:'text', req:1},
-                    {id:'nsc', lb:'Data de nascimento', tp:'date'},
-                    {id:'sex', lb:'Sexo / Identidade de gênero', tp:'text', ph:'Ex: Feminino'},
-                    {id:'pai', lb:'Nome dos pais', tp:'text', full:1},
-                    {id:'cid', lb:'Cidade de nascimento', tp:'text'},
-                    {id:'ava', lb:'Data da avaliação', tp:'date', today:1},
-                    {id:'esc', lb:'Escolaridade', tp:'sel', op:['Ensino Fundamental incompleto','Ensino Fundamental completo','Ensino Médio incompleto','Ensino Médio completo','Graduação incompleta','Graduação completa','Pós-graduação']},
-                    {id:'ocp', lb:'Profissão / Ocupação', tp:'text', ph:'Área de atuação'},
-                    {id:'prf', lb:'Situação profissional', tp:'sel', op:['Empregado(a)','Autônomo(a)','Desempregado(a)','Afastado(a) por doença','Estudante']},
-                    {id:'ecv', lb:'Estado civil', tp:'sel', op:['Solteiro(a)','Casado(a)','União estável','Divorciado(a)','Viúvo(a)']}
-                ]},
-                { ic:'🎯', tt:'Demanda', col:'queixa_historico', g2:[
-                    {id:'mot', lb:'Motivo da avaliação', tp:'ta', req:1, full:1, ph:'Descreva em detalhes as principais preocupações e queixas...'},
-                    {id:'imp', lb:'Impacto na vida diária (trabalho, social, autonomia)', tp:'ta', full:1, ph:'Como as dificuldades afetam o funcionamento nos diferentes domínios...'},
-                    {id:'tmq', lb:'Há quanto tempo as dificuldades estão presentes?', tp:'sel', op:['Desde a infância','Desde a adolescência','Menos de 1 ano','Entre 1 e 3 anos','Entre 3 e 10 anos','Mais de 10 anos']}
-                ]},
-                { ic:'🧬', tt:'Histórico Familiar', col:'contexto_familiar', g2:[
-                    {id:'hf', lb:'Transtornos na família', tp:'cks', its:HF, full:1},
-                    {id:'hfd', lb:'Detalhes (parentesco)', tp:'ta', full:1, ph:'Ex: mãe com depressão, irmão com TDAH...'}
-                ]},
-                { ic:'🌱', tt:'Desenvolvimento e Histórico Pessoal', col:'desenvolvimento', g2:[
-                    {id:'ges', lb:'Intercorrências gestacionais / perinatais', tp:'ta', ph:'Prematuridade, complicações, Apgar...'},
-                    {id:'dev', lb:'Desenvolvimento neuropsicomotor precoce', tp:'sel', op:['Dentro do esperado','Atraso de linguagem','Atraso motor','Atraso em múltiplas áreas','Não sabe informar']},
-                    {id:'trj', lb:'Trajetória escolar', tp:'ta', full:1, ph:'Como foi a vida escolar, dificuldades, desempenho...'}
-                ]},
-                { ic:'🧠', tt:'Saúde Mental', col:'social_emocional', g2:[
-                    {id:'smt', lb:'Sintomas atuais presentes', tp:'cks', full:1, its:['Ansiedade / ataques de pânico','Sintomas depressivos','Instabilidade de humor','Distúrbios do sono','Dificuldades sociais / isolamento','Fadiga social / exaustão após interações','Hipersensibilidade sensorial','Queixas de memória','Dificuldades de atenção / concentração','Dificuldades de organização e planejamento']},
-                    {id:'trt', lb:'Tratamentos psicológicos / psiquiátricos anteriores', tp:'ta', full:1, ph:'Tratamentos anteriores, diagnósticos, internações...'},
-                    {id:'pfs', lb:'Perfil sensorial — hipersensibilidades presentes', tp:'ta', full:1, ph:'Ex: intolerância a ruídos intensos, defensividade tátil, fotofobia...'},
-                    {id:'cmp', lb:'Padrões comportamentais específicos', tp:'ta', full:1, ph:'Estereotipias, rituais, interesses restritos e intensos (hiperfoco), mascaramento social...'}
-                ]},
-                { ic:'💊', tt:'Saúde Geral e Intervenções', col:'saude_medicacoes', g2:[
-                    {id:'med2', lb:'Uso de medicamentos', tp:'sel', op:['Não usa','Sim — psicotrópicos','Sim — outros']},
-                    {id:'son', lb:'Padrão de sono', tp:'sel', op:['Adequado','Dificuldade para adormecer','Despertares frequentes','Insônia significativa','Hipersonia']},
-                    {id:'mdt', lb:'Medicamentos (nome, dose, tempo de uso)', tp:'ta', full:1, ph:'Ex: Venlafaxina 75mg + Lamotrigina 100mg há 2 anos...'},
-                    {id:'clk', lb:'Doenças clínicas / exames realizados', tp:'ta', full:1, ph:'Condições médicas, neuroimagem, genética...'},
-                    {id:'add', lb:'Observações adicionais', tp:'ta', full:1, ph:'Qualquer informação adicional...'}
-                ]}
-            ]
-        },
-
-        idoso: {
-            icon: '🧓', tt: 'Idoso', rg: '50 anos+',
-            sects: [
-                { ic:'🏥', tt:'Encaminhamento', col:'outros_profissionais', g2:[
-                    {id:'med', lb:'Médico solicitante', tp:'text', req:1},
-                    {id:'cli', lb:'Clínica / Telefone', tp:'text'}
-                ]},
-                { ic:'👤', tt:'Identificação', col:'identificacao', g2:[
-                    {id:'rel', lb:'Quem está respondendo?', tp:'sel', op:['Sou eu mesmo(a)','Cônjuge','Filho(a)','Responsável Legal']},
-                    {id:'nom', lb:'Nome do avaliando', tp:'text', req:1},
-                    {id:'nsc', lb:'Data de nascimento', tp:'date'},
-                    {id:'sex', lb:'Sexo biológico', tp:'sel', op:['Masculino','Feminino']},
-                    {id:'esc', lb:'Escolaridade', tp:'sel', op:['Sem escolaridade formal','Ensino Fundamental incompleto','Ensino Fundamental completo','Ensino Médio','Graduação','Pós-graduação']},
-                    {id:'ano', lb:'Anos de estudo', tp:'num', ph:'Ex: 11', mn:0, mx:30},
-                    {id:'ecv', lb:'Estado civil', tp:'sel', op:['Solteiro(a)','Casado(a)','Viúvo(a)','Divorciado(a)']},
-                    {id:'sit', lb:'Situação atual', tp:'sel', op:['Aposentado(a)','Ativo(a) profissionalmente','Afastado(a)','Do lar']},
-                    {id:'ocp', lb:'Profissão principal da vida', tp:'text', ph:'Ex: Professora aposentada'},
-                    {id:'cid', lb:'Cidade de nascimento', tp:'text'},
-                    {id:'ava', lb:'Data da avaliação', tp:'date', today:1}
-                ]},
-                { ic:'🎯', tt:'Demanda', col:'queixa_historico', g2:[
-                    {id:'mot', lb:'Motivo da avaliação', tp:'ta', req:1, full:1, ph:'Descreva as principais preocupações em detalhes...'},
-                    {id:'imp', lb:'Impacto na vida diária (autonomia, social)', tp:'ta', full:1, ph:'Como as dificuldades afetam a independência e o cotidiano...'},
-                    {id:'tmq', lb:'Duração das dificuldades', tp:'sel', op:['Menos de 6 meses','6 meses a 1 ano','1 a 2 anos','2 a 5 anos','Mais de 5 anos']},
-                    {id:'qmp', lb:'Quem percebeu primeiro?', tp:'sel', op:['O próprio paciente','Cônjuge / companheiro(a)','Filhos','Médico','Outros familiares']},
-                    {id:'prg', lb:'Progressão do quadro', tp:'sel', op:['Piora gradual e contínua','Piora em degraus (súbita → estabiliza)','Estável','Oscila (dias bons e ruins)']}
-                ]},
-                { ic:'🧠', tt:'Queixas Cognitivas', col:'desenvolvimento', g2:[
-                    {id:'qmm', lb:'Memória', tp:'cks', full:1, its:['Esquece eventos / conversas recentes','Dificuldade para lembrar nomes','Perde objetos com frequência','Esquece compromissos / medicamentos','Repete perguntas ou histórias','Dificuldade com memória remota (eventos antigos)']},
-                    {id:'qln', lb:'Linguagem', tp:'cks', full:1, its:['Dificuldade para encontrar palavras (anomia)','Dificuldade de compreensão','Discurso desorganizado / vago','Dificuldade de leitura recente']},
-                    {id:'qex', lb:'Funções executivas e orientação', tp:'cks', full:1, its:['Dificuldade para planejar e organizar','Desorientação temporal (data, dia da semana)','Desorientação espacial (se perde em lugares conhecidos)','Dificuldade com cálculos simples','Dificuldade para fazer mais de uma tarefa ao mesmo tempo']},
-                    {id:'cob', lb:'Descrição adicional das queixas cognitivas', tp:'ta', full:1, ph:'Situações específicas, exemplos concretos...'}
-                ]},
-                { ic:'🏠', tt:'Autonomia e AVDs', col:'historico_escolar', g2:[
-                    {id:'avb', lb:'AVDs básicas independentes', tp:'cks', full:1, its:['Higiene pessoal','Vestir-se','Alimentar-se','Locomoção dentro de casa','Continência esfincteriana']},
-                    {id:'avi', lb:'AVDs instrumentais independentes', tp:'cks', full:1, its:['Gerenciar finanças','Tomar medicamentos sozinho','Usar telefone / celular','Fazer compras','Cozinhar / preparar refeições','Usar transporte']},
-                    {id:'dep', lb:'Grau de dependência atual', tp:'sel', op:['Totalmente independente','Independente com supervisão ocasional','Necessita de ajuda parcial','Totalmente dependente']},
-                    {id:'phb', lb:'Perdas funcionais recentes', tp:'ta', full:1, ph:'Ex: parou de dirigir, não consegue mais usar caixa eletrônico...'}
-                ]},
-                { ic:'💊', tt:'Saúde Geral', col:'saude_medicacoes', g2:[
-                    {id:'dcs', lb:'Doenças clínicas', tp:'cks', full:1, its:['Hipertensão arterial','Diabetes mellitus','Doença cardiovascular (infarto, arritmia)','AVC / AIT prévio','Parkinson / distúrbios do movimento','Doenças da tireoide','Neoplasia / Câncer','Traumatismo cranioencefálico (TCE)','Epilepsia / Convulsões','Infecção do SNC (meningite, encefalite)']},
-                    {id:'cdt', lb:'Detalhes clínicos (datas, gravidade)', tp:'ta', full:1, ph:'Ex: HAS há 15 anos em uso de losartana, AVC em 2020...'},
-                    {id:'mds', lb:'Medicamentos em uso (nome, dose, indicação)', tp:'ta', full:1, ph:'Ex: Donepezila 10mg, Losartana 50mg, Atorvastatina 20mg...'},
-                    {id:'bnz', lb:'Uso de benzodiazepínicos', tp:'sel', op:['Não usa','Uso ocasional','Uso crônico há menos de 1 ano','Uso crônico há mais de 1 ano']},
-                    {id:'exc', lb:'Exames neurológicos realizados', tp:'cks', full:1, its:['RM de crânio','TC de crânio','EEG','PET-scan cerebral','SPECT cerebral','Análise de líquor (biomarcadores)']},
-                    {id:'exd', lb:'Resultados relevantes dos exames', tp:'ta', full:1, ph:'Ex: RM com atrofia hipocampal bilateral, leucoaraiose...'}
-                ]},
-                { ic:'🧠', tt:'Sintomas Neuropsiquiátricos', col:'social_emocional', g2:[
-                    {id:'nps', lb:'Sintomas presentes', tp:'cks', full:1, its:['Humor deprimido / tristeza persistente','Ansiedade / preocupação excessiva','Apatia / perda de iniciativa e interesse','Agitação / irritabilidade','Desinibição comportamental','Alucinações (ver ou ouvir coisas)','Delírios / ideias fixas sem base real','Alterações importantes do sono','Comportamentos compulsivos ou repetitivos novos']},
-                    {id:'pqa', lb:'Histórico psiquiátrico prévio', tp:'ta', full:1, ph:'Depressão anterior, tratamentos, internações...'},
-                    {id:'son', lb:'Padrão de sono atual', tp:'sel', op:['Normal para a idade','Insônia de conciliação','Insônia de manutenção (acorda frequentemente)','Hipersonia','Inversão do ciclo sono-vigília','Comportamentos durante o sono (fala, grita, movimenta-se)']}
-                ]},
-                { ic:'🧬', tt:'Histórico Familiar', col:'contexto_familiar', g2:[
-                    {id:'hf', lb:'Doenças neurológicas / psiquiátricas na família', tp:'cks', its:HFI, full:1},
-                    {id:'hfd', lb:'Detalhes (parentesco)', tp:'ta', full:1, ph:'Ex: mãe com Alzheimer aos 75 anos, irmão com AVC...'}
-                ]},
-                { ic:'📖', tt:'Reserva Cognitiva e Estilo de Vida', col:'desenvolvimento', g2:[
-                    {id:'atf', lb:'Atividade física', tp:'sel', op:['Regular (3x/semana ou mais)','Ocasional','Não pratica','Praticava antes, parou recentemente']},
-                    {id:'atc', lb:'Atividade cognitiva / intelectual', tp:'sel', op:['Leitura frequente','Jogos / palavras cruzadas / xadrez','Atividades artísticas','Pouca estimulação cognitiva']},
-                    {id:'vds', lb:'Vida social', tp:'sel', op:['Ativa — muitos contatos sociais','Moderada','Isolamento social significativo','Piorou recentemente']},
-                    {id:'alc', lb:'Uso de álcool', tp:'sel', op:['Não usa','Uso leve / social','Uso moderado / frequente','Uso excessivo / abuso']},
-                    {id:'tab', lb:'Tabagismo', tp:'sel', op:['Nunca fumou','Ex-fumante','Fumante atual']},
-                    {id:'trj', lb:'Trajetória escolar e profissional', tp:'ta', full:1, ph:'Escolaridade, profissão exercida, complexidade das atividades ao longo da vida...'},
-                    {id:'evv', lb:'Eventos de vida marcantes recentes', tp:'ta', full:1, ph:'Ex: falecimento do cônjuge, mudança de residência, aposentadoria...'},
-                    {id:'dxs', lb:'Diagnósticos neurológicos / psiquiátricos estabelecidos', tp:'ta', full:1, ph:'Ex: CCL amnéstico, Alzheimer fase inicial, Depressão maior...'},
-                    {id:'add', lb:'Observações adicionais', tp:'ta', full:1, ph:'Qualquer informação adicional relevante...'}
-                ]}
-            ]
+    function secDemanda(comImpacto) {
+        const g2 = [
+            {id:'mot', lb:'Motivo da avaliação', tp:'ta', req:1, full:1, ph:'Descreva em detalhes as principais preocupações ou dificuldades que motivaram a busca por esta avaliação...'}
+        ];
+        if (comImpacto) {
+            g2.push({id:'imp', lb:'Impacto na vida diária', tp:'ta', full:1, ph:'Como as dificuldades afetam o cotidiano (escola, trabalho, relações sociais, autonomia, bem-estar emocional)...'});
         }
+        return { ic:'🎯', tt:'Demanda', col:'queixa_historico', g2: g2 };
+    }
+
+    function secHistFamiliar() {
+        return { ic:'🧬', tt:'Histórico Familiar', col:'contexto_familiar', g2:[
+            {id:'hf',  lb:'Transtornos cognitivos / psiquiátricos na família', tp:'cks', its:HF, full:1},
+            {id:'hfd', lb:'Detalhes (quem na família, outros transtornos)', tp:'ta', full:1, ph:'Ex.: mãe com TDAH, tio paterno com TEA, avó com Alzheimer...'}
+        ]};
+    }
+
+    function secTratamentos(comSubst, comOutrosProf) {
+        const g2 = [
+            {id:'dgn', lb:'Possui algum tipo de diagnóstico?', tp:'sn_ta', full:1, ph:'Se sim, descreva.'},
+            {id:'acm', lb:'Acompanhamentos atuais', tp:'cks', its:ACOMPS, full:1},
+            {id:'acd', lb:'Detalhes do acompanhamento (tempo, com quem)', tp:'ta', full:1, ph:'Ex.: psicóloga há 2 anos, psiquiatra desde 2024...'}
+        ];
+        if (comOutrosProf) {
+            g2.push({id:'opf', lb:'Outros profissionais de saúde em acompanhamento', tp:'cks', its:OUTROS_PRF, full:1});
+            g2.push({id:'opd', lb:'Detalhes desses acompanhamentos', tp:'ta', full:1});
+        }
+        g2.push({id:'mdc', lb:'Faz uso de medicação contínua?', tp:'sn_ta', full:1, ph:'Se sim, liste medicação e dosagem.'});
+        if (comSubst) {
+            g2.push({id:'sbs', lb:'Já fez/faz uso de substâncias?', tp:'cks', its:SUBST_PAC, full:1});
+            g2.push({id:'sbd', lb:'Detalhes do uso (frequência, há quanto tempo)', tp:'ta', full:1});
+        }
+        return { ic:'💊', tt:'Tratamentos e Acompanhamentos', col:'saude_medicacoes', g2: g2 };
+    }
+
+    function secObservacoes(comEventoMarcante) {
+        const lb = comEventoMarcante
+            ? 'Eventos marcantes ou observações finais — algo importante não perguntado?'
+            : 'Observações finais — algo importante não perguntado?';
+        return { ic:'📝', tt:'Observações', col:'queixa_historico', g2:[
+            {id:'obs', lb: lb, tp:'ta', full:1, ph:'Descreva livremente...'}
+        ]};
+    }
+
+    // =======================================================================
+    // FAIXA 1 — PRIMEIRA INFÂNCIA (0–6)
+    // =======================================================================
+    const F_PRIMEIRA_INFANCIA = {
+        icon:'🍼', tt:'Primeira Infância', rg:'0 – 6 anos',
+        sects: [
+            secMedico(),
+            secIdentInf('Nome completo da criança'),
+            secDemanda(false),
+            secHistFamiliar(),
+            { ic:'🤰', tt:'Gestação e Parto', col:'desenvolvimento', g2:[
+                {id:'sub', lb:'Antes da gestação, os pais usavam substâncias?', tp:'cks', its:SUBST_PAIS, full:1},
+                {id:'sbo', lb:'Outras observações sobre uso de substâncias', tp:'ta', full:1},
+                {id:'abo', lb:'A mãe já sofreu algum aborto?', tp:'sn_ta', full:1, ph:'Se sim, descreva quantos e em que circunstâncias.'},
+                {id:'pnt', lb:'Intercorrências no pré-natal (infecções, estresse intenso)', tp:'sn_ta', full:1},
+                {id:'sem', lb:'Semanas de gestação ao nascer', tp:'num', mn:20, mx:45, ph:'Ex.: 38'},
+                {id:'par', lb:'Tipo de parto', tp:'sel_other', op:TIPO_PARTO},
+                {id:'dia', lb:'Dias até a alta hospitalar', tp:'num', mn:0, mx:365, ph:'Ex.: 2'},
+                {id:'cmp', lb:'Complicações com a mãe no parto', tp:'sn_ta', full:1, ph:'Ex.: pressão alta, pré-eclâmpsia, hemorragia.'},
+                {id:'cbb', lb:'Complicações com o bebê no parto', tp:'sn_ta', full:1, ph:'Ex.: falta de oxigênio, UTI neonatal.'}
+            ]},
+            { ic:'📔', tt:'Caderneta da Criança', col:'desenvolvimento', g3:[
+                {id:'ap5', lb:'Apgar 5 min', tp:'num', mn:0, mx:10},
+                {id:'apA', lb:'Apgar 10 min', tp:'num', mn:0, mx:10},
+                {id:'pes', lb:'Peso ao nascer (g)', tp:'num', mn:500, mx:6000, ph:'Ex.: 3200'},
+                {id:'cmp2', lb:'Comprimento (cm)', tp:'num', mn:25, mx:65, ph:'Ex.: 50'},
+                {id:'pc', lb:'Perímetro cefálico (cm)', tp:'num', mn:25, mx:45, ph:'Ex.: 34'}
+            ]},
+            { ic:'📈', tt:'Marcos do Desenvolvimento', col:'desenvolvimento', g3:[
+                {id:'mc1', lb:'Firmou pescoço (meses)', tp:'num', mn:0, mx:24, ph:'~3m'},
+                {id:'mc2', lb:'Engatinhou (meses)', tp:'num', mn:0, mx:24, ph:'~8m'},
+                {id:'mc3', lb:'Andou (meses)', tp:'num', mn:0, mx:36, ph:'~12m'},
+                {id:'mc4', lb:'Balbuciou (meses)', tp:'num', mn:0, mx:24, ph:'~6m'},
+                {id:'mc5', lb:'Primeiras palavras (meses)', tp:'num', mn:0, mx:36, ph:'~12m'},
+                {id:'mc6', lb:'Frases de 3 palavras (meses)', tp:'num', mn:0, mx:60, ph:'~24m'},
+                {id:'dfr', lb:'Estado do desfralde', tp:'sel', op:DESFR},
+                {id:'xix', lb:'Faz xixi na cama?', tp:'sn_ta'}
+            ]},
+            { ic:'🔍', tt:'Comportamento e Perfil Sensorial', col:'social_emocional', g2:[
+                {id:'tmp', lb:'Temperamento (calma/irritada, sono, alimentação, mudanças de rotina)', tp:'ta', full:1},
+                {id:'rcr', lb:'Relação com outras crianças (solitária, retraída...)', tp:'ta', full:1},
+                {id:'rep', lb:'Comportamentos repetitivos', tp:'cks', its:COMP_REP, full:1},
+                {id:'app', lb:'Anda na ponta dos pés?', tp:'sn'},
+                {id:'hpf', lb:'Hiperfocos / interesses muito intensos', tp:'sn_ta', full:1, ph:'Ex.: animais, carros, dinossauros...'},
+                {id:'ali', lb:'Como é a alimentação?', tp:'sel', op:SELET},
+                {id:'alo', lb:'Observações sobre alimentação', tp:'ta', full:1},
+                {id:'etq', lb:'Etiquetas de roupa o incomodam?', tp:'sn'},
+                {id:'bar', lb:'Barulho o incomoda? Tapa os ouvidos?', tp:'sn_ta', full:1},
+                {id:'fal', lb:'A fala é desenvolvida? Ecolalia?', tp:'ta', full:1},
+                {id:'brk', lb:'Brinca normalmente com brinquedos?', tp:'ta', full:1}
+            ]},
+            { ic:'🏫', tt:'Adaptação Escolar', col:'historico_escolar', g2:[
+                {id:'aes', lb:'Adaptação ao ambiente escolar', tp:'sel', op:ADAPT_ESC, full:1},
+                {id:'aeo', lb:'Observações sobre adaptação escolar', tp:'ta', full:1}
+            ]},
+            secTratamentos(false, true),
+            secObservacoes(false)
+        ]
+    };
+
+    // =======================================================================
+    // FAIXA 2 — SEGUNDA INFÂNCIA (6–12)
+    // =======================================================================
+    const F_SEGUNDA_INFANCIA = {
+        icon:'🎒', tt:'Segunda Infância', rg:'6 – 12 anos',
+        sects: [
+            secMedico(),
+            secIdentInf('Nome completo da criança'),
+            secDemanda(true),
+            secHistFamiliar(),
+            { ic:'🤰', tt:'Gestação e Parto', col:'desenvolvimento', g2:[
+                {id:'sub', lb:'Antes da gestação, os pais usavam substâncias?', tp:'cks', its:SUBST_PAIS, full:1},
+                {id:'sbo', lb:'Outras observações sobre uso de substâncias', tp:'ta', full:1},
+                {id:'abo', lb:'A mãe já sofreu algum aborto?', tp:'sn_ta', full:1},
+                {id:'pnt', lb:'Intercorrências no pré-natal', tp:'sn_ta', full:1},
+                {id:'sem', lb:'Semanas de gestação ao nascer', tp:'num', mn:20, mx:45},
+                {id:'par', lb:'Tipo de parto', tp:'sel_other', op:TIPO_PARTO},
+                {id:'dia', lb:'Dias até a alta hospitalar', tp:'num', mn:0, mx:365},
+                {id:'cmp', lb:'Complicações com a mãe no parto', tp:'sn_ta', full:1},
+                {id:'cbb', lb:'Complicações com o bebê no parto', tp:'sn_ta', full:1}
+            ]},
+            { ic:'📔', tt:'Caderneta da Criança', col:'desenvolvimento', g3:[
+                {id:'ap5', lb:'Apgar 5 min', tp:'num', mn:0, mx:10},
+                {id:'apA', lb:'Apgar 10 min', tp:'num', mn:0, mx:10},
+                {id:'pes', lb:'Peso ao nascer (g)', tp:'num', mn:500, mx:6000},
+                {id:'cmp2', lb:'Comprimento (cm)', tp:'num', mn:25, mx:65},
+                {id:'pc', lb:'Perímetro cefálico (cm)', tp:'num', mn:25, mx:45},
+                {id:'tmn', lb:'Caso não tenha caderneta, era um bebê:', tp:'sel', op:TAM_BEBE}
+            ]},
+            { ic:'📈', tt:'Marcos do Desenvolvimento', col:'desenvolvimento', g3:[
+                {id:'mc1', lb:'Firmou pescoço (meses)', tp:'num', mn:0, mx:24},
+                {id:'mc2', lb:'Engatinhou (meses)', tp:'num', mn:0, mx:24},
+                {id:'mc3', lb:'Andou (meses)', tp:'num', mn:0, mx:36},
+                {id:'mc4', lb:'Balbuciou (meses)', tp:'num', mn:0, mx:24},
+                {id:'mc5', lb:'Primeiras palavras (meses)', tp:'num', mn:0, mx:36},
+                {id:'mc6', lb:'Frases de 3 palavras (meses)', tp:'num', mn:0, mx:60}
+            ]},
+            { ic:'👶', tt:'Comportamento Inicial', col:'social_emocional', g2:[
+                {id:'dfr', lb:'Estado do desfralde', tp:'sel', op:DESFR, full:1},
+                {id:'dfm', lb:'Idade do desfralde (observações)', tp:'ta', full:1},
+                {id:'xix', lb:'Fez/faz xixi na cama?', tp:'sn_ta', full:1},
+                {id:'dif', lb:'Dificuldades iniciais', tp:'cks', its:DIF_BEBE, full:1},
+                {id:'rep', lb:'Comportamentos repetitivos', tp:'cks', its:COMP_REP, full:1}
+            ]},
+            { ic:'🏫', tt:'Histórico Escolar', col:'historico_escolar', g2:[
+                {id:'aes', lb:'Adaptação ao ambiente escolar', tp:'sel', op:ADAPT_ESC},
+                {id:'aeo', lb:'Observações sobre adaptação', tp:'ta', full:1},
+                {id:'alf', lb:'Processo de alfabetização', tp:'sel', op:ALFAB},
+                {id:'alo', lb:'Observações sobre alfabetização', tp:'ta', full:1},
+                {id:'ser', lb:'Ano escolar / série atual', tp:'text'},
+                {id:'apr', lb:'Aproveitamento escolar', tp:'sel', op:APROVEIT},
+                {id:'apo', lb:'Observações sobre desempenho', tp:'ta', full:1}
+            ]},
+            { ic:'🤝', tt:'Comportamento e Perfil Social', col:'social_emocional', g2:[
+                {id:'prs', lb:'Perfil social (tímida ou falante)', tp:'sel', op:PERFIL_SOC},
+                {id:'tmp', lb:'Temperamento (calma ou irritada)', tp:'sel', op:TEMPER},
+                {id:'rpr', lb:'Prefere ficar sozinha? Tem muitos amigos?', tp:'ta', full:1},
+                {id:'bul', lb:'Sofre bullying?', tp:'sn_ta', full:1},
+                {id:'app', lb:'Anda na ponta dos pés?', tp:'sn'}
+            ]},
+            { ic:'🌈', tt:'Perfil Sensorial', col:'social_emocional', g2:[
+                {id:'etq', lb:'Etiquetas de roupa o incomodam?', tp:'sn'},
+                {id:'bar', lb:'Barulho o incomoda? Tapa os ouvidos?', tp:'sn_ta', full:1},
+                {id:'ali', lb:'Como é a alimentação?', tp:'sel', op:SELET},
+                {id:'alo', lb:'Observações sobre alimentação', tp:'ta', full:1}
+            ]},
+            { ic:'🎨', tt:'Interesses e Lazer', col:'social_emocional', g2:[
+                {id:'hbb', lb:'Hobbies (leitura, jogos, filmes, músicas)', tp:'ta', full:1},
+                {id:'hpf', lb:'Hiperfocos / interesses muito intensos', tp:'sn_ta', full:1, ph:'Ex.: animais, geografia, história, carros, medicina, astrologia...'},
+                {id:'brk', lb:'Brinca normalmente com brinquedos?', tp:'ta', full:1}
+            ]},
+            { ic:'💙', tt:'Saúde Mental', col:'social_emocional', g2:[
+                {id:'tho', lb:'Traços de humor', tp:'cks', its:TRACOS_HUM, full:1},
+                {id:'tho2', lb:'Observações sobre traços de humor', tp:'ta', full:1},
+                {id:'cmr', lb:'Comportamento de risco (se cortar, tentativa de autoextermínio)', tp:'sn_ta', full:1}
+            ]},
+            secTratamentos(false, true),
+            { ic:'🧹', tt:'Autocuidado', col:'social_emocional', g2:[
+                {id:'rgr', lb:'Como lida com regras e responsabilidades', tp:'sel', op:REGRAS_RES},
+                {id:'rgo', lb:'Observações sobre regras', tp:'ta', full:1},
+                {id:'hig', lb:'Como lida com a higiene pessoal', tp:'sel', op:HIG},
+                {id:'hio', lb:'Observações sobre higiene', tp:'ta', full:1}
+            ]},
+            secObservacoes(false)
+        ]
+    };
+
+    // =======================================================================
+    // FAIXA 3 — ADOLESCÊNCIA (12–18)
+    // =======================================================================
+    const F_ADOLESCENCIA = {
+        icon:'🧒', tt:'Adolescência', rg:'12 – 18 anos',
+        sects: [
+            secMedico(),
+            secIdentInf('Nome completo do(a) adolescente'),
+            secDemanda(true),
+            secHistFamiliar(),
+            { ic:'🤰', tt:'Gestação e Parto', col:'desenvolvimento', g2:[
+                {id:'sub', lb:'Antes da gestação, os pais usavam substâncias?', tp:'cks', its:SUBST_PAIS, full:1},
+                {id:'sbo', lb:'Outras observações', tp:'ta', full:1},
+                {id:'abo', lb:'A mãe já sofreu algum aborto?', tp:'sn_ta', full:1},
+                {id:'pnt', lb:'Intercorrências no pré-natal', tp:'sn_ta', full:1},
+                {id:'sem', lb:'Semanas de gestação ao nascer', tp:'num', mn:20, mx:45},
+                {id:'par', lb:'Tipo de parto', tp:'sel_other', op:TIPO_PARTO},
+                {id:'dia', lb:'Dias até a alta hospitalar', tp:'num', mn:0, mx:365},
+                {id:'cmp', lb:'Complicações com a mãe no parto', tp:'sn_ta', full:1},
+                {id:'cbb', lb:'Complicações com o bebê no parto', tp:'sn_ta', full:1}
+            ]},
+            { ic:'🌱', tt:'Desenvolvimento Inicial', col:'desenvolvimento', g2:[
+                {id:'tmn', lb:'Era um bebê grande, pequeno ou normal?', tp:'sel', op:TAM_BEBE},
+                {id:'tmo', lb:'Dados adicionais da caderneta (peso, APGAR...)', tp:'ta', full:1},
+                {id:'d6m', lb:'Nos primeiros 6 meses, desenvolveu-se bem?', tp:'sn_ta', full:1},
+                {id:'d1a', lb:'No primeiro ano, andou e falou no tempo certo?', tp:'sn_ta', full:1},
+                {id:'d18', lb:'Com 1 ano e 6 meses já estava bem desenvolvido?', tp:'sn_ta', full:1}
+            ]},
+            { ic:'👶', tt:'Comportamento Inicial', col:'social_emocional', g2:[
+                {id:'xix', lb:'Fazia xixi na cama?', tp:'sn_ta', full:1},
+                {id:'mns', lb:'Tinha manias e rituais? Apego a brinquedo?', tp:'ta', full:1},
+                {id:'rep', lb:'Comportamentos repetitivos', tp:'cks', its:COMP_REP, full:1}
+            ]},
+            { ic:'🏫', tt:'Histórico Escolar', col:'historico_escolar', g2:[
+                {id:'alf', lb:'Processo de alfabetização', tp:'sel', op:ALFAB},
+                {id:'alo', lb:'Observações sobre alfabetização', tp:'ta', full:1},
+                {id:'fra', lb:'Está em alguma formação atualmente?', tp:'sn_ta', full:1, ph:'Se sim, qual.'},
+                {id:'apr', lb:'Aproveitamento escolar', tp:'sel', op:APROVEIT},
+                {id:'apo', lb:'Observações sobre desempenho', tp:'ta', full:1}
+            ]},
+            { ic:'🤝', tt:'Comportamento e Perfil Social', col:'social_emocional', g2:[
+                {id:'prs', lb:'Perfil social (tímida ou falante)', tp:'sel', op:PERFIL_SOC},
+                {id:'tmp', lb:'Temperamento (calma ou irritada)', tp:'sel', op:TEMPER},
+                {id:'rpr', lb:'Prefere ficar sozinha? Tem muitos amigos?', tp:'ta', full:1},
+                {id:'bul', lb:'Sofre bullying?', tp:'sn_ta', full:1}
+            ]},
+            { ic:'🌈', tt:'Perfil Sensorial', col:'social_emocional', g2:[
+                {id:'etq', lb:'Etiquetas / peças de alça incomodam?', tp:'sn'},
+                {id:'bar', lb:'Barulho o incomoda?', tp:'sn_ta', full:1},
+                {id:'ali', lb:'Como é a alimentação?', tp:'sel', op:SELET},
+                {id:'alo', lb:'Observações sobre alimentação', tp:'ta', full:1}
+            ]},
+            { ic:'🎨', tt:'Interesses e Lazer', col:'social_emocional', g2:[
+                {id:'hbb', lb:'Hobbies (leitura, jogos, filmes, músicas)', tp:'ta', full:1},
+                {id:'hpf', lb:'Hiperfocos / interesses muito intensos', tp:'sn_ta', full:1},
+                {id:'evt', lb:'Habilidade social — gosta de festas e eventos?', tp:'sel', op:HABIL_EV},
+                {id:'evo', lb:'Observações sobre socialização', tp:'ta', full:1}
+            ]},
+            { ic:'💙', tt:'Saúde Mental', col:'social_emocional', g2:[
+                {id:'tho', lb:'Traços de humor', tp:'cks', its:TRACOS_HUM, full:1},
+                {id:'tho2', lb:'Observações', tp:'ta', full:1},
+                {id:'cmr', lb:'Comportamento de risco (autoextermínio, se cortar)', tp:'sn_ta', full:1}
+            ]},
+            secTratamentos(true, false),
+            { ic:'🧹', tt:'Autocuidado', col:'social_emocional', g2:[
+                {id:'rgr', lb:'Como lida com regras e responsabilidades', tp:'sel', op:REGRAS_RES},
+                {id:'rgo', lb:'Observações', tp:'ta', full:1},
+                {id:'hig', lb:'Como lida com a higiene pessoal', tp:'sel', op:HIG},
+                {id:'hio', lb:'Observações', tp:'ta', full:1}
+            ]},
+            secObservacoes(false)
+        ]
+    };
+
+    // =======================================================================
+    // FAIXA 4 — JOVENS ADULTOS (18–50)
+    // =======================================================================
+    const F_JOVENS_ADULTOS = {
+        icon:'🧑', tt:'Jovens Adultos', rg:'18 – 50 anos',
+        sects: [
+            secMedico(),
+            secIdentAdu(),
+            secDemanda(true),
+            secHistFamiliar(),
+            { ic:'🌱', tt:'Histórico do Desenvolvimento', col:'desenvolvimento', g2:[
+                {id:'sub', lb:'Antes da gestação, os pais usavam substâncias?', tp:'cks', its:SUBST_PAIS, full:1},
+                {id:'sbo', lb:'Outras observações', tp:'ta', full:1},
+                {id:'ris', lb:'Foi uma gestação de risco?', tp:'sn_ta', full:1},
+                {id:'sem', lb:'Meses de gestação ao nascer', tp:'num', mn:5, mx:11, ph:'Ex.: 9'},
+                {id:'par', lb:'Tipo de parto', tp:'sel_other', op:TIPO_PARTO},
+                {id:'cmp', lb:'Complicações com a mãe no parto', tp:'sn_ta', full:1},
+                {id:'cbb', lb:'Complicações com o bebê no parto', tp:'sn_ta', full:1},
+                {id:'tmn', lb:'Era um bebê grande, pequeno ou normal?', tp:'sel', op:TAM_BEBE},
+                {id:'tmo', lb:'Dados adicionais da caderneta', tp:'ta', full:1},
+                {id:'d18', lb:'Nos primeiros 18 anos, desenvolveu-se bem?', tp:'sn_ta', full:1}
+            ]},
+            { ic:'🤝', tt:'Comportamento ao Longo da Vida', col:'social_emocional', g2:[
+                {id:'prs', lb:'Era uma pessoa tímida ou falante?', tp:'sel', op:PERFIL_SOC},
+                {id:'pro', lb:'Observações', tp:'ta', full:1},
+                {id:'amg', lb:'Possui amigos?', tp:'sn_ta', full:1}
+            ]},
+            { ic:'🎓', tt:'Histórico Escolar e Formação', col:'historico_escolar', g2:[
+                {id:'eme', lb:'Concluiu o ensino médio?', tp:'sel', op:ENS_MED},
+                {id:'emo', lb:'Observações', tp:'ta', full:1},
+                {id:'sup', lb:'Possui formação superior?', tp:'sn_ta', full:1, ph:'Se sim, descreva (curso, instituição, ano).'}
+            ]},
+            { ic:'💼', tt:'Desenvolvimento Profissional', col:'historico_escolar', g2:[
+                {id:'prf', lb:'Profissão atual e tempo na área', tp:'ta', full:1},
+                {id:'amb', lb:'Gosta do ambiente de trabalho?', tp:'sel', op:SATIS_TRAB},
+                {id:'amo', lb:'Observações sobre o trabalho', tp:'ta', full:1},
+                {id:'amz', lb:'Cultiva amizades no trabalho?', tp:'sn_ta', full:1}
+            ]},
+            { ic:'👨‍👩‍👧', tt:'Família', col:'identificacao', g2:[
+                {id:'ec',  lb:'Estado civil', tp:'sel_other', op:EST_CIVIL},
+                {id:'fil', lb:'Possui filhos?', tp:'sn'},
+                {id:'fln', lb:'Quantos filhos', tp:'num', mn:0, mx:20},
+                {id:'flt', lb:'Algum dos filhos tem transtorno diagnosticado? Descreva.', tp:'ta', full:1}
+            ]},
+            { ic:'🌈', tt:'Perfil Sensorial', col:'social_emocional', g2:[
+                {id:'etq', lb:'Etiquetas / peças de alça incomodam?', tp:'sn'},
+                {id:'bar', lb:'Barulho o incomoda?', tp:'sn_ta', full:1},
+                {id:'ali', lb:'Como é a alimentação?', tp:'sel', op:SELET},
+                {id:'alo', lb:'Observações', tp:'ta', full:1}
+            ]},
+            { ic:'🎨', tt:'Interesses e Lazer', col:'social_emocional', g2:[
+                {id:'hbb', lb:'Hobbies', tp:'ta', full:1},
+                {id:'hpf', lb:'Hiperfocos / interesses muito intensos', tp:'sn_ta', full:1},
+                {id:'evt', lb:'Habilidade social — gosta de festas e eventos?', tp:'sel', op:HABIL_EV},
+                {id:'evo', lb:'Observações', tp:'ta', full:1}
+            ]},
+            secTratamentos(true, false),
+            { ic:'🧹', tt:'Autocuidado e Autonomia', col:'social_emocional', g2:[
+                {id:'hig', lb:'Como lida com a higiene pessoal', tp:'sel', op:HIG},
+                {id:'hio', lb:'Observações', tp:'ta', full:1},
+                {id:'rgr', lb:'Como lida com regras e responsabilidades', tp:'sel', op:REGRAS_RES},
+                {id:'rgo', lb:'Observações', tp:'ta', full:1},
+                {id:'aut', lb:'Independência para atividades diárias', tp:'sel', op:AUTON},
+                {id:'auo', lb:'Observações', tp:'ta', full:1}
+            ]},
+            { ic:'💙', tt:'Saúde Mental', col:'social_emocional', g2:[
+                {id:'iso', lb:'Isolamento social intenso ou mudanças de humor acentuadas?', tp:'sn_ta', full:1},
+                {id:'cmr', lb:'Comportamento de risco (autoextermínio, se cortar)', tp:'sn_ta', full:1}
+            ]},
+            secObservacoes(true)
+        ]
+    };
+
+    // =======================================================================
+    // FAIXA 5 — 50+
+    // =======================================================================
+    const F_CINQUENTA_MAIS = {
+        icon:'🧓', tt:'50+ anos', rg:'50 anos ou mais',
+        sects: [
+            secMedico(),
+            secIdentAdu(),
+            secDemanda(true),
+            secHistFamiliar(),
+            { ic:'🌱', tt:'Histórico do Desenvolvimento', col:'desenvolvimento', g2:[
+                {id:'sub', lb:'Antes da gestação, os pais usavam Cigarro ou Álcool?', tp:'cks', its:['Cigarro','Álcool'], full:1},
+                {id:'ris', lb:'Foi uma gestação tranquila? Mãe quase perdeu por algum motivo?', tp:'sn_ta', full:1},
+                {id:'tmp', lb:'Nasceu no tempo certo?', tp:'sn_ta', full:1},
+                {id:'par', lb:'Tipo de parto', tp:'sel_other', op:TIPO_PARTO},
+                {id:'cmp', lb:'Complicações com a mãe no parto', tp:'sn_ta', full:1},
+                {id:'cbb', lb:'Complicações com o bebê no parto', tp:'sn_ta', full:1},
+                {id:'d18', lb:'Nos primeiros 18 anos, desenvolveu-se bem?', tp:'sn_ta', full:1}
+            ]},
+            { ic:'🤝', tt:'Comportamento ao Longo da Vida', col:'social_emocional', g2:[
+                {id:'prs', lb:'Era uma pessoa tímida ou falante?', tp:'sel', op:PERFIL_SOC},
+                {id:'pro', lb:'Observações', tp:'ta', full:1},
+                {id:'amg', lb:'Possui amigos? Interage bem com familiares?', tp:'sn_ta', full:1}
+            ]},
+            { ic:'🎓', tt:'Histórico Escolar e Formação', col:'historico_escolar', g2:[
+                {id:'eme', lb:'Concluiu o ensino médio?', tp:'sel', op:ENS_MED},
+                {id:'emo', lb:'Observações', tp:'ta', full:1},
+                {id:'sup', lb:'Possui formação superior?', tp:'sn_ta', full:1}
+            ]},
+            { ic:'💼', tt:'Desenvolvimento Profissional', col:'historico_escolar', g2:[
+                {id:'prv', lb:'Qual segmento trabalhou a vida toda?', tp:'ta', full:1},
+                {id:'sit', lb:'Aposentou ou trabalha ainda?', tp:'sel', op:SITU_TRAB},
+                {id:'sio', lb:'Observações', tp:'ta', full:1}
+            ]},
+            { ic:'👨‍👩‍👧', tt:'Família', col:'identificacao', g2:[
+                {id:'ec',  lb:'Estado civil', tp:'sel_other', op:EST_CIVIL},
+                {id:'fil', lb:'Possui filhos?', tp:'sn'},
+                {id:'fln', lb:'Quantos filhos', tp:'num', mn:0, mx:20},
+                {id:'flt', lb:'Algum dos filhos tem transtorno diagnosticado?', tp:'ta', full:1}
+            ]},
+            { ic:'🌈', tt:'Perfil Social', col:'social_emocional', g2:[
+                {id:'int', lb:'É uma pessoa intolerante?', tp:'sn_ta', full:1},
+                {id:'bar', lb:'Barulho o incomoda?', tp:'sn_ta', full:1},
+                {id:'ali', lb:'A alimentação é boa?', tp:'sel', op:ALIM_QUAL},
+                {id:'alo', lb:'Observações', tp:'ta', full:1}
+            ]},
+            { ic:'🎨', tt:'Interesses e Lazer', col:'social_emocional', g2:[
+                {id:'hbb', lb:'Atividades de lazer / o que gosta de fazer', tp:'ta', full:1},
+                {id:'hpf', lb:'Hiperfocos / interesses muito intensos', tp:'sn_ta', full:1},
+                {id:'evt', lb:'Habilidade social — gosta de festas e eventos?', tp:'sel', op:HABIL_EV},
+                {id:'evo', lb:'Observações', tp:'ta', full:1}
+            ]},
+            secTratamentos(true, false),
+            { ic:'🧹', tt:'Autocuidado e Autonomia', col:'social_emocional', g2:[
+                {id:'hig', lb:'Como lida com a higiene pessoal', tp:'sel', op:HIG},
+                {id:'hio', lb:'Observações', tp:'ta', full:1},
+                {id:'rgr', lb:'Como lida com regras e responsabilidades', tp:'sel', op:REGRAS_RES},
+                {id:'rgo', lb:'Observações', tp:'ta', full:1},
+                {id:'aut', lb:'Independência para atividades diárias', tp:'sel', op:AUTON},
+                {id:'auo', lb:'Observações', tp:'ta', full:1}
+            ]},
+            { ic:'💙', tt:'Saúde Mental', col:'social_emocional', g2:[
+                {id:'iso', lb:'Isolamento social ou mudanças de humor acentuadas?', tp:'sn_ta', full:1},
+                {id:'cmr', lb:'Comportamento de risco (autoextermínio, se cortar)', tp:'sn_ta', full:1}
+            ]},
+            secObservacoes(true)
+        ]
+    };
+
+    // -----------------------------------------------------------------------
+    // Mapa de faixas — chaves novas
+    // -----------------------------------------------------------------------
+    const F = {
+        'primeira_infancia': F_PRIMEIRA_INFANCIA,
+        'segunda_infancia':  F_SEGUNDA_INFANCIA,
+        'adolescencia':      F_ADOLESCENCIA,
+        'jovens_adultos':    F_JOVENS_ADULTOS,
+        'cinquenta_mais':    F_CINQUENTA_MAIS
     };
 
     /**
-     * Detecta a faixa etária com base na idade em anos
+     * Detecta a faixa etária com base na idade em anos.
      */
     function detectarFaixa(idadeAnos) {
-        if (idadeAnos === null || idadeAnos === undefined) return 'adulto';
-        if (idadeAnos < 6) return 'infantil';
-        if (idadeAnos < 12) return 'escolar';
-        if (idadeAnos < 18) return 'adolescente';
-        if (idadeAnos < 50) return 'adulto';
-        return 'idoso';
+        if (idadeAnos === null || idadeAnos === undefined) return 'jovens_adultos';
+        if (idadeAnos < 6)  return 'primeira_infancia';
+        if (idadeAnos < 12) return 'segunda_infancia';
+        if (idadeAnos < 18) return 'adolescencia';
+        if (idadeAnos < 50) return 'jovens_adultos';
+        return 'cinquenta_mais';
     }
 
-    /**
-     * Lista todas as faixas disponíveis (para dropdown de troca manual)
-     */
     function listarFaixas() {
         return Object.entries(F).map(([key, fx]) => ({
             key: key,
@@ -339,9 +528,6 @@ window.CortexAnamneseForms = (function() {
         }));
     }
 
-    /**
-     * Retorna lista das colunas JSONB usadas no banco
-     */
     function colunasJsonb() {
         return [
             'identificacao',

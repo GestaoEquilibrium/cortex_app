@@ -1,0 +1,190 @@
+/* ============================================================================
+   CORTEX_APP — Sprint 18 — publica.css
+   Estilos APENAS do shell da página pública (header, footer, container).
+   Os formulários, botões e wizard reutilizam base.css + components.css +
+   anamnese.css que já estão importados.
+   ============================================================================ */
+
+body {
+    background-color: var(--color-bg);
+    background-image: radial-gradient(circle, rgba(12, 31, 63, 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+}
+
+/* ---------------------- Header ---------------------- */
+.publica-header {
+    background: #0c1f3f;
+    color: #fff;
+    padding: 14px 18px;
+    box-shadow: var(--shadow-sm);
+}
+.publica-header-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.publica-brand {
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.04em;
+    color: #fff;
+}
+.publica-clinica {
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+/* ---------------------- Main ---------------------- */
+.publica-main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 18px 16px 30px 16px;
+}
+
+/* ---------------------- Tela de boas-vindas ---------------------- */
+.publica-bemvindo {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    box-shadow: var(--shadow-xs);
+}
+.publica-bemvindo h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+}
+.publica-bemvindo p {
+    font-size: 14px;
+    color: var(--color-text);
+    margin-bottom: 12px;
+    line-height: 1.55;
+}
+.publica-info-paciente {
+    background: var(--gradient-soft);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    color: var(--primary-blue);
+    margin: 18px 0;
+    font-size: 14px;
+}
+.publica-aviso {
+    background: var(--slate-50);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    color: var(--color-text-muted);
+    font-size: 12.5px !important;
+    margin-bottom: 20px !important;
+}
+.publica-btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ---------------------- Topo da seção (progress bar) ---------------------- */
+.publica-topo {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+}
+.publica-progresso-texto {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+}
+.publica-progresso-texto strong {
+    color: var(--color-text);
+}
+
+/* ---------------------- Estado enviado ---------------------- */
+.publica-enviado {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 5px solid var(--primary-green);
+    border-radius: var(--radius-lg);
+    padding: 40px 24px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+.publica-enviado-icone {
+    width: 72px;
+    height: 72px;
+    background: var(--primary-green);
+    color: white;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    font-size: 38px;
+    line-height: 72px;
+}
+.publica-enviado h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--color-text);
+    margin-bottom: 12px;
+}
+.publica-enviado p {
+    font-size: 14px;
+    color: var(--color-text);
+    margin-bottom: 10px;
+}
+
+/* ---------------------- Estado de erro ---------------------- */
+.publica-erro {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 5px solid var(--color-danger-text);
+    border-radius: var(--radius-lg);
+    padding: 32px 22px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+.publica-erro-icone {
+    font-size: 38px;
+    color: var(--color-danger-text);
+    margin-bottom: 10px;
+}
+.publica-erro p {
+    font-size: 14px;
+    color: var(--color-text);
+}
+
+/* ---------------------- Footer ---------------------- */
+.publica-footer {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 16px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+/* ---------------------- Touch targets em mobile ---------------------- */
+@media (max-width: 720px) {
+    .form-input,
+    .form-select,
+    .form-textarea {
+        font-size: 16px !important; /* evita zoom no iOS */
+        padding: 11px 13px;
+    }
+    .ck-item {
+        min-height: 44px;
+        padding: 10px 14px;
+    }
+    .btn {
+        min-height: 44px;
+    }
+    .wizard-navegacao .btn {
+        flex: 1;
+    }
+    .wizard-etapa {
+        padding: 18px 16px !important;
+    }
+}

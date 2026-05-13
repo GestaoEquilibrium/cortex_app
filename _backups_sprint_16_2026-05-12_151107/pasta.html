@@ -1,0 +1,2721 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasta do paciente — CORTEX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/pacientes.css">
+    <link rel="stylesheet" href="../anamnese/anamnese.css">
+    <link rel="stylesheet" href="../hipoteses/hipoteses.css">
+    <link rel="stylesheet" href="../relatorio_escolar/relatorio_escolar.css">
+    <link rel="stylesheet" href="../checklist/checklist.css">
+    <link rel="stylesheet" href="../bateria/bateria.css">
+    <style>
+    /* Sprint 8: Modais Agendar Sessão + Designar Aplicador */
+    .sprint8-modal {
+        position: fixed; inset: 0;
+        background: rgba(15, 23, 42, .55);
+        backdrop-filter: blur(2px);
+        z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .sprint8-modal-box {
+        background: white;
+        border-radius: 14px;
+        max-width: 760px; width: 100%;
+        max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+    .sprint8-modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 14px;
+        position: sticky; top: 0; background: white; z-index: 1;
+    }
+    .sprint8-modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+    .sprint8-modal-close {
+        background: none; border: none; font-size: 18px;
+        color: #64748b; cursor: pointer;
+        padding: 4px 10px; border-radius: 6px;
+        transition: background .15s;
+    }
+    .sprint8-modal-close:hover { background: #f1f5f9; }
+
+    #sprint8-form-sessao { padding: 18px 24px 22px; }
+
+    .sprint8-bloco { margin-bottom: 18px; }
+    .sprint8-bloco-label {
+        font-size: 11px; font-weight: 700; color: #64748b;
+        text-transform: uppercase; letter-spacing: .07em;
+        margin-bottom: 10px; display: block;
+    }
+    .sprint8-form-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .sprint8-field { display: flex; flex-direction: column; }
+    .sprint8-field label {
+        font-size: 12px; color: #475569; margin-bottom: 4px; font-weight: 600;
+    }
+    .sprint8-field input,
+    .sprint8-field select,
+    .sprint8-field textarea {
+        padding: 9px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color .15s, box-shadow .15s;
+        resize: vertical;
+    }
+    .sprint8-field input:focus,
+    .sprint8-field select:focus,
+    .sprint8-field textarea:focus {
+        outline: none; border-color: #1a56db;
+        box-shadow: 0 0 0 3px rgba(26,86,219,.1);
+    }
+
+    /* Cards de data (calendário simples) */
+    .sprint8-datas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+        gap: 8px;
+    }
+    .sprint8-data-card {
+        background: white; border: 1.5px solid #e2e8f0;
+        border-radius: 10px; padding: 10px 6px;
+        cursor: pointer;
+        transition: all .15s;
+        font-family: inherit;
+        display: flex; flex-direction: column; align-items: center; gap: 2px;
+        position: relative;
+    }
+    .sprint8-data-card:hover { border-color: #1a56db; transform: translateY(-1px); }
+    .sprint8-data-card.active {
+        background: #1a56db; color: white; border-color: #1a56db;
+        box-shadow: 0 4px 10px rgba(26,86,219,.3);
+    }
+    .sprint8-data-dia-semana { font-size: 10px; font-weight: 700; text-transform: uppercase; opacity: .8; }
+    .sprint8-data-numero { font-size: 20px; font-weight: 800; line-height: 1; }
+    .sprint8-data-mes { font-size: 10px; opacity: .8; text-transform: uppercase; }
+    .sprint8-data-hoje {
+        position: absolute; top: 3px; right: 3px;
+        font-size: 8px; font-weight: 800;
+        background: #fbbf24; color: white;
+        padding: 1px 4px; border-radius: 4px;
+    }
+    .sprint8-data-card.active .sprint8-data-hoje { background: #fbbf24; }
+
+    /* Lista de horários ocupados */
+    .sprint8-ocupados-lista {
+        display: flex; flex-direction: column; gap: 6px;
+        max-height: 200px; overflow-y: auto;
+        background: #fef3c7; border: 1px solid #fde68a;
+        border-radius: 8px; padding: 10px;
+    }
+    .sprint8-ocupado-item {
+        display: flex; gap: 12px; align-items: center;
+        background: white; border-radius: 6px; padding: 8px 10px;
+        font-size: 12px;
+    }
+    .sprint8-ocupado-hora {
+        font-weight: 800; color: #92400e;
+        flex-shrink: 0; min-width: 80px;
+    }
+    .sprint8-ocupado-info { flex: 1; min-width: 0; }
+    .sprint8-ocupado-meta { font-size: 11px; color: #78716c; margin-top: 1px; }
+
+    .sprint8-erro {
+        padding: 10px 14px;
+        background: #fef2f2; color: #b91c1c;
+        border-radius: 8px; font-size: 13px;
+        margin: 12px 0; border-left: 3px solid #b91c1c;
+    }
+    .sprint8-actions {
+        display: flex; justify-content: flex-end; gap: 8px;
+        margin-top: 18px; padding-top: 14px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* Modal Designar — lista de aplicadores */
+    .sprint8-aplicadores-lista {
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .sprint8-aplicador-opcao {
+        display: flex; align-items: center; gap: 12px;
+        width: 100%; text-align: left;
+        background: white; border: 1.5px solid #e2e8f0;
+        border-radius: 10px; padding: 12px 14px;
+        cursor: pointer; font-family: inherit;
+        transition: all .15s;
+    }
+    .sprint8-aplicador-opcao:hover:not(:disabled) {
+        border-color: #1a56db; background: #f8fafc;
+        transform: translateX(2px);
+    }
+    .sprint8-aplicador-opcao.atual { background: #f0fdf4; border-color: #059669; cursor: default; }
+    .sprint8-aplicador-opcao:disabled { opacity: 1; }
+    .sprint8-aplicador-avatar {
+        flex-shrink: 0; width: 38px; height: 38px;
+        background: #e2e8f0; color: #475569;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 14px;
+    }
+    .sprint8-aplicador-info { flex: 1; min-width: 0; }
+    .sprint8-aplicador-nome { font-size: 13px; font-weight: 700; color: #1e293b; }
+    .sprint8-aplicador-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .sprint8-aplicador-tag {
+        font-size: 10px; font-weight: 800;
+        background: #059669; color: white;
+        padding: 3px 8px; border-radius: 10px;
+        flex-shrink: 0;
+    }
+    .sprint8-aplicador-acao {
+        font-size: 11px; font-weight: 700; color: #1a56db;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 720px) {
+        .sprint8-form-grid { grid-template-columns: 1fr; }
+    }
+    </style>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="manifest" href="../site.webmanifest">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <main class="app-main">
+            <a href="lista.html" class="page-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Voltar à lista de pacientes
+            </a>
+
+            <div id="pasta-conteudo">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando paciente...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <input type="file" id="foto-input-hidden" accept="image/jpeg,image/png,image/webp" style="display:none">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Sprint 17 — pra gerar PDF de anamnese remota -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/supabase_client.js"></script>
+    <script src="../shared/auth_guard.js"></script>
+    <script src="../shared/audit.js"></script>
+    <script src="../shared/avatar.js"></script>
+    <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/sidebar.js"></script>
+
+    <script>
+    let pacienteId = null;
+    let paciente = null;
+    let etapaAtual = 'visao_geral';
+    let anamneseExistente = null;
+    let hipoteseExistente = null;
+    let relatorioEscolarExistente = null;
+    let checklistInfo = null;
+    let bateriaInfo = null;
+    let ehAdmin = false;          // Sprint 8: controla botão Designar
+    let aplicadorAtivo = null;    // Sprint 8: vínculo paciente↔aplicador atual
+    let respostasRemotas = [];    // Sprint 17: anamneses_remotas pendentes/respondidas
+
+    const ETAPAS = [
+        { id: 'visao_geral', label: 'Visão geral' },
+        { id: 'anamnese', label: 'Anamnese' },
+        { id: 'hipoteses', label: 'Hipóteses' },
+        { id: 'checklist', label: 'Checklist' },
+        { id: 'bateria', label: 'Bateria' },
+        { id: 'correcao', label: 'Correção' },
+        { id: 'laudo', label: 'Laudo' },
+        { id: 'devolutiva', label: 'Devolutiva' }
+    ];
+
+    window.addEventListener('cortex:auth-ready', async () => {
+        await CortexSidebar.render('pacientes');
+
+        // Sprint 8: detecta admin pra mostrar botão Designar
+        const perfil = window.cortexProfissional?.perfil;
+        ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        pacienteId = urlParams.get('id');
+
+        if (!pacienteId) {
+            mostrarErroPasta('Paciente não especificado');
+            return;
+        }
+
+        await carregarPaciente();
+    });
+
+    async function carregarPaciente() {
+        const { data, error } = await window.cortexClient
+            .from('vw_pacientes_lista')
+            .select('*')
+            .eq('id', pacienteId)
+            .single();
+
+        if (error || !data) {
+            mostrarErroPasta('Paciente não encontrado');
+            return;
+        }
+
+        paciente = data;
+        await CortexAudit.log('leitura', 'pacientes', pacienteId, { pacienteId });
+
+        await Promise.all([
+            carregarAnamnese(),
+            carregarHipotese(),
+            carregarRelatorioEscolar(),
+            carregarChecklistInfo(),
+            carregarBateriaInfo(),
+            carregarAplicadorAtivo(),
+            carregarRespostasRemotas()
+        ]);
+        renderizarPasta();
+    }
+
+    // Sprint 17: carrega anamneses remotas pendentes/respondidas pra mostrar na aba Anamnese
+    async function carregarRespostasRemotas() {
+        const { data, error } = await window.cortexClient
+            .from('anamneses_remotas')
+            .select('id, status, respostas, quem_respondeu, nome_respondente, data_envio, data_resposta')
+            .eq('paciente_id', pacienteId)
+            .in('status', ['aguardando_resposta', 'respondida'])
+            .order('data_envio', { ascending: false });
+        if (!error && Array.isArray(data)) {
+            respostasRemotas = data;
+        }
+    }
+
+    // Sprint 8: carrega vínculo ativo paciente↔aplicador
+    async function carregarAplicadorAtivo() {
+        const { data, error } = await window.cortexClient
+            .from('vinculos_paciente_aplicador')
+            .select(`
+                id, paciente_id, aplicador_id, data_inicio, motivo_atribuicao, ativo, atribuido_por,
+                aplicador:profissionais!vinculos_paciente_aplicador_aplicador_id_fkey (
+                    id, nome_completo, crp, email, foto_url
+                )
+            `)
+            .eq('paciente_id', pacienteId)
+            .eq('ativo', true)
+            .order('data_inicio', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (!error && data) aplicadorAtivo = data;
+        else aplicadorAtivo = null;
+    }
+
+    async function carregarAnamnese() {
+        const { data, error } = await window.cortexClient
+            .from('anamneses')
+            .select('id, faixa_etaria, status, created_at, updated_at, aprovado_em')
+            .eq('paciente_id', pacienteId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (!error && data) anamneseExistente = data;
+    }
+
+    async function carregarHipotese() {
+        const { data, error } = await window.cortexClient
+            .from('hipoteses')
+            .select('id, hipoteses_iniciais, cids_sugeridos, instrumentos_sugeridos, aprovado_em, created_at, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) hipoteseExistente = data;
+    }
+
+    async function carregarRelatorioEscolar() {
+        const { data, error } = await window.cortexClient
+            .from('relatorios_escolares')
+            .select('id, observacoes_educadores, created_at, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) relatorioEscolarExistente = data;
+    }
+
+    async function carregarChecklistInfo() {
+        // O "checklist" reaproveita instrumentos_sugeridos da tabela hipoteses.
+        // Aqui só queremos saber o total de instrumentos selecionados.
+        const { data, error } = await window.cortexClient
+            .from('hipoteses')
+            .select('id, instrumentos_sugeridos, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) {
+            checklistInfo = {
+                total: (data.instrumentos_sugeridos || []).length,
+                updated_at: data.updated_at,
+                hipoteseId: data.id
+            };
+        }
+    }
+
+    async function carregarBateriaInfo() {
+        const { data, error } = await window.cortexClient
+            .from('aplicacoes_instrumento')
+            .select('id, status, updated_at')
+            .eq('paciente_id', pacienteId);
+
+        if (!error && data && data.length > 0) {
+            const stats = { total: data.length, aguardando: 0, em_aplicacao: 0, concluido: 0 };
+            data.forEach(a => {
+                if (a.status === 'aguardando') stats.aguardando++;
+                else if (a.status === 'em_aplicacao') stats.em_aplicacao++;
+                else if (['concluido_aplicacao', 'em_correcao', 'corrigido', 'integrado_laudo'].includes(a.status)) stats.concluido++;
+            });
+            const ultimaAtualizacao = data.reduce((max, a) =>
+                a.updated_at > max ? a.updated_at : max, '');
+            bateriaInfo = { ...stats, updated_at: ultimaAtualizacao };
+        }
+    }
+
+    function mostrarErroPasta(msg) {
+        document.getElementById('pasta-conteudo').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <div class="empty-state-title">${escapeHtml(msg)}</div>
+                <a href="lista.html" class="btn btn-primary">Voltar à lista</a>
+            </div>
+        `;
+    }
+
+    async function renderizarPasta() {
+        let signedUrl = null;
+        if (paciente.foto_url) {
+            signedUrl = await window.CortexAvatar.buscarUrlAssinada(pacienteId, paciente.foto_url);
+        }
+        const avatar = window.CortexAvatar.render(paciente, { tamanho: 'xl', signedUrl });
+        const statusClass = window.CortexUI.STATUS_CLASSES[paciente.status] || 'status-info';
+        const statusLabel = window.CortexUI.STATUS_LABELS[paciente.status] || paciente.status;
+
+        const cabecalho = `
+            <div class="pasta-cabecalho">
+                <div onclick="document.getElementById('foto-input-hidden').click()" style="cursor: pointer;" title="Clique para alterar foto">
+                    ${avatar}
+                </div>
+                <div class="pasta-info">
+                    <div class="pasta-nome">${escapeHtml(paciente.nome_completo)}${paciente.nome_social ? ` <span style="font-size: 14px; color: var(--color-text-muted); font-weight: 400;">(${escapeHtml(paciente.nome_social)})</span>` : ''}</div>
+                    <div class="pasta-meta">
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Idade:</span>
+                            <span class="pasta-meta-valor">${paciente.idade_humanizada}</span>
+                        </div>
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Sexo:</span>
+                            <span class="pasta-meta-valor">${paciente.sexo}</span>
+                        </div>
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Nascimento:</span>
+                            <span class="pasta-meta-valor">${window.CortexUI.formatarDataBR(paciente.data_nascimento)}</span>
+                        </div>
+                        ${paciente.convenio_nome ? `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Convênio:</span>
+                                <span class="pasta-meta-valor">${escapeHtml(paciente.convenio_nome)}</span>
+                            </div>
+                        ` : ''}
+                        ${aplicadorAtivo?.aplicador ? `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Aplicador:</span>
+                                <span class="pasta-meta-valor">${escapeHtml(aplicadorAtivo.aplicador.nome_completo)}${aplicadorAtivo.aplicador.crp ? ` — ${escapeHtml(aplicadorAtivo.aplicador.crp)}` : ''}</span>
+                            </div>
+                        ` : `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Aplicador:</span>
+                                <span class="pasta-meta-valor" style="color: var(--color-text-muted); font-style: italic;">— não designado —</span>
+                            </div>
+                        `}
+                    </div>
+                    <div class="pasta-actions">
+                        <span class="badge ${statusClass}">${statusLabel}</span>
+                        <a class="btn btn-secondary btn-sm" href="novo.html?id=${pacienteId}">
+                            ✏️ Editar dados
+                        </a>
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
+                            ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
+                        ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalDesignar()">👤 Designar aplicador</button>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const etapasComStatus = ETAPAS.map(et => {
+            let concluida = false;
+            if (et.id === 'anamnese' && anamneseExistente && anamneseExistente.status === 'concluida') {
+                concluida = true;
+            }
+            if (et.id === 'hipoteses' && hipoteseExistente && hipoteseExistente.aprovado_em) {
+                concluida = true;
+            }
+            if (et.id === 'checklist' && checklistInfo && checklistInfo.total > 0) {
+                concluida = true;
+            }
+            if (et.id === 'bateria' && bateriaInfo && bateriaInfo.total > 0 && bateriaInfo.concluido === bateriaInfo.total) {
+                concluida = true;
+            }
+            return { ...et, concluida };
+        });
+
+        const etapasHtml = `
+            <div class="pasta-etapas">
+                ${etapasComStatus.map(et => `
+                    <button
+                        class="etapa ${et.id === etapaAtual ? 'ativa' : ''} ${et.concluida ? 'concluida' : ''}"
+                        onclick="trocarEtapa('${et.id}')"
+                    >${et.label}</button>
+                `).join('')}
+            </div>
+        `;
+
+        const conteudoEtapa = renderizarEtapa(etapaAtual);
+
+        document.getElementById('pasta-conteudo').innerHTML = cabecalho + etapasHtml + conteudoEtapa;
+
+        document.getElementById('foto-input-hidden').onchange = uploadFoto;
+    }
+
+    function trocarEtapa(novaEtapa) {
+        etapaAtual = novaEtapa;
+        renderizarPasta();
+    }
+    window.trocarEtapa = trocarEtapa;
+
+    function renderizarEtapa(etapaId) {
+        if (etapaId === 'visao_geral') return renderVisaoGeral();
+        if (etapaId === 'anamnese') return renderAnamneseComRelatorio();
+        if (etapaId === 'hipoteses') return renderHipoteses();
+        if (etapaId === 'checklist') return renderChecklist();
+        if (etapaId === 'bateria') return renderBateria();
+        if (etapaId === 'correcao') {
+            // Dispara carga assíncrona; substitui o conteúdo quando pronto
+            setTimeout(() => carregarERenderCorrecao(), 0);
+            return `
+                <div class="etapa-content" id="correcao-container">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">⏳</div>
+                        <h3>Carregando dashboard de correção...</h3>
+                    </div>
+                </div>
+            `;
+        }
+        if (etapaId === 'laudo') {
+            setTimeout(() => carregarERenderLaudo(), 0);
+            return `
+                <div class="etapa-content" id="laudo-container">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">⏳</div>
+                        <h3>Carregando laudos...</h3>
+                    </div>
+                </div>
+            `;
+        }
+        if (etapaId === 'devolutiva') {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">🚧</div>
+                        <h3>Em construção</h3>
+                        <p>A etapa de Devolutiva estará disponível em breve.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Qualquer outra etapa não mapeada
+        const sprints = {};
+
+        const labelEtapa = ETAPAS.find(e => e.id === etapaId)?.label || etapaId;
+        const sprintInfo = sprints[etapaId] || 'próximo sprint';
+
+        return `
+            <div class="etapa-content">
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <h3>${labelEtapa}</h3>
+                    <p>Esta etapa será construída no <strong>${sprintInfo}</strong>.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================================================
+    // CORREÇÃO — Dashboard de status dos instrumentos da bateria
+    // ============================================================================
+
+    // Helpers (espelham bateria.js — mesma convenção de URL)
+    function correcaoSiglaParaSlug(sigla) {
+        return String(sigla || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+    const CORRECAO_URL_OVERRIDES_RESULTADO = {
+        'SCARED-A': '../correcao/scared/scared_resultado.html',
+        'SCARED-H': '../correcao/scared/scared_resultado.html'
+    };
+    // Whitelist de retrocompatibilidade (espelha bateria.js — testes legados)
+    const CORRECAO_WHITELIST_RESULTADO = ['RAADS-R'];
+
+    function correcaoMontarUrlResultado(sigla, aplicacaoId) {
+        let base = CORRECAO_URL_OVERRIDES_RESULTADO[sigla];
+        if (!base) {
+            const slug = correcaoSiglaParaSlug(sigla);
+            if (!slug) return null;
+            base = `../correcao/${slug}/${slug}_resultado.html`;
+        }
+        return `${base}?aplicacao_id=${aplicacaoId}`;
+    }
+
+    function correcaoTemPaginaResultado(inst) {
+        if (!inst) return false;
+        if (CORRECAO_WHITELIST_RESULTADO.includes(inst.sigla)) return true;
+        if (inst.tipo_aplicacao === 'presencial') {
+            return inst.permite_correcao_sistema === true;
+        }
+        return inst.permite_aplicacao_online === true
+            && inst.permite_correcao_sistema === true;
+    }
+
+    async function carregarERenderCorrecao() {
+        const container = document.getElementById('correcao-container');
+        if (!container) return;
+
+        try {
+            const { data, error } = await window.cortexClient
+                .from('aplicacoes_instrumento')
+                .select(`
+                    id, status, modalidade, data_aplicacao, data_conclusao,
+                    link_unico, link_acessado_em, updated_at, created_at,
+                    instrumentos_catalogo (
+                        sigla, nome_completo, tipo_aplicacao,
+                        permite_aplicacao_online, permite_correcao_sistema
+                    )
+                `)
+                .eq('paciente_id', pacienteId)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            container.innerHTML = renderCorrecao(data || []);
+        } catch (err) {
+            console.error('[correcao] erro ao carregar:', err);
+            container.innerHTML = `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">⚠</div>
+                    <h3>Erro ao carregar</h3>
+                    <p>${escapeHtml(err.message || 'erro desconhecido')}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderCorrecao(aplicacoes) {
+        if (aplicacoes.length === 0) {
+            return `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">📋</div>
+                    <h3>Nenhum instrumento na bateria</h3>
+                    <p style="margin-bottom: 18px;">Selecione testes no Checklist e inicie a Bateria para ver o status aqui.</p>
+                    <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">Ir para Checklist</a>
+                </div>
+            `;
+        }
+
+        // Classifica cada aplicação em um dos 3 grupos
+        const corrigidos = [];
+        const aguardandoCorrecao = [];
+        const onlineAguardando = [];
+
+        for (const apl of aplicacoes) {
+            const inst = apl.instrumentos_catalogo;
+            const sigla = inst?.sigla || '?';
+            const ehOnline = apl.modalidade === 'online'
+                || (inst?.permite_aplicacao_online && inst?.tipo_aplicacao !== 'presencial');
+
+            if (apl.status === 'corrigido' || apl.status === 'integrado_laudo') {
+                corrigidos.push(apl);
+            } else if (ehOnline && (apl.status === 'aguardando' || apl.status === 'em_aplicacao')) {
+                onlineAguardando.push(apl);
+            } else {
+                aguardandoCorrecao.push(apl);
+            }
+        }
+
+        const total = aplicacoes.length;
+        const pctConcluido = Math.round((corrigidos.length / total) * 100);
+
+        return `
+            <div class="correcao-dashboard">
+
+                <!-- Resumo -->
+                <div class="correcao-resumo">
+                    <div class="correcao-resumo-info">
+                        <h3 style="margin: 0 0 6px 0;">Instrumentos da bateria (${total})</h3>
+                        <p style="margin: 0; color: var(--color-text-muted); font-size: 13px;">
+                            ${corrigidos.length} de ${total} já corrigidos (${pctConcluido}%)
+                        </p>
+                    </div>
+                    <div class="correcao-resumo-progress">
+                        <div class="correcao-resumo-progress-bar" style="width: ${pctConcluido}%;"></div>
+                    </div>
+                </div>
+
+                <!-- ✅ Corrigidos -->
+                ${corrigidos.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #059669;">
+                            ✅ Corrigidos
+                            <span class="correcao-grupo-contador">${corrigidos.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${corrigidos.map(apl => renderCorrecaoLinhaCorrigido(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- ⏳ Aguardando correção (presencial / sem link) -->
+                ${aguardandoCorrecao.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #d97706;">
+                            ⏳ Aguardando correção
+                            <span class="correcao-grupo-contador">${aguardandoCorrecao.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${aguardandoCorrecao.map(apl => renderCorrecaoLinhaPendente(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- 📲 Online aguardando paciente -->
+                ${onlineAguardando.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #1d4ed8;">
+                            📲 Online — aguardando paciente
+                            <span class="correcao-grupo-contador">${onlineAguardando.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${onlineAguardando.map(apl => renderCorrecaoLinhaOnline(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Atalho para Bateria -->
+                <div style="margin-top: 22px; text-align: center;">
+                    <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-secondary">
+                        🎯 Ir para a Bateria
+                    </a>
+                </div>
+
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaCorrigido(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+        const dataConcl = apl.data_conclusao
+            ? formatarDataHora(apl.data_conclusao)
+            : (apl.updated_at ? formatarDataHora(apl.updated_at) : '—');
+
+        const podeVer = correcaoTemPaginaResultado(inst);
+        const url = podeVer ? correcaoMontarUrlResultado(sigla, apl.id) : null;
+
+        return `
+            <div class="correcao-item correcao-item-ok">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">Corrigido em ${dataConcl}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    ${url ? `
+                        <a class="btn btn-primary btn-sm" href="${url}">📊 Ver resultado</a>
+                    ` : `
+                        <span style="font-size: 12px; color: var(--color-text-muted); font-style: italic;">Sem página de resultado</span>
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaPendente(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+        const tipo = inst?.tipo_aplicacao === 'presencial' ? 'Presencial' : 'Online';
+        const statusLabel = {
+            'aguardando': 'Aguardando aplicação',
+            'em_aplicacao': 'Em aplicação',
+            'concluido_aplicacao': 'Aplicado — aguardando correção',
+            'em_correcao': 'Em correção',
+        }[apl.status] || apl.status;
+
+        return `
+            <div class="correcao-item correcao-item-pend">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">${tipo} — ${escapeHtml(statusLabel)}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    <a class="btn btn-secondary btn-sm" href="../bateria/bateria.html?paciente=${pacienteId}">Ir para a Bateria</a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaOnline(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+
+        let metaTxt = '';
+        if (apl.link_acessado_em) {
+            metaTxt = `Link acessado em ${formatarDataHora(apl.link_acessado_em)}`;
+        } else if (apl.link_unico) {
+            metaTxt = `Link enviado em ${formatarDataHora(apl.updated_at || apl.created_at)}`;
+        } else {
+            metaTxt = 'Aguardando geração de link';
+        }
+
+        return `
+            <div class="correcao-item correcao-item-online">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">${escapeHtml(metaTxt)}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    <a class="btn btn-secondary btn-sm" href="../bateria/bateria.html?paciente=${pacienteId}">Gerenciar link</a>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================================================
+    // LAUDO — Upload PDF + visualização + histórico versionado (Sprint 3)
+    // ============================================================================
+
+    let laudosCache = null;  // Lista carregada (refresh ao alterar)
+
+    async function carregarERenderLaudo() {
+        const container = document.getElementById('laudo-container');
+        if (!container) return;
+
+        try {
+            const { data, error } = await window.cortexClient
+                .from('laudos_paciente')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('versao', { ascending: false });
+
+            if (error) throw error;
+
+            laudosCache = data || [];
+            container.innerHTML = renderLaudo(laudosCache);
+            bindLaudoUpload();
+        } catch (err) {
+            console.error('[laudo] erro ao carregar:', err);
+            container.innerHTML = `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">⚠</div>
+                    <h3>Erro ao carregar laudos</h3>
+                    <p>${escapeHtml(err.message || 'erro desconhecido')}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderLaudo(laudos) {
+        const ativo = laudos.find(l => l.ativo) || laudos[0] || null;
+        const historicas = laudos.filter(l => !ativo || l.id !== ativo.id);
+
+        return `
+            <div class="laudo-page">
+
+                <!-- Topo: upload + título -->
+                <div class="laudo-topo">
+                    <div>
+                        <h3 style="margin: 0 0 4px 0;">Laudo do Paciente</h3>
+                        <p style="margin: 0; color: var(--color-text-muted); font-size: 13px;">
+                            Faça upload do PDF do laudo final. Cada envio gera uma nova versão automaticamente.
+                        </p>
+                    </div>
+                    <div>
+                        <input type="file" id="laudo-file-input" accept="application/pdf" style="display: none;">
+                        <button class="btn btn-primary" id="btn-laudo-upload">
+                            📤 Enviar laudo (PDF)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Versão atual -->
+                ${ativo ? renderLaudoVersaoAtual(ativo) : `
+                    <div class="laudo-empty">
+                        <div class="laudo-empty-icon">📄</div>
+                        <h4>Nenhum laudo enviado ainda</h4>
+                        <p>Clique em "Enviar laudo" para fazer upload do primeiro PDF.</p>
+                    </div>
+                `}
+
+                <!-- Histórico (versões antigas) -->
+                ${historicas.length > 0 ? `
+                    <div class="laudo-historico">
+                        <h4 class="laudo-historico-titulo">
+                            📚 Histórico de versões
+                            <span class="laudo-historico-contador">${historicas.length}</span>
+                        </h4>
+                        <div class="laudo-historico-lista">
+                            ${historicas.map(l => renderLaudoVersaoHistorica(l)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+            </div>
+        `;
+    }
+
+    function renderLaudoVersaoAtual(laudo) {
+        return `
+            <div class="laudo-versao-atual">
+                <div class="laudo-versao-atual-header">
+                    <div>
+                        <span class="laudo-badge-atual">VERSÃO ATUAL</span>
+                        <h4 class="laudo-versao-atual-titulo">Laudo v${laudo.versao}</h4>
+                        <div class="laudo-versao-atual-meta">
+                            ${escapeHtml(laudo.arquivo_nome_original || '—')}
+                            · ${formatarBytes(laudo.arquivo_tamanho_bytes)}
+                            · Enviado em ${formatarDataHora(laudo.created_at)}
+                        </div>
+                    </div>
+                    <div class="laudo-versao-atual-acoes">
+                        <button class="btn btn-primary btn-sm" onclick="window.CortexLaudo.visualizar('${laudo.id}')">
+                            👁 Visualizar
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">
+                            ⬇ Baixar
+                        </button>
+                        <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
+                            🗑 Remover
+                        </button>
+                    </div>
+                </div>
+                <div class="laudo-versao-atual-viewer" id="laudo-viewer-${laudo.id}"></div>
+            </div>
+        `;
+    }
+
+    function renderLaudoVersaoHistorica(laudo) {
+        return `
+            <div class="laudo-historico-item">
+                <div class="laudo-historico-info">
+                    <div class="laudo-historico-versao">v${laudo.versao}</div>
+                    <div class="laudo-historico-detalhes">
+                        <div class="laudo-historico-nome">${escapeHtml(laudo.arquivo_nome_original || '—')}</div>
+                        <div class="laudo-historico-meta">
+                            ${formatarBytes(laudo.arquivo_tamanho_bytes)}
+                            · Enviado em ${formatarDataHora(laudo.created_at)}
+                        </div>
+                    </div>
+                </div>
+                <div class="laudo-historico-acoes">
+                    <button class="btn btn-ghost btn-sm" onclick="window.CortexLaudo.visualizar('${laudo.id}')">
+                        👁 Visualizar
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">
+                        ⬇ Baixar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.definirAtual('${laudo.id}')">
+                        ⭐ Definir como atual
+                    </button>
+                    <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
+                        🗑
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function bindLaudoUpload() {
+        const btn = document.getElementById('btn-laudo-upload');
+        const input = document.getElementById('laudo-file-input');
+        if (!btn || !input) return;
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', uploadLaudo);
+    }
+
+    async function uploadLaudo(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validações
+        if (file.type !== 'application/pdf') {
+            window.CortexUI.toast('Apenas arquivos PDF são aceitos.', 'danger');
+            event.target.value = '';
+            return;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            window.CortexUI.toast('Arquivo muito grande. Máximo: 20MB.', 'danger');
+            event.target.value = '';
+            return;
+        }
+
+        const btn = document.getElementById('btn-laudo-upload');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳ Enviando...';
+
+        try {
+            // Path: <paciente_id>/v<timestamp>.pdf
+            const ts = Date.now();
+            const path = `${pacienteId}/v${ts}.pdf`;
+
+            // 1. Upload no Storage
+            const { error: uploadError } = await window.cortexClient
+                .storage
+                .from('laudos')
+                .upload(path, file, { contentType: 'application/pdf', upsert: false });
+            if (uploadError) throw uploadError;
+
+            // 2. INSERT em laudos_paciente (versao auto via trigger; ativo=true por default)
+            const { data: { user } } = await window.cortexClient.auth.getUser();
+            const { error: insertError } = await window.cortexClient
+                .from('laudos_paciente')
+                .insert({
+                    paciente_id: pacienteId,
+                    arquivo_path: path,
+                    arquivo_nome_original: file.name,
+                    arquivo_tamanho_bytes: file.size,
+                    ativo: true,
+                    created_by: user?.id || null,
+                });
+            if (insertError) throw insertError;
+
+            await CortexAudit.log('upload', 'laudos_paciente', pacienteId, {
+                pacienteId,
+                detalhes: { nome: file.name, tamanho: file.size }
+            });
+
+            window.CortexUI.toast('Laudo enviado com sucesso!', 'success');
+
+            // Reload da lista
+            await carregarERenderLaudo();
+
+        } catch (err) {
+            console.error('[laudo] erro upload:', err);
+            window.CortexUI.toast('Erro ao enviar laudo: ' + (err.message || 'desconhecido'), 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = orig;
+            event.target.value = '';
+        }
+    }
+
+    // API global pros botões inline (visualizar/baixar/definir/remover)
+    window.CortexLaudo = {
+        visualizar: async function(laudoId) {
+            try {
+                const laudo = (laudosCache || []).find(l => l.id === laudoId);
+                if (!laudo) throw new Error('Laudo não encontrado');
+
+                const { data, error } = await window.cortexClient
+                    .storage
+                    .from('laudos')
+                    .createSignedUrl(laudo.arquivo_path, 600);  // 10 min
+                if (error || !data) throw error || new Error('URL não gerada');
+
+                // Abre modal com iframe do PDF
+                abrirModalLaudo(laudo, data.signedUrl);
+            } catch (err) {
+                console.error('[laudo] visualizar:', err);
+                window.CortexUI.toast('Erro ao visualizar: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        baixar: async function(laudoId) {
+            try {
+                const laudo = (laudosCache || []).find(l => l.id === laudoId);
+                if (!laudo) throw new Error('Laudo não encontrado');
+
+                const { data, error } = await window.cortexClient
+                    .storage
+                    .from('laudos')
+                    .createSignedUrl(laudo.arquivo_path, 60, { download: laudo.arquivo_nome_original || 'laudo.pdf' });
+                if (error || !data) throw error || new Error('URL não gerada');
+
+                window.location.href = data.signedUrl;
+            } catch (err) {
+                console.error('[laudo] baixar:', err);
+                window.CortexUI.toast('Erro ao baixar: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        definirAtual: async function(laudoId) {
+            if (!confirm('Definir esta versão como a atual? A versão atual passa a ser histórico.')) return;
+            try {
+                // Trigger laudos_unique_ativo cuida de marcar as outras como false
+                const { error } = await window.cortexClient
+                    .from('laudos_paciente')
+                    .update({ ativo: true })
+                    .eq('id', laudoId);
+                if (error) throw error;
+
+                window.CortexUI.toast('Versão definida como atual.', 'success');
+                await carregarERenderLaudo();
+            } catch (err) {
+                console.error('[laudo] definirAtual:', err);
+                window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        remover: async function(laudoId) {
+            const laudo = (laudosCache || []).find(l => l.id === laudoId);
+            if (!laudo) return;
+            if (!confirm(`Remover permanentemente a versão v${laudo.versao}? Esta ação não pode ser desfeita.`)) return;
+            try {
+                // 1. Remove do Storage
+                await window.cortexClient.storage.from('laudos').remove([laudo.arquivo_path]);
+                // 2. Remove da tabela
+                const { error } = await window.cortexClient
+                    .from('laudos_paciente')
+                    .delete()
+                    .eq('id', laudoId);
+                if (error) throw error;
+
+                await CortexAudit.log('remocao', 'laudos_paciente', pacienteId, {
+                    pacienteId,
+                    detalhes: { versao: laudo.versao }
+                });
+
+                window.CortexUI.toast('Versão removida.', 'success');
+                await carregarERenderLaudo();
+            } catch (err) {
+                console.error('[laudo] remover:', err);
+                window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        }
+    };
+
+    function abrirModalLaudo(laudo, signedUrl) {
+        // Cria modal full-screen com iframe do PDF
+        const modal = document.createElement('div');
+        modal.className = 'laudo-modal';
+        modal.innerHTML = `
+            <div class="laudo-modal-header">
+                <div class="laudo-modal-titulo">
+                    <strong>Laudo v${laudo.versao}</strong>
+                    <span class="laudo-modal-meta">${escapeHtml(laudo.arquivo_nome_original || '')}</span>
+                </div>
+                <div class="laudo-modal-acoes">
+                    <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">⬇ Baixar</button>
+                    <button class="btn btn-ghost btn-sm" onclick="this.closest('.laudo-modal').remove()">✕ Fechar</button>
+                </div>
+            </div>
+            <iframe class="laudo-modal-iframe" src="${signedUrl}" title="Laudo PDF"></iframe>
+        `;
+        document.body.appendChild(modal);
+
+        // ESC fecha
+        const escHandler = (e) => {
+            if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function formatarBytes(bytes) {
+        if (bytes == null) return '—';
+        const kb = bytes / 1024;
+        if (kb < 1024) return `${kb.toFixed(0)} KB`;
+        return `${(kb / 1024).toFixed(2)} MB`;
+    }
+
+    function renderVisaoGeral() {
+        return `
+            <div class="etapa-content">
+                <h3>Visão geral</h3>
+                <div class="campos-grid">
+                    ${campo('Telefone', paciente.telefone)}
+                    ${campo('E-mail', paciente.email)}
+                    ${campo('CPF', paciente.cpf)}
+                    ${campo('Endereço', paciente.endereco)}
+                    ${campo('Cidade', paciente.cidade)}
+                    ${campo('Encaminhado por', paciente.encaminhado_por)}
+                    ${campo('Médico de referência', paciente.medico_referencia)}
+                    ${paciente.responsavel_nome ? campo('Responsável', `${paciente.responsavel_nome} (${paciente.responsavel_parentesco || 'sem parentesco'})`) : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAnamneseComRelatorio() {
+        return `
+            <div class="etapa-content">
+                ${renderCardAnamnese()}
+                ${renderCardRelatorioEscolar()}
+            </div>
+        `;
+    }
+
+    function renderCardAnamnese() {
+        // Sprint 17: cards de respostas remotas SEMPRE no topo, independente do estado da anamnese
+        const cardsRemotos = renderCardsAnamnesesRemotas();
+
+        // Botão "Enviar formulário remoto" também SEMPRE disponível
+        const btnEnviarRemoto = `
+            <div class="anamnese-acoes-topo">
+                <button class="btn btn-secondary btn-sm" onclick="enviarAnamneseRemota()" title="Gera link pra paciente preencher antes da sessão">
+                    📧 Enviar formulário remoto
+                </button>
+            </div>
+        `;
+
+        if (!anamneseExistente) {
+            const idadeAnos = paciente.idade_anos;
+            let faixaSugerida = 'Adulto';
+            if (idadeAnos < 6) faixaSugerida = 'Primeira Infância (0–6 anos)';
+            else if (idadeAnos < 12) faixaSugerida = 'Segunda Infância (6–12 anos)';
+            else if (idadeAnos < 18) faixaSugerida = 'Adolescência (12–18 anos)';
+            else if (idadeAnos < 50) faixaSugerida = 'Adulto (18–50 anos)';
+            else faixaSugerida = 'Idoso (50+ anos)';
+
+            return `
+                ${btnEnviarRemoto}
+                ${cardsRemotos}
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                    </div>
+                    <h3>Anamnese ainda não iniciada</h3>
+                    <p style="margin-bottom: 18px;">Com base na idade do paciente (${paciente.idade_humanizada}), o formulário sugerido é:<br><strong>${faixaSugerida}</strong></p>
+                    <a href="../anamnese/anamnese.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                        Iniciar anamnese
+                    </a>
+                </div>
+            `;
+        }
+
+        const FAIXAS_LABELS = {
+            'infantil': 'Primeira Infância (0–6 anos)',
+            'escolar': 'Segunda Infância (6–12 anos)',
+            'adolescente': 'Adolescência (12–18 anos)',
+            'adulto': 'Adulto (18–50 anos)',
+            'idoso': 'Idoso (50+ anos)'
+        };
+
+        const faixaLabel = FAIXAS_LABELS[anamneseExistente.faixa_etaria] || anamneseExistente.faixa_etaria;
+        const isFinalizada = anamneseExistente.status === 'concluida';
+
+        if (isFinalizada) {
+            return `
+                ${btnEnviarRemoto}
+                ${cardsRemotos}
+                <div class="anamnese-card-resumo">
+                    <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-success">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <div class="anamnese-card-resumo-info">
+                        <h3>Anamnese finalizada</h3>
+                        <p><strong>Formulário:</strong> ${faixaLabel}</p>
+                        <p><strong>Finalizada em:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
+                    </div>
+                    <div class="anamnese-card-resumo-acoes">
+                        <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-secondary">Visualizar</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            ${btnEnviarRemoto}
+            ${cardsRemotos}
+            <div class="anamnese-card-resumo">
+                <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-warning">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                    </svg>
+                </div>
+                <div class="anamnese-card-resumo-info">
+                    <h3>Anamnese em rascunho</h3>
+                    <p><strong>Formulário:</strong> ${faixaLabel}</p>
+                    <p><strong>Última edição:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
+                </div>
+                <div class="anamnese-card-resumo-acoes">
+                    <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-primary">
+                        Continuar anamnese
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Sprint 17 — Anamnese Remota
+    // ════════════════════════════════════════════════════════════════════
+    function renderCardsAnamnesesRemotas() {
+        if (!respostasRemotas || respostasRemotas.length === 0) return '';
+
+        return respostasRemotas.map(ar => {
+            const isResp = ar.status === 'respondida';
+            const dataEnv = new Date(ar.data_envio).toLocaleDateString('pt-BR');
+            const dataResp = ar.data_resposta ? new Date(ar.data_resposta).toLocaleDateString('pt-BR') : null;
+            const respondente = ar.nome_respondente || ar.quem_respondeu || '—';
+
+            if (isResp) {
+                return `
+                    <div class="anamnese-card-remoto-pasta anamnese-card-remoto-respondida">
+                        <div class="anamnese-card-remoto-pasta-info">
+                            <div class="anamnese-card-remoto-pasta-titulo">📬 Formulário remoto respondido em ${dataResp}</div>
+                            <div class="anamnese-card-remoto-pasta-sub">Respondido por: ${escapeHtml(respondente)}${ar.quem_respondeu ? ` (${escapeHtml(ar.quem_respondeu)})` : ''}</div>
+                        </div>
+                        <div class="anamnese-card-remoto-pasta-acoes">
+                            <button class="btn btn-primary btn-sm" onclick="visualizarPdfAnamneseRemota('${ar.id}')">📄 Visualizar PDF</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="anamnese-card-remoto-pasta anamnese-card-remoto-pendente">
+                        <div class="anamnese-card-remoto-pasta-info">
+                            <div class="anamnese-card-remoto-pasta-titulo">⏳ Formulário enviado em ${dataEnv} — aguardando resposta</div>
+                            <div class="anamnese-card-remoto-pasta-sub">Quando o responsável preencher, as respostas aparecem aqui.</div>
+                        </div>
+                        <div class="anamnese-card-remoto-pasta-acoes">
+                            <button class="btn btn-secondary btn-sm" onclick="copiarLinkRemoto('${ar.id}')">Copiar link</button>
+                            <button class="btn btn-secondary btn-sm" onclick="cancelarRemotaPasta('${ar.id}')">Cancelar</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }).join('');
+    }
+
+    // Mantém os tokens em cache pra reuso ao "Copiar link"
+    const _tokensRemotosCache = {};
+
+    async function enviarAnamneseRemota() {
+        try {
+            const { data, error } = await window.cortexClient
+                .rpc('criar_anamnese_remota', { p_paciente_id: pacienteId });
+            if (error) throw error;
+            const linha = Array.isArray(data) ? data[0] : data;
+            if (!linha || !linha.novo_token) throw new Error('Não retornou token');
+
+            const base = window.location.origin + window.location.pathname.replace(/pacientes\/pasta\.html$/, '');
+            const link = `${base}responder/anamnese_remota.html?token=${linha.novo_token}`;
+
+            // Guarda o token pra reuso (Copiar link no card pendente)
+            _tokensRemotosCache[linha.anamnese_remota_id] = linha.novo_token;
+
+            mostrarModalLinkRemoto(link);
+
+            // Recarrega lista pra mostrar o card "aguardando resposta"
+            await carregarRespostasRemotas();
+            renderizarPasta();
+        } catch (err) {
+            console.error('Erro ao gerar link remoto:', err);
+            window.CortexUI.toast('Erro ao gerar link: ' + (err.message || ''), 'danger');
+        }
+    }
+
+    async function copiarLinkRemoto(arId) {
+        // Se temos o token em cache (mesma sessão), usa; senão, regenera não dá — token só vem na criação.
+        // Solução: como o token está só no banco do paciente que vai abrir, não dá pra recuperar pelo painel.
+        // Avisa o usuário se não temos cache.
+        const token = _tokensRemotosCache[arId];
+        if (!token) {
+            alert('Não consigo recuperar o link desta sessão antiga. Por segurança, o token só está disponível no momento da geração.\n\nSe precisar enviar de novo, cancele este envio e gere um novo formulário remoto.');
+            return;
+        }
+        const base = window.location.origin + window.location.pathname.replace(/pacientes\/pasta\.html$/, '');
+        const link = `${base}responder/anamnese_remota.html?token=${token}`;
+        mostrarModalLinkRemoto(link);
+    }
+
+    function mostrarModalLinkRemoto(link) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+        const msgWhats = encodeURIComponent(
+            'Olá! Aqui está o link do formulário pré-avaliação que falamos. Preencha com calma:\n\n' + link
+        );
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Link do formulário remoto</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin: 0 0 14px; color: #475569; font-size: 14px;">Copie o link abaixo e envie ao paciente ou responsável:</p>
+                    <input type="text" class="form-input" id="link-remoto-input" readonly value="${escapeHtml(link)}" style="width: 100%; font-size: 13px;">
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button class="btn btn-secondary" id="btn-copiar-remoto" style="flex: 1;">📋 Copiar link</button>
+                        <a class="btn btn-primary" style="flex: 1; text-decoration: none; text-align: center;"
+                           href="https://wa.me/?text=${msgWhats}" target="_blank" rel="noopener">📱 Enviar por WhatsApp</a>
+                    </div>
+                    <p style="margin: 18px 0 0; color: #64748b; font-size: 12.5px; font-style: italic;">
+                        💡 O link não expira. Só pode ser usado uma vez. Se precisar reenviar, gere um novo.
+                    </p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        document.getElementById('btn-copiar-remoto').addEventListener('click', () => {
+            const inp = document.getElementById('link-remoto-input');
+            inp.select();
+            document.execCommand('copy');
+            window.CortexUI.toast('Link copiado!', 'success');
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Sprint 17 — mapeamento de chaves técnicas pra rótulos humanos
+    // (espelhado do anamnese_remota_perguntas.js)
+    // ════════════════════════════════════════════════════════════════════
+    const ROTULOS_ANAMNESE_REMOTA = {
+        // queixa
+        motivo: 'Motivo da avaliação',
+        impacto: 'Impacto no dia a dia',
+        tempo_queixa: 'Há quanto tempo existem',
+        encaminhado_por: 'Quem indicou a avaliação',
+        // gestação
+        tipo_parto: 'Tipo de parto',
+        gestacao_risco: 'Gestação de alto risco',
+        tempo_gestacao: 'Semanas de gestação ao nascer',
+        peso_nascimento: 'Peso aproximado ao nascer',
+        intercorrencias_gestacao: 'Intercorrências durante gestação/parto',
+        // desenvolvimento
+        idade_andou: 'Idade que começou a andar sozinha',
+        idade_falou: 'Idade das primeiras palavras',
+        controle_esfincter: 'Idade do controle do xixi/cocô',
+        desenvolvimento_obs: 'Observações sobre o desenvolvimento',
+        // escola
+        serie_escolar: 'Série / ano escolar',
+        tipo_escola: 'Tipo de escola',
+        desempenho_escolar: 'Desempenho escolar',
+        dificuldades_escolares: 'Dificuldades específicas',
+        queixa_escola: 'Preocupação da escola',
+        // comportamento
+        comportamentos_observados: 'Comportamentos observados',
+        amigos: 'Relacionamento com outras crianças / amigos',
+        // trabalho/vida pessoal
+        ocupacao: 'Profissão / ocupação',
+        situacao_trabalho: 'Situação de trabalho',
+        escolaridade: 'Escolaridade',
+        dificuldades_trabalho: 'Dificuldades no trabalho',
+        estado_civil: 'Estado civil',
+        tem_filhos: 'Filhos',
+        // idoso
+        com_quem_mora: 'Com quem mora',
+        autonomia: 'Atividades que precisa de ajuda',
+        inicio_queixas: 'Quando as queixas começaram',
+        piora: 'Estão piorando',
+        // saúde
+        medicacoes: 'Medicamentos em uso',
+        diagnosticos_anteriores: 'Diagnósticos anteriores',
+        acompanhamentos: 'Acompanhamentos atuais',
+        doencas_cronicas: 'Doenças crônicas',
+        sono: 'Padrão de sono',
+        // família
+        hist_familiar: 'Casos na família',
+        hist_familiar_detalhes: 'Detalhes do histórico familiar',
+        // final
+        expectativas: 'Expectativas com a avaliação',
+        informacoes_extras: 'Informações adicionais',
+    };
+
+    function rotulo(chave) {
+        return ROTULOS_ANAMNESE_REMOTA[chave] || chave.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+    }
+
+    function renderValorResposta(v) {
+        if (v === null || v === undefined || v === '') return '<em style="color:#94a3b8;">— em branco —</em>';
+        if (Array.isArray(v)) {
+            if (v.length === 0) return '<em style="color:#94a3b8;">— em branco —</em>';
+            return v.map(escapeHtml).join(' · ');
+        }
+        return escapeHtml(String(v)).replace(/\n/g, '<br>');
+    }
+
+    function montarDocumentoAnamneseRemotaHTML(ar) {
+        const meta = (ar.respostas && ar.respostas._metadata) || {};
+        const respostasLimpas = { ...ar.respostas };
+        delete respostasLimpas._metadata;
+
+        const dataResp = ar.data_resposta
+            ? new Date(ar.data_resposta).toLocaleDateString('pt-BR') + ' às ' + new Date(ar.data_resposta).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+            : '—';
+        const dataEnv = new Date(ar.data_envio).toLocaleDateString('pt-BR');
+
+        const linhas = Object.entries(respostasLimpas).map(([k, v]) => `
+            <div style="margin: 0 0 12px; padding: 0 0 10px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">
+                    ${escapeHtml(rotulo(k))}
+                </div>
+                <div style="font-size: 13px; color: #0f172a; line-height: 1.5;">
+                    ${renderValorResposta(v)}
+                </div>
+            </div>
+        `).join('');
+
+        const idade = paciente.idade_humanizada || '';
+        const cpf = paciente.cpf ? `<br>CPF: ${escapeHtml(paciente.cpf)}` : '';
+
+        // Documento todo dentro de uma div A4-like pra html2canvas + jsPDF
+        return `
+            <div id="pdf-anamnese-remota-conteudo" style="
+                width: 720px;
+                background: #fff;
+                padding: 40px 48px;
+                font-family: 'Inter', -apple-system, sans-serif;
+                color: #0f172a;
+                box-sizing: border-box;
+            ">
+                <!-- Cabeçalho -->
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    padding-bottom: 18px;
+                    border-bottom: 2px solid #0c1f3f;
+                    margin-bottom: 24px;
+                ">
+                    <div>
+                        <div style="font-size: 22px; font-weight: 800; color: #0c1f3f; letter-spacing: -0.01em;">
+                            Equilibrium <span style="font-weight: 400; color: #64748b;">Neuropsicologia</span>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase;">
+                            Formulário Pré-Avaliação
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 11px; color: #64748b;">
+                        Gerado em ${new Date().toLocaleDateString('pt-BR')}
+                    </div>
+                </div>
+
+                <!-- Identificação -->
+                <h2 style="font-size: 16px; font-weight: 700; color: #0c1f3f; margin: 0 0 14px;">Identificação</h2>
+                <div style="background: #f8fafc; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; line-height: 1.7; color: #1e293b;">
+                    <strong>Paciente:</strong> ${escapeHtml(paciente.nome_completo)}${cpf}<br>
+                    <strong>Idade:</strong> ${escapeHtml(idade)}<br>
+                    <strong>Respondido por:</strong> ${escapeHtml(ar.nome_respondente || '—')}${ar.quem_respondeu ? ' (' + escapeHtml(ar.quem_respondeu) + ')' : ''}${meta.relacao_outro ? '<br><strong>Relação:</strong> ' + escapeHtml(meta.relacao_outro) : ''}<br>
+                    <strong>Link enviado em:</strong> ${escapeHtml(dataEnv)}<br>
+                    <strong>Respondido em:</strong> ${escapeHtml(dataResp)}
+                </div>
+
+                <!-- Respostas -->
+                <h2 style="font-size: 16px; font-weight: 700; color: #0c1f3f; margin: 0 0 14px;">Respostas</h2>
+                <div>
+                    ${linhas}
+                </div>
+
+                <!-- Rodapé -->
+                <div style="margin-top: 36px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center;">
+                    Este documento é um relato de pré-avaliação preenchido remotamente. Deve ser revisado e
+                    complementado em sessão presencial com o profissional responsável.
+                </div>
+            </div>
+        `;
+    }
+
+    function visualizarPdfAnamneseRemota(arId) {
+        const ar = respostasRemotas.find(r => r.id === arId);
+        if (!ar) {
+            window.CortexUI.toast('Resposta não encontrada.', 'danger');
+            return;
+        }
+
+        const documentoHtml = montarDocumentoAnamneseRemotaHTML(ar);
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+            <div class="modal-content" style="max-width: 820px; max-height: 92vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h2>Formulário Pré-Avaliação</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" id="btn-baixar-pdf-anamnese-remota">📥 Baixar PDF</button>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                    </div>
+                </div>
+                <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 24px; background: #f1f5f9;">
+                    ${documentoHtml}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('btn-baixar-pdf-anamnese-remota').addEventListener('click', async () => {
+            await gerarPdfAnamneseRemota(ar);
+        });
+    }
+
+    async function gerarPdfAnamneseRemota(ar) {
+        if (!window.html2canvas || !window.jspdf) {
+            window.CortexUI.toast('Biblioteca de PDF ainda carregando, tente em 2 segundos...', 'info');
+            return;
+        }
+
+        const btn = document.getElementById('btn-baixar-pdf-anamnese-remota');
+        const txtOriginal = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+
+        try {
+            const el = document.getElementById('pdf-anamnese-remota-conteudo');
+            if (!el) throw new Error('Elemento do documento não encontrado');
+
+            const canvas = await window.html2canvas(el, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false
+            });
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const pdfWidth = 210, pdfHeight = 297;
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            if (imgHeight <= pdfHeight) {
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight);
+            } else {
+                let posY = 0, restante = imgHeight;
+                while (restante > 0) {
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, -posY, pdfWidth, imgHeight);
+                    restante -= pdfHeight;
+                    posY += pdfHeight;
+                    if (restante > 0) pdf.addPage();
+                }
+            }
+
+            const nomeAbreviado = (paciente.nome_completo || 'PACIENTE').toUpperCase()
+                .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
+            const d = new Date();
+            const dataStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const nomeArquivo = `Anamnese Remota - ${nomeAbreviado}_${dataStr}.pdf`;
+
+            pdf.save(nomeArquivo);
+            window.CortexUI.toast('PDF gerado com sucesso', 'success');
+        } catch (err) {
+            console.error('Erro ao gerar PDF:', err);
+            window.CortexUI.toast('Erro ao gerar PDF: ' + err.message, 'danger');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = txtOriginal; }
+        }
+    }
+
+    async function cancelarRemotaPasta(arId) {
+        if (!confirm('Cancelar este envio? O link parará de funcionar e não será mais possível receber as respostas.')) return;
+        try {
+            const { error } = await window.cortexClient
+                .from('anamneses_remotas')
+                .update({ status: 'cancelada' })
+                .eq('id', arId);
+            if (error) throw error;
+            await carregarRespostasRemotas();
+            renderizarPasta();
+            window.CortexUI.toast('Envio cancelado.', 'info');
+        } catch (err) {
+            window.CortexUI.toast('Erro: ' + err.message, 'danger');
+        }
+    }
+
+    function renderCardRelatorioEscolar() {
+        // Se não foi cadastrado ainda
+        if (!relatorioEscolarExistente) {
+            return `
+                <div class="relatorio-card-resumo" style="margin-top: 14px;">
+                    <div class="relatorio-card-resumo-icone">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                    </div>
+                    <div class="relatorio-card-resumo-info">
+                        <h3>📚 Relatório Escolar</h3>
+                        <p style="color: var(--color-text-muted);">
+                            Cole aqui o relatório que a escola enviou para complementar a anamnese.
+                        </p>
+                    </div>
+                    <div class="relatorio-card-resumo-acoes">
+                        <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-secondary">
+                            Adicionar
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Tem relatório registrado
+        const conteudo = relatorioEscolarExistente.observacoes_educadores || '';
+        const preview = conteudo.length > 0
+            ? conteudo.substring(0, 200) + (conteudo.length > 200 ? '...' : '')
+            : null;
+
+        return `
+            <div class="relatorio-card-resumo" style="margin-top: 14px;">
+                <div class="relatorio-card-resumo-icone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                </div>
+                <div class="relatorio-card-resumo-info">
+                    <h3>📚 Relatório Escolar</h3>
+                    <p><strong>Última edição:</strong> ${formatarDataHora(relatorioEscolarExistente.updated_at)}</p>
+                    ${preview ? `<div class="resumo-preview">${escapeHtml(preview)}</div>` : `<p style="color: var(--color-text-muted); font-style: italic;">Documento ainda sem conteúdo.</p>`}
+                </div>
+                <div class="relatorio-card-resumo-acoes">
+                    <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-primary">
+                        Editar relatório
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderBateria() {
+        if (!bateriaInfo || bateriaInfo.total === 0) {
+            const totalChecklist = checklistInfo ? checklistInfo.total : 0;
+            if (totalChecklist === 0) {
+                return `
+                    <div class="etapa-content">
+                        <div class="etapa-placeholder">
+                            <div class="etapa-placeholder-icon">🎯</div>
+                            <h3>Bateria sem instrumentos</h3>
+                            <p style="margin-bottom: 18px;">É necessário primeiro selecionar testes no Checklist.</p>
+                            <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">Ir para Checklist</a>
+                        </div>
+                    </div>
+                `;
+            }
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">🎯</div>
+                        <h3>Bateria pronta para iniciar</h3>
+                        <p style="margin-bottom: 18px;">${totalChecklist} testes selecionados no checklist. Abra a bateria para carregá-los automaticamente.</p>
+                        <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">Iniciar bateria</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        const todosConcluidos = bateriaInfo.concluido === bateriaInfo.total;
+        const cor = todosConcluidos ? 'var(--primary-green)' : 'var(--primary-blue)';
+
+        return `
+            <div class="etapa-content">
+                <div class="bateria-card-resumo">
+                    <div class="bateria-card-icone">${todosConcluidos ? '✓' : '🎯'}</div>
+                    <div class="bateria-card-info">
+                        <h3>${todosConcluidos ? 'Bateria concluída' : 'Bateria em andamento'}</h3>
+                        <p><strong>Última atualização:</strong> ${formatarDataHora(bateriaInfo.updated_at)}</p>
+                        <div class="bateria-mini-stats">
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--color-warning-text);">${bateriaInfo.aguardando}</span>
+                                <span class="bateria-mini-stat-label">Aguardando</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--primary-blue);">${bateriaInfo.em_aplicacao}</span>
+                                <span class="bateria-mini-stat-label">Em aplicação</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--primary-green);">${bateriaInfo.concluido}</span>
+                                <span class="bateria-mini-stat-label">Concluídos</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num">${bateriaInfo.total}</span>
+                                <span class="bateria-mini-stat-label">Total</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-primary">
+                            ${todosConcluidos ? 'Visualizar' : 'Continuar'}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderChecklist() {
+        const total = checklistInfo ? checklistInfo.total : 0;
+
+        if (total === 0) {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M9 11l3 3L22 4"/>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                        </div>
+                        <h3>Checklist ainda não preenchido</h3>
+                        <p style="margin-bottom: 18px;">Selecione os instrumentos que serão aplicados ao paciente. A lista é filtrada automaticamente pela idade.</p>
+                        <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                            Abrir checklist
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="etapa-content">
+                <div class="checklist-card-resumo">
+                    <div class="checklist-card-icone">📋</div>
+                    <div class="checklist-card-info">
+                        <h3>Checklist com ${total} instrumento${total === 1 ? '' : 's'}</h3>
+                        <p><strong>Última atualização:</strong> ${formatarDataHora(checklistInfo.updated_at)}</p>
+                        <p style="color: var(--color-text-muted); margin-top: 4px;">Os instrumentos selecionados estão prontos para aplicação na etapa Bateria.</p>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">
+                            Editar / Imprimir
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderHipoteses() {
+        const anamneseFinalizada = anamneseExistente && anamneseExistente.status === 'concluida';
+
+        if (!hipoteseExistente) {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                        </div>
+                        <h3>Hipóteses ainda não levantadas</h3>
+                        ${!anamneseFinalizada ? `
+                            <p style="margin-bottom: 18px; color: var(--color-warning-text);">⚠️ Recomendamos finalizar a anamnese antes de levantar hipóteses.</p>
+                        ` : `
+                            <p style="margin-bottom: 18px;">A partir da anamnese, defina as hipóteses diagnósticas iniciais para guiar a bateria de avaliação.</p>
+                        `}
+                        <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                            Iniciar hipóteses
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        const numCids = (hipoteseExistente.cids_sugeridos || []).length;
+        const numInst = (hipoteseExistente.instrumentos_sugeridos || []).length;
+        const aprovada = !!hipoteseExistente.aprovado_em;
+
+        if (aprovada) {
+            return `
+                <div class="etapa-content">
+                    <div class="hipoteses-card-resumo">
+                        <div class="hipoteses-card-resumo-icone hipoteses-card-resumo-icone-success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <div class="hipoteses-card-resumo-info">
+                            <h3>Hipóteses aprovadas</h3>
+                            <p><strong>Aprovadas em:</strong> ${formatarDataHora(hipoteseExistente.aprovado_em)}</p>
+                            <p style="color: var(--color-text-muted); margin-top: 4px;">Bloqueado para edição.</p>
+                            <div class="hipoteses-mini-stats">
+                                <div class="hipoteses-mini-stat">
+                                    <span class="hipoteses-mini-stat-num">${numCids}</span>
+                                    <span class="hipoteses-mini-stat-label">CIDs/DSM</span>
+                                </div>
+                                <div class="hipoteses-mini-stat">
+                                    <span class="hipoteses-mini-stat-num">${numInst}</span>
+                                    <span class="hipoteses-mini-stat-label">Instrumentos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hipoteses-card-resumo-acoes">
+                            <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-secondary">Visualizar</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="etapa-content">
+                <div class="hipoteses-card-resumo">
+                    <div class="hipoteses-card-resumo-icone hipoteses-card-resumo-icone-warning">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                        </svg>
+                    </div>
+                    <div class="hipoteses-card-resumo-info">
+                        <h3>Hipóteses em rascunho</h3>
+                        <p><strong>Última edição:</strong> ${formatarDataHora(hipoteseExistente.updated_at)}</p>
+                        <div class="hipoteses-mini-stats">
+                            <div class="hipoteses-mini-stat">
+                                <span class="hipoteses-mini-stat-num">${numCids}</span>
+                                <span class="hipoteses-mini-stat-label">CIDs/DSM</span>
+                            </div>
+                            <div class="hipoteses-mini-stat">
+                                <span class="hipoteses-mini-stat-num">${numInst}</span>
+                                <span class="hipoteses-mini-stat-label">Instrumentos</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-primary">
+                            Continuar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function campo(label, valor) {
+        return `
+            <div class="campo">
+                <div class="campo-label">${label}</div>
+                <div class="campo-valor">${escapeHtml(valor || '—')}</div>
+            </div>
+        `;
+    }
+
+    function formatarDataHora(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        return `${dd}/${mm}/${yyyy} às ${hh}:${mi}`;
+    }
+
+    async function uploadFoto(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            window.CortexUI.toast('Arquivo muito grande. Máximo: 2MB.', 'danger');
+            return;
+        }
+
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            window.CortexUI.toast('Formato não suportado. Use JPG, PNG ou WEBP.', 'danger');
+            return;
+        }
+
+        window.CortexUI.toast('Enviando foto...', 'info');
+
+        const ext = file.name.split('.').pop().toLowerCase();
+        const path = `${pacienteId}/perfil.${ext}`;
+
+        try {
+            const { error: uploadError } = await window.cortexClient
+                .storage
+                .from('pacientes-fotos')
+                .upload(path, file, { upsert: true, contentType: file.type });
+
+            if (uploadError) throw uploadError;
+
+            const { error: updateError } = await window.cortexClient
+                .from('pacientes')
+                .update({ foto_url: path })
+                .eq('id', pacienteId);
+
+            if (updateError) throw updateError;
+
+            await CortexAudit.log('edicao', 'pacientes', pacienteId, {
+                pacienteId,
+                detalhes: { campo: 'foto_url' }
+            });
+
+            window.CortexUI.toast('Foto enviada com sucesso!', 'success');
+
+            paciente.foto_url = path;
+            renderizarPasta();
+
+        } catch (err) {
+            console.error('Erro no upload:', err);
+            window.CortexUI.toast('Erro ao enviar foto: ' + err.message, 'danger');
+        }
+    }
+
+    // ============================================================================
+    // SPRINT 8: Modal Agendar Sessão (calendário simples, dentro da pasta)
+    //          + Modal Designar Aplicador (só admin)
+    // ============================================================================
+
+    const SPRINT8_TIPOS_SESSAO = {
+        'avaliacao': 'Avaliação',
+        'devolutiva': 'Devolutiva',
+        'reavaliacao': 'Reavaliação',
+        'orientacao': 'Orientação',
+        'aplicacao_teste': 'Aplicação de teste',
+    };
+
+    const SPRINT8_HORA_INICIO = 8;   // expediente: 8h às 19h (mostra horários ocupados nesse range)
+    const SPRINT8_HORA_FIM    = 19;
+
+    let _sprint8Profissionais = [];
+    let _sprint8SessoesDoDia = [];
+    let _sprint8DataSelecionada = null;
+
+    // =====================================================================
+    // Sprint 16 — Capa de prontuário (v4 aprovada: logo centralizada,
+    // foto ao lado do nome, labels em azul Equilibrium #1e5a92 em 12px)
+    // =====================================================================
+
+    const SPRINT16_LOGO_B64 = "data:image/png;base64,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";
+
+    function sprint16FmtData(iso) {
+        if (!iso) return '—';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('pt-BR');
+        } catch { return '—'; }
+    }
+
+    function sprint16MontarHtmlCapa(fotoSignedUrl) {
+        const p = paciente || {};
+        const aplic = aplicadorAtivo?.aplicador || null;
+
+        const nome = (p.nome_completo || '—').toUpperCase();
+        const inicio = sprint16FmtData(p.created_at);
+        const cpf = p.cpf || '—';
+        const dn = sprint16FmtData(p.data_nascimento);
+        const idade = p.idade_humanizada || '—';
+        const escolaridade = p.escolaridade || '—';
+
+        const parentesco = (p.responsavel_parentesco || '').trim();
+        const ehMae = /mae|mãe/i.test(parentesco);
+        const maeNome = ehMae || !parentesco ? (p.responsavel_nome || '—')
+                                              : (`${parentesco}: ${p.responsavel_nome || '—'}`);
+        const paiNome = p.pai_nome || '—';
+
+        const operadora = p.convenio_nome || '—';
+        const celular = p.responsavel_telefone || p.telefone || '—';
+
+        const medicoNomeStr = p.medico_referencia ? `Dr(a). ${p.medico_referencia}` : '—';
+        const crmStr = p.medico_crm ? `<strong style="color:#1e5a92;font-size:12px;"> CRM:</strong> ${escapeHtml(p.medico_crm)}` : '';
+
+        const neuro = aplic
+            ? `${aplic.nome_completo}` + (aplic.crp ? ` - ${aplic.crp}` : '')
+            : '— não designado —';
+
+        const fotoHtml = fotoSignedUrl
+            ? `<img src="${fotoSignedUrl}" alt="Foto" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#94a3b8;font-size:10px;">sem foto</div>`;
+
+        return `
+            <div id="pdf-capa-prontuario-conteudo" style="
+                width: 720px;
+                min-height: 1018px;
+                background: #fff;
+                padding: 64px 84px 56px;
+                font-family: 'Inter', -apple-system, sans-serif;
+                color: #0f172a;
+                box-sizing: border-box;
+                position: relative;
+            ">
+                <!-- LOGO CENTRALIZADA NO TOPO -->
+                <div style="text-align: center; margin-bottom: 42px;">
+                    <img src="${SPRINT16_LOGO_B64}" alt="Equilibrium Med Center" style="height: 80px; width: auto; display: block; margin: 0 auto;" />
+                </div>
+
+                <!-- NOME + FOTO NA MESMA LINHA -->
+                <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 32px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 22px; font-weight: 700; color: #1e5a92; letter-spacing: 0.5px; line-height: 1.2;">
+                            ${escapeHtml(nome)}
+                        </div>
+                    </div>
+                    <div style="width: 90px; height: 90px; border-radius: 50%; background: #f1f5f9; border: 2px solid #cbd5e1; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        ${fotoHtml}
+                    </div>
+                </div>
+
+                <!-- BLOCO DE DADOS - títulos em azul #1e5a92, fonte 12px -->
+                <div style="font-size: 12px; line-height: 2.0; color: #1e293b;">
+                    <div><strong style="color:#1e5a92;font-size:13px;">Início:</strong> ${escapeHtml(inicio)}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">CPF:</strong> ${escapeHtml(cpf)}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">DN:</strong> ${escapeHtml(dn)} &nbsp;&nbsp; <strong style="color:#1e5a92;font-size:13px;">Idade:</strong> ${escapeHtml(idade)}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">Escolaridade:</strong> ${escapeHtml(escolaridade)}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">Mãe/Responsável:</strong> ${escapeHtml(maeNome)}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">Pai/Responsável:</strong> ${escapeHtml(paiNome)}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">Operadora:</strong> ${escapeHtml(operadora)}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">Celular:</strong> ${escapeHtml(celular)}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">Atendimento:</strong> Avaliação Neuropsicológica</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">Médico solicitante:</strong> ${escapeHtml(medicoNomeStr)}${crmStr}</div>
+                    <div><strong style="color:#1e5a92;font-size:13px;">Neuropsicólogo:</strong> ${escapeHtml(neuro)}</div>
+                </div>
+
+                <!-- APLICADOR + TABELA -->
+                <div style="margin-top: 32px; margin-bottom: 10px;">
+                    <strong style="color:#1e5a92;font-size:13px;">Aplicador:</strong>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <thead>
+                        <tr>
+                            <th style="padding:9px 10px;text-align:left;width:23%;font-weight:600;color:#1e5a92;border:1px solid #64748b;background:#ffffff;font-size:12px;">Aplicador</th>
+                            <th style="padding:9px 10px;text-align:left;width:45%;font-weight:600;color:#1e5a92;border:1px solid #64748b;background:#ffffff;font-size:12px;">Observações</th>
+                            <th style="padding:9px 10px;text-align:left;width:18%;font-weight:600;color:#1e5a92;border:1px solid #64748b;background:#ffffff;font-size:12px;">Data</th>
+                            <th style="padding:9px 10px;text-align:left;width:14%;font-weight:600;color:#1e5a92;border:1px solid #64748b;background:#ffffff;font-size:12px;">Visto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Array.from({length: 5}, () => `
+                            <tr>
+                                <td style="padding:14px 10px;border:1px solid #64748b;">&nbsp;</td>
+                                <td style="padding:14px 10px;border:1px solid #64748b;">&nbsp;</td>
+                                <td style="padding:14px 10px;border:1px solid #64748b;">&nbsp;</td>
+                                <td style="padding:14px 10px;border:1px solid #64748b;">&nbsp;</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    async function sprint16AbrirModalCapa() {
+        if (!paciente) {
+            window.CortexUI.toast('Paciente não carregado.', 'danger');
+            return;
+        }
+
+        let fotoSignedUrl = null;
+        if (paciente.foto_url) {
+            try {
+                fotoSignedUrl = await window.CortexAvatar.buscarUrlAssinada(pacienteId, paciente.foto_url);
+            } catch (err) {
+                console.warn('[sprint16] foto signed url:', err);
+            }
+        }
+
+        const documentoHtml = sprint16MontarHtmlCapa(fotoSignedUrl);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'sprint16-modal-capa';
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+            <div class="modal-content" style="max-width: 820px; max-height: 92vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h2>Capa de prontuário</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" id="btn-baixar-pdf-capa">📥 Baixar PDF</button>
+                        <button class="modal-close" onclick="document.getElementById('sprint16-modal-capa').remove()">×</button>
+                    </div>
+                </div>
+                <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 24px; background: #f1f5f9;">
+                    ${documentoHtml}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        try {
+            await CortexAudit.log('leitura', 'pacientes', pacienteId, {
+                operacao: 'capa_prontuario_visualizada'
+            });
+        } catch (e) { /* silencioso */ }
+
+        document.getElementById('btn-baixar-pdf-capa').addEventListener('click', sprint16GerarPdfCapa);
+    }
+
+    async function sprint16GerarPdfCapa() {
+        if (!window.html2canvas || !window.jspdf) {
+            window.CortexUI.toast('Biblioteca de PDF ainda carregando, tente em 2 segundos...', 'info');
+            return;
+        }
+
+        const btn = document.getElementById('btn-baixar-pdf-capa');
+        const txtOriginal = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+
+        try {
+            const el = document.getElementById('pdf-capa-prontuario-conteudo');
+            if (!el) throw new Error('Elemento da capa não encontrado');
+
+            const canvas = await window.html2canvas(el, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false
+            });
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const pdfWidth = 210, pdfHeight = 297;
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            if (imgHeight <= pdfHeight) {
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight);
+            } else {
+                let posY = 0, restante = imgHeight;
+                while (restante > 0) {
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, -posY, pdfWidth, imgHeight);
+                    restante -= pdfHeight;
+                    posY += pdfHeight;
+                    if (restante > 0) pdf.addPage();
+                }
+            }
+
+            const nomeAbreviado = (paciente.nome_completo || 'PACIENTE').toUpperCase()
+                .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
+            const d = new Date();
+            const dataStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const nomeArquivo = `Capa Prontuario - ${nomeAbreviado}_${dataStr}.pdf`;
+
+            pdf.save(nomeArquivo);
+            window.CortexUI.toast('PDF gerado com sucesso', 'success');
+
+            try {
+                await CortexAudit.log('leitura', 'pacientes', pacienteId, {
+                    operacao: 'capa_prontuario_pdf_gerado',
+                    arquivo: nomeArquivo
+                });
+            } catch (e) { /* silencioso */ }
+
+        } catch (err) {
+            console.error('[sprint16] gerar PDF capa:', err);
+            window.CortexUI.toast('Erro ao gerar PDF: ' + (err.message || 'desconhecido'), 'danger');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = txtOriginal; }
+        }
+    }
+
+    window.CortexPasta = {
+        abrirModalAgendar: async function () {
+            await sprint8AbrirModalAgendar();
+        },
+        abrirModalDesignar: async function () {
+            await sprint8AbrirModalDesignar();
+        },
+        abrirModalCapa: async function () {
+            await sprint16AbrirModalCapa();
+        },
+        fecharModal: function () {
+            const m = document.getElementById('sprint8-modal');
+            if (m) m.remove();
+        },
+        selecionarData: async function (dataISO) {
+            _sprint8DataSelecionada = dataISO;
+            await sprint8CarregarSessoesDoDia(dataISO);
+            sprint8RenderHorariosOcupados();
+            // Marca card de data ativo
+            document.querySelectorAll('.sprint8-data-card').forEach(c => {
+                c.classList.toggle('active', c.dataset.data === dataISO);
+            });
+            document.getElementById('sprint8-data-aplicacao').value = dataISO;
+        },
+        salvarSessao: async function (event) {
+            event.preventDefault();
+            await sprint8SalvarSessao(event.target);
+        },
+        designarAplicador: async function (aplicadorId) {
+            await sprint8DesignarAplicador(aplicadorId);
+        },
+        removerAplicador: async function () {
+            await sprint8RemoverAplicador();
+        }
+    };
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MODAL AGENDAR SESSÃO
+    // ────────────────────────────────────────────────────────────────────────
+
+    async function sprint8AbrirModalAgendar() {
+        // Carrega profissionais ativos
+        try {
+            const { data, error } = await window.cortexClient
+                .from('profissionais')
+                .select('id, nome_completo, perfil')
+                .eq('ativo', true)
+                .order('nome_completo');
+            if (error) throw error;
+            _sprint8Profissionais = data || [];
+        } catch (err) {
+            window.CortexUI.toast('Erro ao carregar profissionais: ' + err.message, 'danger');
+            return;
+        }
+
+        // Próximos 14 dias
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const dias = [];
+        for (let i = 0; i < 14; i++) {
+            const d = new Date(hoje); d.setDate(d.getDate() + i);
+            dias.push(d);
+        }
+
+        const profDefault = ehAdmin
+            ? (aplicadorAtivo?.aplicador_id || (window.cortexProfissional?.id ?? ''))
+            : window.cortexProfissional?.id;
+
+        const html = `
+            <div id="sprint8-modal" class="sprint8-modal">
+                <div class="sprint8-modal-box">
+                    <div class="sprint8-modal-header">
+                        <h3>📅 Agendar sessão — ${escapeHtml(paciente.nome_completo)}</h3>
+                        <button class="sprint8-modal-close" onclick="window.CortexPasta.fecharModal()">✕</button>
+                    </div>
+
+                    <form id="sprint8-form-sessao" onsubmit="window.CortexPasta.salvarSessao(event)">
+
+                        <!-- Calendário simples (próximos 14 dias) -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">1. Escolha a data</label>
+                            <div class="sprint8-datas-grid">
+                                ${dias.map(d => sprint8RenderCardData(d)).join('')}
+                            </div>
+                            <input type="hidden" id="sprint8-data-aplicacao" name="data" required>
+                        </div>
+
+                        <!-- Horários ocupados naquele dia -->
+                        <div class="sprint8-bloco" id="sprint8-bloco-ocupados" style="display:none;">
+                            <label class="sprint8-bloco-label">Sessões já marcadas neste dia</label>
+                            <div id="sprint8-ocupados-lista" class="sprint8-ocupados-lista"></div>
+                        </div>
+
+                        <!-- Hora + duração -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">2. Horário</label>
+                            <div class="sprint8-form-grid">
+                                <div class="sprint8-field">
+                                    <label>Hora de início <span style="color:#dc2626">*</span></label>
+                                    <input type="time" id="sprint8-hora-inicio" name="hora_inicio" required>
+                                </div>
+                                <div class="sprint8-field">
+                                    <label>Hora de fim <span style="color:#dc2626">*</span></label>
+                                    <input type="time" id="sprint8-hora-fim" name="hora_fim" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profissional + Tipo -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">3. Detalhes</label>
+                            <div class="sprint8-form-grid">
+                                <div class="sprint8-field">
+                                    <label>Profissional <span style="color:#dc2626">*</span></label>
+                                    <select name="profissional_id" required ${ehAdmin ? '' : 'disabled'}>
+                                        ${ehAdmin ? '<option value="">— Selecione —</option>' : ''}
+                                        ${_sprint8Profissionais.map(p =>
+                                            `<option value="${p.id}" ${p.id === profDefault ? 'selected' : ''}>${escapeHtml(p.nome_completo)}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                                <div class="sprint8-field">
+                                    <label>Tipo de sessão <span style="color:#dc2626">*</span></label>
+                                    <select name="tipo" required>
+                                        <option value="">— Selecione —</option>
+                                        ${Object.entries(SPRINT8_TIPOS_SESSAO).map(([v, l]) =>
+                                            `<option value="${v}">${l}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sprint8-bloco">
+                            <div class="sprint8-field">
+                                <label>Observações (opcional)</label>
+                                <textarea name="observacoes" rows="2" placeholder="Anotações sobre a sessão..."></textarea>
+                            </div>
+                        </div>
+
+                        <div id="sprint8-erro" class="sprint8-erro" style="display:none;"></div>
+
+                        <div class="sprint8-actions">
+                            <button type="button" class="btn btn-ghost" onclick="window.CortexPasta.fecharModal()">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="sprint8-btn-salvar">
+                                <span class="btn-text">📅 Agendar sessão</span>
+                                <span class="btn-loading" style="display:none;">Salvando...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        // Pré-seleciona hoje
+        const hojeISO = sprint8DataParaISO(hoje);
+        await window.CortexPasta.selecionarData(hojeISO);
+
+        // ESC fecha
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                window.CortexPasta.fecharModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function sprint8RenderCardData(d) {
+        const iso = sprint8DataParaISO(d);
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const eHoje = d.getTime() === hoje.getTime();
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+        return `
+            <button type="button" class="sprint8-data-card" data-data="${iso}"
+                    onclick="window.CortexPasta.selecionarData('${iso}')">
+                <div class="sprint8-data-dia-semana">${diasSemana[d.getDay()]}</div>
+                <div class="sprint8-data-numero">${String(d.getDate()).padStart(2, '0')}</div>
+                <div class="sprint8-data-mes">${meses[d.getMonth()]}</div>
+                ${eHoje ? '<div class="sprint8-data-hoje">HOJE</div>' : ''}
+            </button>
+        `;
+    }
+
+    function sprint8DataParaISO(d) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    async function sprint8CarregarSessoesDoDia(dataISO) {
+        const inicio = new Date(dataISO + 'T00:00:00');
+        const fim = new Date(dataISO + 'T23:59:59');
+
+        const { data, error } = await window.cortexClient
+            .from('sessoes')
+            .select(`
+                id, data_hora_inicio, data_hora_fim, tipo, status, profissional_id,
+                paciente:pacientes!sessoes_paciente_id_fkey ( nome_completo ),
+                profissional:profissionais!sessoes_profissional_id_fkey ( nome_completo )
+            `)
+            .gte('data_hora_inicio', inicio.toISOString())
+            .lt('data_hora_inicio', fim.toISOString())
+            .neq('status', 'cancelada')
+            .order('data_hora_inicio');
+
+        _sprint8SessoesDoDia = (error ? [] : data) || [];
+    }
+
+    function sprint8RenderHorariosOcupados() {
+        const bloco = document.getElementById('sprint8-bloco-ocupados');
+        const lista = document.getElementById('sprint8-ocupados-lista');
+        if (_sprint8SessoesDoDia.length === 0) {
+            bloco.style.display = 'none';
+            return;
+        }
+        bloco.style.display = 'block';
+        lista.innerHTML = _sprint8SessoesDoDia.map(s => {
+            const di = new Date(s.data_hora_inicio);
+            const df = new Date(s.data_hora_fim);
+            const hi = `${String(di.getHours()).padStart(2,'0')}:${String(di.getMinutes()).padStart(2,'0')}`;
+            const hf = `${String(df.getHours()).padStart(2,'0')}:${String(df.getMinutes()).padStart(2,'0')}`;
+            return `
+                <div class="sprint8-ocupado-item">
+                    <div class="sprint8-ocupado-hora">${hi}–${hf}</div>
+                    <div class="sprint8-ocupado-info">
+                        <div>${escapeHtml(s.paciente?.nome_completo || '—')}</div>
+                        <div class="sprint8-ocupado-meta">${escapeHtml(SPRINT8_TIPOS_SESSAO[s.tipo] || s.tipo)} · ${escapeHtml(s.profissional?.nome_completo || '—')}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function sprint8SalvarSessao(form) {
+        const erro = document.getElementById('sprint8-erro');
+        erro.style.display = 'none';
+        const btn = document.getElementById('sprint8-btn-salvar');
+        const btnText = btn.querySelector('.btn-text');
+        const btnLoading = btn.querySelector('.btn-loading');
+
+        const data = form.elements['data'].value;
+        const horaInicio = form.elements['hora_inicio'].value;
+        const horaFim = form.elements['hora_fim'].value;
+        const profissionalId = form.elements['profissional_id'].value;
+        const tipo = form.elements['tipo'].value;
+        const observacoes = form.elements['observacoes'].value || null;
+
+        // Validações
+        if (!data) { sprint8MostrarErro(erro, 'Escolha uma data.'); return; }
+        if (!horaInicio || !horaFim) { sprint8MostrarErro(erro, 'Preencha hora de início e fim.'); return; }
+        if (horaFim <= horaInicio) { sprint8MostrarErro(erro, 'Hora de fim deve ser depois da hora de início.'); return; }
+        if (!profissionalId) { sprint8MostrarErro(erro, 'Selecione um profissional.'); return; }
+        if (!tipo) { sprint8MostrarErro(erro, 'Selecione o tipo de sessão.'); return; }
+
+        const dtInicio = new Date(`${data}T${horaInicio}:00`);
+        const dtFim = new Date(`${data}T${horaFim}:00`);
+
+        // Checa conflito local (na lista que carregamos)
+        const conflito = _sprint8SessoesDoDia.find(s => {
+            if (s.profissional_id !== profissionalId) return false;
+            const sI = new Date(s.data_hora_inicio);
+            const sF = new Date(s.data_hora_fim);
+            return dtInicio < sF && dtFim > sI;
+        });
+        if (conflito) {
+            const di = new Date(conflito.data_hora_inicio);
+            const df = new Date(conflito.data_hora_fim);
+            const hi = `${String(di.getHours()).padStart(2,'0')}:${String(di.getMinutes()).padStart(2,'0')}`;
+            const hf = `${String(df.getHours()).padStart(2,'0')}:${String(df.getMinutes()).padStart(2,'0')}`;
+            if (!confirm(`⚠ Conflito: o profissional já tem sessão das ${hi} às ${hf}. Deseja continuar mesmo assim?`)) {
+                return;
+            }
+        }
+
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+
+        try {
+            const { error } = await window.cortexClient
+                .from('sessoes')
+                .insert({
+                    paciente_id: pacienteId,
+                    profissional_id: profissionalId,
+                    tipo: tipo,
+                    status: 'agendada',
+                    data_hora_inicio: dtInicio.toISOString(),
+                    data_hora_fim: dtFim.toISOString(),
+                    observacoes: observacoes,
+                });
+            if (error) throw error;
+
+            await CortexAudit.log('criacao', 'sessoes', null, {
+                pacienteId,
+                detalhes: { data: dtInicio.toISOString(), tipo }
+            });
+
+            window.CortexUI.toast('✓ Sessão agendada com sucesso!', 'success');
+            window.CortexPasta.fecharModal();
+        } catch (err) {
+            console.error('[sprint8] salvar sessão:', err);
+            sprint8MostrarErro(erro, 'Erro ao agendar: ' + (err.message || 'desconhecido'));
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+        }
+    }
+
+    function sprint8MostrarErro(el, msg) {
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MODAL DESIGNAR APLICADOR (só admin)
+    // ────────────────────────────────────────────────────────────────────────
+
+    async function sprint8AbrirModalDesignar() {
+        let aplicadores = [];
+        try {
+            const { data, error } = await window.cortexClient
+                .from('profissionais')
+                .select('id, nome_completo, crp, perfil, foto_url')
+                .eq('ativo', true)
+                .in('perfil', ['neuropsicologo_aplicador', 'admin_clinico', 'admin_gestor'])
+                .order('nome_completo');
+            if (error) throw error;
+            aplicadores = data || [];
+        } catch (err) {
+            window.CortexUI.toast('Erro ao carregar profissionais: ' + err.message, 'danger');
+            return;
+        }
+
+        const atualId = aplicadorAtivo?.aplicador_id || null;
+        const atualNome = aplicadorAtivo?.aplicador?.nome_completo || null;
+
+        const html = `
+            <div id="sprint8-modal" class="sprint8-modal">
+                <div class="sprint8-modal-box" style="max-width: 560px;">
+                    <div class="sprint8-modal-header">
+                        <h3>👤 Designar aplicador</h3>
+                        <button class="sprint8-modal-close" onclick="window.CortexPasta.fecharModal()">✕</button>
+                    </div>
+
+                    <div style="padding: 20px 24px;">
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--color-text-muted);">
+                            Defina o profissional responsável por <strong>${escapeHtml(paciente.nome_completo)}</strong>.
+                            ${atualNome ? `<br>Atual: <strong>${escapeHtml(atualNome)}</strong>` : ''}
+                        </p>
+
+                        <div class="sprint8-aplicadores-lista">
+                            ${aplicadores.map(a => sprint8RenderAplicadorOpcao(a, atualId)).join('')}
+                        </div>
+
+                        ${atualId ? `
+                            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--color-border); text-align: right;">
+                                <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);"
+                                        onclick="window.CortexPasta.removerAplicador()">
+                                    🗑 Remover designação atual
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                window.CortexPasta.fecharModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function sprint8RenderAplicadorOpcao(a, atualId) {
+        const ehAtual = a.id === atualId;
+        const inicial = (a.nome_completo || '?').charAt(0).toUpperCase();
+        return `
+            <button type="button" class="sprint8-aplicador-opcao ${ehAtual ? 'atual' : ''}"
+                    onclick="window.CortexPasta.designarAplicador('${a.id}')"
+                    ${ehAtual ? 'disabled' : ''}>
+                <div class="sprint8-aplicador-avatar">${escapeHtml(inicial)}</div>
+                <div class="sprint8-aplicador-info">
+                    <div class="sprint8-aplicador-nome">${escapeHtml(a.nome_completo)}</div>
+                    <div class="sprint8-aplicador-meta">
+                        ${a.crp ? `CRP ${escapeHtml(a.crp)} · ` : ''}${escapeHtml(sprint8PerfilLabel(a.perfil))}
+                    </div>
+                </div>
+                ${ehAtual ? '<div class="sprint8-aplicador-tag">ATUAL</div>' : '<div class="sprint8-aplicador-acao">Designar →</div>'}
+            </button>
+        `;
+    }
+
+    function sprint8PerfilLabel(p) {
+        return (window.CortexUI?.PERFIL_LABELS?.[p]) || p;
+    }
+
+    async function sprint8DesignarAplicador(novoAplicadorId) {
+        if (aplicadorAtivo?.aplicador_id === novoAplicadorId) return;
+
+        const profAtualId = window.cortexProfissional?.id;
+        if (!profAtualId) {
+            window.CortexUI.toast('Erro: profissional logado não identificado.', 'danger');
+            return;
+        }
+
+        try {
+            // 1. Encerra vínculo atual (se houver)
+            if (aplicadorAtivo?.id) {
+                const { error: errEnc } = await window.cortexClient
+                    .from('vinculos_paciente_aplicador')
+                    .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0], motivo_encerramento: 'Substituído via designação manual' })
+                    .eq('id', aplicadorAtivo.id);
+                if (errEnc) throw errEnc;
+            }
+
+            // 2. Cria novo vínculo
+            const { error: errIns } = await window.cortexClient
+                .from('vinculos_paciente_aplicador')
+                .insert({
+                    paciente_id: pacienteId,
+                    aplicador_id: novoAplicadorId,
+                    atribuido_por: profAtualId,
+                    ativo: true,
+                    motivo_atribuicao: aplicadorAtivo ? 'Substituição via designação' : 'Designação inicial'
+                });
+            if (errIns) throw errIns;
+
+            await CortexAudit.log('atualizacao', 'vinculos_paciente_aplicador', pacienteId, {
+                pacienteId,
+                detalhes: { aplicador_anterior: aplicadorAtivo?.aplicador_id || null, aplicador_novo: novoAplicadorId }
+            });
+
+            window.CortexUI.toast('✓ Aplicador designado.', 'success');
+            window.CortexPasta.fecharModal();
+
+            // Recarrega vínculo e re-renderiza
+            await carregarAplicadorAtivo();
+            renderizarPasta();
+        } catch (err) {
+            console.error('[sprint8] designar:', err);
+            window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+        }
+    }
+
+    async function sprint8RemoverAplicador() {
+        if (!aplicadorAtivo?.id) return;
+        if (!confirm('Remover a designação atual? O paciente ficará sem aplicador responsável.')) return;
+
+        try {
+            const { error } = await window.cortexClient
+                .from('vinculos_paciente_aplicador')
+                .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0], motivo_encerramento: 'Removido via interface' })
+                .eq('id', aplicadorAtivo.id);
+            if (error) throw error;
+
+            await CortexAudit.log('remocao', 'vinculos_paciente_aplicador', pacienteId, {
+                pacienteId,
+                detalhes: { aplicador_anterior: aplicadorAtivo.aplicador_id }
+            });
+
+            window.CortexUI.toast('Designação removida.', 'success');
+            window.CortexPasta.fecharModal();
+            await carregarAplicadorAtivo();
+            renderizarPasta();
+        } catch (err) {
+            console.error('[sprint8] remover designação:', err);
+            window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+        }
+    }
+
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>

@@ -2083,7 +2083,7 @@
         const cpf = p.cpf || '—';
         const dn = sprint16FmtData(p.data_nascimento);
         const idade = p.idade_humanizada || '—';
-        const escolaridade = p.escolaridade || '—';
+        const escolaridade = p.escolaridade_completa || p.escolaridade || '—';
 
         // Mãe e Pai sempre aparecem (campos dedicados).
         // Fallback: se mae_nome vazio mas responsavel_parentesco indica mãe, usa o legado.

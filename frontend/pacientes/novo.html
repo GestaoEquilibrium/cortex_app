@@ -88,14 +88,23 @@
                                 <option value="">Não informado</option>
                                 <option value="Não alfabetizado">Não alfabetizado</option>
                                 <option value="Educação infantil">Educação infantil</option>
-                                <option value="Fundamental incompleto">Fundamental incompleto</option>
-                                <option value="Fundamental completo">Fundamental completo</option>
+                                <option value="Fundamental I incompleto">Fundamental I incompleto (1º–5º ano)</option>
+                                <option value="Fundamental I completo">Fundamental I completo</option>
+                                <option value="Fundamental II incompleto">Fundamental II incompleto (6º–9º ano)</option>
+                                <option value="Fundamental II completo">Fundamental II completo</option>
                                 <option value="Médio incompleto">Médio incompleto</option>
                                 <option value="Médio completo">Médio completo</option>
                                 <option value="Superior incompleto">Superior incompleto</option>
                                 <option value="Superior completo">Superior completo</option>
                                 <option value="Pós-graduação">Pós-graduação</option>
+                                <option value="Mestrado">Mestrado</option>
+                                <option value="Doutorado">Doutorado</option>
                             </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Ano/série cursando</label>
+                            <input type="text" class="form-input" name="escolaridade_serie" maxlength="80" placeholder="Ex: 7º ano, 2º período, 3ª série">
                         </div>
 
                         <div class="form-group">
@@ -340,7 +349,7 @@
         // Preenche todos os inputs/selects/textareas que tem name correspondente
         const campos = [
             'nome_completo', 'nome_social', 'sexo', 'data_nascimento', 'cpf', 'rg',
-            'escolaridade', 'profissao', 'estado_civil',
+            'escolaridade', 'escolaridade_serie', 'profissao', 'estado_civil',
             'convenio_id', 'numero_convenio',
             'telefone', 'email', 'endereco', 'cidade', 'cep',
             'mae_nome', 'mae_telefone',

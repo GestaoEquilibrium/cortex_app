@@ -1,0 +1,287 @@
+/* ============================================================================
+   CORTEX_APP — ATA Resultado (estilos)
+   Paleta navy CORTEX #0c1f3f, gráficos modernos com alto contraste.
+   ============================================================================ */
+
+/* ---------- Loading e Erro ---------- */
+.loading-state, .erro-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: #64748b;
+}
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #0c1f3f;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 20px;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.erro-state h2 {
+    color: #dc2626;
+    margin-bottom: 12px;
+}
+
+/* ---------- Ações topo ---------- */
+.resultado-acoes-topo {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+/* ---------- Laudo container ---------- */
+.laudo {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 36px 44px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    max-width: 920px;
+    margin: 0 auto;
+    color: #1e293b;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* ---------- Cabeçalho ---------- */
+.laudo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 24px;
+    border-bottom: 3px solid #0c1f3f;
+    margin-bottom: 28px;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.laudo-header-titulo h1 {
+    color: #0c1f3f;
+    font-size: 28px;
+    margin: 0 0 4px 0;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+.laudo-header-subtitulo {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0;
+}
+.laudo-header-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #475569;
+    text-align: right;
+}
+.laudo-header-meta strong {
+    color: #1e293b;
+}
+
+/* ---------- Resumo (cards de pontuação) ---------- */
+.laudo-resumo {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+}
+.resumo-card {
+    background: #f8fafc;
+    border-left: 6px solid #0c1f3f;
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+}
+.resumo-label {
+    font-size: 11px;
+    color: #0c1f3f;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.resumo-valor {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+}
+.resumo-max {
+    font-size: 14px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+.resumo-corte {
+    color: #64748b !important;
+}
+
+/* ---------- Seções ---------- */
+.laudo-secao {
+    margin-bottom: 32px;
+}
+.laudo-secao h2 {
+    color: #0c1f3f;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 14px 0;
+    font-weight: 600;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* ---------- Interpretação clínica ---------- */
+.laudo-interpretacao p {
+    margin: 0 0 12px 0;
+    line-height: 1.6;
+    font-size: 14px;
+    color: #1e293b;
+}
+.laudo-interpretacao p:last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- Gráficos ---------- */
+.grafico-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    height: 320px;
+    position: relative;
+}
+.grafico-container.grafico-pizza {
+    height: 280px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.grafico-legenda {
+    font-size: 12px;
+    color: #64748b;
+    margin: 10px 0 0 0;
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* ---------- Itens críticos ---------- */
+.itens-criticos {
+    background: #fef2f2;
+    border-left: 4px solid #dc2626;
+    padding: 12px 16px 12px 32px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0 0 0;
+}
+.itens-criticos li {
+    padding: 4px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #1e293b;
+}
+.itens-criticos li strong {
+    color: #dc2626;
+}
+
+/* ---------- Tabela ---------- */
+.tabela-itens {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+.tabela-itens thead {
+    background: #0c1f3f;
+    color: #ffffff;
+}
+.tabela-itens th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+.tabela-itens th:first-child,
+.tabela-itens .td-num {
+    text-align: center;
+    width: 50px;
+}
+.tabela-itens th:nth-child(3),
+.tabela-itens .td-resposta {
+    text-align: center;
+    width: 60px;
+}
+.tabela-itens th:nth-child(4),
+.tabela-itens .td-label {
+    width: 200px;
+}
+.tabela-itens tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: background 0.15s;
+}
+.tabela-itens tbody tr:hover {
+    background: #f8fafc;
+}
+.tabela-itens tbody tr.linha-critica {
+    background: #fef2f2;
+}
+.tabela-itens tbody tr.linha-critica:hover {
+    background: #fee2e2;
+}
+.tabela-itens td {
+    padding: 10px 12px;
+    color: #1e293b;
+    line-height: 1.4;
+}
+.tabela-itens .td-num {
+    font-weight: 600;
+    color: #64748b;
+}
+.tabela-itens .td-label {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ---------- Rodapé ---------- */
+.laudo-rodape {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+}
+.laudo-rodape small {
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+    display: block;
+}
+
+/* ---------- Modo exportação (PDF) ---------- */
+body.exportando .resultado-acoes-topo,
+body.exportando .page-back,
+body.exportando #sidebar-container {
+    display: none !important;
+}
+body.exportando .laudo {
+    box-shadow: none;
+    border: none;
+    max-width: 100%;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 768px) {
+    .laudo { padding: 24px 20px; }
+    .laudo-resumo { grid-template-columns: 1fr; }
+    .laudo-header { flex-direction: column; }
+    .laudo-header-meta { text-align: left; }
+    .grafico-container { height: 280px; }
+    .tabela-itens th:nth-child(4),
+    .tabela-itens .td-label { display: none; }
+}

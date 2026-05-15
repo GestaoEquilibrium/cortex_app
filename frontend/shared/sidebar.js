@@ -83,18 +83,43 @@ window.CortexSidebar = (function() {
     }
 
     function getRelativePath(itemHref) {
-        // Detecta se está na raiz (frontend/dashboard.html) ou em subpasta (frontend/pacientes/lista.html).
-        // Os hrefs em NAV_ITEMS estão escritos como se a página atual fosse uma subpasta (../pacientes/lista.html).
-        // Se a página atual está na raiz, removemos o ../ inicial.
-        const path = window.location.pathname;
-        const ultimoSegmento = path.split('/').filter(s => s).pop() || '';
-        const segmentos = path.split('/').filter(s => s);
-        const naRaizFrontend = segmentos.length <= 1 || segmentos[segmentos.length - 2] === 'frontend';
+        // Os hrefs em NAV_ITEMS estão escritos como se a página atual fosse 1 nível abaixo de frontend/
+        // Ex: '../pacientes/lista.html' — funciona quando estou em frontend/agenda/agenda.html
+        //
+        // Mas o sistema tem páginas em vários níveis:
+        //   nível 0: frontend/dashboard.html        → precisa REMOVER 1× ../
+        //   nível 1: frontend/pacientes/lista.html  → MANTÉM como está (referência)
+        //   nível 2: frontend/correcao/wisciv/...   → precisa ADICIONAR 1× ../
+        //   nível 3+: idem, adicionar ../ proporcional
+        //
+        // Estratégia: descobre a profundidade da página atual em relação a frontend/
+        // e ajusta os ../ no href dinamicamente.
 
-        if (naRaizFrontend && itemHref.startsWith('../')) {
-            return itemHref.substring(3);
+        const path = window.location.pathname;
+        const segmentos = path.split('/').filter(s => s);
+
+        // Acha o índice da pasta 'frontend' no path. Se não tiver, assume raiz.
+        const idxFrontend = segmentos.indexOf('frontend');
+        const profundidade = idxFrontend >= 0
+            ? Math.max(0, segmentos.length - idxFrontend - 2)  // -1 pra contar de zero, -1 pra ignorar o arquivo
+            : 0;
+
+        // Os hrefs no NAV_ITEMS assumem profundidade 1 (vão de subpasta pra outra subpasta via ../)
+        // - profundidade 0: tira 1× '../'
+        // - profundidade 1: mantém igual (referência)
+        // - profundidade 2: adiciona 1× '../'
+        // - profundidade N: adiciona (N-1)× '../'
+        const diff = profundidade - 1;
+
+        if (diff === 0) return itemHref;
+
+        if (diff < 0) {
+            // Está mais raso que a referência: remove ../ do começo
+            return itemHref.startsWith('../') ? itemHref.substring(3) : itemHref;
         }
-        return itemHref;
+
+        // Está mais fundo: adiciona ../ extras no começo
+        return '../'.repeat(diff) + itemHref;
     }
 
     async function render(itemAtivoId) {
@@ -204,7 +229,8 @@ window.CortexSidebar = (function() {
                 if (window.cortexClient) {
                     await window.cortexClient.auth.signOut();
                 }
-                window.location.href = '../index.html';
+                // Usa o mesmo helper de path relativo para funcionar em qualquer profundidade
+                window.location.href = getRelativePath('../index.html');
             });
         }
     }

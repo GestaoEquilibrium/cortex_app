@@ -2083,13 +2083,24 @@
         const cpf = p.cpf || '—';
         const dn = sprint16FmtData(p.data_nascimento);
         const idade = p.idade_humanizada || '—';
-        const escolaridade = p.escolaridade_completa || p.escolaridade || '—';
+        const escolaridade = p.escolaridade || '—';
 
-        const parentesco = (p.responsavel_parentesco || '').trim();
-        const ehMae = /mae|mãe/i.test(parentesco);
-        const maeNome = ehMae || !parentesco ? (p.responsavel_nome || '—')
-                                              : (`${parentesco}: ${p.responsavel_nome || '—'}`);
+        // Mãe e Pai sempre aparecem (campos dedicados).
+        // Fallback: se mae_nome vazio mas responsavel_parentesco indica mãe, usa o legado.
+        const respParent = (p.responsavel_parentesco || '').trim();
+        const respEhMae = /mae|mãe/i.test(respParent);
+        const maeNome = p.mae_nome
+            || (respEhMae ? p.responsavel_nome : null)
+            || '—';
         const paiNome = p.pai_nome || '—';
+
+        // Responsável legal (tutor/curador/etc) — só mostra se preenchido E não for a mãe migrada
+        const temRespAdicional = p.responsavel_nome
+            && !respEhMae
+            && respParent.length > 0;
+        const respLegalStr = temRespAdicional
+            ? `${respParent}: ${p.responsavel_nome}`
+            : null;
 
         const operadora = p.convenio_nome || '—';
         const celular = p.responsavel_telefone || p.telefone || '—';
@@ -2181,8 +2192,9 @@
                     ${card('Data de nascimento', escapeHtml(dn))}
                     ${card('Idade', escapeHtml(idade))}
                     ${card('Escolaridade', escapeHtml(escolaridade), true)}
-                    ${card('Mãe / Responsável', escapeHtml(maeNome), true)}
-                    ${card('Pai / Responsável', escapeHtml(paiNome), true)}
+                    ${card('Mãe', escapeHtml(maeNome), true)}
+                    ${card('Pai', escapeHtml(paiNome), true)}
+                    ${respLegalStr ? card('Responsável legal', escapeHtml(respLegalStr), true) : ''}
                     ${card('Operadora', escapeHtml(operadora))}
                     ${card('Celular', escapeHtml(celular))}
                     ${card('Atendimento', 'Avaliação Neuropsicológica', true)}

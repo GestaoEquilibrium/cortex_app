@@ -75,7 +75,7 @@
 
         const { data: paciente, error: errP } = await window.cortexClient
             .from('pacientes')
-            .select('id, nome_completo, sexo, data_nascimento, cpf, escolaridade, escolaridade_serie, responsavel_nome')
+            .select('id, nome_completo, sexo, data_nascimento, cpf, escolaridade, escolaridade_serie, mae_nome, pai_nome, responsavel_nome')
             .eq('id', aplicacao.paciente_id).single();
         if (errP) throw new Error('Paciente: ' + errP.message);
         state.paciente = paciente;
@@ -194,7 +194,7 @@
                         <div><strong>Paciente:</strong> ${escapeHtml(p.nome_completo)}</div>
                         ${idade ? `<div><strong>Idade:</strong> ${idade}</div>` : ''}
                         <div><strong>Data:</strong> ${dataAplic}</div>
-                        ${p.responsavel_nome ? `<div><strong>Respondente:</strong> ${escapeHtml(p.responsavel_nome)}</div>` : ''}
+                        ${(p.mae_nome || p.responsavel_nome) ? `<div><strong>Respondente:</strong> ${escapeHtml(p.mae_nome || p.responsavel_nome)}</div>` : ''}
                     </div>
                 </header>
 

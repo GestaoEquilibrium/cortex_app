@@ -2035,6 +2035,45 @@
         } catch { return '—'; }
     }
 
+    // Pré-processa a foto: baixa, recorta em quadrado central (cover), redimensiona.
+    // Resolve dois problemas do html2canvas:
+    //   1) object-fit:cover não respeitado em <img> (deforma a foto)
+    //   2) background-image renderiza em baixa resolução
+    // Saída: data URL PNG quadrado de alta qualidade, pronto pra <img>.
+    async function sprint16PreprocessarFoto(signedUrl, tamanhoPx) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                try {
+                    // Tamanho de saída: 3x o tamanho final pra ter resolução de impressão (~240px → 720px)
+                    const outSize = tamanhoPx * 3;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = outSize;
+                    canvas.height = outSize;
+                    const ctx = canvas.getContext('2d');
+
+                    // Lógica do "cover": calcula o lado menor e recorta o centro
+                    const srcW = img.naturalWidth;
+                    const srcH = img.naturalHeight;
+                    const srcSize = Math.min(srcW, srcH);
+                    const srcX = (srcW - srcSize) / 2;
+                    const srcY = (srcH - srcSize) / 2;
+
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, outSize, outSize);
+
+                    resolve(canvas.toDataURL('image/jpeg', 0.92));
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            img.onerror = () => reject(new Error('Falha ao carregar foto'));
+            img.src = signedUrl;
+        });
+    }
+
     function sprint16MontarHtmlCapa(fotoSignedUrl) {
         const p = paciente || {};
         const aplic = aplicadorAtivo?.aplicador || null;
@@ -2063,14 +2102,10 @@
             ? `${aplic.nome_completo}` + (aplic.crp ? ` — ${aplic.crp}` : '')
             : '— não designado —';
 
-        // Foto: usa background-image porque html2canvas tem bug com object-fit em <img>
-        // (não respeita cover/contain, estica a imagem). background-image + background-size: cover funciona certinho.
-        const fotoBgCss = fotoSignedUrl
-            ? `background-image: url('${fotoSignedUrl}'); background-size: cover; background-position: center center; background-repeat: no-repeat;`
-            : `background: #f1f5f9;`;
-        const fotoFallback = fotoSignedUrl
-            ? ''
-            : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#94a3b8;font-size:9px;">sem foto</div>`;
+        // Foto já vem pré-processada (quadrada, alta resolução) — só usar <img> simples
+        const fotoHtml = fotoSignedUrl
+            ? `<img src="${fotoSignedUrl}" alt="Foto" style="width:100%;height:100%;display:block;" />`
+            : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#94a3b8;font-size:9px;background:#f1f5f9;">sem foto</div>`;
 
         const card = (label, valor, fullWidth = false) => `
             <div style="background:#f8fafc;border-left:4px solid #0c1f3f;padding:7px 12px;border-radius:0 4px 4px 0;${fullWidth ? 'grid-column: 1 / -1;' : ''}">
@@ -2117,22 +2152,20 @@
                     </div>
                 </div>
 
-                <!-- FOTO SOBREPOSTA (background-image, respeitado pelo html2canvas) -->
+                <!-- FOTO SOBREPOSTA (img pré-processada, quadrada, alta res) -->
                 <div style="text-align: center; margin-top: -38px; position: relative; z-index: 3;">
                     <div style="
                         width: 80px;
                         height: 80px;
                         border-radius: 50%;
+                        background: #f1f5f9;
                         border: 4px solid #ffffff;
                         margin: 0 auto 8px;
                         overflow: hidden;
                         box-shadow: 0 3px 10px rgba(0,0,0,0.18);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        ${fotoBgCss}
+                        display: block;
                     ">
-                        ${fotoFallback}
+                        ${fotoHtml}
                     </div>
                     <div style="font-size: 22px; font-weight: 700; color: #0c1f3f; letter-spacing: 0.5px; margin: 0 50px;">
                         ${escapeHtml(nome)}
@@ -2192,15 +2225,18 @@
         }
 
         let fotoSignedUrl = null;
+        let fotoProcessada = null;
         if (paciente.foto_url) {
             try {
                 fotoSignedUrl = await window.CortexAvatar.buscarUrlAssinada(pacienteId, paciente.foto_url);
+                // Pré-processa em alta resolução (240px = 80px × 3 scale) — quadrado e nítido
+                fotoProcessada = await sprint16PreprocessarFoto(fotoSignedUrl, 80);
             } catch (err) {
-                console.warn('[sprint16] foto signed url:', err);
+                console.warn('[sprint16] foto:', err);
             }
         }
 
-        const documentoHtml = sprint16MontarHtmlCapa(fotoSignedUrl);
+        const documentoHtml = sprint16MontarHtmlCapa(fotoProcessada);
 
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
@@ -2256,15 +2292,20 @@
                 });
             }));
 
-            // RENDER ALTA QUALIDADE - sem forçar dimensões: html2canvas mede sozinho
-            // e renderiza o elemento todinho. Forçar width/height antes causava
-            // recorte lateral em alguns navegadores.
+            // RENDER ALTA QUALIDADE — dimensões fixas + scale 3.
+            // O fix do deslocamento lateral agora é feito no pdf.addImage abaixo
+            // (calcula proporção real e centraliza), então podemos forçar width/height
+            // sem causar margem branca.
             const canvas = await window.html2canvas(el, {
                 scale: 3,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 allowTaint: true,
-                logging: false
+                logging: false,
+                width: 720,
+                height: 1018,
+                windowWidth: 720,
+                windowHeight: 1018
             });
 
             const { jsPDF } = window.jspdf;

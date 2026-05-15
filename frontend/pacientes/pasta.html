@@ -2294,21 +2294,37 @@
                 });
             }));
 
-            // RENDER ALTA QUALIDADE — dimensões fixas + scale 3.
-            // O fix do deslocamento lateral agora é feito no pdf.addImage abaixo
-            // (calcula proporção real e centraliza), então podemos forçar width/height
-            // sem causar margem branca.
+            // RENDER ALTA QUALIDADE — scale 3.
+            // OBS: NÃO passar width/height aqui — deixa html2canvas medir o elemento real
+            // (a div tem width:720 height:1018 fixos no estilo inline, então a medição é exata)
             const canvas = await window.html2canvas(el, {
                 scale: 3,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 allowTaint: true,
-                logging: false,
-                width: 720,
-                height: 1018,
-                windowWidth: 720,
-                windowHeight: 1018
+                logging: false
             });
+
+            console.log('[sprint16] canvas size:', canvas.width, 'x', canvas.height, 'ratio:', (canvas.width/canvas.height).toFixed(4));
+
+            // SOLUÇÃO DEFINITIVA: redesenha o canvas em um canvas auxiliar
+            // com proporção MATEMATICAMENTE IDÊNTICA ao A4 (210×297 = ratio 0.70707).
+            // Assim quando o addImage usar 0,0,210,297 não vai sobrar nem 1 pixel branco.
+            const A4_RATIO = 210 / 297;  // 0.70707070...
+            const targetW = canvas.width;
+            const targetH = Math.round(targetW / A4_RATIO);  // altura calculada na proporção A4 exata
+
+            const a4Canvas = document.createElement('canvas');
+            a4Canvas.width = targetW;
+            a4Canvas.height = targetH;
+            const ctx = a4Canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, targetW, targetH);
+            // Desenha o canvas original esticado pra preencher exatamente a proporção A4.
+            // Como o HTML já é 720×1018 (proporção ~A4), o esticamento é < 0.1% — imperceptível.
+            ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, targetW, targetH);
+
+            console.log('[sprint16] a4 canvas size:', targetW, 'x', targetH, 'ratio:', (targetW/targetH).toFixed(4));
 
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({
@@ -2318,27 +2334,9 @@
                 compress: true
             });
 
-            // Calcula proporção real do canvas e centraliza no A4 (210×297mm)
-            // Antes: forçava 210×297, mas canvas pode vir com proporção ligeiramente diferente
-            // e gerava deslocamento lateral. Agora respeita o aspect ratio real.
-            const pdfWidth = 210, pdfHeight = 297;
-            const canvasRatio = canvas.width / canvas.height;
-            const pdfRatio = pdfWidth / pdfHeight;
-            let imgW, imgH, offsetX, offsetY;
-            if (canvasRatio > pdfRatio) {
-                // canvas mais largo que A4 → ajusta pela largura
-                imgW = pdfWidth;
-                imgH = pdfWidth / canvasRatio;
-                offsetX = 0;
-                offsetY = (pdfHeight - imgH) / 2;
-            } else {
-                // canvas mais alto que A4 → ajusta pela altura
-                imgH = pdfHeight;
-                imgW = pdfHeight * canvasRatio;
-                offsetX = (pdfWidth - imgW) / 2;
-                offsetY = 0;
-            }
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, offsetY, imgW, imgH, undefined, 'FAST');
+            // addImage forçado: A4 exato, sem cálculo de proporção, sem offsets.
+            // Como o canvas auxiliar tem proporção A4 garantida, encaixe é pixel-perfect.
+            pdf.addImage(a4Canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297, undefined, 'FAST');
 
             const nomeAbreviado = (paciente.nome_completo || 'PACIENTE').toUpperCase()
                 .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);

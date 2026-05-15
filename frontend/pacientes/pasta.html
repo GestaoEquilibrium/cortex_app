@@ -2129,15 +2129,17 @@
                 padding: 0;
                 margin: 0;
             ">
-                <!-- FAIXA AZUL DEGRADÊ NO TOPO (largura 720, sem gap lateral) -->
+                <!-- FAIXA AZUL: position absolute left:0 right:0 garante 100% da largura do canvas -->
                 <div style="
                     background: #0c1f3f;
-                    width: 720px;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
                     height: 150px;
                     box-sizing: border-box;
                     padding: 22px 60px 0;
                     text-align: center;
-                    position: relative;
                     overflow: hidden;
                     margin: 0;
                 ">
@@ -2152,8 +2154,8 @@
                     </div>
                 </div>
 
-                <!-- FOTO SOBREPOSTA (img pré-processada, quadrada, alta res) -->
-                <div style="text-align: center; margin-top: -38px; position: relative; z-index: 3;">
+                <!-- FOTO SOBREPOSTA — margin-top compensa a faixa absolute (150px) e dá overlap negativo -->
+                <div style="text-align: center; margin-top: 112px; position: relative; z-index: 3;">
                     <div style="
                         width: 80px;
                         height: 80px;

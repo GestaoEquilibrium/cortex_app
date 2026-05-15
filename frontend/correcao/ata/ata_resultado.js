@@ -1,16 +1,11 @@
 // ============================================================================
-// CORTEX_APP — ATA Resultado
+// CORTEX_APP — Resultado ATA (laudo)
 // ============================================================================
-// Escala de Avaliação de Traços Autísticos
-// 23 itens. Escala 0-2. Soma simples 0-46. Ponto de corte ≥15.
+// URL: ?aplicacao_id=<uuid>
 //
-// Estrutura do laudo:
-//   1. Cabeçalho com dados do paciente + pontuação total + classificação
-//   2. Interpretação clínica (texto dinâmico baseado no escore)
-//   3. Gráfico de barras (23 itens, destaque vermelho em pontuação 2)
-//   4. Gráfico de pizza (distribuição: Não apresenta / Alguns / Vários)
-//   5. Destaque de severidade (itens com pontuação 2 e impacto)
-//   6. Tabela completa de itens com pontuação
+// Escala ATA — Avaliação de Traços Autísticos (Ballabriga, Escudé, Llaberia)
+// 23 itens · escala 0-2 · soma simples 0-46 · ponto de corte ≥15
+// Heteroaplicada online — pai/mãe/cuidador responde remotamente
 //
 // JS recalcula tudo do zero a partir de escores_brutos.respostas
 // (decisão arquitetural B do CORTEX).
@@ -18,9 +13,6 @@
 
 (function() {
     'use strict';
-
-    // window.cortexClient já foi criado por shared/supabase_client.js
-    // (esta página está dentro do app autenticado, não é responder público)
 
     const SIGLA_ESPERADA = 'ATA';
     const PONTO_CORTE = 15;
@@ -116,12 +108,9 @@
     function calcularResultados(correcao) {
         const respostas = (correcao?.escores_brutos || {}).respostas || {};
 
-        // Soma simples
         const total = Object.values(respostas).reduce((a, v) => a + (parseInt(v) || 0), 0);
 
-        // Distribuição
         const dist = { naoApresenta: 0, algunsTracos: 0, variosTracos: 0 };
-        const respondidos = Object.values(respostas).length;
         for (const v of Object.values(respostas)) {
             const n = parseInt(v);
             if (n === 0) dist.naoApresenta++;
@@ -129,30 +118,25 @@
             else if (n === 2) dist.variosTracos++;
         }
 
-        // Itens críticos (pontuação 2)
         const itensCriticos = [];
         for (const [num, val] of Object.entries(respostas)) {
             if (parseInt(val) === 2) itensCriticos.push(parseInt(num));
         }
         itensCriticos.sort((a, b) => a - b);
 
-        // Classificação binária pelo ponto de corte
         const classificacao = total >= PONTO_CORTE ? 'sugestivo_tea' : 'nao_sugestivo';
+        const respondidos = Object.values(respostas).length;
 
         return {
-            total,
-            maxScore: MAX_SCORE,
+            total, maxScore: MAX_SCORE,
             percentual: respondidos > 0 ? Math.round((total / MAX_SCORE) * 100) : 0,
-            dist,
-            itensCriticos,
-            classificacao,
-            respondidos,
+            dist, itensCriticos, classificacao, respondidos,
             faltam: TOTAL_ITENS - respondidos
         };
     }
 
     // ============================================================================
-    // RENDERIZAÇÃO
+    // RENDERIZAÇÃO PRINCIPAL
     // ============================================================================
     function renderizar() {
         const cont = document.getElementById('laudo-conteudo');
@@ -160,10 +144,9 @@
 
         document.getElementById('acoes-topo').style.display = 'flex';
         document.getElementById('back-link').href =
-            `../../bateria/bateria.html?paciente_id=${state.paciente.id}`;
+            `../../bateria/bateria.html?paciente=${state.paciente.id}`;
         document.getElementById('btn-gerar-pdf').addEventListener('click', gerarPDF);
 
-        // Aguarda DOM se acomodar e renderiza gráficos
         setTimeout(() => {
             renderGraficoBarras();
             renderGraficoPizza();
@@ -173,8 +156,10 @@
     function renderLaudo() {
         const s = state.scores;
         const p = state.paciente;
-        const idade = calcularIdade(p.data_nascimento, state.aplicacao.created_at);
+        const idade = calcularIdadeAnos(p.data_nascimento, state.aplicacao.created_at);
         const dataAplic = formatarDataBR(state.aplicacao.created_at);
+        const nascStr = formatarDataBR(p.data_nascimento);
+        const respondente = p.mae_nome || p.responsavel_nome || '—';
 
         const corClassif = s.classificacao === 'sugestivo_tea' ? '#dc2626' : '#16a34a';
         const textoClassif = s.classificacao === 'sugestivo_tea'
@@ -182,87 +167,155 @@
             : 'Sem indicativo de TEA';
 
         return `
-            <div class="laudo">
-                <header class="laudo-header">
-                    <div class="laudo-header-titulo">
-                        <h1>Escala ATA</h1>
-                        <p class="laudo-header-subtitulo">Avaliação de Traços Autísticos</p>
+        <div class="laudo">
+            <div class="laudo-header">
+                <div class="laudo-header-esq">
+                    <div class="laudo-header-logo">E</div>
+                    <div class="laudo-header-textos">
+                        <div class="laudo-header-supratitulo">Relatório de Avaliação Neuropsicológica</div>
+                        <h1 class="laudo-header-titulo">Escala ATA</h1>
+                        <div class="laudo-header-subtitulo">Avaliação de Traços Autísticos<br>Ballabriga, Escudé, Llaberia · 23 itens · escala 0-2 · ponto de corte ≥${PONTO_CORTE}</div>
                     </div>
-                    <div class="laudo-header-meta">
-                        <div><strong>Paciente:</strong> ${escapeHtml(p.nome_completo)}</div>
-                        ${idade ? `<div><strong>Idade:</strong> ${idade}</div>` : ''}
-                        <div><strong>Data:</strong> ${dataAplic}</div>
-                        ${(p.mae_nome || p.responsavel_nome) ? `<div><strong>Respondente:</strong> ${escapeHtml(p.mae_nome || p.responsavel_nome)}</div>` : ''}
-                    </div>
-                </header>
+                </div>
+                <div class="laudo-header-pontuacao">
+                    <div class="laudo-header-pontuacao-label">Pontuação total</div>
+                    <div class="laudo-header-pontuacao-valor">${s.total}</div>
+                    <div class="laudo-header-pontuacao-max">de ${s.maxScore}</div>
+                </div>
+            </div>
 
-                <section class="laudo-resumo">
-                    <div class="resumo-card">
-                        <div class="resumo-label">Pontuação total</div>
-                        <div class="resumo-valor">${s.total} <span class="resumo-max">/ ${s.maxScore}</span></div>
-                    </div>
-                    <div class="resumo-card">
-                        <div class="resumo-label">Ponto de corte</div>
-                        <div class="resumo-valor resumo-corte">≥ ${PONTO_CORTE}</div>
-                    </div>
-                    <div class="resumo-card" style="border-left-color: ${corClassif};">
-                        <div class="resumo-label">Classificação</div>
-                        <div class="resumo-valor" style="color: ${corClassif};">${textoClassif}</div>
-                    </div>
-                </section>
+            <div class="laudo-body">
 
-                <section class="laudo-secao">
-                    <h2>Interpretação Clínica</h2>
-                    <div class="laudo-interpretacao">
-                        ${renderInterpretacao()}
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">1</span>
+                    Identificação
+                </div>
+                <div class="laudo-identificacao">
+                    <div class="laudo-identif-item">
+                        <span class="laudo-identif-label">Nome:</span>
+                        <span class="laudo-identif-valor">${escapeHtml(p.nome_completo)}</span>
                     </div>
-                </section>
+                    <div class="laudo-identif-item">
+                        <span class="laudo-identif-label">Idade:</span>
+                        <span class="laudo-identif-valor">${idade !== null ? idade + ' anos' : '—'}</span>
+                    </div>
+                    <div class="laudo-identif-item">
+                        <span class="laudo-identif-label">Sexo:</span>
+                        <span class="laudo-identif-valor">${escapeHtml(p.sexo || '—')}</span>
+                    </div>
+                    <div class="laudo-identif-item">
+                        <span class="laudo-identif-label">Nascimento:</span>
+                        <span class="laudo-identif-valor">${nascStr}</span>
+                    </div>
+                    <div class="laudo-identif-item">
+                        <span class="laudo-identif-label">Aplicação:</span>
+                        <span class="laudo-identif-valor">${dataAplic}</span>
+                    </div>
+                    <div class="laudo-identif-item">
+                        <span class="laudo-identif-label">Respondente:</span>
+                        <span class="laudo-identif-valor">${escapeHtml(respondente)}</span>
+                    </div>
+                </div>
 
-                <section class="laudo-secao">
-                    <h2>Distribuição das respostas por item</h2>
-                    <div class="grafico-container">
-                        <canvas id="ata-chart-barras"></canvas>
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">2</span>
+                    Classificação Clínica
+                </div>
+                <div class="laudo-cards">
+                    <div class="laudo-card ${s.classificacao === 'sugestivo_tea' ? 'laudo-card-paciente-positivo' : 'laudo-card-paciente-negativo'}">
+                        <div class="laudo-card-label">Resultado</div>
+                        <div class="laudo-card-valor" style="font-size: 22px;">${textoClassif}</div>
                     </div>
-                    <p class="grafico-legenda">
-                        Itens em <strong style="color:#dc2626;">vermelho</strong> indicam pontuação máxima (2 — apresenta vários traços).
-                        Itens em <strong style="color:#eab308;">amarelo</strong> indicam pontuação intermediária (1 — apresenta alguns traços).
-                        Itens em <strong style="color:#94a3b8;">cinza</strong> indicam ausência de traços (0).
-                    </p>
-                </section>
+                    <div class="laudo-card laudo-card-corte">
+                        <div class="laudo-card-label">Ponto de corte</div>
+                        <div class="laudo-card-valor">≥ ${PONTO_CORTE}</div>
+                    </div>
+                    <div class="laudo-card laudo-card-max">
+                        <div class="laudo-card-label">Itens em destaque</div>
+                        <div class="laudo-card-valor">${s.itensCriticos.length}</div>
+                    </div>
+                </div>
 
-                <section class="laudo-secao">
-                    <h2>Distribuição percentual</h2>
-                    <div class="grafico-container grafico-pizza">
-                        <canvas id="ata-chart-pizza"></canvas>
+                <div class="laudo-barra-container">
+                    <div class="laudo-barra-titulo">Distribuição da pontuação</div>
+                    <div class="laudo-barra-fundo">
+                        <div class="laudo-barra-cutoff" style="left: ${(PONTO_CORTE / MAX_SCORE) * 100}%;">
+                            <span>corte ${PONTO_CORTE}</span>
+                        </div>
+                        <div class="laudo-barra-marcador" style="left: ${(s.total / MAX_SCORE) * 100}%; background: ${corClassif};">
+                            <span>${s.total}</span>
+                        </div>
                     </div>
-                </section>
+                    <div class="laudo-barra-extremos">
+                        <span>0</span>
+                        <span>${s.maxScore}</span>
+                    </div>
+                </div>
+
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">3</span>
+                    Interpretação Clínica
+                </div>
+                <div class="laudo-caixa-descricao">
+                    ${renderInterpretacao()}
+                </div>
+
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">4</span>
+                    Distribuição das Respostas por Item
+                </div>
+                <div class="ata-grafico-wrap">
+                    <canvas id="ata-chart-barras"></canvas>
+                </div>
+                <p class="ata-grafico-legenda">
+                    <span class="ata-leg-item"><span class="ata-leg-bola" style="background:#dc2626"></span> Apresenta vários traços (2)</span>
+                    <span class="ata-leg-item"><span class="ata-leg-bola" style="background:#eab308"></span> Apresenta alguns traços (1)</span>
+                    <span class="ata-leg-item"><span class="ata-leg-bola" style="background:#94a3b8"></span> Não apresenta (0)</span>
+                </p>
+
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">5</span>
+                    Distribuição Percentual
+                </div>
+                <div class="ata-grafico-wrap ata-grafico-pizza">
+                    <canvas id="ata-chart-pizza"></canvas>
+                </div>
 
                 ${s.itensCriticos.length > 0 ? `
-                <section class="laudo-secao">
-                    <h2>Destaque de severidade</h2>
-                    <p>Os itens a seguir receberam pontuação máxima (2 pontos — apresenta vários traços) e merecem atenção clínica especial:</p>
-                    <ul class="itens-criticos">
-                        ${s.itensCriticos.map(n => {
-                            const item = state.itens.find(i => i.numero === n);
-                            return `<li><strong>Item ${n}:</strong> ${escapeHtml(item?.texto || '—')}</li>`;
-                        }).join('')}
-                    </ul>
-                </section>
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">6</span>
+                    Destaque de Severidade
+                </div>
+                <div class="laudo-caixa-descricao">
+                    <p>Os itens a seguir receberam pontuação máxima (2 — apresenta vários traços) e merecem atenção clínica especial:</p>
+                </div>
+                <ul class="ata-itens-criticos">
+                    ${s.itensCriticos.map(n => {
+                        const item = state.itens.find(i => i.numero === n);
+                        return `<li><strong>Item ${n}:</strong> ${escapeHtml(item?.texto || '—')}</li>`;
+                    }).join('')}
+                </ul>
                 ` : ''}
 
-                <section class="laudo-secao">
-                    <h2>Tabela completa de respostas</h2>
-                    ${renderTabelaItens()}
-                </section>
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">${s.itensCriticos.length > 0 ? 7 : 6}</span>
+                    Tabela Completa de Respostas
+                </div>
+                ${renderTabelaItens()}
 
-                <footer class="laudo-rodape">
-                    <p><small>
-                        Instrumento de rastreio. O resultado isolado não estabelece diagnóstico —
-                        deve ser interpretado em conjunto com avaliação clínica completa, anamnese
-                        e demais instrumentos da bateria.
-                    </small></p>
-                </footer>
             </div>
+
+            <div class="laudo-rodape">
+                <div class="laudo-rodape-esq">
+                    <div class="laudo-rodape-org">Equilibrium Neuropsicologia</div>
+                    <div class="laudo-rodape-tipo">Correção automatizada — ATA</div>
+                </div>
+                <div class="laudo-rodape-dir">
+                    <div class="laudo-rodape-data">Documento gerado em ${formatarDataBR(new Date().toISOString())}</div>
+                    <div class="laudo-rodape-confidencial">Instrumento de rastreio. O resultado isolado não estabelece diagnóstico.</div>
+                </div>
+            </div>
+        </div>
         `;
     }
 
@@ -271,17 +324,17 @@
         if (s.classificacao === 'sugestivo_tea') {
             return `
                 <p>A pontuação total de <strong>${s.total} pontos</strong> está
-                <strong>acima do ponto de corte</strong> (≥${PONTO_CORTE} pontos), o que
+                <strong>acima do ponto de corte</strong> (≥${PONTO_CORTE}), o que
                 <strong>sugere a presença de traços autísticos em intensidade clinicamente relevante</strong>.</p>
                 <p>Foram identificados <strong>${s.itensCriticos.length} ${s.itensCriticos.length === 1 ? 'item' : 'itens'} com pontuação máxima (2)</strong>,
                 indicando comportamentos que apresentam vários traços do espectro autista.
                 Recomenda-se aprofundamento da avaliação com instrumentos diagnósticos específicos
-                (como ADOS-2, ADI-R ou CARS-2) e investigação clínica complementar.</p>
+                (ADOS-2, ADI-R ou CARS-2) e investigação clínica complementar.</p>
             `;
         }
         return `
             <p>A pontuação total de <strong>${s.total} pontos</strong> está
-            <strong>abaixo do ponto de corte</strong> (≥${PONTO_CORTE} pontos),
+            <strong>abaixo do ponto de corte</strong> (≥${PONTO_CORTE}),
             <strong>não sugerindo indicativos clinicamente significativos de TEA</strong>
             pela perspectiva do respondente.</p>
             ${s.itensCriticos.length > 0 ? `
@@ -316,7 +369,7 @@
         }).join('');
 
         return `
-            <table class="tabela-itens">
+            <table class="ata-tabela-itens">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -440,7 +493,7 @@
     }
 
     // ============================================================================
-    // PDF (mesma técnica dos outros laudos)
+    // PDF
     // ============================================================================
     async function gerarPDF() {
         const btn = document.getElementById('btn-gerar-pdf');
@@ -479,9 +532,8 @@
             const nomeAbreviado = state.paciente.nome_completo.toUpperCase()
                 .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
             const dataStr = formatarDataArquivo(new Date());
-            const nomeArquivo = `ATA - ${nomeAbreviado}_${dataStr}.pdf`;
+            pdf.save(`ATA - ${nomeAbreviado}_${dataStr}.pdf`);
 
-            pdf.save(nomeArquivo);
             window.CortexUI.toast('PDF gerado com sucesso', 'success');
         } catch (err) {
             console.error('Erro ao gerar PDF:', err);
@@ -496,16 +548,17 @@
     // ============================================================================
     // UTILS
     // ============================================================================
-    function calcularIdade(nascISO, aplISO) {
+    function calcularIdadeAnos(nascISO, aplISO) {
         if (!nascISO) return null;
         const ref = aplISO ? new Date(aplISO) : new Date();
         const n = new Date(nascISO);
         if (isNaN(n) || isNaN(ref) || ref < n) return null;
         let anos = ref.getFullYear() - n.getFullYear();
-        let meses = ref.getMonth() - n.getMonth();
-        if (ref.getDate() < n.getDate()) meses--;
-        if (meses < 0) { anos--; meses += 12; }
-        return `${anos} anos, ${meses} meses`;
+        if (ref.getMonth() < n.getMonth() ||
+            (ref.getMonth() === n.getMonth() && ref.getDate() < n.getDate())) {
+            anos--;
+        }
+        return anos;
     }
 
     function formatarDataBR(iso) {

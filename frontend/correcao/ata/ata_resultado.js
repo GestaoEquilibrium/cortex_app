@@ -19,10 +19,8 @@
 (function() {
     'use strict';
 
-    const SUPABASE_CONFIG = window.SUPABASE_CONFIG;
-    window.cortexClient = window.supabase.createClient(
-        SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey
-    );
+    // window.cortexClient já foi criado por shared/supabase_client.js
+    // (esta página está dentro do app autenticado, não é responder público)
 
     const SIGLA_ESPERADA = 'ATA';
     const PONTO_CORTE = 15;

@@ -1,0 +1,563 @@
+/* ============================================================================
+   PORTAL DO PACIENTE — Mobile-first
+   Paleta navy CORTEX (#0c1f3f). Sem gradientes (exceto background do login).
+   ============================================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1e293b;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button { font-family: inherit; cursor: pointer; }
+
+/* ============================================================================
+   LOGIN / TROCAR SENHA (background)
+   ============================================================================ */
+body.portal-bg-grad {
+    background: linear-gradient(135deg, #0c1f3f 0%, #1e3a5f 100%);
+    min-height: 100vh;
+}
+
+.login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+}
+
+.login-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 36px 28px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+
+.login-logo-wrap { text-align: center; margin-bottom: 28px; }
+
+.login-logo {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: #0c1f3f;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.login-logo .ti { font-size: 28px; }
+
+.login-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #0c1f3f;
+    margin-bottom: 4px;
+}
+
+.login-sub { font-size: 13px; color: #64748b; }
+
+.form-group { margin-bottom: 18px; }
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 6px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 16px;       /* 16px evita zoom no iOS */
+    font-family: inherit;
+    color: #1e293b;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #0c1f3f;
+    box-shadow: 0 0 0 3px rgba(12, 31, 63, 0.1);
+}
+
+.form-help {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    background: #0c1f3f;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s, transform 0.05s;
+}
+
+.btn-primary:hover:not(:disabled) { background: #1e3a5f; }
+.btn-primary:active:not(:disabled) { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary .ti { font-size: 18px; }
+
+.alerta {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.alerta-erro {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 4px solid #dc2626;
+}
+
+.alerta-sucesso {
+    background: #ecfdf5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+.login-footer {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.login-footer-strong {
+    color: #0c1f3f;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.login-footer-strong .ti { font-size: 16px; }
+
+/* ============================================================================
+   APP (DASHBOARD)
+   ============================================================================ */
+body.portal-app {
+    background: #f1f5f9;
+    min-height: 100vh;
+    padding-bottom: 78px;     /* espaço pra tab bar */
+}
+
+/* ─── HEADER ─────────────────────────────────────────────────────────── */
+.app-header {
+    background: #0c1f3f;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.app-header-inner {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-header-logo {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    color: #0c1f3f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.app-header-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.15;
+}
+
+.app-header-sub {
+    font-size: 10px;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+}
+
+.app-header-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.app-icon-btn {
+    background: rgba(255,255,255,0.06);
+    border: none;
+    color: rgba(255,255,255,0.9);
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+.app-icon-btn:hover { background: rgba(255,255,255,0.16); }
+.app-icon-btn:active { background: rgba(255,255,255,0.24); }
+.app-icon-btn .ti { font-size: 20px; }
+
+.app-page-title {
+    padding: 10px 16px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: none;
+}
+
+.app-page-title.visivel { display: block; }
+
+/* ─── MAIN ───────────────────────────────────────────────────────────── */
+.app-main {
+    padding: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.app-page[hidden] { display: none; }
+
+.app-saudacao { margin-bottom: 18px; }
+
+.app-saudacao h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0c1f3f;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.app-saudacao p {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+/* ─── CARDS DE RESUMO ────────────────────────────────────────────────── */
+.app-cards-resumo {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.card-resumo {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.05s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.card-resumo:hover {
+    border-color: #0c1f3f;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.card-resumo:active { transform: scale(0.97); }
+
+.card-resumo-num {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0c1f3f;
+    line-height: 1;
+}
+
+.card-resumo-label {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-top: 6px;
+}
+
+/* ─── SEÇÕES ─────────────────────────────────────────────────────────── */
+.app-secao { margin-bottom: 22px; }
+
+.app-secao-titulo {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0c1f3f;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.app-secao-titulo .ti { font-size: 18px; }
+
+.app-grupo-label {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin: 4px 0 10px 0;
+    padding-top: 4px;
+}
+
+.app-grupo-label:not(:first-child) { margin-top: 18px; }
+
+/* ─── ITENS ──────────────────────────────────────────────────────────── */
+.app-lista { display: flex; flex-direction: column; gap: 10px; }
+
+.app-item {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.app-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.app-item-info { flex: 1; min-width: 0; }
+
+.app-item-titulo {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0c1f3f;
+    line-height: 1.35;
+}
+
+.app-item-desc {
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.4;
+    margin: 4px 0;
+}
+
+.app-item-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.app-item-data {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.app-item-acao {
+    flex-shrink: 0;
+}
+
+.btn-acao {
+    background: #0c1f3f;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.15s, transform 0.05s;
+}
+
+.btn-acao:hover { background: #1e3a5f; }
+.btn-acao:active { transform: scale(0.96); }
+.btn-acao .ti { font-size: 14px; }
+
+.btn-acao-secundario {
+    background: #fff;
+    color: #0c1f3f;
+    border: 1px solid #cbd5e1;
+}
+
+.btn-acao-secundario:hover {
+    background: #f8fafc;
+    border-color: #0c1f3f;
+}
+
+/* ─── STATUS BADGES ──────────────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badge-aguardando { background: #fef3c7; color: #92400e; }
+.badge-em_aplicacao { background: #dbeafe; color: #1e40af; }
+.badge-corrigido { background: #d1fae5; color: #065f46; }
+
+.badge-modalidade {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.badge-modalidade .ti { font-size: 12px; }
+
+/* ─── BLOCO DE DATA (agendamentos) ───────────────────────────────────── */
+.data-block {
+    background: #0c1f3f;
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 10px;
+    text-align: center;
+    min-width: 48px;
+    flex-shrink: 0;
+}
+
+.data-block-dia {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.data-block-mes {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 3px;
+    opacity: 0.85;
+}
+
+/* ─── ESTADOS VAZIOS ─────────────────────────────────────────────────── */
+.app-empty {
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.app-empty .ti {
+    font-size: 36px;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.app-empty p { line-height: 1.5; }
+
+/* ─── TAB BAR ────────────────────────────────────────────────────────── */
+.app-tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab-item {
+    background: none;
+    border: none;
+    padding: 10px 0 8px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    color: #94a3b8;
+    transition: color 0.15s;
+}
+
+.tab-item .ti {
+    font-size: 22px;
+}
+
+.tab-item span {
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.tab-item.is-active {
+    color: #0c1f3f;
+}
+
+.tab-item.is-active span {
+    font-weight: 700;
+}
+
+.tab-item:active {
+    background: #f1f5f9;
+}
+
+/* ─── RESPONSIVO ─────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+    /* Em telas maiores, segue o mesmo layout mas mais arejado */
+    .app-main { padding: 24px; }
+    .app-saudacao h1 { font-size: 26px; }
+
+    .app-cards-resumo { gap: 14px; margin-bottom: 28px; }
+    .card-resumo { padding: 18px 14px; }
+    .card-resumo-num { font-size: 30px; }
+
+    .app-secao-titulo { font-size: 14px; }
+    .app-item-titulo { font-size: 14px; }
+    .app-item-desc { font-size: 12px; }
+}

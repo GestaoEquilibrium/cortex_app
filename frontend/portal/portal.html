@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0c1f3f">
+    <title>Meu Portal — Equilibrium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.21.0/dist/tabler-icons.min.css">
+    <link rel="stylesheet" href="portal.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+</head>
+<body class="portal-app">
+
+    <header class="app-header">
+        <div class="app-header-inner">
+            <div class="app-header-brand">
+                <div class="app-header-logo">E</div>
+                <div class="app-header-text">
+                    <div class="app-header-title">Equilibrium</div>
+                    <div class="app-header-sub">Portal do paciente</div>
+                </div>
+            </div>
+            <div class="app-header-actions">
+                <button class="app-icon-btn" id="btn-trocar-senha" title="Trocar senha" aria-label="Trocar senha">
+                    <i class="ti ti-lock"></i>
+                </button>
+                <button class="app-icon-btn" id="btn-sair" title="Sair" aria-label="Sair">
+                    <i class="ti ti-logout"></i>
+                </button>
+            </div>
+        </div>
+        <div class="app-page-title" id="page-title"></div>
+    </header>
+
+    <main class="app-main">
+
+        <!-- ABA INÍCIO -->
+        <section class="app-page" id="page-inicio" data-page="inicio">
+
+            <div class="app-saudacao">
+                <h1 id="saudacao-h1">Olá!</h1>
+                <p>Aqui você acompanha seus testes, agendamentos e laudos.</p>
+            </div>
+
+            <div class="app-cards-resumo">
+                <div class="card-resumo" data-go="testes">
+                    <div class="card-resumo-num" id="num-instrumentos">—</div>
+                    <div class="card-resumo-label">Testes</div>
+                </div>
+                <div class="card-resumo" data-go="agenda">
+                    <div class="card-resumo-num" id="num-agendamentos">—</div>
+                    <div class="card-resumo-label">Consultas</div>
+                </div>
+                <div class="card-resumo" data-go="laudos">
+                    <div class="card-resumo-num" id="num-laudos">—</div>
+                    <div class="card-resumo-label">Laudos</div>
+                </div>
+            </div>
+
+            <div class="app-secao" id="inicio-instrumento-bloco" style="display:none;">
+                <div class="app-secao-titulo">
+                    <i class="ti ti-clipboard-check" aria-hidden="true"></i>
+                    Teste mais urgente
+                </div>
+                <div id="inicio-instrumento" class="app-lista"></div>
+            </div>
+
+            <div class="app-secao" id="inicio-agenda-bloco" style="display:none;">
+                <div class="app-secao-titulo">
+                    <i class="ti ti-calendar-event" aria-hidden="true"></i>
+                    Próximo agendamento
+                </div>
+                <div id="inicio-agenda" class="app-lista"></div>
+            </div>
+
+            <div class="app-secao" id="inicio-vazio" style="display:none;">
+                <div class="app-empty">
+                    <i class="ti ti-mood-smile" aria-hidden="true"></i>
+                    <p>Você está em dia!<br>Não há pendências no momento.</p>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ABA TESTES -->
+        <section class="app-page" id="page-testes" data-page="testes" hidden>
+            <div id="lista-instrumentos-pendentes-bloco" style="display:none;">
+                <div class="app-grupo-label">
+                    Pendentes <span id="num-pendentes">(0)</span>
+                </div>
+                <div id="lista-instrumentos-pendentes" class="app-lista"></div>
+            </div>
+
+            <div id="lista-instrumentos-concluidos-bloco" style="display:none;">
+                <div class="app-grupo-label">
+                    Concluídos <span id="num-concluidos">(0)</span>
+                </div>
+                <div id="lista-instrumentos-concluidos" class="app-lista"></div>
+            </div>
+
+            <div class="app-empty" id="testes-vazio" style="display:none;">
+                <i class="ti ti-clipboard-list" aria-hidden="true"></i>
+                <p>Você não tem testes no momento.</p>
+            </div>
+        </section>
+
+        <!-- ABA AGENDA -->
+        <section class="app-page" id="page-agenda" data-page="agenda" hidden>
+            <div id="lista-agenda-bloco" style="display:none;">
+                <div class="app-grupo-label">
+                    Próximos <span id="num-agenda-prox">(0)</span>
+                </div>
+                <div id="lista-agenda" class="app-lista"></div>
+            </div>
+
+            <div class="app-empty" id="agenda-vazio" style="display:none;">
+                <i class="ti ti-calendar-off" aria-hidden="true"></i>
+                <p>Você não tem agendamentos futuros.</p>
+            </div>
+        </section>
+
+        <!-- ABA LAUDOS -->
+        <section class="app-page" id="page-laudos" data-page="laudos" hidden>
+            <div id="lista-laudos-bloco" style="display:none;">
+                <div class="app-grupo-label">
+                    Disponíveis <span id="num-laudos-disp">(0)</span>
+                </div>
+                <div id="lista-laudos" class="app-lista"></div>
+            </div>
+
+            <div class="app-empty" id="laudos-vazio" style="display:none;">
+                <i class="ti ti-file-text" aria-hidden="true"></i>
+                <p>Você ainda não tem laudos disponíveis.<br>Eles aparecerão aqui quando forem liberados pela equipe clínica.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- TAB BAR -->
+    <nav class="app-tabbar" role="navigation" aria-label="Navegação principal">
+        <button class="tab-item is-active" data-tab="inicio">
+            <i class="ti ti-home" aria-hidden="true"></i>
+            <span>Início</span>
+        </button>
+        <button class="tab-item" data-tab="testes">
+            <i class="ti ti-clipboard-list" aria-hidden="true"></i>
+            <span>Testes</span>
+        </button>
+        <button class="tab-item" data-tab="agenda">
+            <i class="ti ti-calendar" aria-hidden="true"></i>
+            <span>Agenda</span>
+        </button>
+        <button class="tab-item" data-tab="laudos">
+            <i class="ti ti-file-text" aria-hidden="true"></i>
+            <span>Laudos</span>
+        </button>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="portal.js"></script>
+</body>
+</html>

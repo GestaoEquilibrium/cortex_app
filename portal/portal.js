@@ -295,16 +295,20 @@
 
     // ─── AÇÕES ────────────────────────────────────────────────────────────
     window.baixarLaudo = async function(laudoId) {
-        await client.rpc('portal_log_acesso', {
-            p_acao: 'baixou_laudo',
-            p_recurso_id: laudoId,
-            p_detalhes: {}
-        }).catch(() => {});
+        try {
+            await client.rpc('portal_log_acesso', {
+                p_acao: 'baixou_laudo',
+                p_recurso_id: laudoId,
+                p_detalhes: {}
+            });
+        } catch (e) { /* ignore */ }
         alert('Download de laudo em construção. Em breve disponível.');
     };
 
     async function logout() {
-        await client.rpc('portal_log_acesso', { p_acao: 'logout', p_recurso_id: null, p_detalhes: {} }).catch(() => {});
+        try {
+            await client.rpc('portal_log_acesso', { p_acao: 'logout', p_recurso_id: null, p_detalhes: {} });
+        } catch (e) { /* ignore */ }
         await client.auth.signOut();
         window.location.href = './login.html';
     }

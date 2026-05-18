@@ -1,9 +1,13 @@
 // ============================================================================
-// Portal — Troca de senha
+// Portal — Troca de senha (Sprint 37 — isolamento de sessão)
 // ============================================================================
 // Usado em 2 cenários:
 //   1. Primeiro acesso (?primeiro=1): obrigatório trocar a senha CPF
 //   2. Troca voluntária pelo paciente já autenticado
+//
+// SPRINT 37 — storageKey isolada: usa 'cortex-portal-auth', a mesma chave
+// usada por portal_login.js e portal.js. Não pode usar a chave default
+// senão pega/sobrescreve a sessão do sistema profissional.
 // ============================================================================
 
 (function() {
@@ -11,7 +15,16 @@
 
     const client = window.supabase.createClient(
         SUPABASE_CONFIG.url,
-        SUPABASE_CONFIG.anonKey
+        SUPABASE_CONFIG.anonKey,
+        {
+            auth: {
+                storageKey: 'cortex-portal-auth',
+                storage: window.localStorage,
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: false
+            }
+        }
     );
 
     const params = new URLSearchParams(window.location.search);

@@ -1,8 +1,17 @@
 // ============================================================================
-// CORTEX_APP — Auth Guard
+// CORTEX_APP — Auth Guard (Sprint 37 — anti-loop)
 // ============================================================================
 // Inclua este script em todas as páginas que exigem login.
 // Se o usuário não estiver autenticado, redireciona para a tela de login.
+//
+// SPRINT 37 — Mudanças anti-loop:
+//   1. Antes de redirecionar para o login, SEMPRE chama signOut() pra
+//      limpar a sessão. Sem isso, auth.js (no index) detecta a sessão
+//      residual e redireciona de volta pra dashboard → loop ("pisca").
+//
+//   2. Detecta sessão de paciente (user_metadata.paciente_id presente)
+//      e força signOut + redirect, sem nem tentar buscar em `profissionais`.
+//      Isso elimina o erro `PGRST116` que antes derrubava no catch.
 // ============================================================================
 
 (async function() {
@@ -20,14 +29,39 @@
     const profundidade = segmentos.length - 1; // -1 porque o primeiro segmento é o domínio
     const caminhoRaiz = profundidade > 0 ? '../'.repeat(profundidade) : './';
 
+    // Helper: limpa a sessão e redireciona pro login. SEM chamar signOut
+    // antes do redirect, o auth.js do index re-detecta a sessão residual
+    // e devolve pra dashboard → loop.
+    async function redirecionarParaLogin(motivo) {
+        try {
+            await window.cortexClient.auth.signOut();
+        } catch (e) {
+            console.warn('signOut falhou:', e);
+        }
+        // Pequena espera pra garantir que o storage foi limpo antes do reload
+        setTimeout(() => {
+            window.location.href = caminhoRaiz + 'index.html';
+        }, 50);
+    }
+
     try {
         const { data: { session }, error } = await window.cortexClient.auth.getSession();
 
         if (error) throw error;
 
         if (!session) {
-            // Não autenticado: redireciona para login
+            // Não autenticado: redireciona para login (sem signOut, não tem sessão)
             window.location.href = caminhoRaiz + 'index.html';
+            return;
+        }
+
+        // ─── Bloqueio de sessão de PACIENTE no sistema profissional ────────
+        // Pacientes têm `paciente_id` em user_metadata. Se aparecer aqui, é
+        // sessão do portal vazando — limpa e manda pro login do sistema.
+        const meta = session.user?.user_metadata || {};
+        if (meta.paciente_id) {
+            console.warn('CORTEX_APP: sessão de paciente detectada no sistema profissional. Limpando.');
+            await redirecionarParaLogin('sessao_paciente');
             return;
         }
 
@@ -39,14 +73,16 @@
             .from('profissionais')
             .select('id, nome_completo, email, perfil, foto_url')
             .eq('auth_user_id', session.user.id)
-            .single();
+            .maybeSingle(); // maybeSingle: 0 linhas = null (sem erro), não levanta PGRST116
 
         if (profError) throw profError;
 
         if (!profissional) {
-            console.error('Profissional não encontrado em profissionais. Vinculação pode estar quebrada.');
-            await window.cortexClient.auth.signOut();
-            window.location.href = caminhoRaiz + 'index.html';
+            // Sessão de auth.users válida mas SEM vínculo em `profissionais`.
+            // Pode ser: paciente sem flag, ex-funcionário desvinculado, ou
+            // conta órfã. Em todos os casos, limpa e manda pro login.
+            console.error('Profissional não encontrado para auth_user_id:', session.user.id);
+            await redirecionarParaLogin('sem_vinculo_profissional');
             return;
         }
 
@@ -63,7 +99,7 @@
 
     } catch (err) {
         console.error('Erro no auth guard:', err);
-        window.location.href = caminhoRaiz + 'index.html';
+        await redirecionarParaLogin('erro_inesperado');
     }
 })();
 

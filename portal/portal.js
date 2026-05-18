@@ -1,9 +1,12 @@
 // ============================================================================
-// PORTAL DO PACIENTE — Dashboard
+// PORTAL DO PACIENTE — Dashboard (Sprint 37 — isolamento de sessão)
 // ============================================================================
 // Tudo é filtrado por auth.uid() no banco. RPCs com SECURITY DEFINER + JOIN em
 // pacientes.portal_user_id = auth.uid() garantem isolamento. Frontend não
 // consegue ver dados de outro paciente.
+//
+// SPRINT 37 — storageKey isolada: usa 'cortex-portal-auth' pra não colidir
+// com a sessão do sistema profissional (que usa a chave default do supabase-js).
 // ============================================================================
 
 (function() {
@@ -11,7 +14,16 @@
 
     const client = window.supabase.createClient(
         SUPABASE_CONFIG.url,
-        SUPABASE_CONFIG.anonKey
+        SUPABASE_CONFIG.anonKey,
+        {
+            auth: {
+                storageKey: 'cortex-portal-auth',
+                storage: window.localStorage,
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: false
+            }
+        }
     );
 
     const state = {

@@ -1,5 +1,5 @@
 // ============================================================================
-// Portal do Paciente — Login
+// Portal do Paciente — Login (Sprint 37 — isolamento de sessão)
 // ============================================================================
 // Fluxo:
 //   1. Paciente digita CPF + senha
@@ -9,6 +9,12 @@
 //   5. Loga tentativa (sucesso ou falha) pra anti-bruteforce
 //   6. Se sucesso E primeira senha → redireciona pra troca obrigatória
 //   7. Se sucesso E senha já trocada → redireciona pro portal
+//
+// SPRINT 37 — storageKey isolada do sistema principal
+//   O sistema profissional usa a key default do supabase-js.
+//   O portal usa 'cortex-portal-auth'. Isso impede que a sessão do paciente
+//   vaze pro sistema principal (e vice-versa), eliminando o loop de redirect
+//   no auth_guard.js quando um paciente está logado.
 // ============================================================================
 
 (function() {
@@ -16,7 +22,16 @@
 
     const client = window.supabase.createClient(
         SUPABASE_CONFIG.url,
-        SUPABASE_CONFIG.anonKey
+        SUPABASE_CONFIG.anonKey,
+        {
+            auth: {
+                storageKey: 'cortex-portal-auth',
+                storage: window.localStorage,
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: false
+            }
+        }
     );
 
     // ----- Boot -----

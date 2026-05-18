@@ -15,8 +15,8 @@
     'use strict';
 
     const client = window.supabase.createClient(
-        window.SUPABASE_CONFIG.url,
-        window.SUPABASE_CONFIG.anonKey
+        SUPABASE_CONFIG.url,
+        SUPABASE_CONFIG.anonKey
     );
 
     // ----- Boot -----

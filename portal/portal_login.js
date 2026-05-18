@@ -29,6 +29,21 @@
         });
 
         formatCPF();
+
+        // Pré-preencher CPF se vier ?cpf= na URL (link do WhatsApp da clínica)
+        const params = new URLSearchParams(window.location.search);
+        const cpfParam = params.get('cpf');
+        if (cpfParam) {
+            const cpfLimpo = cpfParam.replace(/\D/g, '').slice(0, 11);
+            if (cpfLimpo.length === 11) {
+                const cpfInput = document.getElementById('cpf');
+                // Formata visualmente: 000.000.000-00
+                cpfInput.value = cpfLimpo.slice(0,3) + '.' + cpfLimpo.slice(3,6) + '.' + cpfLimpo.slice(6,9) + '-' + cpfLimpo.slice(9);
+                // Move foco pro campo de senha
+                document.getElementById('senha').focus();
+            }
+        }
+
         document.getElementById('form-login').addEventListener('submit', handleLogin);
     });
 

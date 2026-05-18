@@ -464,6 +464,7 @@
                         </button>
                         <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.enviarPortalWhatsApp()">📱 Enviar acesso ao portal</button>
                         ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalDesignar()">👤 Designar aplicador</button>` : ''}
                     </div>
                 </div>
@@ -2374,6 +2375,57 @@
         }
     }
 
+    // ========================================================================
+    // ENVIAR ACESSO AO PORTAL POR WHATSAPP
+    // ========================================================================
+    async function abrirWhatsAppPortal() {
+        if (!paciente || !paciente.cpf) {
+            window.CortexUI.toast('Paciente sem CPF cadastrado.', 'danger');
+            return;
+        }
+
+        const cpfLimpo = String(paciente.cpf).replace(/\D/g, '');
+        if (cpfLimpo.length !== 11) {
+            window.CortexUI.toast('CPF inválido (precisa ter 11 dígitos).', 'danger');
+            return;
+        }
+
+        // Telefone preferido: mãe > pai > responsável > paciente
+        let tel = paciente.mae_telefone || paciente.pai_telefone
+               || paciente.responsavel_telefone || paciente.telefone;
+        let telLimpo = tel ? String(tel).replace(/\D/g, '') : '';
+
+        // Garante código do Brasil (55) na frente
+        if (telLimpo.length === 10 || telLimpo.length === 11) {
+            telLimpo = '55' + telLimpo;
+        }
+
+        const urlPortal = `https://cortexneuro.com.br/portal/?cpf=${cpfLimpo}`;
+        const primeiroNome = (paciente.nome_completo || '').split(' ')[0];
+
+        const msg = `Olá! Aqui é da Equilibrium Neuropsicologia. ` +
+                    `Liberamos o acesso de ${primeiroNome} ao nosso Portal do Paciente, ` +
+                    `onde você pode responder questionários, acompanhar consultas e baixar laudos.\n\n` +
+                    `🔐 Acesse aqui: ${urlPortal}\n\n` +
+                    `*Login:* CPF do paciente\n` +
+                    `*Senha inicial:* o mesmo CPF (será solicitada a troca no primeiro acesso)\n\n` +
+                    `Qualquer dúvida, é só nos chamar.`;
+
+        const encoded = encodeURIComponent(msg);
+
+        if (telLimpo && telLimpo.length >= 12) {
+            // Abre direto a conversa
+            window.open(`https://wa.me/${telLimpo}?text=${encoded}`, '_blank');
+        } else {
+            // Sem telefone: abre WhatsApp Web genérico e copia mensagem
+            try {
+                await navigator.clipboard.writeText(msg);
+                window.CortexUI.toast('Mensagem copiada. Abrindo WhatsApp Web...', 'info');
+            } catch (e) { /* ignore */ }
+            window.open('https://web.whatsapp.com/', '_blank');
+        }
+    }
+
     window.CortexPasta = {
         abrirModalAgendar: async function () {
             await sprint8AbrirModalAgendar();
@@ -2383,6 +2435,9 @@
         },
         abrirModalCapa: async function () {
             await sprint16AbrirModalCapa();
+        },
+        enviarPortalWhatsApp: async function () {
+            await abrirWhatsAppPortal();
         },
         fecharModal: function () {
             const m = document.getElementById('sprint8-modal');

@@ -45,45 +45,54 @@
 
             <div class="app-saudacao">
                 <h1 id="saudacao-h1">Olá!</h1>
-                <p>Aqui você acompanha seus testes, agendamentos e laudos.</p>
+                <p>Bom ter você de volta. Confira suas pendências abaixo.</p>
             </div>
 
-            <div class="app-cards-resumo">
-                <div class="card-resumo" data-go="testes">
-                    <div class="card-resumo-num" id="num-instrumentos">—</div>
-                    <div class="card-resumo-label">Testes</div>
-                </div>
-                <div class="card-resumo" data-go="agenda">
-                    <div class="card-resumo-num" id="num-agendamentos">—</div>
-                    <div class="card-resumo-label">Consultas</div>
-                </div>
-                <div class="card-resumo" data-go="laudos">
-                    <div class="card-resumo-num" id="num-laudos">—</div>
-                    <div class="card-resumo-label">Laudos</div>
+            <!-- Banner de alerta: só aparece quando há pendência -->
+            <div class="inicio-alerta" id="inicio-alerta" style="display:none;">
+                <i class="ti ti-bell" aria-hidden="true"></i>
+                <div class="inicio-alerta-texto">
+                    <div class="inicio-alerta-titulo" id="inicio-alerta-titulo"></div>
+                    <div class="inicio-alerta-dica">Toque em "Testes" abaixo pra responder</div>
                 </div>
             </div>
 
-            <div class="app-secao" id="inicio-instrumento-bloco" style="display:none;">
-                <div class="app-secao-titulo">
-                    <i class="ti ti-clipboard-check" aria-hidden="true"></i>
-                    Teste mais urgente
-                </div>
-                <div id="inicio-instrumento" class="app-lista"></div>
-            </div>
+            <!-- Atalhos para as abas -->
+            <div class="inicio-secao-label">Acessar</div>
 
-            <div class="app-secao" id="inicio-agenda-bloco" style="display:none;">
-                <div class="app-secao-titulo">
-                    <i class="ti ti-calendar-event" aria-hidden="true"></i>
-                    Próximo agendamento
-                </div>
-                <div id="inicio-agenda" class="app-lista"></div>
-            </div>
+            <div class="inicio-atalhos">
+                <button class="atalho-card" data-go="testes" type="button">
+                    <div class="atalho-card-icone atalho-icone-testes">
+                        <i class="ti ti-clipboard-list" aria-hidden="true"></i>
+                    </div>
+                    <div class="atalho-card-conteudo">
+                        <div class="atalho-card-titulo">Meus testes</div>
+                        <div class="atalho-card-desc" id="atalho-testes-desc">—</div>
+                    </div>
+                    <i class="ti ti-chevron-right atalho-card-seta" aria-hidden="true"></i>
+                </button>
 
-            <div class="app-secao" id="inicio-vazio" style="display:none;">
-                <div class="app-empty">
-                    <i class="ti ti-mood-smile" aria-hidden="true"></i>
-                    <p>Você está em dia!<br>Não há pendências no momento.</p>
-                </div>
+                <button class="atalho-card" data-go="agenda" type="button">
+                    <div class="atalho-card-icone atalho-icone-agenda">
+                        <i class="ti ti-calendar" aria-hidden="true"></i>
+                    </div>
+                    <div class="atalho-card-conteudo">
+                        <div class="atalho-card-titulo">Minha agenda</div>
+                        <div class="atalho-card-desc" id="atalho-agenda-desc">—</div>
+                    </div>
+                    <i class="ti ti-chevron-right atalho-card-seta" aria-hidden="true"></i>
+                </button>
+
+                <button class="atalho-card" data-go="laudos" type="button">
+                    <div class="atalho-card-icone atalho-icone-laudos">
+                        <i class="ti ti-file-text" aria-hidden="true"></i>
+                    </div>
+                    <div class="atalho-card-conteudo">
+                        <div class="atalho-card-titulo">Meus laudos</div>
+                        <div class="atalho-card-desc" id="atalho-laudos-desc">—</div>
+                    </div>
+                    <i class="ti ti-chevron-right atalho-card-seta" aria-hidden="true"></i>
+                </button>
             </div>
 
         </section>

@@ -49,7 +49,7 @@
 
         bindHeader();
         bindTabBar();
-        bindCardsResumo();
+        bindAtalhosInicio();
 
         await carregarTudo();
     });
@@ -68,8 +68,8 @@
         });
     }
 
-    function bindCardsResumo() {
-        document.querySelectorAll('.card-resumo[data-go]').forEach(c => {
+    function bindAtalhosInicio() {
+        document.querySelectorAll('.atalho-card[data-go]').forEach(c => {
             c.addEventListener('click', () => trocarAba(c.dataset.go));
         });
     }
@@ -124,11 +124,9 @@
             const pendentes = state.instrumentos.filter(i => i.status === 'aguardando' || i.status === 'em_aplicacao');
             const concluidos = state.instrumentos.filter(i => i.status === 'corrigido');
 
-            document.getElementById('num-instrumentos').textContent = pendentes.length;
             renderListaTestes(pendentes, concluidos);
         } catch (err) {
             console.error('Erro instrumentos:', err);
-            document.getElementById('num-instrumentos').textContent = '–';
         }
     }
 
@@ -138,11 +136,9 @@
             if (error) throw error;
             state.agendamentos = data || [];
 
-            document.getElementById('num-agendamentos').textContent = state.agendamentos.length;
             renderListaAgenda(state.agendamentos);
         } catch (err) {
             console.error('Erro agendamentos:', err);
-            document.getElementById('num-agendamentos').textContent = '–';
         }
     }
 
@@ -152,38 +148,77 @@
             if (error) throw error;
             state.laudos = data || [];
 
-            document.getElementById('num-laudos').textContent = state.laudos.length;
             renderListaLaudos(state.laudos);
         } catch (err) {
             console.error('Erro laudos:', err);
-            document.getElementById('num-laudos').textContent = '–';
         }
     }
 
     // ─── ABA INÍCIO ───────────────────────────────────────────────────────
+    // Mostra: banner de alerta (se houver pendência) + 3 cards de atalho
+    // pras outras abas com resumo de status em cada um.
     function montarInicio() {
-        const instrumentoBloco = document.getElementById('inicio-instrumento-bloco');
-        const agendaBloco = document.getElementById('inicio-agenda-bloco');
-        const vazio = document.getElementById('inicio-vazio');
+        const instrumentos = state.instrumentos || [];
+        const agendamentos = state.agendamentos || [];
+        const laudos = state.laudos || [];
 
-        const pendentes = (state.instrumentos || []).filter(i => i.status === 'aguardando' || i.status === 'em_aplicacao');
-        const proxAgendamento = (state.agendamentos || [])[0];
+        const pendentes  = instrumentos.filter(i => i.status === 'aguardando' || i.status === 'em_aplicacao');
+        const concluidos = instrumentos.filter(i => i.status === 'corrigido');
+        const proxAgendamento = agendamentos[0];
+
+        // ─── Banner de alerta ────────────────────────────────────────────
+        const alerta = document.getElementById('inicio-alerta');
+        const alertaTitulo = document.getElementById('inicio-alerta-titulo');
 
         if (pendentes.length > 0) {
-            document.getElementById('inicio-instrumento').innerHTML = renderItemInstrumento(pendentes[0]);
-            instrumentoBloco.style.display = 'block';
+            alertaTitulo.textContent = pendentes.length === 1
+                ? 'Você tem 1 teste aguardando'
+                : `Você tem ${pendentes.length} testes aguardando`;
+            alerta.style.display = 'flex';
         } else {
-            instrumentoBloco.style.display = 'none';
+            alerta.style.display = 'none';
         }
 
-        if (proxAgendamento) {
-            document.getElementById('inicio-agenda').innerHTML = renderItemAgendamento(proxAgendamento);
-            agendaBloco.style.display = 'block';
+        // ─── Atalho Testes ───────────────────────────────────────────────
+        const descTestes = document.getElementById('atalho-testes-desc');
+        if (instrumentos.length === 0) {
+            descTestes.textContent = 'Nenhum teste no momento';
         } else {
-            agendaBloco.style.display = 'none';
+            const partes = [];
+            if (pendentes.length > 0) {
+                partes.push(`${pendentes.length} ${pendentes.length === 1 ? 'aguardando' : 'aguardando'}`);
+            }
+            if (concluidos.length > 0) {
+                partes.push(`${concluidos.length} ${concluidos.length === 1 ? 'concluído' : 'concluídos'}`);
+            }
+            descTestes.textContent = partes.length > 0
+                ? partes.join(' · ')
+                : 'Nenhum teste no momento';
         }
 
-        vazio.style.display = (pendentes.length === 0 && !proxAgendamento) ? 'block' : 'none';
+        // ─── Atalho Agenda ───────────────────────────────────────────────
+        const descAgenda = document.getElementById('atalho-agenda-desc');
+        if (!proxAgendamento) {
+            descAgenda.textContent = 'Nenhuma consulta agendada';
+        } else {
+            const data = new Date(proxAgendamento.inicio_em);
+            const dia = String(data.getDate()).padStart(2, '0');
+            const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+            const mes = meses[data.getMonth()];
+            const hora = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const profNome = (proxAgendamento.profissional_nome || '').split(' ')[0];
+            descAgenda.textContent = `Próxima: ${dia} de ${mes} às ${hora}${profNome ? ' com ' + profNome : ''}`;
+        }
+
+        // ─── Atalho Laudos ───────────────────────────────────────────────
+        const descLaudos = document.getElementById('atalho-laudos-desc');
+        if (laudos.length === 0) {
+            descLaudos.textContent = 'Aguardando liberação da equipe';
+        } else {
+            descLaudos.textContent = laudos.length === 1
+                ? '1 laudo disponível pra baixar'
+                : `${laudos.length} laudos disponíveis pra baixar`;
+        }
     }
 
     // ─── ABA TESTES ───────────────────────────────────────────────────────

@@ -30,8 +30,19 @@
             return;
         }
 
-        const meta = session.user?.user_metadata || {};
-        const nome = meta.nome || 'Paciente';
+        // Busca dados do paciente DIRETO do banco (não confiar no metadata,
+        // que pode estar desatualizado se o nome for editado depois)
+        let nome = 'Paciente';
+        try {
+            const { data } = await client.rpc('portal_meus_dados');
+            if (data && data.length > 0) {
+                nome = data[0].nome_completo || 'Paciente';
+            }
+        } catch (e) {
+            // fallback: usa o metadata se RPC falhar
+            const meta = session.user?.user_metadata || {};
+            nome = meta.nome || 'Paciente';
+        }
         const primeiroNome = nome.split(' ')[0];
 
         document.getElementById('saudacao-h1').textContent = `Olá, ${primeiroNome}!`;

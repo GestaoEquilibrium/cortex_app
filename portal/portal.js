@@ -215,7 +215,7 @@
         const isConcluido = item.status === 'corrigido';
         const acao = isConcluido
             ? `<span class="app-item-data">${formatarDataCurta(item.created_at)}</span>`
-            : `<button class="btn-acao" onclick="window.location.href='${escapeAttr(item.link_unico || '#')}'">
+            : `<button class="btn-acao" onclick="window.responderInstrumento('${escapeAttr(item.aplicacao_id)}', '${escapeAttr(item.sigla)}')">
                    <i class="ti ti-pencil"></i> Responder
                </button>`;
 
@@ -323,6 +323,53 @@
         await client.auth.signOut();
         window.location.href = './login.html';
     }
+
+    // ─── RESPONDER INSTRUMENTO ────────────────────────────────────────────
+    // Gera o link único na hora (se ainda não existir) e redireciona pra
+    // página de resposta do instrumento correspondente.
+    window.responderInstrumento = async function(aplicacaoId, sigla) {
+        try {
+            // 1) Pede ao banco pra gerar/recuperar o token único
+            const { data: token, error } = await client.rpc(
+                'portal_gerar_link_aplicacao',
+                { p_aplicacao_id: aplicacaoId }
+            );
+
+            if (error) {
+                alert('Erro ao abrir o teste: ' + (error.message || 'tente novamente'));
+                return;
+            }
+
+            if (!token) {
+                alert('Não foi possível gerar o link. Procure a clínica.');
+                return;
+            }
+
+            // 2) Monta a URL da página de resposta
+            // Padrão: /responder/<slug>.html?token=<token>
+            // Slug = sigla em minúsculas, sem hifens nem caracteres especiais
+            const slug = String(sigla || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!slug) {
+                alert('Configuração de teste inválida. Procure a clínica.');
+                return;
+            }
+            const url = `../frontend/responder/${slug}.html?token=${encodeURIComponent(token)}`;
+
+            // 3) Loga acesso e redireciona
+            try {
+                await client.rpc('portal_log_acesso', {
+                    p_acao: 'abriu_instrumento',
+                    p_recurso_id: aplicacaoId,
+                    p_detalhes: { sigla: sigla }
+                });
+            } catch (e) { /* ignore */ }
+
+            window.location.href = url;
+        } catch (err) {
+            console.error('Erro responderInstrumento:', err);
+            alert('Erro inesperado. Tente novamente.');
+        }
+    };
 
     // ─── HELPERS ──────────────────────────────────────────────────────────
     function escapeHtml(t) {

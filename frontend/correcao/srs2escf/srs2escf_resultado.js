@@ -471,8 +471,21 @@
         const data = SRS2_NORMS.scale_order.map(s => state.scores.tPorEscala[s]);
         const brutos = SRS2_NORMS.scale_order.map(s => state.scores.brutoPorEscala[s]);
 
-        // Plugin: faixas coloridas por zona, cutoffs, labels TÍPICO/N1/N2/N3 no topo,
-        // 50(M) dentro da faixa TÍPICO, colunas Bruto/T à esquerda
+        // Cor da bolinha por zona em que o T cai:
+        //   Típico (T < 60)        → verde
+        //   N1     (60 ≤ T < 66)   → amarelo claro
+        //   N2     (66 ≤ T < 76)   → laranja claro
+        //   N3     (T ≥ 76)        → vermelho claro
+        function corPorT(t) {
+            if (t >= 76) return '#f4cccc';
+            if (t >= 66) return '#fce5cd';
+            if (t >= 60) return '#fff2cc';
+            return '#10b981';
+        }
+        const coresBolinhas = data.map(corPorT);
+
+        // Plugin: faixa TÍPICO, cutoffs, labels TÍPICO/N1/N2/N3 e 50(M) no topo,
+        // colunas Bruto/T à esquerda
         const cutoffsPlugin = {
             id: 'cutoffsCinza',
             beforeDatasetsDraw: (chart) => {
@@ -482,21 +495,12 @@
                 const yTopArea = chartArea.top;
                 const yBotArea = chartArea.bottom;
 
-                // Fundos coloridos por zona clínica
-                // TÍPICO (40-60) azul-clarinho · N1 (60-66) amarelo · N2 (66-76) laranja · N3 (76-80) vermelho
-                const zonas = [
-                    { ini: 40, fim: 60, cor: 'rgba(59, 130, 246, 0.08)' }, // TÍPICO
-                    { ini: 60, fim: 66, cor: '#fff2cc' },                  // N1
-                    { ini: 66, fim: 76, cor: '#fce5cd' },                  // N2
-                    { ini: 76, fim: 80, cor: '#f4cccc' }                   // N3
-                ];
+                // Faixa azul-clara na zona TÍPICO (T 40–60)
                 ctx.save();
-                for (const z of zonas) {
-                    const xi = xs.getPixelForValue(z.ini);
-                    const xf = xs.getPixelForValue(z.fim);
-                    ctx.fillStyle = z.cor;
-                    ctx.fillRect(xi, yTopArea, xf - xi, yBotArea - yTopArea);
-                }
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+                const xTipIni = xs.getPixelForValue(40);
+                const xTipFim = xs.getPixelForValue(60);
+                ctx.fillRect(xTipIni, yTopArea, xTipFim - xTipIni, yBotArea - yTopArea);
                 ctx.restore();
 
                 // Linhas verticais cinza tracejadas nos cutoffs
@@ -519,11 +523,10 @@
                 const xs = scales.x;
                 const ys = scales.y;
 
-                // Layout vertical no topo (padding-top de 60px no canvas):
+                // Layout vertical no topo:
                 //   linha 1 (topo): TÍPICO, N1, N2, N3
                 //   linha 2:        50 (M)  — alinhado embaixo de TÍPICO
-                //   linha 3:        números do eixo X (20, 25, 30, ..., desenhados pelo Chart.js)
-                //   chartArea começa logo abaixo
+                //   linha 3:        números do eixo X (desenhados pelo Chart.js)
                 const yLinha1 = xs.top - 28;
                 const yLinha2 = xs.top - 12;
 
@@ -581,7 +584,7 @@
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     pointBackgroundColor: '#fff',
-                    pointBorderColor: '#10b981',
+                    pointBorderColor: coresBolinhas,
                     pointBorderWidth: 2.5,
                     pointRadius: 7,
                     pointHoverRadius: 9,
@@ -590,6 +593,9 @@
                 }]
             },
             options: {
+                // Renderiza em alta resolução pra captura via copy_to_clipboard
+                // ficar nítida (html2canvas re-fotografa o canvas como bitmap)
+                devicePixelRatio: Math.max(window.devicePixelRatio || 1, 3),
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,

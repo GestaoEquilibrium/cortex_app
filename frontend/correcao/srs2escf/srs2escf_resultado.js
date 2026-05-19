@@ -471,13 +471,21 @@
         const data = SRS2_NORMS.scale_order.map(s => state.scores.tPorEscala[s]);
         const brutos = SRS2_NORMS.scale_order.map(s => state.scores.brutoPorEscala[s]);
 
-        // Plugin: linhas verticais cinza nos cutoffs + zona labels EM CIMA + 50(M) EMBAIXO
+        // Plugin: cutoffs, faixa TÍPICO, zonas em cima, 50(M) em cima, colunas Bruto/T à esquerda
         const cutoffsPlugin = {
             id: 'cutoffsCinza',
-            afterDraw: (chart) => {
+            beforeDatasetsDraw: (chart) => {
                 const { ctx, chartArea, scales } = chart;
                 if (!chartArea || !scales.x) return;
                 const xs = scales.x;
+
+                // Faixa azul-clara cobrindo a zona TÍPICO (40 → 60)
+                ctx.save();
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+                const xTipIni = xs.getPixelForValue(40);
+                const xTipFim = xs.getPixelForValue(60);
+                ctx.fillRect(xTipIni, chartArea.top, xTipFim - xTipIni, chartArea.bottom - chartArea.top);
+                ctx.restore();
 
                 // Linhas verticais cinza tracejadas nos cutoffs
                 ctx.save();
@@ -492,26 +500,53 @@
                     ctx.stroke();
                 }
                 ctx.restore();
+            },
+            afterDraw: (chart) => {
+                const { ctx, chartArea, scales } = chart;
+                if (!chartArea || !scales.x || !scales.y) return;
+                const xs = scales.x;
+                const ys = scales.y;
 
-                // ACIMA do gráfico: TÍPICO / N1 / N2 / N3 (zonas clínicas)
+                // ACIMA do gráfico: TÍPICO (azul) e N1/N2/N3 (cinza-escuro)
                 ctx.save();
-                ctx.font = '700 10px sans-serif';
+                ctx.font = '700 11px sans-serif';
                 ctx.textAlign = 'center';
-                ctx.fillStyle = '#94a3b8';
-                const yTopo = chartArea.top - 10;
-                ctx.fillText('TÍPICO', xs.getPixelForValue(40),   yTopo);
-                ctx.fillText('N1',     xs.getPixelForValue(62.5), yTopo);
-                ctx.fillText('N2',     xs.getPixelForValue(70.5), yTopo);
-                ctx.fillText('N3',     xs.getPixelForValue(78),   yTopo);
+                const yTopo = chartArea.top - 22;
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillText('TÍPICO', xs.getPixelForValue(50), yTopo);
+                ctx.fillStyle = '#475569';
+                ctx.fillText('N1', xs.getPixelForValue(63), yTopo);
+                ctx.fillText('N2', xs.getPixelForValue(71), yTopo);
+                ctx.fillText('N3', xs.getPixelForValue(78), yTopo);
                 ctx.restore();
 
-                // ABAIXO do gráfico: marcador "50 (M)" centralizado na média
+                // ACIMA, logo abaixo de TÍPICO: marcador "50 (M)"
                 ctx.save();
-                ctx.font = '700 9px sans-serif';
+                ctx.font = '700 11px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#1e40af';
-                const yBaixo = chartArea.bottom + 32;
-                ctx.fillText('50 (M)', xs.getPixelForValue(50), yBaixo);
+                ctx.fillText('50 (M)', xs.getPixelForValue(50), chartArea.top - 8);
+                ctx.restore();
+
+                // À ESQUERDA: colunas "Bruto" e "T" com valores por escala
+                ctx.save();
+                ctx.textAlign = 'center';
+                // Cabeçalhos
+                ctx.font = '700 10px sans-serif';
+                ctx.fillStyle = '#94a3b8';
+                const xColBruto = chartArea.left - 70;
+                const xColT     = chartArea.left - 30;
+                ctx.fillText('Bruto', xColBruto, chartArea.top - 8);
+                ctx.fillText('T',     xColT,     chartArea.top - 8);
+
+                // Valores em cada linha (alinhados com cada escala no eixo Y)
+                ctx.font = '600 12px sans-serif';
+                ctx.fillStyle = '#334155';
+                for (let i = 0; i < labels.length; i++) {
+                    const y = ys.getPixelForValue(i);
+                    ctx.fillText(String(brutos[i]), xColBruto, y + 4);
+                    ctx.fillText(String(data[i]),   xColT,     y + 4);
+                }
                 ctx.restore();
             }
         };
@@ -522,14 +557,14 @@
                 labels: labels,
                 datasets: [{
                     data: data,
-                    borderColor: '#1e40af',
-                    backgroundColor: 'rgba(30, 64, 175, 0.8)',
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     pointBackgroundColor: '#fff',
-                    pointBorderColor: '#1e40af',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    borderWidth: 2,
+                    pointBorderColor: '#10b981',
+                    pointBorderWidth: 2.5,
+                    pointRadius: 7,
+                    pointHoverRadius: 9,
+                    borderWidth: 2.5,
                     tension: 0
                 }]
             },
@@ -537,7 +572,7 @@
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: { padding: { top: 22, right: 24, bottom: 36, left: 8 } },
+                layout: { padding: { top: 36, right: 24, bottom: 12, left: 96 } },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -553,17 +588,18 @@
                 },
                 scales: {
                     x: {
-                        position: 'bottom',
+                        position: 'top',
                         min: 20, max: 80,
                         ticks: {
-                            stepSize: 10,
+                            stepSize: 5,
                             font: { size: 10 },
                             color: '#94a3b8'
                         },
                         grid: { color: '#f1f5f9' }
                     },
                     y: {
-                        ticks: { font: { size: 11, weight: '600' }, color: '#475569' },
+                        position: 'right',
+                        ticks: { font: { size: 11, weight: '600' }, color: '#1e293b' },
                         grid: { display: false }
                     }
                 }

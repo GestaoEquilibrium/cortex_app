@@ -471,20 +471,32 @@
         const data = SRS2_NORMS.scale_order.map(s => state.scores.tPorEscala[s]);
         const brutos = SRS2_NORMS.scale_order.map(s => state.scores.brutoPorEscala[s]);
 
-        // Plugin: cutoffs, faixa TÍPICO, zonas em cima, 50(M) em cima, colunas Bruto/T à esquerda
+        // Plugin: faixas coloridas por zona, cutoffs, labels TÍPICO/N1/N2/N3 no topo,
+        // 50(M) dentro da faixa TÍPICO, colunas Bruto/T à esquerda
         const cutoffsPlugin = {
             id: 'cutoffsCinza',
             beforeDatasetsDraw: (chart) => {
                 const { ctx, chartArea, scales } = chart;
                 if (!chartArea || !scales.x) return;
                 const xs = scales.x;
+                const yTopArea = chartArea.top;
+                const yBotArea = chartArea.bottom;
 
-                // Faixa azul-clara cobrindo a zona TÍPICO (40 → 60)
+                // Fundos coloridos por zona clínica
+                // TÍPICO (40-60) azul-clarinho · N1 (60-66) amarelo · N2 (66-76) laranja · N3 (76-80) vermelho
+                const zonas = [
+                    { ini: 40, fim: 60, cor: 'rgba(59, 130, 246, 0.08)' }, // TÍPICO
+                    { ini: 60, fim: 66, cor: '#fff2cc' },                  // N1
+                    { ini: 66, fim: 76, cor: '#fce5cd' },                  // N2
+                    { ini: 76, fim: 80, cor: '#f4cccc' }                   // N3
+                ];
                 ctx.save();
-                ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
-                const xTipIni = xs.getPixelForValue(40);
-                const xTipFim = xs.getPixelForValue(60);
-                ctx.fillRect(xTipIni, chartArea.top, xTipFim - xTipIni, chartArea.bottom - chartArea.top);
+                for (const z of zonas) {
+                    const xi = xs.getPixelForValue(z.ini);
+                    const xf = xs.getPixelForValue(z.fim);
+                    ctx.fillStyle = z.cor;
+                    ctx.fillRect(xi, yTopArea, xf - xi, yBotArea - yTopArea);
+                }
                 ctx.restore();
 
                 // Linhas verticais cinza tracejadas nos cutoffs
@@ -495,8 +507,8 @@
                 for (const cutoff of [50, 60, 66, 76]) {
                     const x = xs.getPixelForValue(cutoff);
                     ctx.beginPath();
-                    ctx.moveTo(x, chartArea.top);
-                    ctx.lineTo(x, chartArea.bottom);
+                    ctx.moveTo(x, yTopArea);
+                    ctx.lineTo(x, yBotArea);
                     ctx.stroke();
                 }
                 ctx.restore();
@@ -507,37 +519,46 @@
                 const xs = scales.x;
                 const ys = scales.y;
 
-                // ACIMA do gráfico: TÍPICO (azul) e N1/N2/N3 (cinza-escuro)
+                // Layout vertical no topo (padding-top de 60px no canvas):
+                //   linha 1 (topo): TÍPICO, N1, N2, N3
+                //   linha 2:        50 (M)  — alinhado embaixo de TÍPICO
+                //   linha 3:        números do eixo X (20, 25, 30, ..., desenhados pelo Chart.js)
+                //   chartArea começa logo abaixo
+                const yLinha1 = xs.top - 28;
+                const yLinha2 = xs.top - 12;
+
+                // Linha 1: TÍPICO (azul) e N1/N2/N3 (cinza-escuro)
                 ctx.save();
-                ctx.font = '700 11px sans-serif';
+                ctx.font = '700 12px sans-serif';
                 ctx.textAlign = 'center';
-                const yTopo = chartArea.top - 22;
+                ctx.textBaseline = 'alphabetic';
                 ctx.fillStyle = '#3b82f6';
-                ctx.fillText('TÍPICO', xs.getPixelForValue(50), yTopo);
+                ctx.fillText('TÍPICO', xs.getPixelForValue(50), yLinha1);
                 ctx.fillStyle = '#475569';
-                ctx.fillText('N1', xs.getPixelForValue(63), yTopo);
-                ctx.fillText('N2', xs.getPixelForValue(71), yTopo);
-                ctx.fillText('N3', xs.getPixelForValue(78), yTopo);
+                ctx.fillText('N1', xs.getPixelForValue(63), yLinha1);
+                ctx.fillText('N2', xs.getPixelForValue(71), yLinha1);
+                ctx.fillText('N3', xs.getPixelForValue(78), yLinha1);
                 ctx.restore();
 
-                // ACIMA, logo abaixo de TÍPICO: marcador "50 (M)"
+                // Linha 2: "50 (M)" embaixo de TÍPICO
                 ctx.save();
                 ctx.font = '700 11px sans-serif';
                 ctx.textAlign = 'center';
+                ctx.textBaseline = 'alphabetic';
                 ctx.fillStyle = '#1e40af';
-                ctx.fillText('50 (M)', xs.getPixelForValue(50), chartArea.top - 8);
+                ctx.fillText('50 (M)', xs.getPixelForValue(50), yLinha2);
                 ctx.restore();
 
-                // À ESQUERDA: colunas "Bruto" e "T" com valores por escala
+                // À ESQUERDA: cabeçalhos "Bruto" e "T" alinhados com a linha 1
                 ctx.save();
                 ctx.textAlign = 'center';
-                // Cabeçalhos
-                ctx.font = '700 10px sans-serif';
+                ctx.textBaseline = 'alphabetic';
+                ctx.font = '700 11px sans-serif';
                 ctx.fillStyle = '#94a3b8';
                 const xColBruto = chartArea.left - 70;
                 const xColT     = chartArea.left - 30;
-                ctx.fillText('Bruto', xColBruto, chartArea.top - 8);
-                ctx.fillText('T',     xColT,     chartArea.top - 8);
+                ctx.fillText('Bruto', xColBruto, yLinha1);
+                ctx.fillText('T',     xColT,     yLinha1);
 
                 // Valores em cada linha (alinhados com cada escala no eixo Y)
                 ctx.font = '600 12px sans-serif';
@@ -572,7 +593,7 @@
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: { padding: { top: 36, right: 24, bottom: 12, left: 96 } },
+                layout: { padding: { top: 64, right: 24, bottom: 12, left: 96 } },
                 plugins: {
                     legend: { display: false },
                     tooltip: {

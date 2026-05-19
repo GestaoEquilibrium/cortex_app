@@ -473,13 +473,13 @@
 
         // Cor da bolinha por zona em que o T cai:
         //   Típico (T < 60)        → verde
-        //   N1     (60 ≤ T < 66)   → amarelo claro
-        //   N2     (66 ≤ T < 76)   → laranja claro
-        //   N3     (T ≥ 76)        → vermelho claro
+        //   N1     (60 ≤ T < 66)   → mostarda
+        //   N2     (66 ≤ T < 76)   → laranja
+        //   N3     (T ≥ 76)        → vermelho escuro
         function corPorT(t) {
-            if (t >= 76) return '#f4cccc';
-            if (t >= 66) return '#fce5cd';
-            if (t >= 60) return '#fff2cc';
+            if (t >= 76) return '#9c0006';
+            if (t >= 66) return '#ff9900';
+            if (t >= 60) return '#bf8f00';
             return '#10b981';
         }
         const coresBolinhas = data.map(corPorT);

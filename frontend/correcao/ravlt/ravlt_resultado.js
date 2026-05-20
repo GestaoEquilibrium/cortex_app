@@ -469,13 +469,13 @@
         acoes.style.display = 'flex';
         acoes.innerHTML = `
             <button class="btn btn-secondary" id="btn-editar-brutos">✏️ Editar brutos</button>
-            <button class="btn btn-primary" id="btn-pdf">📄 Gerar PDF</button>
+            <button class="btn btn-primary" id="btn-gerar-pdf">📄 Gerar PDF do relatório</button>
         `;
         document.getElementById('btn-editar-brutos').addEventListener('click', () => {
             state.resultado = null;
             decidirModoERenderizar();
         });
-        document.getElementById('btn-pdf').addEventListener('click', () => window.print());
+        document.getElementById('btn-gerar-pdf').addEventListener('click', gerarPDF);
 
         const laudo = document.getElementById('laudo-conteudo');
         laudo.classList.remove('modo-edicao');
@@ -760,6 +760,61 @@
                 </div>
             </div>
         `;
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // GERAR PDF (html2canvas + jsPDF) — padrão dos demais instrumentos
+    // ────────────────────────────────────────────────────────────────────────
+    async function gerarPDF() {
+        const btn = document.getElementById('btn-gerar-pdf');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳ Gerando PDF...';
+        try {
+            document.body.classList.add('exportando');
+            await new Promise(r => setTimeout(r, 100));
+            const laudo = document.getElementById('laudo-conteudo');
+            if (!laudo) throw new Error('Laudo não encontrado');
+
+            const canvas = await html2canvas(laudo, {
+                scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false
+            });
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const pdfWidth = 210, pdfHeight = 297;
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            if (imgHeight <= pdfHeight) {
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight);
+            } else {
+                let posY = 0, restante = imgHeight;
+                while (restante > 0) {
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, -posY, pdfWidth, imgHeight);
+                    restante -= pdfHeight;
+                    posY += pdfHeight;
+                    if (restante > 0) pdf.addPage();
+                }
+            }
+
+            const nomeAbreviado = (state.paciente?.nome_completo || '').toUpperCase()
+                .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
+            const dataStr = formatarDataArquivo(new Date());
+            const nomeArquivo = `RAVLT - ${nomeAbreviado}_${dataStr}.pdf`;
+            pdf.save(nomeArquivo);
+            if (window.CortexUI?.toast) window.CortexUI.toast('PDF gerado com sucesso', 'success');
+        } catch (err) {
+            console.error('Erro ao gerar PDF:', err);
+            if (window.CortexUI?.toast) window.CortexUI.toast('Erro ao gerar PDF: ' + err.message, 'danger');
+        } finally {
+            document.body.classList.remove('exportando');
+            btn.disabled = false;
+            btn.textContent = orig;
+        }
+    }
+
+    function formatarDataArquivo(d) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
     // ────────────────────────────────────────────────────────────────────────

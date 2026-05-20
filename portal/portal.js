@@ -333,17 +333,26 @@
     }
 
     function renderItemLaudo(l) {
+        const tamanhoKB = l.arquivo_tamanho_bytes
+            ? Math.round(l.arquivo_tamanho_bytes / 1024)
+            : null;
+        const tamanhoTxt = tamanhoKB
+            ? (tamanhoKB > 1024 ? (tamanhoKB/1024).toFixed(1) + ' MB' : tamanhoKB + ' KB')
+            : '';
+        const versaoTxt = (l.versao && l.versao > 1) ? ` · v${l.versao}` : '';
+
         return `
             <div class="app-item">
                 <div class="app-item-info">
-                    <div class="app-item-titulo">Laudo Neuropsicológico</div>
+                    <div class="app-item-titulo">Laudo Neuropsicológico${versaoTxt}</div>
                     <div class="app-item-desc">Responsável: ${escapeHtml(l.profissional_nome || '—')}</div>
                     <div class="app-item-meta">
                         <span class="app-item-data">Liberado em ${formatarDataCurta(l.liberado_em)}</span>
+                        ${tamanhoTxt ? `<span class="app-item-data"> · ${tamanhoTxt}</span>` : ''}
                     </div>
                 </div>
                 <div class="app-item-acao">
-                    <button class="btn-acao btn-acao-secundario" onclick="window.baixarLaudo('${escapeAttr(l.laudo_id)}')">
+                    <button class="btn-acao btn-acao-secundario" onclick="window.baixarLaudo('${escapeAttr(l.laudo_id)}', this)">
                         <i class="ti ti-download"></i> Baixar
                     </button>
                 </div>
@@ -352,15 +361,72 @@
     }
 
     // ─── AÇÕES ────────────────────────────────────────────────────────────
-    window.baixarLaudo = async function(laudoId) {
+    // SPRINT 39: download real do laudo via signed URL do Storage.
+    // Fluxo:
+    //   1. RPC `portal_baixar_laudo(laudo_id)` valida que o laudo pertence
+    //      ao paciente autenticado e retorna { arquivo_path, arquivo_nome }.
+    //   2. `storage.createSignedUrl(path, 60, { download: nome })` gera URL
+    //      temporária (60s) com header Content-Disposition: attachment.
+    //   3. Frontend abre essa URL — o navegador faz o download.
+    window.baixarLaudo = async function(laudoId, btnEl) {
+        const btn = btnEl || null;
+        const txtOriginal = btn ? btn.innerHTML : null;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ti ti-loader"></i> Baixando...';
+        }
+
         try {
-            await client.rpc('portal_log_acesso', {
+            // 1) Pede pro banco validar o laudo e devolver o path
+            const { data, error } = await client.rpc('portal_baixar_laudo', {
+                p_laudo_id: laudoId
+            });
+
+            if (error) throw error;
+            if (!data || data.length === 0) {
+                alert('Laudo não encontrado ou não disponível.');
+                return;
+            }
+
+            const { arquivo_path, arquivo_nome_original } = data[0];
+            const nome = arquivo_nome_original || 'laudo.pdf';
+
+            // 2) Gera signed URL (60s) com header de download
+            const { data: signed, error: signedErr } = await client
+                .storage
+                .from('laudos')
+                .createSignedUrl(arquivo_path, 60, { download: nome });
+
+            if (signedErr) throw signedErr;
+            if (!signed?.signedUrl) throw new Error('Não foi possível gerar o link de download.');
+
+            // 3) Registra auditoria (não bloqueia o download)
+            client.rpc('portal_log_acesso', {
                 p_acao: 'baixou_laudo',
                 p_recurso_id: laudoId,
-                p_detalhes: {}
-            });
-        } catch (e) { /* ignore */ }
-        alert('Download de laudo em construção. Em breve disponível.');
+                p_detalhes: { arquivo: nome }
+            }).catch(() => { /* ignore */ });
+
+            // 4) Dispara o download. Tentamos primeiro o método "âncora invisível"
+            //    porque é o mais compatível com mobile (Safari iOS, Chrome Android).
+            const a = document.createElement('a');
+            a.href = signed.signedUrl;
+            a.download = nome;
+            a.rel = 'noopener';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+        } catch (err) {
+            console.error('Erro ao baixar laudo:', err);
+            alert('Não foi possível baixar o laudo. Tente novamente em alguns segundos.');
+        } finally {
+            if (btn && txtOriginal !== null) {
+                btn.disabled = false;
+                btn.innerHTML = txtOriginal;
+            }
+        }
     };
 
     async function logout() {

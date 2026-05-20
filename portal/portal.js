@@ -401,11 +401,15 @@
             if (!signed?.signedUrl) throw new Error('Não foi possível gerar o link de download.');
 
             // 3) Registra auditoria (não bloqueia o download)
-            client.rpc('portal_log_acesso', {
-                p_acao: 'baixou_laudo',
-                p_recurso_id: laudoId,
-                p_detalhes: { arquivo: nome }
-            }).catch(() => { /* ignore */ });
+            //    Nota: client.rpc retorna PostgrestBuilder, não Promise pura,
+            //    então não suporta .catch() direto. Usamos try/catch.
+            try {
+                client.rpc('portal_log_acesso', {
+                    p_acao: 'baixou_laudo',
+                    p_recurso_id: laudoId,
+                    p_detalhes: { arquivo: nome }
+                });
+            } catch (e) { /* ignore */ }
 
             // 4) Dispara o download. Tentamos primeiro o método "âncora invisível"
             //    porque é o mais compatível com mobile (Safari iOS, Chrome Android).

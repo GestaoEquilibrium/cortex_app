@@ -491,20 +491,24 @@
 
     function renderHeaderLaudo() {
         const r = state.resultado;
+        const idadeStr = `${r.idade_anos}a${r.idade_meses ? ' ' + r.idade_meses + 'm' : ''}`;
         return `
-            <div class="fdt-header-laudo">
-                <div class="fdt-header-brand">EQUILIBRIUM NEUROPSICOLOGIA</div>
-                <div class="fdt-header-titulo-row">
-                    <div>
-                        <div class="fdt-header-sigla">FDT</div>
-                        <div class="fdt-header-subtitulo">${escapeHtml(NOME_INSTRUMENTO)}</div>
-                        <div class="fdt-header-en">Five Digit Test · Atenção, Controle Inibitório e Flexibilidade Cognitiva</div>
+            <div class="laudo-header">
+                <div class="laudo-header-esq">
+                    <div class="laudo-header-logo">E</div>
+                    <div class="laudo-header-textos">
+                        <div class="laudo-header-supratitulo">Relatório Neuropsicológico</div>
+                        <h1 class="laudo-header-titulo">FDT</h1>
+                        <div class="laudo-header-subtitulo">
+                            ${escapeHtml(NOME_INSTRUMENTO)}<br>
+                            Five Digit Test · Atenção, Controle Inibitório e Flexibilidade Cognitiva
+                        </div>
                     </div>
-                    <div class="fdt-header-faixa">
-                        <div class="fdt-header-faixa-label">FAIXA NORMATIVA</div>
-                        <div class="fdt-header-faixa-valor">${escapeHtml(r.faixa_norma)}</div>
-                        <div class="fdt-header-faixa-idade">${r.idade_anos}a ${r.idade_meses}m</div>
-                    </div>
+                </div>
+                <div class="laudo-header-pontuacao">
+                    <div class="laudo-header-pontuacao-label">Faixa Normativa</div>
+                    <div class="laudo-header-pontuacao-valor">${escapeHtml(r.faixa_norma)}</div>
+                    <div class="laudo-header-pontuacao-max" style="font-size:11px;">Idade: ${idadeStr}</div>
                 </div>
             </div>
         `;

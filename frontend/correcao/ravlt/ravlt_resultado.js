@@ -493,20 +493,24 @@
 
     function renderHeaderLaudo() {
         const r = state.resultado;
+        const idadeStr = `${r.idade_anos}a${r.idade_meses ? ' ' + r.idade_meses + 'm' : ''}`;
         return `
-            <div class="ravlt-header-laudo">
-                <div class="ravlt-header-brand">EQUILIBRIUM NEUROPSICOLOGIA</div>
-                <div class="ravlt-header-titulo-row">
-                    <div>
-                        <div class="ravlt-header-sigla">RAVLT</div>
-                        <div class="ravlt-header-subtitulo">${escapeHtml(NOME_INSTRUMENTO)}</div>
-                        <div class="ravlt-header-en">Rey Auditory Verbal Learning Test</div>
+            <div class="laudo-header">
+                <div class="laudo-header-esq">
+                    <div class="laudo-header-logo">E</div>
+                    <div class="laudo-header-textos">
+                        <div class="laudo-header-supratitulo">Relatório Neuropsicológico</div>
+                        <h1 class="laudo-header-titulo">RAVLT</h1>
+                        <div class="laudo-header-subtitulo">
+                            ${escapeHtml(NOME_INSTRUMENTO)}<br>
+                            Rey Auditory Verbal Learning Test
+                        </div>
                     </div>
-                    <div class="ravlt-header-faixa">
-                        <div class="ravlt-header-faixa-label">FAIXA NORMATIVA</div>
-                        <div class="ravlt-header-faixa-valor">${escapeHtml(r.faixa_norma)}</div>
-                        <div class="ravlt-header-faixa-idade">${r.idade_anos}a ${r.idade_meses}m</div>
-                    </div>
+                </div>
+                <div class="laudo-header-pontuacao">
+                    <div class="laudo-header-pontuacao-label">Faixa Normativa</div>
+                    <div class="laudo-header-pontuacao-valor">${escapeHtml(r.faixa_norma)}</div>
+                    <div class="laudo-header-pontuacao-max" style="font-size:11px;">Idade: ${idadeStr}</div>
                 </div>
             </div>
         `;

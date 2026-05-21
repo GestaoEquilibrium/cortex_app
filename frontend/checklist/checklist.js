@@ -114,7 +114,7 @@
         const idadeAnos = state.paciente.idade_anos;
         if (idadeAnos < 6) {
             state.faixaPaciente = 'pre_escolar';
-        } else if (idadeAnos < 16) {
+        } else if (idadeAnos < 18) {
             state.faixaPaciente = 'escolar';
         } else {
             state.faixaPaciente = 'adulto';

@@ -271,11 +271,15 @@ serve(async (req) => {
             throw new Error("Aplicação sem data preenchida.");
         }
 
-        // 3. Idade na data de aplicação + validação de faixa (18-75)
+        // 3. Idade na data de aplicação
+        //    Aviso (não bloqueia) se idade fora 18-75 — decisão clínica:
+        //    o legado (app.neuroequilibrium) não validava idade, e a clínica
+        //    permite aplicar BFP em 16-17 anos usando a norma adulta.
+        //    (Sprint Wess 2026-05-21)
         const idade = calcularIdade(paciente.data_nascimento, aplicacao.data_aplicacao);
         if (!idade) throw new Error("Não foi possível calcular idade.");
         if (idade.anos < 18 || idade.anos > 75) {
-            throw new Error(`Idade ${idade.anos} fora da faixa normativa do BFP (18-75 anos).`);
+            console.warn(`[bfp-calcular] Idade ${idade.anos} fora da faixa normativa 18-75. Calculando com norma adulta padrão.`);
         }
 
         // 4. Brutos

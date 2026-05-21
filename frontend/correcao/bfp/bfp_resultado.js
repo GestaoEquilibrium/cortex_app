@@ -503,9 +503,16 @@
                 return;
             }
             const idade = calcularIdadeAnos(state.paciente.data_nascimento, dados.data_aplicacao);
-            if (idade == null || idade < 18 || idade > 75) {
-                window.CortexUI.toast(`Idade ${idade ?? '?'} fora da faixa normativa (18-75 anos)`, 'danger');
+            // Aviso (não bloqueia) se idade fora da faixa normativa 18-75.
+            // O legado (app.neuroequilibrium) não validava idade, e a decisão
+            // clínica aqui foi permitir cálculo fora da norma com aviso visual
+            // (Sprint Wess 2026-05-21).
+            if (idade == null) {
+                window.CortexUI.toast('Não foi possível calcular a idade (verifique data de aplicação e nascimento)', 'danger');
                 return;
+            }
+            if (idade < 18 || idade > 75) {
+                window.CortexUI.toast(`⚠ Idade ${idade} fora da faixa normativa BFP (18-75). Cálculo usará a norma adulta padrão.`, 'warning');
             }
             if (Object.keys(dados.respostas).length === 0) {
                 window.CortexUI.toast('Insira pelo menos 1 resposta pra calcular', 'danger');

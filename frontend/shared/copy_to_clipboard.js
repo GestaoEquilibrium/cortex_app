@@ -64,6 +64,9 @@
             '.laudo-detalhes-tabela',              // Tabela "Ver detalhes" (todos D3)
             '.laudo-barra-container',              // Barra de pontuação (RAADS-R, EQ-15)
 
+            // ─── Genéricos adicionais (Sprint 50) ───
+            '[class*="-tabela-"]',                 // Tabelas por instrumento (.ysqs3-tabela-itens, .tiahs-tabela-itens, .etcd-tabela-itens, etc.)
+
             // ─── BAARS-IV ───
             '.baars-cards-row',                    // Linha de cards principais
             '.baars-sub-card',                     // Card de subtipo

@@ -266,6 +266,11 @@
                    <i class="ti ti-pencil"></i> Responder
                </button>`;
 
+        // Tag de respondente (Sprint 53) — só se item.tipo_respondente vier da RPC
+        const tagRespondente = (item.tipo_respondente && window.CortexRespondente && !isConcluido)
+            ? `<div style="margin-top:8px;">${window.CortexRespondente.gerarTag(item.tipo_respondente)}</div>`
+            : '';
+
         return `
             <div class="app-item">
                 <div class="app-item-info">
@@ -275,6 +280,7 @@
                         <span class="badge badge-${item.status}">${formatStatus(item.status)}</span>
                         ${!isConcluido ? `<span class="app-item-data">Enviado em ${formatarDataCurta(item.created_at)}</span>` : ''}
                     </div>
+                    ${tagRespondente}
                 </div>
                 <div class="app-item-acao">${acao}</div>
             </div>

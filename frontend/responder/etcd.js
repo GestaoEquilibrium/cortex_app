@@ -221,6 +221,7 @@
     function renderConsentimento() {
         return `
             <div class="tela-consentimento">
+                ${(window.CortexRespondente && state.instrumento && state.instrumento.tipo_respondente) ? window.CortexRespondente.gerarBanner(state.instrumento.tipo_respondente) : ''}
                 <h1>Olá!</h1>
                 <p class="subtitulo">Você foi convidado(a) a responder o questionário <strong>${escapeHtml(state.norma.versao_label)}</strong>.</p>
 

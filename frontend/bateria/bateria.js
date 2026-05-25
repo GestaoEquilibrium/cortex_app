@@ -213,7 +213,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_label, permite_aplicacao_online, permite_correcao_sistema, tipo_aplicacao')
+            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_label, permite_aplicacao_online, permite_correcao_sistema, tipo_aplicacao, tipo_respondente')
             .order('sigla');
 
         if (error) throw new Error('Erro ao carregar catálogo: ' + error.message);
@@ -557,25 +557,53 @@
     // MODAL DE LINK GERADO (D3)
     // ============================================================================
 
-    function abrirModalLink(url, sigla, primeiroNome) {
+    function abrirModalLink(url, sigla, primeiroNome, tipoRespondente) {
+        tipoRespondente = tipoRespondente || 'paciente';
+
         // Tenta copiar pra área de transferência
         try {
             navigator.clipboard?.writeText(url);
         } catch(e) { /* sem permissão */ }
 
-        // Mensagem WhatsApp pronta
-        const msgBase = primeiroNome
-            ? `Olá, ${primeiroNome}! Seu profissional da Equilibrium enviou um questionário pra você responder. ` +
-              `É rápido (5-10 minutos) e pode ser feito pelo celular. Aqui o link: ${url}`
-            : `Olá! Seu profissional da Equilibrium enviou um questionário pra você responder. ` +
-              `É rápido (5-10 minutos) e pode ser feito pelo celular. Aqui o link: ${url}`;
+        // Mensagem WhatsApp pronta — adaptada ao tipo de respondente
+        let msgBase;
+        if (tipoRespondente === 'professor') {
+            msgBase = primeiroNome
+                ? `Olá! A Equilibrium Neuropsicologia está realizando uma avaliação do(a) aluno(a) ${primeiroNome} ` +
+                  `e gostaria de pedir sua colaboração como professor(a). É um questionário rápido (10-15 minutos). ` +
+                  `Aqui o link: ${url}`
+                : `Olá! A Equilibrium Neuropsicologia está realizando uma avaliação e gostaria de pedir ` +
+                  `sua colaboração como professor(a). É um questionário rápido (10-15 minutos). Aqui o link: ${url}`;
+        } else if (tipoRespondente === 'responsavel' || tipoRespondente === 'responsavel_ou_professor') {
+            msgBase = primeiroNome
+                ? `Olá! Seu profissional da Equilibrium enviou um questionário sobre ${primeiroNome} pra você (pai, mãe ou responsável) responder. ` +
+                  `É rápido (5-15 minutos) e pode ser feito pelo celular. Aqui o link: ${url}`
+                : `Olá! Seu profissional da Equilibrium enviou um questionário para o pai, mãe ou responsável responder. ` +
+                  `É rápido (5-15 minutos) e pode ser feito pelo celular. Aqui o link: ${url}`;
+        } else {
+            // paciente ou paciente_ou_responsavel — texto padrão
+            msgBase = primeiroNome
+                ? `Olá, ${primeiroNome}! Seu profissional da Equilibrium enviou um questionário pra você responder. ` +
+                  `É rápido (5-15 minutos) e pode ser feito pelo celular. Aqui o link: ${url}`
+                : `Olá! Seu profissional da Equilibrium enviou um questionário pra você responder. ` +
+                  `É rápido (5-15 minutos) e pode ser feito pelo celular. Aqui o link: ${url}`;
+        }
         const msgWhats = encodeURIComponent(msgBase);
+
+        // Banner contextual usa a função compartilhada se carregada (Sprint 53)
+        const bannerHtml = (window.CortexRespondente && tipoRespondente)
+            ? window.CortexRespondente.gerarBanner(tipoRespondente)
+            : '';
+
+        // Botão "Enviar para professor" — só quando exclusivamente professor
+        const ehProfessor = (tipoRespondente === 'professor');
+        const labelEnvio = ehProfessor ? '💬 Enviar ao professor pelo WhatsApp' : '💬 Enviar pelo WhatsApp';
 
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
         overlay.innerHTML = `
-            <div style="background:white;border-radius:16px;max-width:560px;width:100%;padding:28px;box-shadow:0 12px 40px rgba(0,0,0,.2);">
+            <div style="background:white;border-radius:16px;max-width:580px;width:100%;padding:28px;box-shadow:0 12px 40px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto;">
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
                     <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#1e40af 0%,#059669 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;">📲</div>
                     <div>
@@ -584,11 +612,9 @@
                     </div>
                 </div>
 
-                <p style="font-size:13px;color:#475569;margin-bottom:14px;line-height:1.6;">
-                    Envie este link ao paciente. Ele(a) responderá pelo celular ou computador, sem precisar fazer login.
-                </p>
+                ${bannerHtml}
 
-                <label style="display:block;font-size:11px;color:#64748b;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;">Link do paciente</label>
+                <label style="display:block;font-size:11px;color:#64748b;font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;">Link</label>
                 <div style="display:flex;gap:8px;margin-bottom:18px;">
                     <input id="modal-link-input" type="text" value="${escapeHtml(url)}" readonly
                         style="flex:1;padding:11px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;font-family:'SF Mono',Consolas,monospace;background:#f8fafc;color:#1e293b;"
@@ -602,7 +628,7 @@
                 <div style="display:flex;gap:10px;">
                     <a href="https://wa.me/?text=${msgWhats}" target="_blank" rel="noopener"
                         style="flex:1;text-align:center;padding:12px;background:#25d366;color:white;text-decoration:none;border-radius:10px;font-weight:600;font-size:13.5px;">
-                        💬 Enviar pelo WhatsApp
+                        ${labelEnvio}
                     </a>
                     <button id="modal-link-fechar"
                         style="padding:12px 22px;background:#e2e8f0;color:#334155;border:none;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit;">
@@ -683,7 +709,11 @@
                     nomePaciente = (p?.nome_completo || '').split(' ')[0];
                 } catch(e) { /* ignora */ }
 
-                abrirModalLink(url, sigla, nomePaciente);
+                // Descobre o tipo de respondente do catálogo (Sprint 53)
+                const instCat = state.catalogo.find(i => i.sigla === sigla);
+                const tipoRespondente = instCat?.tipo_respondente || 'paciente';
+
+                abrirModalLink(url, sigla, nomePaciente, tipoRespondente);
 
                 // Atualiza estado local pra mostrar "Reenviar link"
                 const apl = state.aplicacoes.find(a => a.id === aplicacaoId);

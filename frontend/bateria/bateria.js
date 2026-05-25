@@ -357,9 +357,16 @@
             </div>
         `;
 
-        const ORDEM = ['Inteligência', 'Desenvolvimento Infantil', 'Atenção/Memória',
-                       'Funções Executivas', 'Linguagem', 'TEA/Autismo', 'TDAH',
-                       'Humor/Ansiedade', 'Personalidade', 'Sensorial'];
+        const ORDEM = ['Inteligência / Raciocínio',
+                       'Linguagem / Leitura / Escrita / Matemática',
+                       'Atenção / Memória',
+                       'Funções Executivas',
+                       'TEA / Autismo',
+                       'TDAH / Comportamento',
+                       'Humor / Ansiedade / Depressão',
+                       'Personalidade / Habilidades Sociais / Adaptativo',
+                       'Desenvolvimento Infantil',
+                       'Sensorial'];
 
         const categoriasOrdenadas = ORDEM.filter(c => state.agrupado[c]);
         Object.keys(state.agrupado).forEach(c => {

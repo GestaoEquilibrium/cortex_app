@@ -184,17 +184,17 @@
             </div>
         ` : '';
 
-        // Lista por categoria (mantém ordem dos PDFs)
+        // Lista por categoria (mantém ordem dos PDFs Equilibrium oficiais)
         const ORDEM_CATEGORIAS = [
-            'Inteligência',
-            'Desenvolvimento Infantil',
-            'Atenção/Memória',
+            'Inteligência / Raciocínio',
+            'Linguagem / Leitura / Escrita / Matemática',
+            'Atenção / Memória',
             'Funções Executivas',
-            'Linguagem',
-            'TEA/Autismo',
-            'TDAH',
-            'Humor/Ansiedade',
-            'Personalidade',
+            'TEA / Autismo',
+            'TDAH / Comportamento',
+            'Humor / Ansiedade / Depressão',
+            'Personalidade / Habilidades Sociais / Adaptativo',
+            'Desenvolvimento Infantil',
             'Sensorial'
         ];
 
@@ -260,15 +260,15 @@
 
     function iconeCategoria(cat) {
         const icones = {
-            'Inteligência': '🧠',
-            'Desenvolvimento Infantil': '🌱',
-            'Atenção/Memória': '🎯',
+            'Inteligência / Raciocínio': '🧠',
+            'Linguagem / Leitura / Escrita / Matemática': '💬',
+            'Atenção / Memória': '🎯',
             'Funções Executivas': '⚙️',
-            'Linguagem': '💬',
-            'TEA/Autismo': '🧩',
-            'TDAH': '⚡',
-            'Humor/Ansiedade': '💭',
-            'Personalidade': '🌈',
+            'TEA / Autismo': '🧩',
+            'TDAH / Comportamento': '⚡',
+            'Humor / Ansiedade / Depressão': '💭',
+            'Personalidade / Habilidades Sociais / Adaptativo': '🌈',
+            'Desenvolvimento Infantil': '🌱',
             'Sensorial': '🎨'
         };
         return icones[cat] || '📋';
@@ -420,14 +420,14 @@
 
     // Mapeamento de categorias → bullet color class (usado no PDF)
     const BULLET_CATEGORIA = {
-        'Inteligência': 'bullet-inteligencia',
-        'Atenção/Memória': 'bullet-atencao',
+        'Inteligência / Raciocínio': 'bullet-inteligencia',
+        'Linguagem / Leitura / Escrita / Matemática': 'bullet-linguagem',
+        'Atenção / Memória': 'bullet-atencao',
         'Funções Executivas': 'bullet-funcoes-exec',
-        'Linguagem': 'bullet-linguagem',
-        'TEA/Autismo': 'bullet-tea',
-        'TDAH': 'bullet-tdah',
-        'Humor/Ansiedade': 'bullet-humor',
-        'Personalidade': 'bullet-personalidade',
+        'TEA / Autismo': 'bullet-tea',
+        'TDAH / Comportamento': 'bullet-tdah',
+        'Humor / Ansiedade / Depressão': 'bullet-humor',
+        'Personalidade / Habilidades Sociais / Adaptativo': 'bullet-personalidade',
         'Desenvolvimento Infantil': 'bullet-desenvolvimento',
         'Sensorial': 'bullet-sensorial'
     };
@@ -531,9 +531,16 @@
                         <tbody>
         `;
 
-        const ORDEM = ['Inteligência', 'Desenvolvimento Infantil', 'Atenção/Memória',
-                       'Funções Executivas', 'Linguagem', 'TEA/Autismo', 'TDAH',
-                       'Humor/Ansiedade', 'Personalidade', 'Sensorial'];
+        const ORDEM = ['Inteligência / Raciocínio',
+                       'Linguagem / Leitura / Escrita / Matemática',
+                       'Atenção / Memória',
+                       'Funções Executivas',
+                       'TEA / Autismo',
+                       'TDAH / Comportamento',
+                       'Humor / Ansiedade / Depressão',
+                       'Personalidade / Habilidades Sociais / Adaptativo',
+                       'Desenvolvimento Infantil',
+                       'Sensorial'];
 
         const categorias = ORDEM.filter(c => agrupado[c]);
         Object.keys(agrupado).forEach(c => { if (!categorias.includes(c)) categorias.push(c); });

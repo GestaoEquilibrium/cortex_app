@@ -53,7 +53,7 @@
                 <i class="ti ti-bell" aria-hidden="true"></i>
                 <div class="inicio-alerta-texto">
                     <div class="inicio-alerta-titulo" id="inicio-alerta-titulo"></div>
-                    <div class="inicio-alerta-dica" id="inicio-alerta-dica">Toque nas abas abaixo para responder</div>
+                    <div class="inicio-alerta-dica">Toque em "Testes" abaixo pra responder</div>
                 </div>
             </div>
 
@@ -61,17 +61,6 @@
             <div class="inicio-secao-label">Acessar</div>
 
             <div class="inicio-atalhos">
-                <button class="atalho-card" data-go="anamnese" type="button">
-                    <div class="atalho-card-icone atalho-icone-anamnese">
-                        <i class="ti ti-clipboard-text" aria-hidden="true"></i>
-                    </div>
-                    <div class="atalho-card-conteudo">
-                        <div class="atalho-card-titulo">Minha anamnese</div>
-                        <div class="atalho-card-desc" id="atalho-anamnese-desc">—</div>
-                    </div>
-                    <i class="ti ti-chevron-right atalho-card-seta" aria-hidden="true"></i>
-                </button>
-
                 <button class="atalho-card" data-go="testes" type="button">
                     <div class="atalho-card-icone atalho-icone-testes">
                         <i class="ti ti-clipboard-list" aria-hidden="true"></i>
@@ -130,21 +119,6 @@
             </div>
         </section>
 
-        <!-- ABA ANAMNESE (Sprint 57) -->
-        <section class="app-page" id="page-anamnese" data-page="anamnese" hidden>
-            <div id="lista-anamnese-bloco" style="display:none;">
-                <div class="app-grupo-label">
-                    Anamnese pendente <span id="num-anamnese-pend">(0)</span>
-                </div>
-                <div id="lista-anamnese" class="app-lista"></div>
-            </div>
-
-            <div class="app-empty" id="anamnese-vazio" style="display:none;">
-                <i class="ti ti-clipboard-text" aria-hidden="true"></i>
-                <p>Você não tem anamneses pendentes no momento.<br>Quando a equipe clínica disponibilizar uma, ela aparece aqui.</p>
-            </div>
-        </section>
-
         <!-- ABA AGENDA -->
         <section class="app-page" id="page-agenda" data-page="agenda" hidden>
             <div id="lista-agenda-bloco" style="display:none;">
@@ -182,10 +156,6 @@
         <button class="tab-item is-active" data-tab="inicio">
             <i class="ti ti-home" aria-hidden="true"></i>
             <span>Início</span>
-        </button>
-        <button class="tab-item" data-tab="anamnese">
-            <i class="ti ti-clipboard-text" aria-hidden="true"></i>
-            <span>Anamnese</span>
         </button>
         <button class="tab-item" data-tab="testes">
             <i class="ti ti-clipboard-list" aria-hidden="true"></i>

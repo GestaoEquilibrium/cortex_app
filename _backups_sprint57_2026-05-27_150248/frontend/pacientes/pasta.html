@@ -1201,11 +1201,11 @@
         // Sprint 17: cards de respostas remotas SEMPRE no topo, independente do estado da anamnese
         const cardsRemotos = renderCardsAnamnesesRemotas();
 
-        // Botão "Enviar para o portal" — SEMPRE disponível
+        // Botão "Enviar formulário remoto" também SEMPRE disponível
         const btnEnviarRemoto = `
             <div class="anamnese-acoes-topo">
-                <button class="btn btn-secondary btn-sm" onclick="enviarAnamnesePortal()" title="Disponibiliza a anamnese pro paciente responder pelo portal">
-                    📲 Enviar para o portal
+                <button class="btn btn-secondary btn-sm" onclick="enviarAnamneseRemota()" title="Gera link pra paciente preencher antes da sessão">
+                    📧 Enviar formulário remoto
                 </button>
             </div>
         `;
@@ -1317,7 +1317,7 @@
                     <div class="anamnese-card-remoto-pasta anamnese-card-remoto-pendente" style="opacity:.65;">
                         <div class="anamnese-card-remoto-pasta-info">
                             <div class="anamnese-card-remoto-pasta-titulo">⌛ Link expirado em ${dataExpStr}</div>
-                            <div class="anamnese-card-remoto-pasta-sub">Disponibilize uma nova anamnese no portal pra reenviar.</div>
+                            <div class="anamnese-card-remoto-pasta-sub">Gere um novo link para reenviar ao paciente.</div>
                         </div>
                         <div class="anamnese-card-remoto-pasta-acoes">
                             <button class="btn btn-secondary btn-sm" onclick="cancelarTokenRemoto('${t.token}')">Remover</button>
@@ -1329,11 +1329,11 @@
             return `
                 <div class="anamnese-card-remoto-pasta anamnese-card-remoto-pendente">
                     <div class="anamnese-card-remoto-pasta-info">
-                        <div class="anamnese-card-remoto-pasta-titulo">⏳ Anamnese disponível no portal — aguardando resposta</div>
-                        <div class="anamnese-card-remoto-pasta-sub">Enviado em ${dataEnv} · válido até ${dataExpStr}. Quando o paciente responder, as respostas vão direto pra anamnese.</div>
+                        <div class="anamnese-card-remoto-pasta-titulo">⏳ Formulário enviado em ${dataEnv} — aguardando resposta</div>
+                        <div class="anamnese-card-remoto-pasta-sub">Link válido até ${dataExpStr}. Quando o paciente preencher, as respostas vão direto pra anamnese.</div>
                     </div>
                     <div class="anamnese-card-remoto-pasta-acoes">
-                        <button class="btn btn-secondary btn-sm" onclick="avisarPortalWhatsApp()">📱 Avisar por WhatsApp</button>
+                        <button class="btn btn-secondary btn-sm" onclick="copiarLinkRemoto('${t.token}')">Copiar link</button>
                         <button class="btn btn-secondary btn-sm" onclick="cancelarTokenRemoto('${t.token}')">Cancelar</button>
                     </div>
                 </div>
@@ -1351,12 +1351,10 @@
         return 'cinquenta_mais';
     }
 
-    // Sprint 57: disponibiliza a anamnese no portal do paciente.
-    // - Garante que exista uma anamnese (cria vazia se for a primeira vez)
-    // - Insere um token na anamneses_tokens_publicos (expira em 7 dias)
-    // - Silêncio total (sem modal, sem WhatsApp): só registra e mostra toast
-    // - O paciente vê o card "Responder anamnese" na aba Anamnese do portal
-    async function enviarAnamnesePortal() {
+    // Sprint 56: gera link público via anamneses_tokens_publicos.
+    // Se a anamnese ainda não existir, cria uma vazia (faixa pela idade) — o
+    // paciente vai preencher diretamente nela via canal público.
+    async function enviarAnamneseRemota() {
         try {
             // 1) Garante que existe uma anamnese pra esse paciente
             let anamneseId = anamneseExistente?.id;
@@ -1378,8 +1376,8 @@
                 anamneseExistente = nova;
             }
 
-            // 2) Cria o token público (a publica vai consumir esse token)
-            const { error: errTok } = await window.cortexClient
+            // 2) Cria o token público (expira em 7 dias por default da tabela)
+            const { data: tokenRow, error: errTok } = await window.cortexClient
                 .from('anamneses_tokens_publicos')
                 .insert({
                     anamnese_id: anamneseId,
@@ -1389,57 +1387,67 @@
                     paciente_data_nascimento: paciente.data_nascimento,
                     faixa_etaria: faixa,
                     created_by: window.cortexProfissional.id
-                });
+                })
+                .select('token')
+                .single();
             if (errTok) throw errTok;
 
-            // 3) Toast e refresh da pasta (cards "aguardando" aparecem)
-            window.CortexUI.toast('Anamnese disponibilizada no portal do paciente.', 'success');
+            // 3) Monta o link e mostra modal
+            const base = window.location.origin + window.location.pathname.replace(/pacientes\/pasta\.html$/, '');
+            const link = `${base}anamnese-publica/index.html?t=${tokenRow.token}`;
+
+            mostrarModalLinkRemoto(link);
+
+            // 4) Recarrega lista pra mostrar o card "aguardando resposta"
             await carregarRespostasRemotas();
             renderizarPasta();
         } catch (err) {
-            console.error('Erro ao disponibilizar anamnese no portal:', err);
-            window.CortexUI.toast('Erro: ' + (err.message || ''), 'danger');
+            console.error('Erro ao gerar link remoto:', err);
+            window.CortexUI.toast('Erro ao gerar link: ' + (err.message || ''), 'danger');
         }
     }
 
-    // Sprint 57: mensagem de WhatsApp avisando que a anamnese está disponível
-    // no portal — NÃO envia link direto, manda o paciente entrar no portal e
-    // responder por lá (login com CPF, mesmo fluxo do "Enviar acesso ao portal").
-    async function avisarPortalWhatsApp() {
-        if (!paciente) {
-            window.CortexUI.toast('Paciente não carregado.', 'danger');
-            return;
-        }
+    // Sprint 56: copia o link de um token público existente (já guardado no respostasRemotas)
+    function copiarLinkRemoto(token) {
+        const base = window.location.origin + window.location.pathname.replace(/pacientes\/pasta\.html$/, '');
+        const link = `${base}anamnese-publica/index.html?t=${token}`;
+        mostrarModalLinkRemoto(link);
+    }
 
-        // Telefone preferido: mãe > pai > responsável > paciente
-        let tel = paciente.mae_telefone || paciente.pai_telefone
-               || paciente.responsavel_telefone || paciente.telefone;
-        let telLimpo = tel ? String(tel).replace(/\D/g, '') : '';
-        if (telLimpo.length === 10 || telLimpo.length === 11) {
-            telLimpo = '55' + telLimpo;
-        }
-
-        const urlPortal = 'https://cortexneuro.com.br/portal/';
-        const primeiroNome = (paciente.nome_completo || '').split(' ')[0];
-
-        const msg = `Olá! Aqui é da Equilibrium Neuropsicologia.\n\n` +
-                    `Disponibilizamos uma anamnese para ${primeiroNome} responder pelo nosso Portal do Paciente.\n\n` +
-                    `🔐 Acesse: ${urlPortal}\n\n` +
-                    `Entre com o CPF do paciente como login (se ainda não tem o acesso, peça pra clínica liberar).\n` +
-                    `Após login, vá na aba *Anamnese* e clique em *Responder*.\n\n` +
-                    `Qualquer dúvida, é só nos chamar.`;
-
-        const encoded = encodeURIComponent(msg);
-
-        if (telLimpo && telLimpo.length >= 12) {
-            window.open(`https://wa.me/${telLimpo}?text=${encoded}`, '_blank');
-        } else {
-            try {
-                await navigator.clipboard.writeText(msg);
-                window.CortexUI.toast('Mensagem copiada. Abrindo WhatsApp Web...', 'info');
-            } catch (e) { /* ignore */ }
-            window.open('https://web.whatsapp.com/', '_blank');
-        }
+    function mostrarModalLinkRemoto(link) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+        const msgWhats = encodeURIComponent(
+            'Olá! Aqui está o link do formulário pré-avaliação que falamos. Preencha com calma:\n\n' + link
+        );
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Link do formulário remoto</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin: 0 0 14px; color: #475569; font-size: 14px;">Copie o link abaixo e envie ao paciente ou responsável:</p>
+                    <input type="text" class="form-input" id="link-remoto-input" readonly value="${escapeHtml(link)}" style="width: 100%; font-size: 13px;">
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button class="btn btn-secondary" id="btn-copiar-remoto" style="flex: 1;">📋 Copiar link</button>
+                        <a class="btn btn-primary" style="flex: 1; text-decoration: none; text-align: center;"
+                           href="https://wa.me/?text=${msgWhats}" target="_blank" rel="noopener">📱 Enviar por WhatsApp</a>
+                    </div>
+                    <p style="margin: 18px 0 0; color: #64748b; font-size: 12.5px; font-style: italic;">
+                        💡 O link expira em 7 dias ou quando o paciente enviar as respostas. Se precisar reenviar depois disso, gere um novo.
+                    </p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        document.getElementById('btn-copiar-remoto').addEventListener('click', () => {
+            const inp = document.getElementById('link-remoto-input');
+            inp.select();
+            document.execCommand('copy');
+            window.CortexUI.toast('Link copiado!', 'success');
+        });
     }
 
     // Sprint 56: cancela um link remoto (seta expires_at = NOW(), o que faz a

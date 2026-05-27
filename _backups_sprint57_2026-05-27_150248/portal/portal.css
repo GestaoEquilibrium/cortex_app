@@ -363,7 +363,6 @@ body.portal-app {
     font-size: 22px;
 }
 
-.atalho-icone-anamnese { background: #ede9fe; color: #5b21b6; }
 .atalho-icone-testes  { background: #fef3c7; color: #92400e; }
 .atalho-icone-agenda  { background: #dbeafe; color: #1e40af; }
 .atalho-icone-laudos  { background: #d1fae5; color: #065f46; }
@@ -582,7 +581,7 @@ body.portal-app {
     background: #fff;
     border-top: 1px solid #e2e8f0;
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* Sprint 57: 5 abas (era 4) */
+    grid-template-columns: repeat(4, 1fr);
     z-index: 100;
     padding-bottom: env(safe-area-inset-bottom);
 }
@@ -600,11 +599,11 @@ body.portal-app {
 }
 
 .tab-item .ti {
-    font-size: 21px; /* Sprint 57: reduzido pra caber 5 abas */
+    font-size: 22px;
 }
 
 .tab-item span {
-    font-size: 9.5px; /* Sprint 57: reduzido pra caber 5 abas */
+    font-size: 10px;
     font-weight: 500;
 }
 

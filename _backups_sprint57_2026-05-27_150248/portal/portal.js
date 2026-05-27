@@ -28,7 +28,6 @@
 
     const state = {
         abaAtiva: 'inicio',
-        anamneses: null,        // Sprint 57: anamneses pendentes (tokens)
         instrumentos: null,
         agendamentos: null,
         laudos: null,
@@ -102,7 +101,6 @@
         // Atualiza título do header
         const titulos = {
             inicio: '',
-            anamnese: 'Minha anamnese',
             testes: 'Meus testes',
             agenda: 'Minha agenda',
             laudos: 'Meus laudos'
@@ -121,27 +119,12 @@
     // ─── CARGA INICIAL DOS DADOS ──────────────────────────────────────────
     async function carregarTudo() {
         await Promise.all([
-            carregarAnamneses(),
             carregarInstrumentos(),
             carregarAgendamentos(),
             carregarLaudos()
         ]);
         state.carregado = true;
         montarInicio();
-    }
-
-    // Sprint 57: anamneses pendentes do paciente (tokens públicos não usados ainda)
-    async function carregarAnamneses() {
-        try {
-            const { data, error } = await client.rpc('portal_minhas_anamneses_pendentes');
-            if (error) throw error;
-            state.anamneses = data || [];
-            renderListaAnamneses(state.anamneses);
-        } catch (err) {
-            console.error('Erro anamneses:', err);
-            state.anamneses = [];
-            renderListaAnamneses([]);
-        }
     }
 
     async function carregarInstrumentos() {
@@ -187,7 +170,6 @@
     // Mostra: banner de alerta (se houver pendência) + 3 cards de atalho
     // pras outras abas com resumo de status em cada um.
     function montarInicio() {
-        const anamneses = state.anamneses || [];
         const instrumentos = state.instrumentos || [];
         const agendamentos = state.agendamentos || [];
         const laudos = state.laudos || [];
@@ -195,36 +177,18 @@
         const pendentes  = instrumentos.filter(i => i.status === 'aguardando' || i.status === 'em_aplicacao');
         const concluidos = instrumentos.filter(i => i.status === 'corrigido');
         const proxAgendamento = agendamentos[0];
-        const temAnamnese = anamneses.length > 0;
 
         // ─── Banner de alerta ────────────────────────────────────────────
         const alerta = document.getElementById('inicio-alerta');
         const alertaTitulo = document.getElementById('inicio-alerta-titulo');
-        const alertaDica = document.getElementById('inicio-alerta-dica');
 
-        // Sprint 57: prioriza anamnese pendente sobre testes (chega antes na jornada)
-        if (temAnamnese) {
-            alertaTitulo.textContent = anamneses.length === 1
-                ? 'Você tem 1 anamnese para responder'
-                : `Você tem ${anamneses.length} anamneses para responder`;
-            if (alertaDica) alertaDica.textContent = 'Toque em "Anamnese" abaixo pra responder';
-            alerta.style.display = 'flex';
-        } else if (pendentes.length > 0) {
+        if (pendentes.length > 0) {
             alertaTitulo.textContent = pendentes.length === 1
                 ? 'Você tem 1 teste aguardando'
                 : `Você tem ${pendentes.length} testes aguardando`;
-            if (alertaDica) alertaDica.textContent = 'Toque em "Testes" abaixo pra responder';
             alerta.style.display = 'flex';
         } else {
             alerta.style.display = 'none';
-        }
-
-        // ─── Atalho Anamnese (Sprint 57) ─────────────────────────────────
-        const descAnam = document.getElementById('atalho-anamnese-desc');
-        if (descAnam) {
-            descAnam.textContent = temAnamnese
-                ? (anamneses.length === 1 ? '1 para responder' : `${anamneses.length} para responder`)
-                : 'Nenhuma anamnese no momento';
         }
 
         // ─── Atalho Testes ───────────────────────────────────────────────
@@ -268,58 +232,6 @@
                 : `${laudos.length} laudos disponíveis pra baixar`;
         }
     }
-
-    // ─── ABA ANAMNESE (Sprint 57) ─────────────────────────────────────────
-    function renderListaAnamneses(anamneses) {
-        const bloco = document.getElementById('lista-anamnese-bloco');
-        const vazio = document.getElementById('anamnese-vazio');
-
-        if (anamneses.length > 0) {
-            document.getElementById('num-anamnese-pend').textContent = `(${anamneses.length})`;
-            document.getElementById('lista-anamnese').innerHTML = anamneses.map(renderItemAnamnese).join('');
-            bloco.style.display = 'block';
-            vazio.style.display = 'none';
-        } else {
-            bloco.style.display = 'none';
-            vazio.style.display = 'block';
-        }
-    }
-
-    function renderItemAnamnese(t) {
-        const dataEnv = formatarDataCurta(t.created_at);
-        const dataExp = formatarDataCurta(t.expires_at);
-
-        return `
-            <div class="app-item">
-                <div class="app-item-info">
-                    <div class="app-item-titulo">Anamnese inicial</div>
-                    <div class="app-item-desc">Responda com calma — você pode parar e voltar depois.</div>
-                    <div class="app-item-meta">
-                        <span class="badge badge-aguardando">Aguardando</span>
-                        <span class="app-item-data">Disponibilizada em ${dataEnv}</span>
-                        <span class="app-item-data"> · válida até ${dataExp}</span>
-                    </div>
-                </div>
-                <div class="app-item-acao">
-                    <button class="btn-acao" onclick="window.responderAnamnese('${escapeAttr(t.token)}')">
-                        <i class="ti ti-pencil"></i> Responder
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    // Sprint 57: abre a anamnese pública dentro do portal usando o token
-    window.responderAnamnese = async function(token) {
-        try {
-            await client.rpc('portal_log_acesso', {
-                p_acao: 'abriu_anamnese',
-                p_recurso_id: null,
-                p_detalhes: { token: token }
-            });
-        } catch (e) { /* ignore */ }
-        window.location.href = `../frontend/anamnese-publica/index.html?t=${encodeURIComponent(token)}`;
-    };
 
     // ─── ABA TESTES ───────────────────────────────────────────────────────
     function renderListaTestes(pendentes, concluidos) {

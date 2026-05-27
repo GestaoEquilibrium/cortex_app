@@ -226,10 +226,7 @@
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            // Sprint 58: NÃO incluímos sec.ic (emoji) no PDF — a fonte helvetica
-            // padrão do jsPDF não renderiza emojis e mostra caixas tipo "Ø=ÜË".
-            // O emoji continua aparecendo na UI (anamnese.js).
-            doc.text(sec.tt, MG + 2, y + 4.5);
+            doc.text((sec.ic || '') + ' ' + sec.tt, MG + 2, y + 4.5);
             y += 9;
 
             (sec.g2 || sec.g3 || []).forEach((f) => {

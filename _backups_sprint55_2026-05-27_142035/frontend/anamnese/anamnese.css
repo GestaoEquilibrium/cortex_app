@@ -1,0 +1,675 @@
+/* ============================================================================
+   CORTEX_APP — Anamnese CSS (estilos do wizard)
+   ============================================================================ */
+
+/* ============================================================================
+   CABEÇALHO
+   ============================================================================ */
+
+.anamnese-cabecalho {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: var(--shadow-xs);
+    flex-wrap: wrap;
+}
+
+.anamnese-cabecalho-titulo h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text);
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.anamnese-cabecalho-sub {
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
+.anamnese-cabecalho-acoes {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Indicador de save status */
+.indicador-save {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    transition: all var(--transition-fast);
+    min-width: 110px;
+    text-align: right;
+}
+
+.indicador-save-pendente {
+    color: var(--color-warning-text);
+}
+
+.indicador-save-salvando {
+    color: var(--primary-blue);
+}
+
+.indicador-save-salvo {
+    color: var(--primary-green);
+}
+
+.indicador-save-erro {
+    color: var(--color-danger-text);
+}
+
+/* ============================================================================
+   PROGRESS BAR
+   ============================================================================ */
+
+.wizard-progresso {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 14px 20px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+}
+
+.wizard-progresso-barra {
+    height: 6px;
+    background: var(--slate-100);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.wizard-progresso-preenchido {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-blue) 0%, var(--primary-green) 100%);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+}
+
+.wizard-progresso-texto {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+}
+
+.wizard-progresso-texto strong {
+    color: var(--color-text);
+}
+
+/* ============================================================================
+   STEPPER (PILLS DE NAVEGAÇÃO RÁPIDA)
+   ============================================================================ */
+
+.wizard-stepper {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 8px;
+    box-shadow: var(--shadow-xs);
+}
+
+.stepper-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.stepper-pill:hover {
+    background: var(--slate-50);
+    color: var(--color-text);
+}
+
+.stepper-pill.ativa {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-green) 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.stepper-pill.concluida {
+    background: var(--primary-green-50);
+    color: var(--primary-green-dark);
+    font-weight: 500;
+}
+
+.stepper-pill-num {
+    background: rgba(255, 255, 255, 0.3);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.stepper-pill:not(.ativa):not(.concluida) .stepper-pill-num {
+    background: var(--slate-100);
+    color: var(--color-text-muted);
+}
+
+.stepper-pill.concluida .stepper-pill-num {
+    background: var(--primary-green-100);
+    color: var(--primary-green-dark);
+}
+
+.stepper-pill.concluida .stepper-pill-num::before {
+    content: '✓';
+}
+
+/* ============================================================================
+   ETAPA ATIVA
+   ============================================================================ */
+
+.wizard-etapa {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-xs);
+}
+
+.wizard-etapa-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.wizard-etapa-icone {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--primary-blue-50) 0%, var(--primary-green-50) 100%);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.wizard-etapa-titulo {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: -0.01em;
+}
+
+/* Grids do formulário */
+.fg-grid2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
+}
+
+.fg-grid3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px 20px;
+}
+
+.fg-full {
+    grid-column: 1 / -1;
+}
+
+.required {
+    color: var(--color-danger-text);
+    margin-left: 2px;
+}
+
+/* Checkboxes */
+.ck-grupo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ck-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--slate-50);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 13px;
+}
+
+.ck-item:hover {
+    border-color: var(--primary-blue-200);
+    background: var(--primary-blue-50);
+}
+
+.ck-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--primary-blue);
+    cursor: pointer;
+}
+
+.ck-item:has(input:checked) {
+    background: var(--primary-blue-50);
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    font-weight: 500;
+}
+
+/* ============================================================================
+   NAVEGAÇÃO INFERIOR
+   ============================================================================ */
+
+.wizard-navegacao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.wizard-navegacao-direita {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ============================================================================
+   RESPONSIVO
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .fg-grid2, .fg-grid3 {
+        grid-template-columns: 1fr;
+    }
+
+    .anamnese-cabecalho {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .anamnese-cabecalho-acoes {
+        justify-content: space-between;
+    }
+
+    .stepper-pill-label {
+        display: none;
+    }
+
+    .wizard-stepper {
+        gap: 4px;
+        padding: 6px;
+    }
+
+    .stepper-pill {
+        padding: 6px 8px;
+    }
+}
+
+
+/* ============================================================================
+   CARD DE RESUMO DA ANAMNESE (na pasta do paciente)
+   Esses estilos são usados em pasta.html quando há anamnese existente.
+   ============================================================================ */
+
+.anamnese-card-resumo {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    padding: 20px;
+    background: var(--slate-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.anamnese-card-resumo-icone {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.anamnese-card-resumo-icone svg {
+    width: 28px;
+    height: 28px;
+}
+
+.anamnese-card-resumo-icone-success {
+    background: var(--primary-green-100);
+    color: var(--primary-green-dark);
+}
+
+.anamnese-card-resumo-icone-warning {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+}
+
+.anamnese-card-resumo-info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.anamnese-card-resumo-info h3 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.anamnese-card-resumo-info p {
+    font-size: 13px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.anamnese-card-resumo-info p strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.anamnese-card-resumo-acoes {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .anamnese-card-resumo {
+        flex-direction: column;
+    }
+    .anamnese-card-resumo-acoes {
+        width: 100%;
+    }
+    .anamnese-card-resumo-acoes .btn {
+        flex: 1;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Sprint 17 — Cards de respostas remotas no topo da anamnese
+   ════════════════════════════════════════════════════════════════════════ */
+.anamnese-card-remoto {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-top: 16px;
+    margin-bottom: 4px;
+    border: 1px solid;
+    flex-wrap: wrap;
+}
+
+.anamnese-card-remoto-pendente {
+    background: #fef9c3;
+    border-color: #fde047;
+}
+
+.anamnese-card-remoto-respondida {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.anamnese-card-remoto-info { flex: 1; min-width: 240px; }
+
+.anamnese-card-remoto-titulo {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0c1f3f;
+    margin-bottom: 2px;
+}
+.anamnese-card-remoto-sub {
+    font-size: 12.5px;
+    color: #475569;
+}
+
+.anamnese-card-remoto-acoes {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+    .anamnese-card-remoto-acoes { width: 100%; }
+    .anamnese-card-remoto-acoes .btn { flex: 1; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Sprint 17 — Cards de Anamnese Remota na PASTA do paciente
+   (Visual ligeiramente diferente dos cards mostrados dentro da anamnese
+    pra ficarem proporcionais ao card principal da pasta)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.anamnese-acoes-topo {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
+.anamnese-card-remoto-pasta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    border: 1px solid;
+    flex-wrap: wrap;
+}
+
+.anamnese-card-remoto-pasta.anamnese-card-remoto-pendente {
+    background: #fef9c3;
+    border-color: #fde047;
+}
+
+.anamnese-card-remoto-pasta.anamnese-card-remoto-respondida {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.anamnese-card-remoto-pasta-info { flex: 1; min-width: 280px; }
+
+.anamnese-card-remoto-pasta-titulo {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0c1f3f;
+    margin-bottom: 3px;
+}
+.anamnese-card-remoto-pasta-sub {
+    font-size: 13px;
+    color: #475569;
+}
+
+.anamnese-card-remoto-pasta-acoes {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+    .anamnese-card-remoto-pasta-acoes { width: 100%; }
+    .anamnese-card-remoto-pasta-acoes .btn { flex: 1; }
+}
+
+/* ============================================================================
+   Sprint 55 — Anamneses 3.0
+   - Bloco de identificação do paciente (puxado do cadastro) no topo da etapa 1
+   - Bloco informativo (boas-vindas LGPD/CFP) na primeira etapa
+   - Estilo das textareas (mais altas, já que tudo virou texto livre)
+   ============================================================================ */
+
+/* ----- Identificação do paciente (read-only, antes do wizard) ---------- */
+.anamnese-identif-bloco {
+    background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #0c1f3f;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 0 0 18px 0;
+}
+
+.anamnese-identif-titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.anamnese-identif-titulo span {
+    font-size: 18px;
+}
+
+.anamnese-identif-titulo h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0c1f3f;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex: 1;
+}
+
+.anamnese-identif-link {
+    font-size: 12px;
+    color: #475569;
+    text-decoration: none;
+    border: 1px solid #cbd5e1;
+    padding: 3px 10px;
+    border-radius: 12px;
+    transition: all .15s;
+}
+.anamnese-identif-link:hover {
+    background: #0c1f3f;
+    color: #fff;
+    border-color: #0c1f3f;
+}
+
+.anamnese-identif-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px 16px;
+}
+
+.anamnese-identif-item {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.anamnese-identif-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
+}
+
+.anamnese-identif-valor {
+    font-size: 13.5px;
+    color: #1e293b;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.anamnese-identif-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 12px 0;
+}
+
+.anamnese-identif-aviso {
+    margin: 12px 0 0 0;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.4;
+}
+
+/* ----- Bloco informativo (tipo 'info' — boas-vindas, LGPD/CFP) --------- */
+.anamnese-info-bloco {
+    grid-column: 1 / -1;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 0;
+}
+
+.anamnese-bv p {
+    margin: 0 0 10px 0;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: #334155;
+}
+
+.anamnese-bv p:last-child {
+    margin-bottom: 0;
+}
+
+.anamnese-bv-conv {
+    font-size: 14px !important;
+    color: #0c1f3f !important;
+    text-align: center;
+    margin-top: 16px !important;
+}
+
+/* ----- Textareas mais altas (Sprint 55: tudo virou texto livre) ------- */
+.form-textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+/* Em mobile, textareas começam um pouco menores */
+@media (max-width: 768px) {
+    .form-textarea {
+        min-height: 70px;
+    }
+    .anamnese-identif-grid {
+        grid-template-columns: 1fr;
+    }
+    .anamnese-identif-titulo {
+        flex-wrap: wrap;
+    }
+}

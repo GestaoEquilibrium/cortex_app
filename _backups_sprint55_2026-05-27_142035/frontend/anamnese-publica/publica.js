@@ -80,20 +80,18 @@
         state.dados = {};
         cols.forEach(c => { state.dados[c] = data[c] || {}; });
 
-        // Sprint 55: identificação agora vem do cadastro do paciente
-        // (renderizada como cartão read-only no topo do wizard), não é
-        // mais duplicada no JSONB. Não pré-preenchemos nada aqui.
+        // Pré-preenche se vazio
+        if (!state.dados.identificacao.nom && state.info.paciente_nome) {
+            state.dados.identificacao.nom = state.info.paciente_nome;
+        }
+        if (!state.dados.identificacao.nsc && state.info.paciente_data_nascimento) {
+            state.dados.identificacao.nsc = state.info.paciente_data_nascimento;
+        }
 
         state.form = window.CortexAnamneseForms.getForm(state.info.faixa_etaria);
         if (!state.form) return mostrarErro('Faixa etária inválida.');
 
-        // Sprint 55: o forms.js novo começa com uma seção 'Boas-vindas' (tipo
-        // 'info' com texto LGPD/CFP). No fluxo público temos uma tela custom
-        // de boas-vindas (renderBoasVindas) que já cumpre esse papel, então
-        // filtramos essa seção para não duplicar.
-        state.sects = (state.form.sects || []).filter(s => s.tt !== 'Boas-vindas');
-
-        state.secaoIdx = -1;  // -1 = tela custom de boas-vindas
+        state.secaoIdx = -1;  // -1 = tela de boas-vindas
         renderizar();
     }
 
@@ -119,30 +117,14 @@
             return;
         }
 
-        const sec = state.sects[state.secaoIdx];
-        const total = state.sects.length;
+        const sec = state.form.sects[state.secaoIdx];
+        const total = state.form.sects.length;
         const atual = state.secaoIdx + 1;
         const pct = Math.round((atual / total) * 100);
         const ehUltima = state.secaoIdx === total - 1;
         const ehPrimeira = state.secaoIdx === 0;
 
-        // Sprint 55: mini-cartão de identidade fixo no topo (confirma quem é
-        // que está sendo avaliado em todas as telas do questionário)
-        const dn = state.info.paciente_data_nascimento
-            ? new Date(state.info.paciente_data_nascimento).toLocaleDateString('pt-BR')
-            : '';
-        const miniCartao = `
-            <div class="publica-mini-cartao">
-                <span class="publica-mini-cartao-ic">👤</span>
-                <div class="publica-mini-cartao-info">
-                    <div class="publica-mini-cartao-nome">${escapeHtml(state.info.paciente_nome || '—')}</div>
-                    ${dn ? `<div class="publica-mini-cartao-sub">Nascimento: ${escapeHtml(dn)}</div>` : ''}
-                </div>
-            </div>
-        `;
-
         root.innerHTML = `
-            ${miniCartao}
             <div class="publica-topo">
                 <div class="publica-progresso-texto">
                     Seção <strong>${atual}</strong> de <strong>${total}</strong> · ${escapeHtml(sec.tt)}
@@ -195,24 +177,15 @@
     }
 
     function renderBoasVindas() {
-        const dn = state.info.paciente_data_nascimento
-            ? new Date(state.info.paciente_data_nascimento).toLocaleDateString('pt-BR')
-            : '';
         return `
             <div class="publica-bemvindo">
                 <h1>${escapeHtml(state.form.tt)} — Anamnese</h1>
-                <p><strong>Olá, seja muito bem-vindo(a)!</strong></p>
-                <p>Sabemos que a decisão de buscar uma avaliação é um passo importante, e agradecemos a sua confiança em nosso trabalho.</p>
-                <p>Este formulário foi pensado como o nosso primeiro contato para conhecermos, com cuidado e atenção, a história de quem será avaliado. Suas respostas são como um mapa inicial que nos guiará durante nossa conversa, permitindo que nosso encontro seja mais profundo e focado em <strong>acolher suas preocupações e traçar o melhor plano de ação.</strong></p>
-                <p>Sinta-se seguro(a) e à vontade ao responder. Todas as informações são protegidas por <strong>sigilo profissional absoluto</strong>, conforme a Lei Geral de Proteção de Dados (LGPD), e nosso trabalho é pautado pelo compromisso ético e técnico com as diretrizes do Conselho Federal de Psicologia.</p>
-                <p>Por favor, percorra o questionário até o fim, mas não se preocupe se alguma pergunta não fizer sentido para sua história; basta seguir adiante.</p>
-
+                <p>Olá! Sabemos que a decisão de buscar uma avaliação é um passo importante.</p>
+                <p>Este formulário é o nosso primeiro contato para conhecermos a história de quem será avaliado. Suas respostas vão guiar nossa conversa. Não se preocupe se alguma pergunta não fizer sentido para sua história — basta seguir adiante.</p>
                 <div class="publica-info-paciente">
-                    <div><span class="publica-info-label">Paciente:</span> ${escapeHtml(state.info.paciente_nome || '—')}</div>
-                    ${dn ? `<div><span class="publica-info-label">Nascimento:</span> ${escapeHtml(dn)}</div>` : ''}
+                    <strong>Paciente:</strong> ${escapeHtml(state.info.paciente_nome)}
                 </div>
-
-                <p class="publica-bv-conv"><em>Vamos começar esta jornada juntos?</em></p>
+                <p class="publica-aviso">🔒 Todas as informações são protegidas por sigilo profissional absoluto (LGPD).</p>
                 <button class="btn btn-primary btn-lg publica-btn-block" id="btn-comecar">Começar →</button>
             </div>
         `;

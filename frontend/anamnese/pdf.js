@@ -167,8 +167,9 @@
         const dn = pac.data_nascimento ? new Date(pac.data_nascimento).toLocaleDateString('pt-BR') : '—';
         const idade = pac.idade_anos !== null && pac.idade_anos !== undefined ? pac.idade_anos + ' anos' : '';
 
+        // Sprint 55: bloco mais alto pra acomodar dados do médico solicitante
         doc.setFillColor(AZUL_CLARO);
-        doc.rect(MG, y, LARG, 28, 'F');
+        doc.rect(MG, y, LARG, 40, 'F');
 
         doc.setTextColor(NAVY);
         doc.setFontSize(10);
@@ -182,22 +183,40 @@
         doc.setFont('helvetica', 'normal');
         doc.text(dn + (idade ? ' (' + idade + ')' : ''), MG + 28, y + 12);
 
+        // Sprint 55: médico solicitante (puxado do cadastro)
+        const medicoLinha = pac.medico_referencia
+            ? 'Dr(a). ' + pac.medico_referencia + (pac.medico_crm ? ' — CRM ' + pac.medico_crm : '')
+            : '—';
+        doc.setFont('helvetica', 'bold');
+        doc.text('Médico solicitante:', MG + 3, y + 18);
+        doc.setFont('helvetica', 'normal');
+        doc.text(medicoLinha, MG + 38, y + 18);
+
+        const clinicaLinha = [pac.medico_clinica, pac.medico_telefone].filter(Boolean).join(' · ') || '—';
+        doc.setFont('helvetica', 'bold');
+        doc.text('Clínica / Telefone:', MG + 3, y + 24);
+        doc.setFont('helvetica', 'normal');
+        doc.text(clinicaLinha, MG + 38, y + 24);
+
         const statusLabel = anam.status === 'concluida' ? 'Concluída' : 'Em andamento';
         doc.setFont('helvetica', 'bold');
-        doc.text('Status:', MG + 3, y + 18);
+        doc.text('Status:', MG + 3, y + 30);
         doc.setFont('helvetica', 'normal');
-        doc.text(statusLabel, MG + 17, y + 18);
+        doc.text(statusLabel, MG + 17, y + 30);
 
         doc.setFont('helvetica', 'bold');
-        doc.text('Gerado em:', MG + 3, y + 24);
+        doc.text('Gerado em:', MG + 3, y + 36);
         doc.setFont('helvetica', 'normal');
         const hoje = new Date();
-        doc.text(hoje.toLocaleDateString('pt-BR') + ' às ' + hoje.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}), MG + 26, y + 24);
+        doc.text(hoje.toLocaleDateString('pt-BR') + ' às ' + hoje.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}), MG + 26, y + 36);
 
-        y += 34;
+        y += 46;
 
         // ---- SEÇÕES ----
         form.sects.forEach((sec) => {
+            // Sprint 55: pula seções puramente informativas (boas-vindas)
+            if (!sec.col) return;
+
             const dadosCol = anam[sec.col] || {};
             checkQuebra(12);
 
@@ -211,6 +230,9 @@
             y += 9;
 
             (sec.g2 || sec.g3 || []).forEach((f) => {
+                // Sprint 55: pula campos tipo 'info' (texto estático sem resposta)
+                if (f.tp === 'info') return;
+
                 const valor = dadosCol[f.id];
                 const detalhe = dadosCol[f.id + '_det'];
                 const other = dadosCol[f.id + '_other'];

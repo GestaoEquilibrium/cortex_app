@@ -188,3 +188,41 @@ body {
         padding: 18px 16px !important;
     }
 }
+
+/* ============================================================================
+   Sprint 55 — Tipo 'info' (boas-vindas LGPD/CFP) e textareas mais altas
+   ============================================================================ */
+
+.anamnese-info-bloco {
+    grid-column: 1 / -1;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 0;
+}
+
+.anamnese-bv p {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #334155;
+}
+
+.anamnese-bv p:last-child { margin-bottom: 0; }
+
+.anamnese-bv-conv {
+    font-size: 14.5px !important;
+    color: #0c1f3f !important;
+    text-align: center;
+    margin-top: 14px !important;
+}
+
+.form-textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+@media (max-width: 768px) {
+    .form-textarea { min-height: 70px; }
+}

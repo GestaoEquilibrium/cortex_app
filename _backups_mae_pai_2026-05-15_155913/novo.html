@@ -1,0 +1,478 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paciente — CORTEX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/pacientes.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="manifest" href="../site.webmanifest">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <main class="app-main">
+            <a href="lista.html" id="link-voltar" class="page-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                <span id="link-voltar-texto">Voltar à lista de pacientes</span>
+            </a>
+
+            <div class="page-header">
+                <div class="page-title">
+                    <h1 id="page-h1">Novo paciente</h1>
+                    <p id="page-subtitle">Preencha os dados administrativos. A foto e demais campos podem ser preenchidos depois.</p>
+                </div>
+                <div class="page-actions">
+                    <a href="lista.html" id="btn-cancelar-topo" class="btn btn-ghost">Cancelar</a>
+                </div>
+            </div>
+
+            <form id="form-paciente">
+                <div class="form-section">
+                    <h2 class="form-section-title">Identificação</h2>
+                    <div class="form-grid">
+                        <div class="form-group span-full">
+                            <label class="form-label">Nome completo <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="nome_completo" required maxlength="200">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nome social</label>
+                            <input type="text" class="form-input" name="nome_social" maxlength="200">
+                            <span class="form-help">Se diferente do nome de registro</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Sexo <span class="required">*</span></label>
+                            <select class="form-select" name="sexo" required>
+                                <option value="">Selecione...</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Feminino">Feminino</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Data de nascimento <span class="required">*</span></label>
+                            <input type="date" class="form-input" name="data_nascimento" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CPF</label>
+                            <input type="text" class="form-input" name="cpf" id="cpf-input" maxlength="14" placeholder="000.000.000-00">
+                            <span class="form-help">Opcional</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">RG</label>
+                            <input type="text" class="form-input" name="rg" maxlength="20">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-section-title">Dados sociodemográficos</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Escolaridade</label>
+                            <select class="form-select" name="escolaridade">
+                                <option value="">Não informado</option>
+                                <option value="Não alfabetizado">Não alfabetizado</option>
+                                <option value="Educação infantil">Educação infantil</option>
+                                <option value="Fundamental I incompleto">Fundamental I incompleto (1º–5º ano)</option>
+                                <option value="Fundamental I completo">Fundamental I completo</option>
+                                <option value="Fundamental II incompleto">Fundamental II incompleto (6º–9º ano)</option>
+                                <option value="Fundamental II completo">Fundamental II completo</option>
+                                <option value="Médio incompleto">Médio incompleto</option>
+                                <option value="Médio completo">Médio completo</option>
+                                <option value="Superior incompleto">Superior incompleto</option>
+                                <option value="Superior completo">Superior completo</option>
+                                <option value="Pós-graduação">Pós-graduação</option>
+                                <option value="Mestrado">Mestrado</option>
+                                <option value="Doutorado">Doutorado</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Ano/série cursando</label>
+                            <input type="text" class="form-input" name="escolaridade_serie" maxlength="80" placeholder="Ex: 7º ano, 2º período, 3ª série">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Profissão</label>
+                            <input type="text" class="form-input" name="profissao" maxlength="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Estado civil</label>
+                            <select class="form-select" name="estado_civil">
+                                <option value="">Não informado</option>
+                                <option value="Solteiro(a)">Solteiro(a)</option>
+                                <option value="Casado(a)">Casado(a)</option>
+                                <option value="União estável">União estável</option>
+                                <option value="Divorciado(a)">Divorciado(a)</option>
+                                <option value="Viúvo(a)">Viúvo(a)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-section-title">Convênio</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Convênio</label>
+                            <select class="form-select" name="convenio_id" id="convenio-select">
+                                <option value="">Carregando...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Número da carteirinha</label>
+                            <input type="text" class="form-input" name="numero_convenio" maxlength="50">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-section-title">Contatos</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" class="form-input" name="telefone" id="telefone-input" placeholder="(34) 99999-8888">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">E-mail</label>
+                            <input type="email" class="form-input" name="email" maxlength="200">
+                        </div>
+
+                        <div class="form-group span-full">
+                            <label class="form-label">Endereço</label>
+                            <input type="text" class="form-input" name="endereco" maxlength="200">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Cidade</label>
+                            <input type="text" class="form-input" name="cidade" value="Uberlândia" maxlength="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CEP</label>
+                            <input type="text" class="form-input" name="cep" id="cep-input" placeholder="38400-000" maxlength="9">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-section-title">Responsável</h2>
+                    <p class="form-help" style="margin-bottom: 12px;">
+                        Preencher quando o paciente for menor de idade ou tiver curatela.
+                    </p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nome do responsável</label>
+                            <input type="text" class="form-input" name="responsavel_nome" maxlength="200">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Parentesco</label>
+                            <input type="text" class="form-input" name="responsavel_parentesco" maxlength="50" placeholder="Mãe, pai, tutor...">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Telefone do responsável</label>
+                            <input type="text" class="form-input" name="responsavel_telefone" id="resp-tel-input" placeholder="(34) 99999-8888">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">E-mail do responsável</label>
+                            <input type="email" class="form-input" name="responsavel_email" maxlength="200">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-section-title">Encaminhamento</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Encaminhado por</label>
+                            <input type="text" class="form-input" name="encaminhado_por" maxlength="200" placeholder="Médico, escola, busca espontânea...">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Médico de referência</label>
+                            <input type="text" class="form-input" name="medico_referencia" maxlength="200">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CRM do médico</label>
+                            <input type="text" class="form-input" name="medico_crm" maxlength="20">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-section-title">Observações</h2>
+                    <div class="form-group">
+                        <textarea class="form-textarea" name="observacoes" rows="3" placeholder="Notas administrativas..."></textarea>
+                    </div>
+                </div>
+
+                <div id="form-error" style="display: none; margin-bottom: 14px; padding: 12px 16px; background: var(--color-danger-bg); color: var(--color-danger-text); border-radius: var(--radius-md); font-size: 13px; border-left: 3px solid var(--color-danger-text);"></div>
+
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 24px;">
+                    <a href="lista.html" id="btn-cancelar-rodape" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" id="submit-btn" class="btn btn-primary btn-lg">
+                        <span class="btn-text">Cadastrar paciente</span>
+                        <span class="btn-loading" style="display: none;">Salvando...</span>
+                    </button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/supabase_client.js"></script>
+    <script src="../shared/auth_guard.js"></script>
+    <script src="../shared/audit.js"></script>
+    <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/sidebar.js"></script>
+
+    <script>
+    // Modo CADASTRO (sem ?id=) ou EDIÇÃO (com ?id=<uuid>)
+    let modoEdicao = false;
+    let pacienteIdEdicao = null;
+    let pacienteOriginal = null;
+
+    window.addEventListener('cortex:auth-ready', async () => {
+        await CortexSidebar.render('pacientes');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        pacienteIdEdicao = urlParams.get('id');
+        modoEdicao = !!pacienteIdEdicao;
+
+        window.CortexUI.aplicarMascaraCPF(document.getElementById('cpf-input'));
+        window.CortexUI.aplicarMascaraTelefone(document.getElementById('telefone-input'));
+        window.CortexUI.aplicarMascaraTelefone(document.getElementById('resp-tel-input'));
+        window.CortexUI.aplicarMascaraCEP(document.getElementById('cep-input'));
+
+        await carregarConvenios();
+
+        if (modoEdicao) {
+            await prepararModoEdicao();
+        }
+
+        document.getElementById('form-paciente').addEventListener('submit', salvarPaciente);
+    });
+
+    async function prepararModoEdicao() {
+        // Ajusta UI pra modo edição
+        document.title = 'Editar paciente — CORTEX';
+        document.getElementById('page-h1').textContent = 'Editar paciente';
+        document.getElementById('page-subtitle').textContent =
+            'Atualize os dados administrativos. O CPF não pode ser alterado após o cadastro.';
+        document.getElementById('link-voltar-texto').textContent = 'Voltar à pasta do paciente';
+        document.getElementById('link-voltar').href = `pasta.html?id=${pacienteIdEdicao}`;
+        document.getElementById('btn-cancelar-topo').href = `pasta.html?id=${pacienteIdEdicao}`;
+        document.getElementById('btn-cancelar-rodape').href = `pasta.html?id=${pacienteIdEdicao}`;
+        document.querySelector('#submit-btn .btn-text').textContent = 'Salvar alterações';
+
+        // Carrega dados do paciente
+        const { data, error } = await window.cortexClient
+            .from('pacientes')
+            .select('*')
+            .eq('id', pacienteIdEdicao)
+            .single();
+
+        if (error || !data) {
+            const errorDiv = document.getElementById('form-error');
+            errorDiv.textContent = 'Paciente não encontrado: ' + (error?.message || 'sem dados');
+            errorDiv.style.display = 'block';
+            document.getElementById('submit-btn').disabled = true;
+            return;
+        }
+
+        pacienteOriginal = data;
+        preencherForm(data);
+        travarCPF();
+    }
+
+    function preencherForm(p) {
+        const form = document.getElementById('form-paciente');
+        // Preenche todos os inputs/selects/textareas que tem name correspondente
+        const campos = [
+            'nome_completo', 'nome_social', 'sexo', 'data_nascimento', 'cpf', 'rg',
+            'escolaridade', 'escolaridade_serie', 'profissao', 'estado_civil',
+            'convenio_id', 'numero_convenio',
+            'telefone', 'email', 'endereco', 'cidade', 'cep',
+            'responsavel_nome', 'responsavel_parentesco', 'responsavel_telefone', 'responsavel_email',
+            'encaminhado_por', 'medico_referencia', 'medico_crm',
+            'observacoes',
+        ];
+        for (const nome of campos) {
+            const el = form.elements[nome];
+            if (!el) continue;
+            const valor = p[nome];
+            if (valor != null) el.value = valor;
+        }
+    }
+
+    function travarCPF() {
+        const cpfInput = document.getElementById('cpf-input');
+        cpfInput.readOnly = true;
+        cpfInput.style.background = '#f1f5f9';
+        cpfInput.style.cursor = 'not-allowed';
+        cpfInput.title = 'CPF não pode ser alterado após o cadastro';
+        // Substitui o "Opcional" por aviso
+        const help = cpfInput.parentElement.querySelector('.form-help');
+        if (help) {
+            help.textContent = '🔒 CPF não pode ser alterado';
+            help.style.color = '#64748b';
+        }
+    }
+
+    async function carregarConvenios() {
+        const { data, error } = await window.cortexClient
+            .from('convenios')
+            .select('id, nome')
+            .eq('ativo', true)
+            .order('nome');
+
+        const select = document.getElementById('convenio-select');
+        select.innerHTML = '<option value="">Não informado</option>';
+
+        if (data) {
+            data.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.nome;
+                select.appendChild(option);
+            });
+        }
+    }
+
+    async function salvarPaciente(event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnLoading = submitBtn.querySelector('.btn-loading');
+        const errorDiv = document.getElementById('form-error');
+
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+
+        const formData = new FormData(form);
+        const dados = {};
+        formData.forEach((value, key) => {
+            const v = value && value.trim ? value.trim() : value;
+            if (v) {
+                dados[key] = v;
+            } else if (modoEdicao) {
+                // Em edição, campos vazios = null (pra apagar valores anteriores)
+                dados[key] = null;
+            }
+        });
+
+        // Em edição: NUNCA mandar CPF no UPDATE (campo travado, mantém o original)
+        if (modoEdicao) {
+            delete dados.cpf;
+        } else {
+            // Em cadastro: valida CPF se preenchido
+            if (dados.cpf && !window.CortexUI.validarCPF(dados.cpf)) {
+                errorDiv.textContent = 'CPF inválido. Verifique os dígitos.';
+                errorDiv.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+        }
+
+        submitBtn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+
+        try {
+            if (modoEdicao) {
+                const { data: atualizado, error } = await window.cortexClient
+                    .from('pacientes')
+                    .update(dados)
+                    .eq('id', pacienteIdEdicao)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                await CortexAudit.log('atualizacao', 'pacientes', pacienteIdEdicao, {
+                    pacienteId: pacienteIdEdicao,
+                    detalhes: { nome: atualizado.nome_completo }
+                });
+
+                window.CortexUI.toast('Dados atualizados com sucesso!', 'success');
+
+                setTimeout(() => {
+                    window.location.href = `pasta.html?id=${pacienteIdEdicao}`;
+                }, 600);
+
+            } else {
+                const { data: novoPaciente, error } = await window.cortexClient
+                    .from('pacientes')
+                    .insert(dados)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                await CortexAudit.log('criacao', 'pacientes', novoPaciente.id, {
+                    pacienteId: novoPaciente.id,
+                    detalhes: { nome: novoPaciente.nome_completo }
+                });
+
+                window.CortexUI.toast('Paciente cadastrado com sucesso!', 'success');
+
+                setTimeout(() => {
+                    window.location.href = `pasta.html?id=${novoPaciente.id}`;
+                }, 600);
+            }
+
+        } catch (err) {
+            console.error(modoEdicao ? 'Erro na edição:' : 'Erro no cadastro:', err);
+            let mensagem = modoEdicao
+                ? 'Não foi possível salvar as alterações. '
+                : 'Não foi possível cadastrar o paciente. ';
+
+            if (err.message?.includes('duplicate key')) {
+                if (err.message.includes('cpf')) {
+                    mensagem = 'Já existe um paciente cadastrado com esse CPF.';
+                } else {
+                    mensagem += 'Dados duplicados detectados.';
+                }
+            } else if (err.message?.includes('row-level security')) {
+                mensagem = 'Você não tem permissão para essa operação.';
+            } else {
+                mensagem += err.message || 'Erro desconhecido.';
+            }
+
+            errorDiv.textContent = mensagem;
+            errorDiv.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            submitBtn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+        }
+    }
+    </script>
+</body>
+</html>

@@ -131,12 +131,12 @@
         state.dados = {};
         cols.forEach(col => { state.dados[col] = {}; });
 
-        // Pré-preenche identificação com dados do paciente
-        state.dados.identificacao = {
-            nom: state.paciente.nome_completo,
-            nsc: state.paciente.data_nascimento,
-            sex: state.paciente.sexo
-        };
+        // Sprint 55: identificação (nome, DN, sexo, etc.) agora é puxada do
+        // cadastro do paciente em tempo de render (bloco no topo do wizard),
+        // não duplicada no JSONB. A coluna `identificacao` recebe apenas
+        // 'rel' (relação do respondente) e 'ava' (data da entrevista), que
+        // são preenchidos pelo usuário na seção "Sobre esta entrevista".
+
         state.etapaAtual = 0;
     }
 
@@ -216,6 +216,10 @@
 
         const formularioEtapa = renderizarSecao(sec);
 
+        // Sprint 55: bloco "Identificação do paciente" (read-only) injetado
+        // apenas na PRIMEIRA etapa, lendo do cadastro
+        const blocoIdentif = ePrimeira ? renderizarBlocoIdentificacao() : '';
+
         const navegacao = `
             <div class="wizard-navegacao">
                 <button
@@ -248,7 +252,7 @@
             </div>
         `;
 
-        container.innerHTML = cabecalho + progressBar + stepperPills + formularioEtapa + navegacao;
+        container.innerHTML = cabecalho + progressBar + stepperPills + blocoIdentif + formularioEtapa + navegacao;
 
         aplicarValoresNosCampos(sec);
         setupCampoListeners(sec);
@@ -258,6 +262,50 @@
                 el.disabled = true;
             });
         }
+    }
+
+    // Sprint 55: cartão de identificação puxado do cadastro do paciente
+    function renderizarBlocoIdentificacao() {
+        const p = state.paciente || {};
+        const item = (lb, vl) => `
+            <div class="anamnese-identif-item">
+                <span class="anamnese-identif-label">${escapeHtml(lb)}</span>
+                <span class="anamnese-identif-valor">${vl ? escapeHtml(vl) : '<em style="color:#999;">—</em>'}</span>
+            </div>
+        `;
+        const idade = (p.idade_anos !== null && p.idade_anos !== undefined) ? `${p.idade_anos} anos` : '';
+        const pais = [p.mae_nome, p.pai_nome].filter(Boolean).join(' / ');
+        const medicoLinha = p.medico_referencia
+            ? `Dr(a). ${p.medico_referencia}${p.medico_crm ? ` — CRM ${p.medico_crm}` : ''}`
+            : '';
+        const clinicaLinha = [p.medico_clinica, p.medico_telefone].filter(Boolean).join(' · ');
+
+        return `
+            <div class="anamnese-identif-bloco">
+                <div class="anamnese-identif-titulo">
+                    <span>👤</span>
+                    <h3>Identificação do paciente</h3>
+                    <a class="anamnese-identif-link" href="../pacientes/novo.html?id=${escapeHtml(state.pacienteId)}">Editar cadastro</a>
+                </div>
+                <div class="anamnese-identif-grid">
+                    ${item('Nome completo', p.nome_completo)}
+                    ${item('Data de nascimento', p.data_nascimento)}
+                    ${item('Idade', idade)}
+                    ${item('Sexo', p.sexo)}
+                    ${item('Nome dos pais', pais)}
+                    ${item('Cidade', p.cidade)}
+                </div>
+                <div class="anamnese-identif-divider"></div>
+                <div class="anamnese-identif-grid">
+                    ${item('Médico solicitante', medicoLinha)}
+                    ${item('Clínica e telefone', clinicaLinha)}
+                    ${item('Encaminhado por', p.encaminhado_por)}
+                </div>
+                <p class="anamnese-identif-aviso">
+                    ℹ️ Dados puxados automaticamente do cadastro. Se algo estiver incorreto ou em branco, edite o cadastro do paciente.
+                </p>
+            </div>
+        `;
     }
 
     function renderizarSecao(sec) {
@@ -281,6 +329,15 @@
         const fullClass = f.full ? 'fg-full' : '';
         const reqMark = f.req ? '<span class="required">*</span>' : '';
         const ph = f.ph || '';
+
+        // ---- Sprint 55: bloco informativo (texto estático, não gera input) ----
+        if (f.tp === 'info') {
+            return `
+                <div class="form-group fg-full anamnese-info-bloco">
+                    ${f.html || `<p>${escapeHtml(f.lb || '')}</p>`}
+                </div>
+            `;
+        }
 
         // ---- NOVOS TIPOS Sprint 18 ----
         if (f.tp === 'sn') {
@@ -394,10 +451,15 @@
     function aplicarValoresNosCampos(sec) {
         const hoje = new Date().toISOString().split('T')[0];
         const col = sec.col;
+        // Sprint 55: seções puramente informativas (boas-vindas) não têm col
+        if (!col) return;
         // garante que existe o objeto da coluna
         if (!state.dados[col]) state.dados[col] = {};
 
         (sec.g2 || sec.g3 || []).forEach(f => {
+            // Sprint 55: tipo 'info' é apenas conteúdo estático, ignora
+            if (f.tp === 'info') return;
+
             const valorSalvo = state.dados[col][f.id];
 
             if (f.tp === 'cks') {
@@ -457,9 +519,13 @@
 
     function setupCampoListeners(sec) {
         const col = sec.col;
+        if (!col) return;  // Sprint 55: seção informativa
         if (!state.dados[col]) state.dados[col] = {};
 
         (sec.g2 || sec.g3 || []).forEach(f => {
+            // Sprint 55: tipo 'info' não tem listeners
+            if (f.tp === 'info') return;
+
             if (f.tp === 'cks') {
                 document.querySelectorAll(`input[type="checkbox"][data-campo="${f.id}"]`).forEach(cb => {
                     cb.addEventListener('change', () => {

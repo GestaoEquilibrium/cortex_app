@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0c1f3f">
+    <title>Portal do Paciente — Equilibrium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.21.0/dist/tabler-icons.min.css">
+    <link rel="stylesheet" href="portal.css">
+    <link rel="icon" type="image/svg+xml" href="../frontend/favicon.svg">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Equilibrium">
+</head>
+<body class="portal-bg-grad">
+
+    <div class="login-wrap">
+        <div class="login-card">
+
+            <div class="login-logo-wrap">
+                <div class="login-logo">E</div>
+                <div class="login-title">Portal do paciente</div>
+                <div class="login-sub">Equilibrium Neuropsicologia</div>
+            </div>
+
+            <div id="alerta" class="alerta" style="display:none;"></div>
+
+            <form id="form-login" class="form">
+                <div class="form-group">
+                    <label for="cpf">CPF do paciente</label>
+                    <input type="tel" id="cpf" name="cpf" placeholder="000.000.000-00"
+                           maxlength="14" inputmode="numeric" autocomplete="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" placeholder="••••••••"
+                           autocomplete="current-password" required>
+                    <div class="form-help">
+                        No primeiro acesso, a senha é o CPF do paciente.
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-entrar" class="btn-primary">
+                    <i class="ti ti-login-2" aria-hidden="true"></i>
+                    Entrar
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <div>Esqueceu a senha?</div>
+                <div class="login-footer-strong">
+                    <i class="ti ti-phone" aria-hidden="true"></i>
+                    Entre em contato: (34) 3088-1234
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../frontend/config.js"></script>
+    <script src="portal_login.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .catch(err => console.warn('SW falhou:', err));
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,2915 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pasta do paciente — CORTEX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/pacientes.css">
+    <link rel="stylesheet" href="../anamnese/anamnese.css">
+    <link rel="stylesheet" href="../hipoteses/hipoteses.css">
+    <link rel="stylesheet" href="../relatorio_escolar/relatorio_escolar.css">
+    <link rel="stylesheet" href="../checklist/checklist.css">
+    <link rel="stylesheet" href="../bateria/bateria.css">
+    <style>
+    /* Sprint 8: Modais Agendar Sessão + Designar Aplicador */
+    .sprint8-modal {
+        position: fixed; inset: 0;
+        background: rgba(15, 23, 42, .55);
+        backdrop-filter: blur(2px);
+        z-index: 10000;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .sprint8-modal-box {
+        background: white;
+        border-radius: 14px;
+        max-width: 760px; width: 100%;
+        max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+    .sprint8-modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 14px;
+        position: sticky; top: 0; background: white; z-index: 1;
+    }
+    .sprint8-modal-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+    .sprint8-modal-close {
+        background: none; border: none; font-size: 18px;
+        color: #64748b; cursor: pointer;
+        padding: 4px 10px; border-radius: 6px;
+        transition: background .15s;
+    }
+    .sprint8-modal-close:hover { background: #f1f5f9; }
+
+    #sprint8-form-sessao { padding: 18px 24px 22px; }
+
+    .sprint8-bloco { margin-bottom: 18px; }
+    .sprint8-bloco-label {
+        font-size: 11px; font-weight: 700; color: #64748b;
+        text-transform: uppercase; letter-spacing: .07em;
+        margin-bottom: 10px; display: block;
+    }
+    .sprint8-form-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .sprint8-field { display: flex; flex-direction: column; }
+    .sprint8-field label {
+        font-size: 12px; color: #475569; margin-bottom: 4px; font-weight: 600;
+    }
+    .sprint8-field input,
+    .sprint8-field select,
+    .sprint8-field textarea {
+        padding: 9px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color .15s, box-shadow .15s;
+        resize: vertical;
+    }
+    .sprint8-field input:focus,
+    .sprint8-field select:focus,
+    .sprint8-field textarea:focus {
+        outline: none; border-color: #1a56db;
+        box-shadow: 0 0 0 3px rgba(26,86,219,.1);
+    }
+
+    /* Cards de data (calendário simples) */
+    .sprint8-datas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+        gap: 8px;
+    }
+    .sprint8-data-card {
+        background: white; border: 1.5px solid #e2e8f0;
+        border-radius: 10px; padding: 10px 6px;
+        cursor: pointer;
+        transition: all .15s;
+        font-family: inherit;
+        display: flex; flex-direction: column; align-items: center; gap: 2px;
+        position: relative;
+    }
+    .sprint8-data-card:hover { border-color: #1a56db; transform: translateY(-1px); }
+    .sprint8-data-card.active {
+        background: #1a56db; color: white; border-color: #1a56db;
+        box-shadow: 0 4px 10px rgba(26,86,219,.3);
+    }
+    .sprint8-data-dia-semana { font-size: 10px; font-weight: 700; text-transform: uppercase; opacity: .8; }
+    .sprint8-data-numero { font-size: 20px; font-weight: 800; line-height: 1; }
+    .sprint8-data-mes { font-size: 10px; opacity: .8; text-transform: uppercase; }
+    .sprint8-data-hoje {
+        position: absolute; top: 3px; right: 3px;
+        font-size: 8px; font-weight: 800;
+        background: #fbbf24; color: white;
+        padding: 1px 4px; border-radius: 4px;
+    }
+    .sprint8-data-card.active .sprint8-data-hoje { background: #fbbf24; }
+
+    /* Lista de horários ocupados */
+    .sprint8-ocupados-lista {
+        display: flex; flex-direction: column; gap: 6px;
+        max-height: 200px; overflow-y: auto;
+        background: #fef3c7; border: 1px solid #fde68a;
+        border-radius: 8px; padding: 10px;
+    }
+    .sprint8-ocupado-item {
+        display: flex; gap: 12px; align-items: center;
+        background: white; border-radius: 6px; padding: 8px 10px;
+        font-size: 12px;
+    }
+    .sprint8-ocupado-hora {
+        font-weight: 800; color: #92400e;
+        flex-shrink: 0; min-width: 80px;
+    }
+    .sprint8-ocupado-info { flex: 1; min-width: 0; }
+    .sprint8-ocupado-meta { font-size: 11px; color: #78716c; margin-top: 1px; }
+
+    .sprint8-erro {
+        padding: 10px 14px;
+        background: #fef2f2; color: #b91c1c;
+        border-radius: 8px; font-size: 13px;
+        margin: 12px 0; border-left: 3px solid #b91c1c;
+    }
+    .sprint8-actions {
+        display: flex; justify-content: flex-end; gap: 8px;
+        margin-top: 18px; padding-top: 14px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* Modal Designar — lista de aplicadores */
+    .sprint8-aplicadores-lista {
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .sprint8-aplicador-opcao {
+        display: flex; align-items: center; gap: 12px;
+        width: 100%; text-align: left;
+        background: white; border: 1.5px solid #e2e8f0;
+        border-radius: 10px; padding: 12px 14px;
+        cursor: pointer; font-family: inherit;
+        transition: all .15s;
+    }
+    .sprint8-aplicador-opcao:hover:not(:disabled) {
+        border-color: #1a56db; background: #f8fafc;
+        transform: translateX(2px);
+    }
+    .sprint8-aplicador-opcao.atual { background: #f0fdf4; border-color: #059669; cursor: default; }
+    .sprint8-aplicador-opcao:disabled { opacity: 1; }
+    .sprint8-aplicador-avatar {
+        flex-shrink: 0; width: 38px; height: 38px;
+        background: #e2e8f0; color: #475569;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 14px;
+    }
+    .sprint8-aplicador-info { flex: 1; min-width: 0; }
+    .sprint8-aplicador-nome { font-size: 13px; font-weight: 700; color: #1e293b; }
+    .sprint8-aplicador-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .sprint8-aplicador-tag {
+        font-size: 10px; font-weight: 800;
+        background: #059669; color: white;
+        padding: 3px 8px; border-radius: 10px;
+        flex-shrink: 0;
+    }
+    .sprint8-aplicador-acao {
+        font-size: 11px; font-weight: 700; color: #1a56db;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 720px) {
+        .sprint8-form-grid { grid-template-columns: 1fr; }
+    }
+    </style>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="manifest" href="../site.webmanifest">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <main class="app-main">
+            <a href="lista.html" class="page-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Voltar à lista de pacientes
+            </a>
+
+            <div id="pasta-conteudo">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando paciente...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <input type="file" id="foto-input-hidden" accept="image/jpeg,image/png,image/webp" style="display:none">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Sprint 17 — pra gerar PDF de anamnese remota -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/supabase_client.js"></script>
+    <script src="../shared/auth_guard.js"></script>
+    <script src="../shared/audit.js"></script>
+    <script src="../shared/avatar.js"></script>
+    <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/sidebar.js"></script>
+
+    <script>
+    let pacienteId = null;
+    let paciente = null;
+    let etapaAtual = 'visao_geral';
+    let anamneseExistente = null;
+    let hipoteseExistente = null;
+    let relatorioEscolarExistente = null;
+    let checklistInfo = null;
+    let bateriaInfo = null;
+    let ehAdmin = false;          // Sprint 8: controla botão Designar
+    let aplicadorAtivo = null;    // Sprint 8: vínculo paciente↔aplicador atual
+    let respostasRemotas = [];    // Sprint 17: anamneses_remotas pendentes/respondidas
+
+    const ETAPAS = [
+        { id: 'visao_geral', label: 'Visão geral' },
+        { id: 'anamnese', label: 'Anamnese' },
+        { id: 'hipoteses', label: 'Hipóteses' },
+        { id: 'checklist', label: 'Checklist' },
+        { id: 'bateria', label: 'Bateria' },
+        { id: 'correcao', label: 'Correção' },
+        { id: 'laudo', label: 'Laudo' },
+        { id: 'devolutiva', label: 'Devolutiva' }
+    ];
+
+    window.addEventListener('cortex:auth-ready', async () => {
+        await CortexSidebar.render('pacientes');
+
+        // Sprint 8: detecta admin pra mostrar botão Designar
+        const perfil = window.cortexProfissional?.perfil;
+        ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        pacienteId = urlParams.get('id');
+
+        if (!pacienteId) {
+            mostrarErroPasta('Paciente não especificado');
+            return;
+        }
+
+        await carregarPaciente();
+    });
+
+    async function carregarPaciente() {
+        const { data, error } = await window.cortexClient
+            .from('vw_pacientes_lista')
+            .select('*')
+            .eq('id', pacienteId)
+            .single();
+
+        if (error || !data) {
+            mostrarErroPasta('Paciente não encontrado');
+            return;
+        }
+
+        paciente = data;
+        await CortexAudit.log('leitura', 'pacientes', pacienteId, { pacienteId });
+
+        await Promise.all([
+            carregarAnamnese(),
+            carregarHipotese(),
+            carregarRelatorioEscolar(),
+            carregarChecklistInfo(),
+            carregarBateriaInfo(),
+            carregarAplicadorAtivo(),
+            carregarRespostasRemotas()
+        ]);
+        renderizarPasta();
+    }
+
+    // Sprint 17: carrega anamneses remotas pendentes/respondidas pra mostrar na aba Anamnese
+    async function carregarRespostasRemotas() {
+        const { data, error } = await window.cortexClient
+            .from('anamneses_remotas')
+            .select('id, status, respostas, quem_respondeu, nome_respondente, data_envio, data_resposta')
+            .eq('paciente_id', pacienteId)
+            .in('status', ['aguardando_resposta', 'respondida'])
+            .order('data_envio', { ascending: false });
+        if (!error && Array.isArray(data)) {
+            respostasRemotas = data;
+        }
+    }
+
+    // Sprint 8: carrega vínculo ativo paciente↔aplicador
+    async function carregarAplicadorAtivo() {
+        const { data, error } = await window.cortexClient
+            .from('vinculos_paciente_aplicador')
+            .select(`
+                id, paciente_id, aplicador_id, data_inicio, motivo_atribuicao, ativo, atribuido_por,
+                aplicador:profissionais!vinculos_paciente_aplicador_aplicador_id_fkey (
+                    id, nome_completo, crp, email, foto_url
+                )
+            `)
+            .eq('paciente_id', pacienteId)
+            .eq('ativo', true)
+            .order('data_inicio', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (!error && data) aplicadorAtivo = data;
+        else aplicadorAtivo = null;
+    }
+
+    async function carregarAnamnese() {
+        const { data, error } = await window.cortexClient
+            .from('anamneses')
+            .select('id, faixa_etaria, status, created_at, updated_at, aprovado_em')
+            .eq('paciente_id', pacienteId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (!error && data) anamneseExistente = data;
+    }
+
+    async function carregarHipotese() {
+        const { data, error } = await window.cortexClient
+            .from('hipoteses')
+            .select('id, hipoteses_iniciais, cids_sugeridos, instrumentos_sugeridos, aprovado_em, created_at, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) hipoteseExistente = data;
+    }
+
+    async function carregarRelatorioEscolar() {
+        const { data, error } = await window.cortexClient
+            .from('relatorios_escolares')
+            .select('id, observacoes_educadores, created_at, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) relatorioEscolarExistente = data;
+    }
+
+    async function carregarChecklistInfo() {
+        // O "checklist" reaproveita instrumentos_sugeridos da tabela hipoteses.
+        // Aqui só queremos saber o total de instrumentos selecionados.
+        const { data, error } = await window.cortexClient
+            .from('hipoteses')
+            .select('id, instrumentos_sugeridos, updated_at')
+            .eq('paciente_id', pacienteId)
+            .maybeSingle();
+
+        if (!error && data) {
+            checklistInfo = {
+                total: (data.instrumentos_sugeridos || []).length,
+                updated_at: data.updated_at,
+                hipoteseId: data.id
+            };
+        }
+    }
+
+    async function carregarBateriaInfo() {
+        const { data, error } = await window.cortexClient
+            .from('aplicacoes_instrumento')
+            .select('id, status, updated_at')
+            .eq('paciente_id', pacienteId);
+
+        if (!error && data && data.length > 0) {
+            const stats = { total: data.length, aguardando: 0, em_aplicacao: 0, concluido: 0 };
+            data.forEach(a => {
+                if (a.status === 'aguardando') stats.aguardando++;
+                else if (a.status === 'em_aplicacao') stats.em_aplicacao++;
+                else if (['concluido_aplicacao', 'em_correcao', 'corrigido', 'integrado_laudo'].includes(a.status)) stats.concluido++;
+            });
+            const ultimaAtualizacao = data.reduce((max, a) =>
+                a.updated_at > max ? a.updated_at : max, '');
+            bateriaInfo = { ...stats, updated_at: ultimaAtualizacao };
+        }
+    }
+
+    function mostrarErroPasta(msg) {
+        document.getElementById('pasta-conteudo').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <div class="empty-state-title">${escapeHtml(msg)}</div>
+                <a href="lista.html" class="btn btn-primary">Voltar à lista</a>
+            </div>
+        `;
+    }
+
+    async function renderizarPasta() {
+        let signedUrl = null;
+        if (paciente.foto_url) {
+            signedUrl = await window.CortexAvatar.buscarUrlAssinada(pacienteId, paciente.foto_url);
+        }
+        const avatar = window.CortexAvatar.render(paciente, { tamanho: 'xl', signedUrl });
+        const statusClass = window.CortexUI.STATUS_CLASSES[paciente.status] || 'status-info';
+        const statusLabel = window.CortexUI.STATUS_LABELS[paciente.status] || paciente.status;
+
+        const cabecalho = `
+            <div class="pasta-cabecalho">
+                <div onclick="document.getElementById('foto-input-hidden').click()" style="cursor: pointer;" title="Clique para alterar foto">
+                    ${avatar}
+                </div>
+                <div class="pasta-info">
+                    <div class="pasta-nome">${escapeHtml(paciente.nome_completo)}${paciente.nome_social ? ` <span style="font-size: 14px; color: var(--color-text-muted); font-weight: 400;">(${escapeHtml(paciente.nome_social)})</span>` : ''}</div>
+                    <div class="pasta-meta">
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Idade:</span>
+                            <span class="pasta-meta-valor">${paciente.idade_humanizada}</span>
+                        </div>
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Sexo:</span>
+                            <span class="pasta-meta-valor">${paciente.sexo}</span>
+                        </div>
+                        <div class="pasta-meta-item">
+                            <span class="pasta-meta-label">Nascimento:</span>
+                            <span class="pasta-meta-valor">${window.CortexUI.formatarDataBR(paciente.data_nascimento)}</span>
+                        </div>
+                        ${paciente.convenio_nome ? `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Convênio:</span>
+                                <span class="pasta-meta-valor">${escapeHtml(paciente.convenio_nome)}</span>
+                            </div>
+                        ` : ''}
+                        ${aplicadorAtivo?.aplicador ? `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Aplicador:</span>
+                                <span class="pasta-meta-valor">${escapeHtml(aplicadorAtivo.aplicador.nome_completo)}${aplicadorAtivo.aplicador.crp ? ` — ${escapeHtml(aplicadorAtivo.aplicador.crp)}` : ''}</span>
+                            </div>
+                        ` : `
+                            <div class="pasta-meta-item">
+                                <span class="pasta-meta-label">Aplicador:</span>
+                                <span class="pasta-meta-valor" style="color: var(--color-text-muted); font-style: italic;">— não designado —</span>
+                            </div>
+                        `}
+                    </div>
+                    <div class="pasta-actions">
+                        <span class="badge ${statusClass}">${statusLabel}</span>
+                        <a class="btn btn-secondary btn-sm" href="novo.html?id=${pacienteId}">
+                            ✏️ Editar dados
+                        </a>
+                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
+                            ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.enviarPortalWhatsApp()">📱 Enviar acesso ao portal</button>
+                        ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalDesignar()">👤 Designar aplicador</button>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const etapasComStatus = ETAPAS.map(et => {
+            let concluida = false;
+            if (et.id === 'anamnese' && anamneseExistente && anamneseExistente.status === 'concluida') {
+                concluida = true;
+            }
+            if (et.id === 'hipoteses' && hipoteseExistente && hipoteseExistente.aprovado_em) {
+                concluida = true;
+            }
+            if (et.id === 'checklist' && checklistInfo && checklistInfo.total > 0) {
+                concluida = true;
+            }
+            if (et.id === 'bateria' && bateriaInfo && bateriaInfo.total > 0 && bateriaInfo.concluido === bateriaInfo.total) {
+                concluida = true;
+            }
+            return { ...et, concluida };
+        });
+
+        const etapasHtml = `
+            <div class="pasta-etapas">
+                ${etapasComStatus.map(et => `
+                    <button
+                        class="etapa ${et.id === etapaAtual ? 'ativa' : ''} ${et.concluida ? 'concluida' : ''}"
+                        onclick="trocarEtapa('${et.id}')"
+                    >${et.label}</button>
+                `).join('')}
+            </div>
+        `;
+
+        const conteudoEtapa = renderizarEtapa(etapaAtual);
+
+        document.getElementById('pasta-conteudo').innerHTML = cabecalho + etapasHtml + conteudoEtapa;
+
+        document.getElementById('foto-input-hidden').onchange = uploadFoto;
+    }
+
+    function trocarEtapa(novaEtapa) {
+        etapaAtual = novaEtapa;
+        renderizarPasta();
+    }
+    window.trocarEtapa = trocarEtapa;
+
+    function renderizarEtapa(etapaId) {
+        if (etapaId === 'visao_geral') return renderVisaoGeral();
+        if (etapaId === 'anamnese') return renderAnamneseComRelatorio();
+        if (etapaId === 'hipoteses') return renderHipoteses();
+        if (etapaId === 'checklist') return renderChecklist();
+        if (etapaId === 'bateria') return renderBateria();
+        if (etapaId === 'correcao') {
+            // Dispara carga assíncrona; substitui o conteúdo quando pronto
+            setTimeout(() => carregarERenderCorrecao(), 0);
+            return `
+                <div class="etapa-content" id="correcao-container">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">⏳</div>
+                        <h3>Carregando dashboard de correção...</h3>
+                    </div>
+                </div>
+            `;
+        }
+        if (etapaId === 'laudo') {
+            setTimeout(() => carregarERenderLaudo(), 0);
+            return `
+                <div class="etapa-content" id="laudo-container">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">⏳</div>
+                        <h3>Carregando laudos...</h3>
+                    </div>
+                </div>
+            `;
+        }
+        if (etapaId === 'devolutiva') {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">🚧</div>
+                        <h3>Em construção</h3>
+                        <p>A etapa de Devolutiva estará disponível em breve.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Qualquer outra etapa não mapeada
+        const sprints = {};
+
+        const labelEtapa = ETAPAS.find(e => e.id === etapaId)?.label || etapaId;
+        const sprintInfo = sprints[etapaId] || 'próximo sprint';
+
+        return `
+            <div class="etapa-content">
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <h3>${labelEtapa}</h3>
+                    <p>Esta etapa será construída no <strong>${sprintInfo}</strong>.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================================================
+    // CORREÇÃO — Dashboard de status dos instrumentos da bateria
+    // ============================================================================
+
+    // Helpers (espelham bateria.js — mesma convenção de URL)
+    function correcaoSiglaParaSlug(sigla) {
+        return String(sigla || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+    const CORRECAO_URL_OVERRIDES_RESULTADO = {
+        'SCARED-A': '../correcao/scared/scared_resultado.html',
+        'SCARED-H': '../correcao/scared/scared_resultado.html'
+    };
+    // Whitelist de retrocompatibilidade (espelha bateria.js — testes legados)
+    const CORRECAO_WHITELIST_RESULTADO = ['RAADS-R'];
+
+    function correcaoMontarUrlResultado(sigla, aplicacaoId) {
+        let base = CORRECAO_URL_OVERRIDES_RESULTADO[sigla];
+        if (!base) {
+            const slug = correcaoSiglaParaSlug(sigla);
+            if (!slug) return null;
+            base = `../correcao/${slug}/${slug}_resultado.html`;
+        }
+        return `${base}?aplicacao_id=${aplicacaoId}`;
+    }
+
+    function correcaoTemPaginaResultado(inst) {
+        if (!inst) return false;
+        if (CORRECAO_WHITELIST_RESULTADO.includes(inst.sigla)) return true;
+        if (inst.tipo_aplicacao === 'presencial') {
+            return inst.permite_correcao_sistema === true;
+        }
+        return inst.permite_aplicacao_online === true
+            && inst.permite_correcao_sistema === true;
+    }
+
+    async function carregarERenderCorrecao() {
+        const container = document.getElementById('correcao-container');
+        if (!container) return;
+
+        try {
+            const { data, error } = await window.cortexClient
+                .from('aplicacoes_instrumento')
+                .select(`
+                    id, status, modalidade, data_aplicacao, data_conclusao,
+                    link_unico, link_acessado_em, updated_at, created_at,
+                    instrumentos_catalogo (
+                        sigla, nome_completo, tipo_aplicacao,
+                        permite_aplicacao_online, permite_correcao_sistema
+                    )
+                `)
+                .eq('paciente_id', pacienteId)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            container.innerHTML = renderCorrecao(data || []);
+        } catch (err) {
+            console.error('[correcao] erro ao carregar:', err);
+            container.innerHTML = `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">⚠</div>
+                    <h3>Erro ao carregar</h3>
+                    <p>${escapeHtml(err.message || 'erro desconhecido')}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderCorrecao(aplicacoes) {
+        if (aplicacoes.length === 0) {
+            return `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">📋</div>
+                    <h3>Nenhum instrumento na bateria</h3>
+                    <p style="margin-bottom: 18px;">Selecione testes no Checklist e inicie a Bateria para ver o status aqui.</p>
+                    <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">Ir para Checklist</a>
+                </div>
+            `;
+        }
+
+        // Classifica cada aplicação em um dos 3 grupos
+        const corrigidos = [];
+        const aguardandoCorrecao = [];
+        const onlineAguardando = [];
+
+        for (const apl of aplicacoes) {
+            const inst = apl.instrumentos_catalogo;
+            const sigla = inst?.sigla || '?';
+            const ehOnline = apl.modalidade === 'online'
+                || (inst?.permite_aplicacao_online && inst?.tipo_aplicacao !== 'presencial');
+
+            if (apl.status === 'corrigido' || apl.status === 'integrado_laudo') {
+                corrigidos.push(apl);
+            } else if (ehOnline && (apl.status === 'aguardando' || apl.status === 'em_aplicacao')) {
+                onlineAguardando.push(apl);
+            } else {
+                aguardandoCorrecao.push(apl);
+            }
+        }
+
+        const total = aplicacoes.length;
+        const pctConcluido = Math.round((corrigidos.length / total) * 100);
+
+        return `
+            <div class="correcao-dashboard">
+
+                <!-- Resumo -->
+                <div class="correcao-resumo">
+                    <div class="correcao-resumo-info">
+                        <h3 style="margin: 0 0 6px 0;">Instrumentos da bateria (${total})</h3>
+                        <p style="margin: 0; color: var(--color-text-muted); font-size: 13px;">
+                            ${corrigidos.length} de ${total} já corrigidos (${pctConcluido}%)
+                        </p>
+                    </div>
+                    <div class="correcao-resumo-progress">
+                        <div class="correcao-resumo-progress-bar" style="width: ${pctConcluido}%;"></div>
+                    </div>
+                </div>
+
+                <!-- ✅ Corrigidos -->
+                ${corrigidos.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #059669;">
+                            ✅ Corrigidos
+                            <span class="correcao-grupo-contador">${corrigidos.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${corrigidos.map(apl => renderCorrecaoLinhaCorrigido(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- ⏳ Aguardando correção (presencial / sem link) -->
+                ${aguardandoCorrecao.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #d97706;">
+                            ⏳ Aguardando correção
+                            <span class="correcao-grupo-contador">${aguardandoCorrecao.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${aguardandoCorrecao.map(apl => renderCorrecaoLinhaPendente(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- 📲 Online aguardando paciente -->
+                ${onlineAguardando.length > 0 ? `
+                    <div class="correcao-grupo">
+                        <h4 class="correcao-grupo-titulo" style="color: #1d4ed8;">
+                            📲 Online — aguardando paciente
+                            <span class="correcao-grupo-contador">${onlineAguardando.length}</span>
+                        </h4>
+                        <div class="correcao-lista">
+                            ${onlineAguardando.map(apl => renderCorrecaoLinhaOnline(apl)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Atalho para Bateria -->
+                <div style="margin-top: 22px; text-align: center;">
+                    <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-secondary">
+                        🎯 Ir para a Bateria
+                    </a>
+                </div>
+
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaCorrigido(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+        const dataConcl = apl.data_conclusao
+            ? formatarDataHora(apl.data_conclusao)
+            : (apl.updated_at ? formatarDataHora(apl.updated_at) : '—');
+
+        const podeVer = correcaoTemPaginaResultado(inst);
+        const url = podeVer ? correcaoMontarUrlResultado(sigla, apl.id) : null;
+
+        return `
+            <div class="correcao-item correcao-item-ok">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">Corrigido em ${dataConcl}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    ${url ? `
+                        <a class="btn btn-primary btn-sm" href="${url}">📊 Ver resultado</a>
+                    ` : `
+                        <span style="font-size: 12px; color: var(--color-text-muted); font-style: italic;">Sem página de resultado</span>
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaPendente(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+        const tipo = inst?.tipo_aplicacao === 'presencial' ? 'Presencial' : 'Online';
+        const statusLabel = {
+            'aguardando': 'Aguardando aplicação',
+            'em_aplicacao': 'Em aplicação',
+            'concluido_aplicacao': 'Aplicado — aguardando correção',
+            'em_correcao': 'Em correção',
+        }[apl.status] || apl.status;
+
+        return `
+            <div class="correcao-item correcao-item-pend">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">${tipo} — ${escapeHtml(statusLabel)}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    <a class="btn btn-secondary btn-sm" href="../bateria/bateria.html?paciente=${pacienteId}">Ir para a Bateria</a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderCorrecaoLinhaOnline(apl) {
+        const inst = apl.instrumentos_catalogo;
+        const sigla = inst?.sigla || '?';
+        const nome = inst?.nome_completo || sigla;
+
+        let metaTxt = '';
+        if (apl.link_acessado_em) {
+            metaTxt = `Link acessado em ${formatarDataHora(apl.link_acessado_em)}`;
+        } else if (apl.link_unico) {
+            metaTxt = `Link enviado em ${formatarDataHora(apl.updated_at || apl.created_at)}`;
+        } else {
+            metaTxt = 'Aguardando geração de link';
+        }
+
+        return `
+            <div class="correcao-item correcao-item-online">
+                <div class="correcao-item-info">
+                    <div class="correcao-item-sigla">${escapeHtml(sigla)}</div>
+                    <div class="correcao-item-nome">${escapeHtml(nome)}</div>
+                    <div class="correcao-item-meta">${escapeHtml(metaTxt)}</div>
+                </div>
+                <div class="correcao-item-acoes">
+                    <a class="btn btn-secondary btn-sm" href="../bateria/bateria.html?paciente=${pacienteId}">Gerenciar link</a>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================================================
+    // LAUDO — Upload PDF + visualização + histórico versionado (Sprint 3)
+    // ============================================================================
+
+    let laudosCache = null;  // Lista carregada (refresh ao alterar)
+
+    async function carregarERenderLaudo() {
+        const container = document.getElementById('laudo-container');
+        if (!container) return;
+
+        try {
+            const { data, error } = await window.cortexClient
+                .from('laudos_paciente')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('versao', { ascending: false });
+
+            if (error) throw error;
+
+            laudosCache = data || [];
+            container.innerHTML = renderLaudo(laudosCache);
+            bindLaudoUpload();
+        } catch (err) {
+            console.error('[laudo] erro ao carregar:', err);
+            container.innerHTML = `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">⚠</div>
+                    <h3>Erro ao carregar laudos</h3>
+                    <p>${escapeHtml(err.message || 'erro desconhecido')}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderLaudo(laudos) {
+        const ativo = laudos.find(l => l.ativo) || laudos[0] || null;
+        const historicas = laudos.filter(l => !ativo || l.id !== ativo.id);
+
+        return `
+            <div class="laudo-page">
+
+                <!-- Topo: upload + título -->
+                <div class="laudo-topo">
+                    <div>
+                        <h3 style="margin: 0 0 4px 0;">Laudo do Paciente</h3>
+                        <p style="margin: 0; color: var(--color-text-muted); font-size: 13px;">
+                            Faça upload do PDF do laudo final. Cada envio gera uma nova versão automaticamente.
+                        </p>
+                    </div>
+                    <div>
+                        <input type="file" id="laudo-file-input" accept="application/pdf" style="display: none;">
+                        <button class="btn btn-primary" id="btn-laudo-upload">
+                            📤 Enviar laudo (PDF)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Versão atual -->
+                ${ativo ? renderLaudoVersaoAtual(ativo) : `
+                    <div class="laudo-empty">
+                        <div class="laudo-empty-icon">📄</div>
+                        <h4>Nenhum laudo enviado ainda</h4>
+                        <p>Clique em "Enviar laudo" para fazer upload do primeiro PDF.</p>
+                    </div>
+                `}
+
+                <!-- Histórico (versões antigas) -->
+                ${historicas.length > 0 ? `
+                    <div class="laudo-historico">
+                        <h4 class="laudo-historico-titulo">
+                            📚 Histórico de versões
+                            <span class="laudo-historico-contador">${historicas.length}</span>
+                        </h4>
+                        <div class="laudo-historico-lista">
+                            ${historicas.map(l => renderLaudoVersaoHistorica(l)).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+            </div>
+        `;
+    }
+
+    function renderLaudoVersaoAtual(laudo) {
+        return `
+            <div class="laudo-versao-atual">
+                <div class="laudo-versao-atual-header">
+                    <div>
+                        <span class="laudo-badge-atual">VERSÃO ATUAL</span>
+                        <h4 class="laudo-versao-atual-titulo">Laudo v${laudo.versao}</h4>
+                        <div class="laudo-versao-atual-meta">
+                            ${escapeHtml(laudo.arquivo_nome_original || '—')}
+                            · ${formatarBytes(laudo.arquivo_tamanho_bytes)}
+                            · Enviado em ${formatarDataHora(laudo.created_at)}
+                        </div>
+                    </div>
+                    <div class="laudo-versao-atual-acoes">
+                        <button class="btn btn-primary btn-sm" onclick="window.CortexLaudo.visualizar('${laudo.id}')">
+                            👁 Visualizar
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">
+                            ⬇ Baixar
+                        </button>
+                        <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
+                            🗑 Remover
+                        </button>
+                    </div>
+                </div>
+                <div class="laudo-versao-atual-viewer" id="laudo-viewer-${laudo.id}"></div>
+            </div>
+        `;
+    }
+
+    function renderLaudoVersaoHistorica(laudo) {
+        return `
+            <div class="laudo-historico-item">
+                <div class="laudo-historico-info">
+                    <div class="laudo-historico-versao">v${laudo.versao}</div>
+                    <div class="laudo-historico-detalhes">
+                        <div class="laudo-historico-nome">${escapeHtml(laudo.arquivo_nome_original || '—')}</div>
+                        <div class="laudo-historico-meta">
+                            ${formatarBytes(laudo.arquivo_tamanho_bytes)}
+                            · Enviado em ${formatarDataHora(laudo.created_at)}
+                        </div>
+                    </div>
+                </div>
+                <div class="laudo-historico-acoes">
+                    <button class="btn btn-ghost btn-sm" onclick="window.CortexLaudo.visualizar('${laudo.id}')">
+                        👁 Visualizar
+                    </button>
+                    <button class="btn btn-ghost btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">
+                        ⬇ Baixar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.definirAtual('${laudo.id}')">
+                        ⭐ Definir como atual
+                    </button>
+                    <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
+                        🗑
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function bindLaudoUpload() {
+        const btn = document.getElementById('btn-laudo-upload');
+        const input = document.getElementById('laudo-file-input');
+        if (!btn || !input) return;
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', uploadLaudo);
+    }
+
+    async function uploadLaudo(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validações
+        if (file.type !== 'application/pdf') {
+            window.CortexUI.toast('Apenas arquivos PDF são aceitos.', 'danger');
+            event.target.value = '';
+            return;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            window.CortexUI.toast('Arquivo muito grande. Máximo: 20MB.', 'danger');
+            event.target.value = '';
+            return;
+        }
+
+        const btn = document.getElementById('btn-laudo-upload');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳ Enviando...';
+
+        try {
+            // Path: <paciente_id>/v<timestamp>.pdf
+            const ts = Date.now();
+            const path = `${pacienteId}/v${ts}.pdf`;
+
+            // 1. Upload no Storage
+            const { error: uploadError } = await window.cortexClient
+                .storage
+                .from('laudos')
+                .upload(path, file, { contentType: 'application/pdf', upsert: false });
+            if (uploadError) throw uploadError;
+
+            // 2. INSERT em laudos_paciente (versao auto via trigger; ativo=true por default)
+            const { data: { user } } = await window.cortexClient.auth.getUser();
+            const { error: insertError } = await window.cortexClient
+                .from('laudos_paciente')
+                .insert({
+                    paciente_id: pacienteId,
+                    arquivo_path: path,
+                    arquivo_nome_original: file.name,
+                    arquivo_tamanho_bytes: file.size,
+                    ativo: true,
+                    created_by: user?.id || null,
+                });
+            if (insertError) throw insertError;
+
+            await CortexAudit.log('upload', 'laudos_paciente', pacienteId, {
+                pacienteId,
+                detalhes: { nome: file.name, tamanho: file.size }
+            });
+
+            window.CortexUI.toast('Laudo enviado com sucesso!', 'success');
+
+            // Reload da lista
+            await carregarERenderLaudo();
+
+        } catch (err) {
+            console.error('[laudo] erro upload:', err);
+            window.CortexUI.toast('Erro ao enviar laudo: ' + (err.message || 'desconhecido'), 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = orig;
+            event.target.value = '';
+        }
+    }
+
+    // API global pros botões inline (visualizar/baixar/definir/remover)
+    window.CortexLaudo = {
+        visualizar: async function(laudoId) {
+            try {
+                const laudo = (laudosCache || []).find(l => l.id === laudoId);
+                if (!laudo) throw new Error('Laudo não encontrado');
+
+                const { data, error } = await window.cortexClient
+                    .storage
+                    .from('laudos')
+                    .createSignedUrl(laudo.arquivo_path, 600);  // 10 min
+                if (error || !data) throw error || new Error('URL não gerada');
+
+                // Abre modal com iframe do PDF
+                abrirModalLaudo(laudo, data.signedUrl);
+            } catch (err) {
+                console.error('[laudo] visualizar:', err);
+                window.CortexUI.toast('Erro ao visualizar: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        baixar: async function(laudoId) {
+            try {
+                const laudo = (laudosCache || []).find(l => l.id === laudoId);
+                if (!laudo) throw new Error('Laudo não encontrado');
+
+                const { data, error } = await window.cortexClient
+                    .storage
+                    .from('laudos')
+                    .createSignedUrl(laudo.arquivo_path, 60, { download: laudo.arquivo_nome_original || 'laudo.pdf' });
+                if (error || !data) throw error || new Error('URL não gerada');
+
+                window.location.href = data.signedUrl;
+            } catch (err) {
+                console.error('[laudo] baixar:', err);
+                window.CortexUI.toast('Erro ao baixar: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        definirAtual: async function(laudoId) {
+            if (!confirm('Definir esta versão como a atual? A versão atual passa a ser histórico.')) return;
+            try {
+                // Trigger laudos_unique_ativo cuida de marcar as outras como false
+                const { error } = await window.cortexClient
+                    .from('laudos_paciente')
+                    .update({ ativo: true })
+                    .eq('id', laudoId);
+                if (error) throw error;
+
+                window.CortexUI.toast('Versão definida como atual.', 'success');
+                await carregarERenderLaudo();
+            } catch (err) {
+                console.error('[laudo] definirAtual:', err);
+                window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        },
+
+        remover: async function(laudoId) {
+            const laudo = (laudosCache || []).find(l => l.id === laudoId);
+            if (!laudo) return;
+            if (!confirm(`Remover permanentemente a versão v${laudo.versao}? Esta ação não pode ser desfeita.`)) return;
+            try {
+                // 1. Remove do Storage
+                await window.cortexClient.storage.from('laudos').remove([laudo.arquivo_path]);
+                // 2. Remove da tabela
+                const { error } = await window.cortexClient
+                    .from('laudos_paciente')
+                    .delete()
+                    .eq('id', laudoId);
+                if (error) throw error;
+
+                await CortexAudit.log('remocao', 'laudos_paciente', pacienteId, {
+                    pacienteId,
+                    detalhes: { versao: laudo.versao }
+                });
+
+                window.CortexUI.toast('Versão removida.', 'success');
+                await carregarERenderLaudo();
+            } catch (err) {
+                console.error('[laudo] remover:', err);
+                window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+            }
+        }
+    };
+
+    function abrirModalLaudo(laudo, signedUrl) {
+        // Cria modal full-screen com iframe do PDF
+        const modal = document.createElement('div');
+        modal.className = 'laudo-modal';
+        modal.innerHTML = `
+            <div class="laudo-modal-header">
+                <div class="laudo-modal-titulo">
+                    <strong>Laudo v${laudo.versao}</strong>
+                    <span class="laudo-modal-meta">${escapeHtml(laudo.arquivo_nome_original || '')}</span>
+                </div>
+                <div class="laudo-modal-acoes">
+                    <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">⬇ Baixar</button>
+                    <button class="btn btn-ghost btn-sm" onclick="this.closest('.laudo-modal').remove()">✕ Fechar</button>
+                </div>
+            </div>
+            <iframe class="laudo-modal-iframe" src="${signedUrl}" title="Laudo PDF"></iframe>
+        `;
+        document.body.appendChild(modal);
+
+        // ESC fecha
+        const escHandler = (e) => {
+            if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function formatarBytes(bytes) {
+        if (bytes == null) return '—';
+        const kb = bytes / 1024;
+        if (kb < 1024) return `${kb.toFixed(0)} KB`;
+        return `${(kb / 1024).toFixed(2)} MB`;
+    }
+
+    function renderVisaoGeral() {
+        return `
+            <div class="etapa-content">
+                <h3>Visão geral</h3>
+                <div class="campos-grid">
+                    ${campo('Telefone', paciente.telefone)}
+                    ${campo('E-mail', paciente.email)}
+                    ${campo('CPF', paciente.cpf)}
+                    ${campo('Endereço', paciente.endereco)}
+                    ${campo('Cidade', paciente.cidade)}
+                    ${campo('Encaminhado por', paciente.encaminhado_por)}
+                    ${campo('Médico de referência', paciente.medico_referencia)}
+                    ${paciente.responsavel_nome ? campo('Responsável', `${paciente.responsavel_nome} (${paciente.responsavel_parentesco || 'sem parentesco'})`) : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAnamneseComRelatorio() {
+        return `
+            <div class="etapa-content">
+                ${renderCardAnamnese()}
+                ${renderCardRelatorioEscolar()}
+            </div>
+        `;
+    }
+
+    function renderCardAnamnese() {
+        // Sprint 17: cards de respostas remotas SEMPRE no topo, independente do estado da anamnese
+        const cardsRemotos = renderCardsAnamnesesRemotas();
+
+        // Botão "Enviar formulário remoto" também SEMPRE disponível
+        const btnEnviarRemoto = `
+            <div class="anamnese-acoes-topo">
+                <button class="btn btn-secondary btn-sm" onclick="enviarAnamneseRemota()" title="Gera link pra paciente preencher antes da sessão">
+                    📧 Enviar formulário remoto
+                </button>
+            </div>
+        `;
+
+        if (!anamneseExistente) {
+            const idadeAnos = paciente.idade_anos;
+            let faixaSugerida = 'Adulto';
+            if (idadeAnos < 6) faixaSugerida = 'Primeira Infância (0–6 anos)';
+            else if (idadeAnos < 12) faixaSugerida = 'Segunda Infância (6–12 anos)';
+            else if (idadeAnos < 18) faixaSugerida = 'Adolescência (12–18 anos)';
+            else if (idadeAnos < 50) faixaSugerida = 'Adulto (18–50 anos)';
+            else faixaSugerida = 'Idoso (50+ anos)';
+
+            return `
+                ${btnEnviarRemoto}
+                ${cardsRemotos}
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                    </div>
+                    <h3>Anamnese ainda não iniciada</h3>
+                    <p style="margin-bottom: 18px;">Com base na idade do paciente (${paciente.idade_humanizada}), o formulário sugerido é:<br><strong>${faixaSugerida}</strong></p>
+                    <a href="../anamnese/anamnese.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                        Iniciar anamnese
+                    </a>
+                </div>
+            `;
+        }
+
+        const FAIXAS_LABELS = {
+            'infantil': 'Primeira Infância (0–6 anos)',
+            'escolar': 'Segunda Infância (6–12 anos)',
+            'adolescente': 'Adolescência (12–18 anos)',
+            'adulto': 'Adulto (18–50 anos)',
+            'idoso': 'Idoso (50+ anos)'
+        };
+
+        const faixaLabel = FAIXAS_LABELS[anamneseExistente.faixa_etaria] || anamneseExistente.faixa_etaria;
+        const isFinalizada = anamneseExistente.status === 'concluida';
+
+        if (isFinalizada) {
+            return `
+                ${btnEnviarRemoto}
+                ${cardsRemotos}
+                <div class="anamnese-card-resumo">
+                    <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-success">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <div class="anamnese-card-resumo-info">
+                        <h3>Anamnese finalizada</h3>
+                        <p><strong>Formulário:</strong> ${faixaLabel}</p>
+                        <p><strong>Finalizada em:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
+                    </div>
+                    <div class="anamnese-card-resumo-acoes">
+                        <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-secondary">Visualizar</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            ${btnEnviarRemoto}
+            ${cardsRemotos}
+            <div class="anamnese-card-resumo">
+                <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-warning">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                    </svg>
+                </div>
+                <div class="anamnese-card-resumo-info">
+                    <h3>Anamnese em rascunho</h3>
+                    <p><strong>Formulário:</strong> ${faixaLabel}</p>
+                    <p><strong>Última edição:</strong> ${formatarDataHora(anamneseExistente.updated_at)}</p>
+                </div>
+                <div class="anamnese-card-resumo-acoes">
+                    <a href="../anamnese/anamnese.html?id=${anamneseExistente.id}" class="btn btn-primary">
+                        Continuar anamnese
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Sprint 17 — Anamnese Remota
+    // ════════════════════════════════════════════════════════════════════
+    function renderCardsAnamnesesRemotas() {
+        if (!respostasRemotas || respostasRemotas.length === 0) return '';
+
+        return respostasRemotas.map(ar => {
+            const isResp = ar.status === 'respondida';
+            const dataEnv = new Date(ar.data_envio).toLocaleDateString('pt-BR');
+            const dataResp = ar.data_resposta ? new Date(ar.data_resposta).toLocaleDateString('pt-BR') : null;
+            const respondente = ar.nome_respondente || ar.quem_respondeu || '—';
+
+            if (isResp) {
+                return `
+                    <div class="anamnese-card-remoto-pasta anamnese-card-remoto-respondida">
+                        <div class="anamnese-card-remoto-pasta-info">
+                            <div class="anamnese-card-remoto-pasta-titulo">📬 Formulário remoto respondido em ${dataResp}</div>
+                            <div class="anamnese-card-remoto-pasta-sub">Respondido por: ${escapeHtml(respondente)}${ar.quem_respondeu ? ` (${escapeHtml(ar.quem_respondeu)})` : ''}</div>
+                        </div>
+                        <div class="anamnese-card-remoto-pasta-acoes">
+                            <button class="btn btn-primary btn-sm" onclick="visualizarPdfAnamneseRemota('${ar.id}')">📄 Visualizar PDF</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="anamnese-card-remoto-pasta anamnese-card-remoto-pendente">
+                        <div class="anamnese-card-remoto-pasta-info">
+                            <div class="anamnese-card-remoto-pasta-titulo">⏳ Formulário enviado em ${dataEnv} — aguardando resposta</div>
+                            <div class="anamnese-card-remoto-pasta-sub">Quando o responsável preencher, as respostas aparecem aqui.</div>
+                        </div>
+                        <div class="anamnese-card-remoto-pasta-acoes">
+                            <button class="btn btn-secondary btn-sm" onclick="copiarLinkRemoto('${ar.id}')">Copiar link</button>
+                            <button class="btn btn-secondary btn-sm" onclick="cancelarRemotaPasta('${ar.id}')">Cancelar</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }).join('');
+    }
+
+    // Mantém os tokens em cache pra reuso ao "Copiar link"
+    const _tokensRemotosCache = {};
+
+    async function enviarAnamneseRemota() {
+        try {
+            const { data, error } = await window.cortexClient
+                .rpc('criar_anamnese_remota', { p_paciente_id: pacienteId });
+            if (error) throw error;
+            const linha = Array.isArray(data) ? data[0] : data;
+            if (!linha || !linha.novo_token) throw new Error('Não retornou token');
+
+            const base = window.location.origin + window.location.pathname.replace(/pacientes\/pasta\.html$/, '');
+            const link = `${base}responder/anamnese_remota.html?token=${linha.novo_token}`;
+
+            // Guarda o token pra reuso (Copiar link no card pendente)
+            _tokensRemotosCache[linha.anamnese_remota_id] = linha.novo_token;
+
+            mostrarModalLinkRemoto(link);
+
+            // Recarrega lista pra mostrar o card "aguardando resposta"
+            await carregarRespostasRemotas();
+            renderizarPasta();
+        } catch (err) {
+            console.error('Erro ao gerar link remoto:', err);
+            window.CortexUI.toast('Erro ao gerar link: ' + (err.message || ''), 'danger');
+        }
+    }
+
+    async function copiarLinkRemoto(arId) {
+        // Se temos o token em cache (mesma sessão), usa; senão, regenera não dá — token só vem na criação.
+        // Solução: como o token está só no banco do paciente que vai abrir, não dá pra recuperar pelo painel.
+        // Avisa o usuário se não temos cache.
+        const token = _tokensRemotosCache[arId];
+        if (!token) {
+            alert('Não consigo recuperar o link desta sessão antiga. Por segurança, o token só está disponível no momento da geração.\n\nSe precisar enviar de novo, cancele este envio e gere um novo formulário remoto.');
+            return;
+        }
+        const base = window.location.origin + window.location.pathname.replace(/pacientes\/pasta\.html$/, '');
+        const link = `${base}responder/anamnese_remota.html?token=${token}`;
+        mostrarModalLinkRemoto(link);
+    }
+
+    function mostrarModalLinkRemoto(link) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+        const msgWhats = encodeURIComponent(
+            'Olá! Aqui está o link do formulário pré-avaliação que falamos. Preencha com calma:\n\n' + link
+        );
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Link do formulário remoto</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin: 0 0 14px; color: #475569; font-size: 14px;">Copie o link abaixo e envie ao paciente ou responsável:</p>
+                    <input type="text" class="form-input" id="link-remoto-input" readonly value="${escapeHtml(link)}" style="width: 100%; font-size: 13px;">
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button class="btn btn-secondary" id="btn-copiar-remoto" style="flex: 1;">📋 Copiar link</button>
+                        <a class="btn btn-primary" style="flex: 1; text-decoration: none; text-align: center;"
+                           href="https://wa.me/?text=${msgWhats}" target="_blank" rel="noopener">📱 Enviar por WhatsApp</a>
+                    </div>
+                    <p style="margin: 18px 0 0; color: #64748b; font-size: 12.5px; font-style: italic;">
+                        💡 O link não expira. Só pode ser usado uma vez. Se precisar reenviar, gere um novo.
+                    </p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        document.getElementById('btn-copiar-remoto').addEventListener('click', () => {
+            const inp = document.getElementById('link-remoto-input');
+            inp.select();
+            document.execCommand('copy');
+            window.CortexUI.toast('Link copiado!', 'success');
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Sprint 17 — mapeamento de chaves técnicas pra rótulos humanos
+    // (espelhado do anamnese_remota_perguntas.js)
+    // ════════════════════════════════════════════════════════════════════
+    const ROTULOS_ANAMNESE_REMOTA = {
+        // queixa
+        motivo: 'Motivo da avaliação',
+        impacto: 'Impacto no dia a dia',
+        tempo_queixa: 'Há quanto tempo existem',
+        encaminhado_por: 'Quem indicou a avaliação',
+        // gestação
+        tipo_parto: 'Tipo de parto',
+        gestacao_risco: 'Gestação de alto risco',
+        tempo_gestacao: 'Semanas de gestação ao nascer',
+        peso_nascimento: 'Peso aproximado ao nascer',
+        intercorrencias_gestacao: 'Intercorrências durante gestação/parto',
+        // desenvolvimento
+        idade_andou: 'Idade que começou a andar sozinha',
+        idade_falou: 'Idade das primeiras palavras',
+        controle_esfincter: 'Idade do controle do xixi/cocô',
+        desenvolvimento_obs: 'Observações sobre o desenvolvimento',
+        // escola
+        serie_escolar: 'Série / ano escolar',
+        tipo_escola: 'Tipo de escola',
+        desempenho_escolar: 'Desempenho escolar',
+        dificuldades_escolares: 'Dificuldades específicas',
+        queixa_escola: 'Preocupação da escola',
+        // comportamento
+        comportamentos_observados: 'Comportamentos observados',
+        amigos: 'Relacionamento com outras crianças / amigos',
+        // trabalho/vida pessoal
+        ocupacao: 'Profissão / ocupação',
+        situacao_trabalho: 'Situação de trabalho',
+        escolaridade: 'Escolaridade',
+        dificuldades_trabalho: 'Dificuldades no trabalho',
+        estado_civil: 'Estado civil',
+        tem_filhos: 'Filhos',
+        // idoso
+        com_quem_mora: 'Com quem mora',
+        autonomia: 'Atividades que precisa de ajuda',
+        inicio_queixas: 'Quando as queixas começaram',
+        piora: 'Estão piorando',
+        // saúde
+        medicacoes: 'Medicamentos em uso',
+        diagnosticos_anteriores: 'Diagnósticos anteriores',
+        acompanhamentos: 'Acompanhamentos atuais',
+        doencas_cronicas: 'Doenças crônicas',
+        sono: 'Padrão de sono',
+        // família
+        hist_familiar: 'Casos na família',
+        hist_familiar_detalhes: 'Detalhes do histórico familiar',
+        // final
+        expectativas: 'Expectativas com a avaliação',
+        informacoes_extras: 'Informações adicionais',
+    };
+
+    function rotulo(chave) {
+        return ROTULOS_ANAMNESE_REMOTA[chave] || chave.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+    }
+
+    function renderValorResposta(v) {
+        if (v === null || v === undefined || v === '') return '<em style="color:#94a3b8;">— em branco —</em>';
+        if (Array.isArray(v)) {
+            if (v.length === 0) return '<em style="color:#94a3b8;">— em branco —</em>';
+            return v.map(escapeHtml).join(' · ');
+        }
+        return escapeHtml(String(v)).replace(/\n/g, '<br>');
+    }
+
+    function montarDocumentoAnamneseRemotaHTML(ar) {
+        const meta = (ar.respostas && ar.respostas._metadata) || {};
+        const respostasLimpas = { ...ar.respostas };
+        delete respostasLimpas._metadata;
+
+        const dataResp = ar.data_resposta
+            ? new Date(ar.data_resposta).toLocaleDateString('pt-BR') + ' às ' + new Date(ar.data_resposta).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+            : '—';
+        const dataEnv = new Date(ar.data_envio).toLocaleDateString('pt-BR');
+
+        const linhas = Object.entries(respostasLimpas).map(([k, v]) => `
+            <div style="margin: 0 0 12px; padding: 0 0 10px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">
+                    ${escapeHtml(rotulo(k))}
+                </div>
+                <div style="font-size: 13px; color: #0f172a; line-height: 1.5;">
+                    ${renderValorResposta(v)}
+                </div>
+            </div>
+        `).join('');
+
+        const idade = paciente.idade_humanizada || '';
+        const cpf = paciente.cpf ? `<br>CPF: ${escapeHtml(paciente.cpf)}` : '';
+
+        // Documento todo dentro de uma div A4-like pra html2canvas + jsPDF
+        return `
+            <div id="pdf-anamnese-remota-conteudo" style="
+                width: 720px;
+                background: #fff;
+                padding: 40px 48px;
+                font-family: 'Inter', -apple-system, sans-serif;
+                color: #0f172a;
+                box-sizing: border-box;
+            ">
+                <!-- Cabeçalho -->
+                <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    padding-bottom: 18px;
+                    border-bottom: 2px solid #0c1f3f;
+                    margin-bottom: 24px;
+                ">
+                    <div>
+                        <div style="font-size: 22px; font-weight: 800; color: #0c1f3f; letter-spacing: -0.01em;">
+                            Equilibrium <span style="font-weight: 400; color: #64748b;">Neuropsicologia</span>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase;">
+                            Formulário Pré-Avaliação
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 11px; color: #64748b;">
+                        Gerado em ${new Date().toLocaleDateString('pt-BR')}
+                    </div>
+                </div>
+
+                <!-- Identificação -->
+                <h2 style="font-size: 16px; font-weight: 700; color: #0c1f3f; margin: 0 0 14px;">Identificação</h2>
+                <div style="background: #f8fafc; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; line-height: 1.7; color: #1e293b;">
+                    <strong>Paciente:</strong> ${escapeHtml(paciente.nome_completo)}${cpf}<br>
+                    <strong>Idade:</strong> ${escapeHtml(idade)}<br>
+                    <strong>Respondido por:</strong> ${escapeHtml(ar.nome_respondente || '—')}${ar.quem_respondeu ? ' (' + escapeHtml(ar.quem_respondeu) + ')' : ''}${meta.relacao_outro ? '<br><strong>Relação:</strong> ' + escapeHtml(meta.relacao_outro) : ''}<br>
+                    <strong>Link enviado em:</strong> ${escapeHtml(dataEnv)}<br>
+                    <strong>Respondido em:</strong> ${escapeHtml(dataResp)}
+                </div>
+
+                <!-- Respostas -->
+                <h2 style="font-size: 16px; font-weight: 700; color: #0c1f3f; margin: 0 0 14px;">Respostas</h2>
+                <div>
+                    ${linhas}
+                </div>
+
+                <!-- Rodapé -->
+                <div style="margin-top: 36px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; text-align: center;">
+                    Este documento é um relato de pré-avaliação preenchido remotamente. Deve ser revisado e
+                    complementado em sessão presencial com o profissional responsável.
+                </div>
+            </div>
+        `;
+    }
+
+    function visualizarPdfAnamneseRemota(arId) {
+        const ar = respostasRemotas.find(r => r.id === arId);
+        if (!ar) {
+            window.CortexUI.toast('Resposta não encontrada.', 'danger');
+            return;
+        }
+
+        const documentoHtml = montarDocumentoAnamneseRemotaHTML(ar);
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+            <div class="modal-content" style="max-width: 820px; max-height: 92vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h2>Formulário Pré-Avaliação</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" id="btn-baixar-pdf-anamnese-remota">📥 Baixar PDF</button>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                    </div>
+                </div>
+                <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 24px; background: #f1f5f9;">
+                    ${documentoHtml}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('btn-baixar-pdf-anamnese-remota').addEventListener('click', async () => {
+            await gerarPdfAnamneseRemota(ar);
+        });
+    }
+
+    async function gerarPdfAnamneseRemota(ar) {
+        if (!window.html2canvas || !window.jspdf) {
+            window.CortexUI.toast('Biblioteca de PDF ainda carregando, tente em 2 segundos...', 'info');
+            return;
+        }
+
+        const btn = document.getElementById('btn-baixar-pdf-anamnese-remota');
+        const txtOriginal = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+
+        try {
+            const el = document.getElementById('pdf-anamnese-remota-conteudo');
+            if (!el) throw new Error('Elemento do documento não encontrado');
+
+            const canvas = await window.html2canvas(el, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false
+            });
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const pdfWidth = 210, pdfHeight = 297;
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            if (imgHeight <= pdfHeight) {
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, imgHeight);
+            } else {
+                let posY = 0, restante = imgHeight;
+                while (restante > 0) {
+                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, -posY, pdfWidth, imgHeight);
+                    restante -= pdfHeight;
+                    posY += pdfHeight;
+                    if (restante > 0) pdf.addPage();
+                }
+            }
+
+            const nomeAbreviado = (paciente.nome_completo || 'PACIENTE').toUpperCase()
+                .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
+            const d = new Date();
+            const dataStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const nomeArquivo = `Anamnese Remota - ${nomeAbreviado}_${dataStr}.pdf`;
+
+            pdf.save(nomeArquivo);
+            window.CortexUI.toast('PDF gerado com sucesso', 'success');
+        } catch (err) {
+            console.error('Erro ao gerar PDF:', err);
+            window.CortexUI.toast('Erro ao gerar PDF: ' + err.message, 'danger');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = txtOriginal; }
+        }
+    }
+
+    async function cancelarRemotaPasta(arId) {
+        if (!confirm('Cancelar este envio? O link parará de funcionar e não será mais possível receber as respostas.')) return;
+        try {
+            const { error } = await window.cortexClient
+                .from('anamneses_remotas')
+                .update({ status: 'cancelada' })
+                .eq('id', arId);
+            if (error) throw error;
+            await carregarRespostasRemotas();
+            renderizarPasta();
+            window.CortexUI.toast('Envio cancelado.', 'info');
+        } catch (err) {
+            window.CortexUI.toast('Erro: ' + err.message, 'danger');
+        }
+    }
+
+    function renderCardRelatorioEscolar() {
+        // Se não foi cadastrado ainda
+        if (!relatorioEscolarExistente) {
+            return `
+                <div class="relatorio-card-resumo" style="margin-top: 14px;">
+                    <div class="relatorio-card-resumo-icone">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                    </div>
+                    <div class="relatorio-card-resumo-info">
+                        <h3>📚 Relatório Escolar</h3>
+                        <p style="color: var(--color-text-muted);">
+                            Cole aqui o relatório que a escola enviou para complementar a anamnese.
+                        </p>
+                    </div>
+                    <div class="relatorio-card-resumo-acoes">
+                        <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-secondary">
+                            Adicionar
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Tem relatório registrado
+        const conteudo = relatorioEscolarExistente.observacoes_educadores || '';
+        const preview = conteudo.length > 0
+            ? conteudo.substring(0, 200) + (conteudo.length > 200 ? '...' : '')
+            : null;
+
+        return `
+            <div class="relatorio-card-resumo" style="margin-top: 14px;">
+                <div class="relatorio-card-resumo-icone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                </div>
+                <div class="relatorio-card-resumo-info">
+                    <h3>📚 Relatório Escolar</h3>
+                    <p><strong>Última edição:</strong> ${formatarDataHora(relatorioEscolarExistente.updated_at)}</p>
+                    ${preview ? `<div class="resumo-preview">${escapeHtml(preview)}</div>` : `<p style="color: var(--color-text-muted); font-style: italic;">Documento ainda sem conteúdo.</p>`}
+                </div>
+                <div class="relatorio-card-resumo-acoes">
+                    <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-primary">
+                        Editar relatório
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderBateria() {
+        if (!bateriaInfo || bateriaInfo.total === 0) {
+            const totalChecklist = checklistInfo ? checklistInfo.total : 0;
+            if (totalChecklist === 0) {
+                return `
+                    <div class="etapa-content">
+                        <div class="etapa-placeholder">
+                            <div class="etapa-placeholder-icon">🎯</div>
+                            <h3>Bateria sem instrumentos</h3>
+                            <p style="margin-bottom: 18px;">É necessário primeiro selecionar testes no Checklist.</p>
+                            <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">Ir para Checklist</a>
+                        </div>
+                    </div>
+                `;
+            }
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">🎯</div>
+                        <h3>Bateria pronta para iniciar</h3>
+                        <p style="margin-bottom: 18px;">${totalChecklist} testes selecionados no checklist. Abra a bateria para carregá-los automaticamente.</p>
+                        <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">Iniciar bateria</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        const todosConcluidos = bateriaInfo.concluido === bateriaInfo.total;
+        const cor = todosConcluidos ? 'var(--primary-green)' : 'var(--primary-blue)';
+
+        return `
+            <div class="etapa-content">
+                <div class="bateria-card-resumo">
+                    <div class="bateria-card-icone">${todosConcluidos ? '✓' : '🎯'}</div>
+                    <div class="bateria-card-info">
+                        <h3>${todosConcluidos ? 'Bateria concluída' : 'Bateria em andamento'}</h3>
+                        <p><strong>Última atualização:</strong> ${formatarDataHora(bateriaInfo.updated_at)}</p>
+                        <div class="bateria-mini-stats">
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--color-warning-text);">${bateriaInfo.aguardando}</span>
+                                <span class="bateria-mini-stat-label">Aguardando</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--primary-blue);">${bateriaInfo.em_aplicacao}</span>
+                                <span class="bateria-mini-stat-label">Em aplicação</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num" style="color: var(--primary-green);">${bateriaInfo.concluido}</span>
+                                <span class="bateria-mini-stat-label">Concluídos</span>
+                            </div>
+                            <div class="bateria-mini-stat">
+                                <span class="bateria-mini-stat-num">${bateriaInfo.total}</span>
+                                <span class="bateria-mini-stat-label">Total</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../bateria/bateria.html?paciente=${pacienteId}" class="btn btn-primary">
+                            ${todosConcluidos ? 'Visualizar' : 'Continuar'}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderChecklist() {
+        const total = checklistInfo ? checklistInfo.total : 0;
+
+        if (total === 0) {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M9 11l3 3L22 4"/>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                        </div>
+                        <h3>Checklist ainda não preenchido</h3>
+                        <p style="margin-bottom: 18px;">Selecione os instrumentos que serão aplicados ao paciente. A lista é filtrada automaticamente pela idade.</p>
+                        <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                            Abrir checklist
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="etapa-content">
+                <div class="checklist-card-resumo">
+                    <div class="checklist-card-icone">📋</div>
+                    <div class="checklist-card-info">
+                        <h3>Checklist com ${total} instrumento${total === 1 ? '' : 's'}</h3>
+                        <p><strong>Última atualização:</strong> ${formatarDataHora(checklistInfo.updated_at)}</p>
+                        <p style="color: var(--color-text-muted); margin-top: 4px;">Os instrumentos selecionados estão prontos para aplicação na etapa Bateria.</p>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../checklist/checklist.html?paciente=${pacienteId}" class="btn btn-primary">
+                            Editar / Imprimir
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderHipoteses() {
+        const anamneseFinalizada = anamneseExistente && anamneseExistente.status === 'concluida';
+
+        if (!hipoteseExistente) {
+            return `
+                <div class="etapa-content">
+                    <div class="etapa-placeholder">
+                        <div class="etapa-placeholder-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                        </div>
+                        <h3>Hipóteses ainda não levantadas</h3>
+                        ${!anamneseFinalizada ? `
+                            <p style="margin-bottom: 18px; color: var(--color-warning-text);">⚠️ Recomendamos finalizar a anamnese antes de levantar hipóteses.</p>
+                        ` : `
+                            <p style="margin-bottom: 18px;">A partir da anamnese, defina as hipóteses diagnósticas iniciais para guiar a bateria de avaliação.</p>
+                        `}
+                        <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-primary btn-lg">
+                            Iniciar hipóteses
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        const numCids = (hipoteseExistente.cids_sugeridos || []).length;
+        const numInst = (hipoteseExistente.instrumentos_sugeridos || []).length;
+        const aprovada = !!hipoteseExistente.aprovado_em;
+
+        if (aprovada) {
+            return `
+                <div class="etapa-content">
+                    <div class="hipoteses-card-resumo">
+                        <div class="hipoteses-card-resumo-icone hipoteses-card-resumo-icone-success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <div class="hipoteses-card-resumo-info">
+                            <h3>Hipóteses aprovadas</h3>
+                            <p><strong>Aprovadas em:</strong> ${formatarDataHora(hipoteseExistente.aprovado_em)}</p>
+                            <p style="color: var(--color-text-muted); margin-top: 4px;">Bloqueado para edição.</p>
+                            <div class="hipoteses-mini-stats">
+                                <div class="hipoteses-mini-stat">
+                                    <span class="hipoteses-mini-stat-num">${numCids}</span>
+                                    <span class="hipoteses-mini-stat-label">CIDs/DSM</span>
+                                </div>
+                                <div class="hipoteses-mini-stat">
+                                    <span class="hipoteses-mini-stat-num">${numInst}</span>
+                                    <span class="hipoteses-mini-stat-label">Instrumentos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hipoteses-card-resumo-acoes">
+                            <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-secondary">Visualizar</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="etapa-content">
+                <div class="hipoteses-card-resumo">
+                    <div class="hipoteses-card-resumo-icone hipoteses-card-resumo-icone-warning">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                        </svg>
+                    </div>
+                    <div class="hipoteses-card-resumo-info">
+                        <h3>Hipóteses em rascunho</h3>
+                        <p><strong>Última edição:</strong> ${formatarDataHora(hipoteseExistente.updated_at)}</p>
+                        <div class="hipoteses-mini-stats">
+                            <div class="hipoteses-mini-stat">
+                                <span class="hipoteses-mini-stat-num">${numCids}</span>
+                                <span class="hipoteses-mini-stat-label">CIDs/DSM</span>
+                            </div>
+                            <div class="hipoteses-mini-stat">
+                                <span class="hipoteses-mini-stat-num">${numInst}</span>
+                                <span class="hipoteses-mini-stat-label">Instrumentos</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hipoteses-card-resumo-acoes">
+                        <a href="../hipoteses/hipoteses.html?paciente=${pacienteId}" class="btn btn-primary">
+                            Continuar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function campo(label, valor) {
+        return `
+            <div class="campo">
+                <div class="campo-label">${label}</div>
+                <div class="campo-valor">${escapeHtml(valor || '—')}</div>
+            </div>
+        `;
+    }
+
+    function formatarDataHora(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        return `${dd}/${mm}/${yyyy} às ${hh}:${mi}`;
+    }
+
+    async function uploadFoto(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            window.CortexUI.toast('Arquivo muito grande. Máximo: 2MB.', 'danger');
+            return;
+        }
+
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            window.CortexUI.toast('Formato não suportado. Use JPG, PNG ou WEBP.', 'danger');
+            return;
+        }
+
+        window.CortexUI.toast('Enviando foto...', 'info');
+
+        const ext = file.name.split('.').pop().toLowerCase();
+        const path = `${pacienteId}/perfil.${ext}`;
+
+        try {
+            const { error: uploadError } = await window.cortexClient
+                .storage
+                .from('pacientes-fotos')
+                .upload(path, file, { upsert: true, contentType: file.type });
+
+            if (uploadError) throw uploadError;
+
+            const { error: updateError } = await window.cortexClient
+                .from('pacientes')
+                .update({ foto_url: path })
+                .eq('id', pacienteId);
+
+            if (updateError) throw updateError;
+
+            await CortexAudit.log('edicao', 'pacientes', pacienteId, {
+                pacienteId,
+                detalhes: { campo: 'foto_url' }
+            });
+
+            window.CortexUI.toast('Foto enviada com sucesso!', 'success');
+
+            paciente.foto_url = path;
+            renderizarPasta();
+
+        } catch (err) {
+            console.error('Erro no upload:', err);
+            window.CortexUI.toast('Erro ao enviar foto: ' + err.message, 'danger');
+        }
+    }
+
+    // ============================================================================
+    // SPRINT 8: Modal Agendar Sessão (calendário simples, dentro da pasta)
+    //          + Modal Designar Aplicador (só admin)
+    // ============================================================================
+
+    const SPRINT8_TIPOS_SESSAO = {
+        'avaliacao_inicial': 'Avaliação inicial',
+        'aplicacao_testes': 'Aplicação de testes',
+        'devolutiva': 'Devolutiva',
+        'retorno': 'Retorno',
+        'orientacao_familiar': 'Orientação familiar',
+        'outros': 'Outros',
+    };
+
+    const SPRINT8_HORA_INICIO = 8;   // expediente: 8h às 19h (mostra horários ocupados nesse range)
+    const SPRINT8_HORA_FIM    = 19;
+
+    let _sprint8Profissionais = [];
+    let _sprint8SessoesDoDia = [];
+    let _sprint8DataSelecionada = null;
+
+    // =====================================================================
+    // Sprint 16 — Capa de prontuário (v9 navy CORTEX:
+    // - logo BRANCO oficial embutido (sem filter:invert)
+    // - pattern de turbinas via <img> PNG (renderiza no html2canvas)
+    // - canvas 720×1018 SEM margem branca lateral
+    // - alta qualidade scale 3 + PNG + fix timezone DN)
+    // =====================================================================
+
+    const SPRINT16_LOGO_PRINCIPAL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAADeCAYAAACHUD3TAABLzElEQVR42u2df1xUVf7/X+feO8zAjDAoaBg0RlTjZgWKWIj90sqyXROFXdR+WJJt6LYJ7m6fao3d7TdjtULfLWzth0qB4tqGmbuWrUSJJPbTyYgkSVJQBpqRGebee75/zL1wGQcFwxjpPB+PeaDD5f4495zXeb/f55z3ARgMBoPBYDAYDAaDwWAwGAwGg8FgMBgMBoPBYDAYDAaDwWAwGAwGg8EIJggrAsZPXefM2TncLRGheLWtA47iIhkAZcXCYDDOlA6SY0XD6As8KwLGT0yIMSnzRsvkqy/1GMac5/3+828ASKxYGMwlZARTPaMALNHTl70uWlInqb8QGqqqmrc8dTsorfPVRsLcQ0avMFOccdrRzS/jACBmRm6OIlYiABmAKFpSU2Nm5BaAECpY85jFz2CCxRhcvOfNoQCgj7GerwgVUeqeAEB0x6b90jw+4zHRbhOxnLI6yWCCxQgKOgPUOR4AyMS5fxCsuZORT2Rzdg6ztBhMsBiDDjnBd2TYlWnlAMY4ioskwZrL6iaDCRYjaIWMAhgZMyP3cQAGcW8BBRsUYjDBYgRxXfS6Y9N+bR6f8RAIIYI1V2DFwmCCxQhWdABEMnHu/frY5HtEu83L4lkMJliMYK+TJGzGA0sBpBx5vlA2Z+ewespggsUI2jopATg3evqyF3iOUMcLhSyexWCCxQhaeACSaEm9NGH24j+BEAjWXOYaMsCCmoygFq0jUVMfMyYd/tRVa6tQ6qvIioZZWAxGsNZPOSQl62kACQBENj+LVQgGI1hR52edHzMjtxBArDI/i9VbJlgMRtC6hqI7Nu168/iMp0AIp1hZLAjPBIvBCEoE+OZn/cY8PuMh0W4T1QwQDCZYDEawWloSmTh3MYAU75oMiU0qZYLFYAQrqgs4Inr6MhuAUEdxkcRcQyZYDEZQW1miJTXNPD5jA4BwLKeEiRYTLAYjmEVLJBPn3mBMylyAfCKzSaVMsBiMYBctOSQl6zEAF4h2m8jWGzLBYjCCFdUNDI2evuw1AKPvHV0I5hoywWIwglm0JNGSmhQzI/eBfOYaMsFiMM4A11B0x6bdY0zKvEe020SW9I8JFoMR7KJFQ1Ky/g/AJSyexQSLwQh21xAAzo6evmwzgCRHcZHMFkkPTZj5zOjZ+CmF+a7FvEYI6C0RofLKp56iIATwLUYORtGSREvq2ZGTbn+udedLV6VPGi+W2rsWTzOYYDGGikgtLC/nAGBVeroEQuDwyzm1EgAKCgAAS51O3vvww3RlQQENMjHgAYhInDnJ2HlsWenL8/4mWHMF0W5j+bOYYDGGilCtSk+XVqWnS8p3UQvLy0O2r33nOgBx8KUqFq+ad82G9W9tO+YoLmpbYTIdU0+wJC+PW1lQIAeZaNGQlKw8sbl+t8du22zOzuEcxUUye91Dy/9n/IzIvG0tX/ryPFWkRiXMXnxL4vQJ42S94fqImDHDXKEGo/Z4Y4e7o61pvwTga87j/s+eLR9V1G0o/ACAR5Ip4TlyYktrOeWQT+QxC4tL2/ioDEUIT9cUBBm+2Oyh1udnXQJKm4PYlWUwC4txIpY6ndwKk0kCMCJj9auLJF7IFuKtY6C0cld3o+9aWOwKNYQK8VYAuBTApZfoDfddMnNyzTs7KpfwHNm1sLycX5WeTpW/G2zUTSxGJcxefHcdIX9RrCwmWEywGGcK5uwcbs4NU8kKk0lKmL34l5fMnPwcibfGKhVA0jR29ad2lI1qfspCvJUHMGlWzJgdztTLHlmVnv7XIHtcDgA9EjX1AcGqr3AUF+w2Z4O5hkMANvT7M2BheTnvKC6SV6WnSzEzcgsvmTn5DSHeGgtAMna4qeKeqSODpJfQAVHqi6D8W3KFGvTk/HF/mVO8ej2AMZIcNJkTiGLthUSfh/sAwqwrJliMM4F569t4Jag+dk7x6nVT7p+fI8RbZaVB865Qw6kKDK9YXBI3NnH2nOLVq3mO0KVOZ7DERXkAsjs2LRPA5crcLLZ0hwkWI1hdQEmmZO2cCGlJXt6U9FdKtnBjE7MU948boHdPFGHwcmMTr8xY/eqfV5hM8lKnM1jqlQxAZ0zKnKK5XwYTLEYwuoA8R+iND/ztwe8umfA/Id56Dk7f6JwAABIv5JuzcyYHkWhxABA+Ou5KACHi3gKJ1Q4mWIzggVy+ebOguIAxc4pX/8d0w4y/CvFWdQTvdLlEBAAV4q30milpqwGErzCZ5GCxaNyxaZZ5kYIEwmJZTLAYQSNWS51O8sGNN4oJsxfPTn+l5G1ubOI0HD8CeDrrkhwRM+b8hNmLbwZAMm9bO9j1S12aM3Jtq3gpq/NMsBhBwJK8PB4AXWEy6abet+xPl8ycvF6It16scQF/MkvHFWqgidMnXAeAlqyeO9jTCFTBitbHJp8HAII1l8WxzmDYPKwznMs3bxZW3nijCCB0TvHq17mxib9E96TPn3pUjANAZL1hCoAxPEf2g1KCh4OiqFj8illYjMF8d0udTv6DG28Uzdk5k9NfKfmPRqz4QXq3qvVyTsLsxWMAYMmyZYNp0VDlno4BaAUA0W5jcSwmWIxBsIzlFSaTNPW+ZdnXTEn7txBvnYzTu0avr8hCvJW63PprAKAjNTUYBOsbT2PNB5rvGEywGD8FS51OXxoV4MI5xavLRsye+4IQb40MErHqEolzU6PPAYDw664bfHVvqHIyl5AJFuOndwE5ZS3gtemvlGzmxibOURoiDRKx6mL0yFHeILgNGQANizq7HIBXyffOLCwmWIzTiTIKKK8wmeSE2YsfuGTm5K1CvDUegzAK2A+C5Z5Iy+dVbgAQ7TZWmc5w2ChhkLOwvJxf6ZsIOmpO8erHuLGJCxQrIeisqiCDAuCFhqpDrbWlJcp3zC1kFhbjdFkGC8vLhVXp6ZI5O+fy9FdK3lLESmLvrs/uIIkwdqwA0KybX8Yzd5BZWIzT4wJyzzz5FOU5IlrmPzNvwpRRLwrxVj18wXb2zvpmXXEAvqvbUPgyKCVeQlguLGZhMU6LC1hQIPMcCZ1TvPrJa26b9IoiVhITqz6LlQSAdFaXPAngkPmuxWz3HGZhMQYaSaYczxHJnJ1z8bSU5Ce5sYnTXcpIF1i8qq9iRQEII1q2/V9dbenfdfPLeEdxBotdMcFiDKQLqHv4YfAckTNWvzpV4oXXuXjriKHoAor64RA8R0/HqVWXj6O71r1Tt7vsMSynnDefuYJMsBgDaVURniMyCgowp3j1M6bYhHtdoQYMUReQCp6jA+maqWlzuhISdlaX3O+qLXti+XLK5eeTYNs7kcEE68y2rHiOyObsnEuvmZL2LBdvvdIFwNjhpq5Qw5BzAT1NdgGxaQSaHXlOUaRU1Fz0EBqqPm3/7N1cT2PNfwAgP59t7cUEizGAtgElKwmRp963bGZE0vg1QrzVpDTkH5NnPTgr2et5EAE0VdiejFyUdj0A4wCd2m1orHyn/eCBla21pTsAuDRbejGxYoLFGCA4ECKbs3MmRiSNLxHiraEInrWAA45ot6lxpJ3HKh75zfBLr5whStwlxtgLOtv4qD6Jc4TUQl2N+3QCL9eFRMbtaPm8irhqS98D8FVXZbbm8o5iGwuwM8FiDCTKFvHytJTkmzmfWHkB6IaaDXlcZbPmch677c2mxpo3AQjN/dh4tdX3Q3Unu5BkSkYsWsw5iotk0c7EigkWY8D53GBQ/6lDcOyWfDrESghkaQnWXF78dQFFPhFBaU/r6uGTxLUehrxw40b+pf97Xz1O5jmi3XGaBNHzM5hgDQ32bqygALBny0f7x49NVLdWF4eQWPGtX3zxLgB4H37YX7Qk5CuLkJVNITJvW8uHzwwlq/LTT1wG+cCqM2A94MLycnUvSMYAw/JbDxLKdAbMKV79xLAx1mXKVIYzHmOHGz/st69Zn73griV5eZ6VBQUntCCX5OVxmmOMZ3id5AC0B3guBhOsoUPC7MW3J900aRR+3HB/MFhWXO2bO511Gwqf1zxLr+6RMqInm7Nz0qalJGfJesPNAPTozhR6JiErLv5n7i+/fnTzIw++xUSLCdZQtbToEK1b9GSWVcbqV68yxSaUu0INkUPlwY0dbsnZWDe3bMEtZcuXU5LPZtszwRpKmLNzhLGzZpzx9eQitxvr39oGR3GR2IsF5i9m5vRXSuxCvHUUfCOlZ0xM1djhRiA33tjhll2hBl6st/9QfmtWEoCvTybeDCZYjAGoG4I1l/9dTb6s7OL8oxCsuVzXfCxKCQih5uyc6GumpH0jxFvDhlB9pAAg1tu97+yonOgoLvpEdX1ZlfrxsPQyDH9rT528SkW7TVTEKgxAKIDQeZFCj4/6faBP+D0jQ5W/NShiRQI07qDZ0n4gBQtAC4AjAKDMvGcMAGxaA6O781pO4cgn6nB8gjEp8+bw0XHj3LFpV0CZdrHZ749OGHiSgMhFgNBQJbZ/9u7vPY01W8PvGcm1H+8eDhXUVEAcL4l/dxQXfacswmbWFRMsxgBaVT6XJZ9AH5s8PXTkufeRiXOvAGBwD8D5RUsqwoGNzY0109qfO/yB2buYdwy9/OoyAE6st+OD12sebaqwPbHU6eTyTUysmGAxBgxNgjtrzIzcZ92xadqNBEXFAuJw6kFjAkASLalhCbMXW+o2FH7g3GEYai6gDIAX6+1ff7Lp/fuaKgr/DQADEftjMMFiqPgS3EnGpMy7wkZZnnTHpkZo3Rq/+vFjRIYDQL2hCXoAME1xw2EfMmJFAfDy3j2vlGcvWArgiLJ/JBOr0xK3YPxc3UAe+YTqY5PvDknJel60pEYoFhWHgd/rkAIgbV+8fzMAzLj+0TMyCG3scGv/LQEgYr1d2vHYmmfXZy+4DcARc3aOwMSKWViMgRUrzlFcJOljk68Km/HA/0P3SN3prg9ndPoczbwrSZlr1frJpvfvbKoo3LjU6eRWGI3UQYjIahizsBgDiOOFQgogImzGAytE/fCBcPn6Y2mdyZaVDCVvmbx3zzvlt2ZdWrehcGN5+8v8CpNJVhdzM5iFxRhAV9BBiGRMypwHIEnwHB2yiQMH2LKS4Ausg/O489dnL7AB+GFheTmfHs4yMzDBYpwOiKO4SAIQFpKS9QcMvUmbpwtVrPZ9sun9/LoNhetU15qlkWEuIeP0WVccAM6YlHkvAAu6RwMZvbuwqljteGdH5fS6DYXrFpaXC4r4s+A6s7AYpwvFuiJhoywzxTMzhctPiQyAM3a4+R/22x8vz15wP9CVnI8F1pmFxTjd7qDy8zzRkjpa+f+gCpajuEi1YnpMGQgSF5AT6+3NO/6xNmd99oL7JZkS5gIyC4vxU71oay4R7Taqj022AojDIFpYody244Q0GDKuKvtBQnEBP37j0ZqFor2wZmF5Oc9zRMbQzL/PLCxG8GGa4rNg4iZd1olBnl5w9sez6FKnkwPQynncb2tcsMEUK0nZD5I0vvf2q+W3ZqWKdluNOTtHUKwqNmWBWViMnxpvaILqCg5qA/zgf//j4JtZb0f3EpfBQnSFGgSx3u7+ZNP7t9VtKCwFlCkggZMRMpiFxfg5kfzOOzIAxHz5+dvGDrc8SJ2nunBZEOvt1W88WjOtbkNhqSRTDt1TQBhMsBg/d1YWFFDl53dtTfubNQLyUyEDIMYONyfv3fPP8luzbhTttvc18SrmAjLBYgw2uo66YLkVNY5Vz3ncr2hE5KdAHQVs3/GPtUvWZy+4E8CRJXl5bD9BJliMYMC5wzcKd2DnhxyCZLRr1R/iIcmUbK394z/EensrTn9sTTsR9IuzP/no8roNhYXP7dvPAyArCwqYWAU5LOj+M0G02ygAeBprdoX5At2/wCBPHm1/7rC8aNpGvv25w9980FDzzyn3W3Ph2z1Hd5qsKh6+hctPl2cveBRAy1Knk7vHZGJCxSwsRpBBQSkBcMTQWHkY3QHnwbWy0tPlpU4n11Rh+5u8d8/bilgN9MicalV17HhszePrfYn2Wpbk5bFEe0ywGEFrTo/N4wDQ9oMHnkMQzHRXhXSF0UgBOP5bXTNH3rtnq2L5ewfAPVSD57xYb//gnR2VVzdV2O5fWF6uuoBMrJhgMYLYLZTM2Tmcq7a0HMD7yvsffHfIt0ch5ygucq7PXpAh793zH41beCqTNtW8VZyxw03kvXteK781a5qjuGjnUqeTYxNBmWAxzhCcOwwcAKmzuqRM07gHHUdxkaxkk2hfn73gZnnvnkfEeruI7nTNovKhJ/iov+cUq+qbQ9u3zV6fvSALwLEleXk8cwHPbNhq/Z8jvp2XDdHTl20RLalXoDsgfbqQAPB017o3HLvLZp5wrz5lV2gAMGfnpE1LSc6V9YbrNLtDnxBjhxttTfu/5CVxVdmCW14G0CzJlPAcAbOqhkBYgxXBzw/zXYuJA+ho3vJUbuSijf8CEINgSTfjEyuysLycW5WeXrm+GJUAzk+YvfimxOkTLjgs4aaoMIMAgArxVlWgCAAv53GXH9r/3VubH3nwfQBOwJcOhucIGwVkFhbjjO6prLmCaLeJxqTMW0NSsl5W3KnT1YH13cLSCmt2Dnfk+ULKcz1ypYcBIPNW3I+Uc5IAAPfOyVStp2PqQUreKjZjfYjBYlg/U0S7TdTNL+NdtaWvGBorH1fEKqjiO47iIpnnfAF5c3aOoEzwPAbAtXbpY65752S67p2T6QLgAnDsuX37+czb1vIACAusM5eQMcTwrsmQQSlpIuSR6OncdNGSmqiIVlB1ZEoqYvkeX8I/n1dAqdaNBADcc8EY5voxC4sxhKHC2DwCwNm85anZANqVOhHMI2m+EUFCuj+Dn56GwQSL8RO5hrI5O4cHUN9ZXZKLntMEGAwmWIzgwlFcJCnxrFUjWrbdC98UByZYDCZYjODEuyZDzrxtLV+3ofBFQ2PlZgTLLHgGgwkWIwC09OW5MoBjTRW2WwB8zywtBhMsRhBDqBLPOtpZXTIPwFFRP5zNZWIwwWIEJ47iIunyzZt5V23pO53VJSsEz1GeuYYMJliMoOWDG2+UBWuu4KotfdLQWFkC33w9JloMJliMoERN7udtqrA9CGC/UleYa8hggsUIPpT5WRyA+h/eq8xE97pTJloMJliM4MNRXCTr5pfxot22q7O65H6wSaUMJliMYMa7JkNavpxyrtrSxw2Nlf9F8C/dYQxh2OJnxkl55PU8KIuk746ezn3hvuAmg+A5GnSLpBnMwmIwfPGsuxYTAN+0f/bunYLn6DF0b/DAYDDBYgQXajzL01izTolnBV3+LAYTLAajC++aDHV+1kuGxsp/wbd0h83PYjDBYgQlVLTbZADtTRW2eUJDVZMiWszSYjDBYgQlav6sY6375TkAWlQxY0XDYILFCDrU/Fmi3VbVWV2yEiwVDYMJFiOYUeJZOldt6V8MjZWvAxBE/XCRlQyDCRYjGKEAJFBKmipsfwKwT/AcPdnIIXMbGUywGIODEoAHgP0/vFd5I3xJ/04kTHoA+PNyJlwMJliMwYAQqmzK+nVndcnfEHjpDgFAo84dtR0A/pLPNvBlMMFiDJ6lpW5iUUR3rdsG31QHr+YQWRGtbwBg7/51TLAYp9Y/siJgDAyULF8Okp9PzNHTl23TbMpKlI+n9flZkwB8DLaAmsEsLMYg93302YOLAeBo85an7hQaqj6Ab6qDV2ioauqsLnnIJ1aUMLFiMAuLEUydoAzALFhzLwTAiXZbI4ADzLJiMBhBh2DNPc5yV7KXMhjMwmIEZ90SrLkEAES7jWUpZTAYDAaDwWAwGAwGg8FgMBgMBoPBYDAYDAaDwWAwGAwGg8FgMBgMBoPBYDAYDAaDwWAwfiYQzadXBGsuD0AH3zbzXZ9A2RVO5fx+x5F+/N2ZULYMBuPHomxq2kOXBrKx+p8/wPWGbiewnHYJuW5+Gd8HYWf8BL0H4wxFsOZyys41egDDABxBgDQuynFUH5s8VYiOv0xsru8QouM5ALLYXK/3NNZsB1Cl1IdAaWDMihC2wZervbfjIhQLjvrVMTcA5xnWLtRnGAFf0sFWVuOYYDF+ZKMyJmXeEZKStRRAXITUUtP80X82uGpL/4HuzJ7E1/ZIaPT0ZftFS2r0cYLWUPVp85ankgF0+tULo3l8xjLdyDF3i5ZUg9BQ9dWxQw1PuGpLy9AjeyglAKExM3I3uWPTrlG+54SGKlG0pAqGxsripgrbUnN2Du8oLgryHaJ9zwJgVMyM3CdEiUsH4BF4eX1The1lAB+CUgJCWH6vQYCZuGcklACAMSlzWUhK1ouifvhFAMLb+KhrQlKyioxJmff0dN8IBUBES2qnqB/uVawkUREoUfl0CaFufhmniOHvycS5f3ZfcNNIUT88XLSkTghJySo1JmVeB0DucpGUpquPsYYBMAEIB2ASLakRon64SR9jDQUAV8dVQd8JmLMXEwBx0dOXvemOTbvNfcFNw0RLapQ7Nu3u6OnLNgCIUcSKdfZMsBh9bFcUgC5slOVWALLgOSoqsuEBIEVPuNaiCIR/oyKC5+hxQXe/xke8r86RAYSHpGTNAiAJnqOS4DlKFaGj4aPj7gAA8dcF/jcmQd0R2vdTVP7ujMjjbs7O4RzFRbIxKXOCaElNBuDV3L8oWlIjzdk5JuVYJlhMsBj9xKsIA6eIjvqzz41J1A+HaEn1kzVCARgAjNS4iETjBg4DADwMf0uDiPrhgUYIz7SNJ0RFdHm/ZxddHVexTTSYYDH65xH6tsryHt7/pdKoVKuGA8AJrR/bAcAYuv2kcRbBc/S4s+vml/EADhsaKzcr55c05+fbDx74NwCY71p8XPA9wPmgCFzQjy46iotkAHDVltYA+FZ5Xq8iuByAYd41GVQ5ltVDJliMvnmEBAAkx+6yhYbGyvWKGPAAeLpr3X/rNhSWACB9DXALDVU9zbY1c2QAXFOF7WlDY+U6+Eb+eADU0Fj5gqu29OXwe0ZyjuIiGshi096p8jMKAOc9b06wB6qpsrvP953VJXcKDVUOzbPXdlaXzAOwX+0wWEUchKrPiuCMfncUAPSxyVcJ0fHxYnP9YU9jTQWOn1ZAARgjF23cB2C08n+isRz2KLsyd/Zy/tlCdLzZVVv6OYAP/X+vjpqNWVj8dhsfdZ3mvOrPj1qfn3UFKO04E0bXNNNFkoxJmRMAtLlqS9+AL0bIGMx3w4rgzHUMARBQCg8h25W5VMeJzY88P4flFJ58ssHTWAOtOPXx/ESx4MYBGAZCjg3QvZ1WRLtNVgLwta7a0lr1+zNjWgYTrFPtpdSAJUjyZV3fG0O3w7nDANMUN1ViBqej8qp74nH+16c1H6qVEooFIPu5yJxgzfU/n6z0uD0wZ+fwzh0GEqjCn4rL0Nv5AFDRbpMCHM85x+ZxsOYS0xQ3ce4wqM8kKXsB/ijM2TnE+XoeB2uuzjTFDecOA8XYPBnW3IDlcQLUGFjAchb3FshLXS6svPstTn0/Spn3az9DbZ3rw/sjAHjBmgvl2aCUMQVAnDsMnGDNFQAQ5feyc0eXZUr9LbJA4RWljomnaD3z/vVQOZ8UoEwCHq+0Mam3Y7XtQm0b/WyXxJydwzl3GIhpirvHtBXNewxYd4PGTdHNL+MVH79vNVmmZACXPBClkvWnUQ71OF7XJNDIRRu/i1y0kUYu2igrPyXlZy2AkFO3xXzve8zC4rf9zitGLtpIxyws3ghAh+WU6+/SHuX4AQtdmLNzeEmmP6dQCOkS1X60yxOVu2DN5fpThgPZxge0ImjV3JiUORVAStRFqR1+vY+s66gzNNUf/shVW/ohgB8AAMsph3xyyjsEBzDXLzEmZU6Luij1uEl+LZ9XUQBw1ZZuAbBXuTYApBqTMqcA6NDEYPSejrjtot22U9O7qhM3bwLwCyW2walulHLez/vu/vhmVxuTMm8EME6JJXVdX2yu/9jTWLNFMwsbAHh9bPJvhOj40UovTpTeN8zTEfeuaLd9qLg1tJ8xLKJ5hzMAXOT3fLynI26LaLd91nU/vcewRABChNTy7P5V2feZNrXzzpnhIoBzjUmZMwHwURelSp2tBy4GEBoSGVcNgGv5vIpz1Za+B+Aj1VI9kTumWXp0pRAdf7nf+zMo9/uxcg7V4jnbmJSZHhM/UucNTQAAuS30q1ccxUVHAcQbkzJnKX+vfeeipyPuNdFuO4zuFQQUwERjUuY1/vUAQIertnSVX2ywL3HJCGNS5q1KJ6JahjyAH1y1pa8COKZ5TxRAjDEpMxPdI7EUgCA213/jaaxZL1hzBdFuU5/7HGNS5s1RF6XqNM8HAHLL51WhYnN9jaex5n9qvE4Tz1MNEs67JkN9D+HGpMzLY+JHJnlDE9z+7bzl86pQV21pFYD3NG38Rw1WDIRLSARrLu8otokAzMakzN9ET7j2V2181A0A0B7oL4wWhEQBISlZbYbGyrebKmwrkE92qhaPOrzcD6uOcxRnSABijUmZ80NSsmYAmARAF+j6ISkWAEDYKMsjxw41/NGVT4oBuGNm5Ga4Y9N+5398WENVbbMdlwHo1LzA2LBRlnLRknpcGYaPjktrqrDNWr6ckvz8kwaZidIcwsJGWf4sWlIn+R8QLbWs37+qZotu/nrOuwaquc6Hj7v6IdGSemGA41/Zb8dOpQJJp9CJyQBGK8+nO+75GiuvaLLjV1gOgvw+dTAcAOqcGS4bkzLvDBtleVq0pA7rqh9G3/twA1nq+wlJyZKEhqqPIowdhXUbCv/jKC76vpdOjXi+KKA8ZwsNO3tcCRJnnhXgfs9qsuP3juIi0ZiUuSB8dNxsd2zaVQCMRzTHeaurjAAeSZi9OOlI1NSCQA+i27Uu2gE85BMB4gUgRE66/e9InHlZIFfU0xH3qmi3dfax8+IBiMakzNtDUrKe6eWYY67a0leVdkIAiObxGb8nE7P+cFw9B455np/1qWi3fQkgKWZG7iPu2LQrAYT11i5CAIQ3VH197FBDkau29FXRbmtROibfVBqfWKWax2csJRPnXgsg/EgvN6q8R9Bd697oOPzN0558sv0U2veAChZRfFTRmJR5TUhKlg1AYlu3yksnuXaEOzYtM3JR2mxDY2VJU4XtD47ioqZ+BDcJAOpdkyEZkzIzQlKyngBwrtbtP2Fw1ZIaGmJJ/XvYKMuc5i1P3Q3Age6lKoJqKYiW1EAFzIuWVE+PAHj3ZEMKAPl9LkVCAQwXLamRyrW7zifqh/M41vJDwLiWJbVVOV7W9OzE1bjvegBGR3GRU/N9v9+t8nzE/370MVbaj/oBxaobHzMjd7k7Nu1X4vHvRmstdNUP0ZKacgR4JXLR1MbO6pLlrnzyz0CDCjznWyojREaLYqDyA4YDGB4zI/dP7ti0Ze6esTW1nvI6QlW3uNPvPQC++VghvbQZOdB7AHDENMVNHXb4narXGJwap9Ip9+TVXE9S/q0DfMucBKtBPZ4PcDwFoNPHJk+Im3TZnCNRU5e6feXQWxxMW6/PC7GkrggbZflt+2fv/s7TSLYox0eZx2f8nUycq7XmTtbOBDJx7q/CgF8J1SUPOoqLHtHNL+M1Vlq/4H6sWMG3QPaJkJSsrQAS0T1LmCiFx2uuQ9A9Z0grarw7Nm1+9PRl1frY5BmO4iKpD7EOTlkeMcY8PuOlkJSsUkWs1IpD0XP5Ca/5qN9RALJoSb0ievqyKnfLkbuV7/V+fxvQj9M8o9CH43v1B5U0Jo0RUkut8vecei7Bc1QI9J7mRQrwe5ZTvf7J3nHP3Fm+++krPAC4GvfNip6+7H/u2LRfBXg3av3g/K5FNYMisSEpWS+ax2cUAYjIvG0t11vrF/XDtecIETxHBXfLkcmRk25/yx2btkxTP6mm/PQA6HUX37zRr0MVAtQheoIOeKDeBe3l3fZ2/UDH6wAg7OxxRUeipv5NEW3pBOfWLtOiACTRknp++Lir1+hjk68BYImevuxfZOLcLE3nTE/y7IKmjcshKVl/MyZlPuhdkyGdauz4VAWLKJUm0jw+YyOZOPcPypIM2a9gVeFSKyOvWbohaQQM8K3Vig2b8cAGfWzyTEW0er+/5RSO4iLZPD7jSTJx7m2ifrioaQictuA1MR714/W7N0m0pJqROHPkQMf2+olugAPtQYFoSeVES6oR3bPlobFk/ZfweDWdAaexWEQyce495vEZr5a+PE86kWgdVw6JM+ORODNFY6XwfpaRF4C82/lBwhALuOuQONPsJ1RqGYuaZw84kqh05iPCzh63OXLS7XtFS+pkzTvkNdaa178sA5yLAJBCUrL+akzK/D9HcRE9FdE6JcEyZ+dwpS/Pk4xJmb9V/Fiv4DlKNOfTipEEoDpCavlHhNRSIniOOjS9r79KSwD04eOufgJA9L2jCwM2PnN2Dod8AvP4jEfJxLlzlOv7L+KVNfcgKAXp1AgDr+nF1X8P9vygoZyyRNtgtJZbhxJEdin1R6fp0PwtPZFMnPtL8/iMv5e+PE/qxwJk7Xvuqp+ifjgn6ocLon64DoC+qf7whcEo+ANU7qoF6p91Vucn4MfFHpE4U4/EmaF+ZahtXzqNUaJDj9RDPd4hAUDDRlkeBDBMiWX1q6yFUxAr3lFcJBmTMmeHpGQt1/jNRPMgPAAP3bXuNcfuskIAn7Z2zxKOEay5CdHnYak7Nu3mQEFH0ZJ6YcyM3L/k55Pf+vu76vX1sclZZOLc+5Xr6QLEFDgAbXTXuv94Kan1dMS9ZZri/s5b03wRgCvCR8dNdsemXes3WsY4fRDt6JmhsfK19oMH7Lrk6A3OHQavaYpb9NY0XxE94dqL2/iohfAtvPZ/LzwAmUycuwS7y9Y5ios+7GO8k/jFvXgAHsFz9JMIqeUtAFRo/VhqSY7+J2oDNtyhUO4EAExfv7Gx/eCBPTpCean1EGTzWVL46LiL3bFpc/zibwgQL+T82pfD0Fj5dkfTt3YvJXUAztIRGqkbOWaOaEm9IMD745T2HWJMylzoqi19WrDm8poRzAEXLOJ4oVBGcVFI2CjLX0RfEFLyEyvO0Fi5qanC9hcAu7ts0/llvPe8ORT5pEm025qa7NhhTDqwOCQlKx++jJZEo9jUHZt2u2BFkXdNxmfakQXl+obwcVcvduuH0wCLbSUAvKGxcmtThe12AE3qL3zBTxwG8K6rFjAmHZgRkpK1AsAFTLROOzIAIjRUfdO6X57Tarf56kZtj3fzmqu29DUAZTEzcv/qjk27ye+9qJ0LjZmR+6emClu6Y3QhBfq0ELmrIRoaK19t/horRbuttjVAwNgbmjCULF0KAEJDVcexQw3zW2tLy/0PcNUC+tj3rg8fd3WBaEkd14towa+Nb26qsN0J4PsA13zUPD7jj2Ti3IcCnIsDwIWNstzqAopEu61fy53610AvKONACPSxybeIltRf+JmIFL4sk4eaKmy/A7BbsOaqGxwQ75oMSZmDQczZObxufpngqi0t7KwuecjPhFQV3TAs4sgLikhRZRSFByHUmJQ5U7SkTlJyFXF+hcnTXeu2NVXYMgE0YTnlBGuuzncfvglsgjVXt3w55Vy1pRWtz8+6QWio+kLUD+fAFrSeTrHihIaqD5u3PJUm2m27F5aX84I1V/BNZvR9lHqhA7CnqcKWgT2banD8KCcPAO7YtOsFa+6UPs7rUd19qbO65NamCtutot22C4Com18m6OaX6czZOV1Bcl1H3VASKwqgs/2zd+e7akvLTZvaeaU9qBuQ6LCccp7Gmrebtzw1DcDXJwhPqGK1tanClgXge+U96szZObzS3nUAXI7dZX+ju9a9juPTC3HwjXAn6GOTL1faNXd6BGtfhgSACzt73F29xHzE5i1PpcOXmkMn2m3aJSJdeZocxUWyd02GbM7O0btqS1fTXev+rYlpdfekiTMvApCsDPtzylICEj467peaeIjWsuKEhqoPHLvLbgbQJlhzOeQTWbTbvL65U4SKdpss2m3e/HwiC9bcEAD1zVueulvwHPWCLQY/nW5JW/OWpxYDOChYc4VV6emSaLeJvnfr+ziKiyTvmgyvssTG3brzpV8KDVWNASq9DMAQfR7m9qfxdlaXLHTVlr6qm1+mUxuJd02G6F2T4XUUF4nm7JyhFkOkAEhndcktnsaaclxQJjhnhktKexABiKLd5kU+kc3ZOXoAhzQiI/VioR5sqrD9BkC7YM3llffodRQXSaLd5jufT1c6HbvLbhcaquoCxLQoAKMQHW8GANMUNzkdgqWeNAaJM6PRPYoDKKM9hsbK1fBtZgB0j/b09pEdxUUeAB3OY+fcD8CjjCBqTchwY1LmRaoKK7GsEaLEzdD2tlr/+NihhicAOJXZvSfsfUW7rTPztrU8gCq6a92bvbwoxo9DBEDornXrVav7ZDEL0W6TFAvg+2OHGh4L0OMTAFQfYz0XQGhfXFEANa7a0jWmTe28d02G2M+1kGesVQvgK1dtaYU5O4dTDI6AOHcYvACIY3fZRvjizf5TKCTlPW4A0Kq8x97OJyuWstsYe0Gp5u97EBM/st/rLPssWGqPpI9NToZvvtNxM+E6mr4Nh2++hxm+vN4n+0QAGCbabceEhiqv4Dnqfz806qJUh9937gCzy9VKudtVW/o2KCV9DeRtDakCAKnj8Df/xtAepRu0Hh6At+PwN+XoxyRWpTEQV23pZvgmxGsbEAFA2vioNPgmpeIE1jEFALpr3RYAoqfsbfxM3jNV4nXVADqUdNn0BOWtGhJfw2+JlsY4oF5KKjRtrveL13xIfQK4tddjvKEJ/fZo+hx0N01xw2EH4iZdJh7xC2Kq5yET5/46euSY65WZ4f25GV70bV7gX/FIZ+uBNACbTFPcxGEHjEmZV8I30e+4axgaK7+Fb0upPl9bDeZ7Gms2hQFPAIhGX6YlM/r8boWGKo+nsaYSvqwJfZ+K4FuKcyBCatnWxkfN8ouZAoBszs45WfZPAgBeSqoBEE0WgZ+DG06NBk81AGoM3U4dffu7EKGhivilzVbbw1FXbem3GoHrk2ieDF+Wh75lcO33qNhJVJGKllSzYmVFnuwj6oer/w4/wcNe6idkifBNY9AKFgWAkMi4zQCgu2X9qYz2dQgNVfIgV7Ch6JbAGHvBVgBu7cak/UDyNNl7WzxM+rgTDxWb6w0/MwuaAEBD6JW1p2KZBfouQmqpnhcpfKlkfaAnsZBPy0MN9DA+RfcM2pN+lN1e1I8U4CPCN6FQy7Efq+i9WQLAcSl+f5qK5RvpOq+Nj7riNL2XQXVLANQB6BRezzuldY0dTd+SH3F9DsA+JQMBTlPsig5kRxQTP3LAbmw0vgsdyAdd2yr2q/yk1kNBLVj+68H68+GVWbjqR11oOszvGoaT9OinWrnl43aP+Wktq1ChoSpiKPbyAGIB8OLeglMSi9CYc36skLjh27X6dMWv9L1df84NUzsH+R0MqcGFfs9013XUURgtNEChcAA+Vhbw6gDInib78W82xgoA8P+dPsYKHGvp+l4fY6WeJjvffvDARsXPlYAieDri3gwB/qwIV49YU2frgasBvHIKmx0QRSBJL7u+/BSV5JhoSR1qI5QcALga990IIAyE/IB+pEjWfb2eeAFeH2Ml7l4EwRi6HX2IzXDzIgVubas4kM9Gly+nXH4+odTr+ooAydrnEn2Tmo2r0tMvBPCJkp6F9qfcRP1wDFB9/PkJlpJ+Fwd2fqgLmzHV34qR4JtQ9tb+Ctv9p+NGvWsyZMWkP4Ar06jfy+QAwJfrxzbKfHBxs6OPDUOZRS8ZkzKvhS/grqaIOWWLQtnpWMDDkE6WY0Y3v4x418whxqRfJ6E7NjdUXEKiWK4GAOMB+j9z9mKur6mDlGkso9r4qKt78QgEJSfUoPCIz8UVI34xeVu7kstLvXfBc1QCEGpMyrzZVVv6qe89Z5zweZWR7Yg2V+hvEAUEGDVngtXXA1Xf39NY80kYcEAx87UpVqg7Nu13+tj39spX/bHEWw3oUvplaRDvmgzx8s2b+Zp13WErY+h26pfwSwbwHYAEzfXV+VPnGpMy5zuKi2x9me+j+VtT+Oi4W93924Q00MRZDgDa+KgrAZwHQvYh8ELQ7pPUfEiADBo+OneWW1ngi6G1RIgCCDGPz/izYzeZel3nWpT2YURIzWxpTMpcCN82YVprmor64UTwHP0IwKHT6Or11evQq0kI/TuvkJCw61zAo941GSesi4I1lzNNcdOOt3ZeKVpSx2vib4xTjGFRZZLl14bGylL0nGSpWjNhYWePu9e7JsOLfRleY+h2eNdkyN41GVIvH5nWfAjl3yKAsA9uvFHyrsmg6jEasaKXb97MA2g3NFb+W7Gu/Kf8yyEpWbkAUkS7TTxJfneim1/GK1kobwmwbq034VbTYjRFSC3vBnABJQBGJQWwuilpIBEkGlGd4I5NS0d3epyhhLpg+Qp9bPKdSpYF3Yk6BsGaG+JdkyHpY5MzQlKy/oae61UBgAqeoxjRsu0tqCm2BwF1JKyp/rAXgTeGABJnxgIYoYys9Wa5c+LeAtlRXCQPv/TKmwZbgIeKYKF8524AIE0VtvIAlchnSSTOtCbMXvwHAHrF9KfquiXtR/lO3VFDlzB78R+jpy/bCyAOgKwsz+jBrqXbKAA0f43X4csOqh116pqJHznp9hIAMaLdJoJSTnt9wZorKMPr1LsmQ9THJs9TFkBLfbWulEl4oqfJ/lUgK0vUD0dISlYegPO8azK8ahmoH0XEqCJWUdHTl72IEw8mnPGuoagfLoTNeGA5gDGO4qIeZaJ9N8uXU05JKXxR+Lirn+ylE+EAyHUbCrcP8nNJAOCqLf0XgGYcP7lVBmCJmZH7e2V5maTWR/WjbOYggxAYkzLvdsem3YIfN3jEBEvTo6g5iKoMjZVvoOf6P/V8YUeipj4RPX3Zf/WxydMBRKjrlrQf5btwY1Lm9Ojpy7YdiZr6uGhJPSd6+rIyAGf5hKznzhyi3SbDV6F3GhorawO4W6ponhs9fdkHgjV3EgiRtdcX7TZRmUYw3Dw+4+mwGQ+sUcSC62MloeoW8O0HD2wNUI5q4D46evqynebxGX+Bb12lqH6U2AxvTMpcErloY7VoSb0YQ3uyKhE8R2UAcZGLNm41JmX+DkCkWh7ad5OfT2RjUuaS6OnLtoiW1DE43k2X4FsG9g8AHyriP9i4hIYq0kuIgLpj0/5kHp9RpoQJZG1d4DnCA7jUPD5ja0hK1v9T6iJhgvUjY1gqjhcKqRngmnfgT8NicTl8eYv8GxsVLalpYZbUt8Ibqj4Nizr7xZbPq0Sxud635VB0PI26KFVoN1ruAHCJ2G0Cy6IldVLkpNv/1brzpesFa94Por2neWw+uBgOUNJ+8NcrQmIxHr4Z8trrq6vBLcMs2GI4D7uMBk9FU/1h1YKSwkfHXSxK3PWiJfXcABbayctA2aLdVVvaEJKS1Ybuia/+ZTCCWFIfih45ZnpY1NlrdB11sjc0gXa2HjhLlLgbREvqBI3531vKX+BYy3Hfr20VETlQlcBvq/oTdlq93E8fO0cZwPkhKVnPho2y3BNh7PhnU/1hl/rsURelks7WAze4Y9NuELtdbS5A3LDj6MfvlQEQvWsyetThn3hUjSr52jq8h/dvIJbUu9G9H4DWNZTJxLlzIifOvcLQWPl2SGTcTl1HHfGGJgjHWr6bJVpSE5U6JPej4zyTYpiDJ1gghCI7h4h2277O0AOPhqRk/V0TKPbPW0RES+rF7cAz6o4cKu3HV0I17aoXiTMnJcSaFtVtsD2ZedtavvTleZJGLGSgSHDV4k0Af1E2vvBPIqhe3+yOTbvWDVwbEtV9Qb9NCPwzKPbJylJGF/fSXev+TibO/XMvFZUqwjWxHZjYFZjtDtD6uw+nvWcNNFQ+EPPPKEDO7f3eu3b6Uf8tWlIvPAI8oX0vmh101LLw9wC8AELornWPKjtdCxjkxereNRkyKIWDkIciJ86dDOBiHD/SrO5eNNIdm3aLG7glQF3QivNQGikOGciTnVKhOIqLZMGaK7hqS1d2Vpfcj+486iJ6ZidUG2KgmexigIrZtVas5ZtDYSeKHWTetpZ31Zb+XXENdOhOg9vDHNdcy//6XaljRf1wqb89m6O4iIJS4thdli80VO1B9wiff+CV66UMugRK1A/vtWcdaIvhOLHq58z+3u5H2aTPe4J6poYPOI1wBaoTgd6FuhlFiJLF9nHFFZT6ItCn24Iw37WYAGjprC55EL5MB/7pcICe+xz41wOqqa8DOjo4WLm91FQ9svks+0A+0ymfRLTbRPiS4D3eWV2yAECDxsoR/Qrff9caHj136BA1x3J017rnHLvL/gpQUvryvEBTAmjpy/NkUCo1VdjuobvWPa+x8GSNIGlzumuvrc09Lwmeozz2bPoUQEs/zFjqu3tKm7c8dbPQUPUFurcG899GKVAZEM31OaGh6kvs2fSFn0VCRf3wvprUPVL3dAmM3/blfsdRwXOUnsAlpIH+JoAoA0B0Gx8Vq7lf2vUceza9HyG1bINvNYN2V6VAdYL3+3tZUy9ec+wuux1AhzIvj57sfpUkj6fqygR6bhqoA1fawht017pXNHVRK0jo5Zm72kDXBi17NlVrnBD/ZzqZ29XjnpVNYgfi2ekpnAO65Ojt8OXt53/k+X6cYAEA8omsm1/Gu2pLX2p9ftb1Sj4sl0aM1Jeh7tLh1Xy0O6YI8KW0qOmsLrnOsbssB5TKyq66vb8kQoDllDh2l93dWV1yvdBQtU/Tg/d2be11efjSKf+9dedLNwoNVR399I+pMDaPAGho3vLUDOzZ9J7f9RHg2sc1WENj5frmLU+NN0SN+Bw955bxJ3ETtZ0D0Vgm+hMcrz2OO8H5tTuj9OX4dgCtfsf5tkb2uqr3r8q+IUJq2aRsFsJr7t0b4CNqzsMJDVXVndUl1zp2l2WB0t42Je2aD9jH++3dzfM1cv+/Vy2gkN7agjk7h3fsLrvrWMUjs4SGqnpFoLkTPKv2OQXBc/RwZ3XJPa07X5qqWIcUPXPhk17WGYYAkBVrkijCx51i++aU82mfn+9vOTqKi3zX/ujwAgBhimj517+fIIZ1vA+vbp30ZVOF7Q7A9ox5fEaObuSYeaIllSpB8d62r3LDtx9fVWOl/Z+i3VYFwKtufd4nFc/3bZXuImSry7fV/OXho+Nud8emXX+Ca3sBHIqQWj5s2vL8B62NNSuURt7vqQWi3SYru0Hvb9350jRj57Grw0fHXe+OTbsDvnWQQi/xox8MjZXb2g8eeLu1trQYgNTR9O1hEgsC3+4+vGJ96XpxtYjQUCUqucGo0lHIAEIEXi4H4MJyyondO08ToaHKq2yOKmncFnVHIf/NTH8QGqqaRUvqOfDNdVLjRTpPk913Pw+DKjs/EwCeCKlFbvOAKvffdbyXkkMAvPtXZd9sTMq8O3x03Ex3bFoaulMKBawbhsbK/7YfPPBia23pDgBHeqkXahoar9ja3AwLYjT3KwMQhIaqzrWtYp8bSMvnVTQkxeLG8dMLBC8ldgDo3iC1RyOVAMDTWPOv5saaSmNS5oLoCddOU/J29Rbi8ACoHdGybXPdhsI1AL4BECk0VImwpBL4FvuHKW2Fa6o/TAHAGLodmALqsANeSuwhAKfMrj+m7GBF1WfpZ5V2AtgLYKwmNt3zvfdFWKy5smi3wXnsnLeGAffDl2jR7RfP7HoWR19NhIGMhy1fTpHfnWM7HoBkTMq8WEfo5NCYc7p2xe1o+pZ4KXHrkqPXO4qLDio9s/qg3KmsqA+wBXacMSlzgo7QScq1CQDS0fStiAkjNzqKi76DOkuaUg6EGCMXbfxK1A8fpbgR2t10Pmp9flaqYgX23jNRSjUNarRgzT3HFPbtTaEx53S5OcqzH1QS033t9y7MxqTMKbrk6M80L5Q4dxjaRbvtkJ9lQQCcax6fcbuXkh265OivFHEmzh2G70W7rR3H73gyxm+DWl+SNV/m1wPdx1ICEKqPTb5JiI4/dsfUc75+ta0jRHO8C8BB/wEGfWzyVZLpSo9pirtJ01HI944u/Cbf17FAUz4XGJMy03WERoTGnNNlSSjl43TVlq4H8KXm/fa6O46y84qkj02eJkTHh+uSo2uUzkdWyqNTtNu+7YMb0rU5sGDNjdGk7qUA9N6a5vM8HXEVJ8i02du9XmhMypytI3SY8qxQ6qLXsbusTHlOX93yia/6NxfqkqO/8NY0j/V0xNUDOObbOh5t/lamPjb5Dsl0pV0pewHwLacT7bbvcOIMJ4HKM9I0xR2tEWz1vR+Db5UJ+nm+K0I9u67r0E98zTTF3QGAc+4wUNFu+14RyP6ssxxYBGsu19+8R7r5Zfyp7gTrX+HM2Tm8Mqv45Pg2qFAbsDF6+rLvIxdtpJGLNsrKT0n5WdPX0Y7+PL8k+zZewM9ozo05O4fr8/uhZ3T5EN38sj7XxROsiDjTIUF7skADR+bsxZxzh6HX4W5NatYBv745OyfgtU1T3LIyl0obIzBGT1/2tWhJHaX5vj8WVqDrE+cOAxfAjVRNZjnQPTteKJSVkSfV1eiljCgBCG/OzqGO4kJZsOYR0xT3CY733VOX7b/DgBMdL1hzedMUN9T76cPxnO/3hdSc7bt/pZeXAx0r2m1cgEGBE5XPSTsL0xQ3Ob78CpWNLvp9ruPKr48Lt4/vxHqPJwVsA+qzaKxsqpRNwLJXhJ32pez7Wnd7+Im+c51SW9W8a9k/nBJMgnUm9QCnQ7AYDMYAw1aDMxgMJlgMBoPBBIvBYPxsEVgR9KB7drZmLSCCPC+2JFOy6F8b+Ytlkd47JzNQUJgsLC/nAWBVero6e7zrOwD43GDARW5fkHnVrFkSCKFLnU6ufevWHp2achxVznPyACylxHzXYn7ODVO7vlr/1jZ1zlLAa6h/uSo9XVJ/H1pVJa8s6JkTXn3uVenpEijFwo0bT5i5Yf1b2+Q7nn4CJ7oeAKLkXesqj88NBuzdWCH7TZthDAIs6N4tTKbo6cv2i5bUEQGO+az1+VkTwILuPViSl8evLCjoddRsqdPJrTCZ5NPwrgatY+A5whLrMQsrOAwVsbW5BRYcQfdEu5EATIbGys+CVDC4lQUF8rPrSy9uG/OLOz79tPZA2YJbntFYhAS+zBKWaSnJvwPA/cv22TrRbtv17PrSmAbL+fcBMEqeIwZePwKS5wieTZuGheXlz6xKT/80Y/WrWVQUJ51tSQgbMTyS/6R2FwB41mcveBvA/1YWFLQGmLCrbdwygNGW+c/cefOtE0bzkaaQb/fs6QRwyDwionBVenrLk1vfn/N9ZFia5DkSyutHqLPTuQOffbavbMEtTzzw4Uc3dfDcNe0HvnluVXp6nZLwDjxH6P/btnvCV+HklhUTk/65sLw8JDzu3N8CkCXPEY7Xj1B3izbCN1NbeOPxF8tu/+NC8SihM+Cbea293pdlC255MvO2tSPltM48AMazx8YZvtt7AACOfnf2qFU8R75kzYQJVjC4gQRAR+vOl6Zj50utS/Ly3EdffIaubRXPViq8HYOcxiQQCZelEADwhJ899jO39/em2ATZnJ1T7Sguet+cnUPm3DCVrEpPl69Nvewqcv64pQAw5qKPPq+zY1fD9BujGvd8tUystx8ZM9b6EQAdrx9B7926g7iczSYAiBs3blajBxkH6u3/+66hTgQgynrDuMzK2t+K9fbPPtn0/n11xYX/DeQG8oSQhNmL/3TJzMlLI2LGRB1o2t84JtJaK+sNiQDitq995xMA5d9Hhv2q0YNbxPrmyjFjR3iUM/BUFF0A0MFzUxs9+L3o9EyDbxNduuhfGwUA3iPDuHGNHnqvPjb5IwD1jR4kxOrR2YQROnhwJYDOWD0qAciNHugBGGVOuLzR7b3XJB5932wc7tZc7wcAuOqByZHbD7cuE+vtR7/be6BG1hsMAK6IC4+5N/KBvz2w+ZEHC5Y6nWSALUcGE6x+ixYA7AeAlQUF6vffBPNNN0y/kQLA1i0V18Xd8EuxrWm/MC0led76YlQ+umwZVzc6igKgVBSvlertACB6QxPUBd6dAKTd/3M+X35r0gO9XKJdrLeL5bdm3aCxOo0xM3IfmP77OfdfMhOv120onCrJ9GOeACCELiwv51cRIiXMXjx3/H13PirW2782vb3hV6sLCj5WzmE0Z+ecjeFdm0eo1/gVNEu0NLiNHW5XG3BxzIzcAp4jS5/bt7/rd/Ctd9OtSk9/H8CV6i/SXylpGzPWun3FxKSZ2pM5/nTnVWK9XfznrVkzARwJcL1OY4dbevd/zuL9q7L/BADGpMxpmU/et0K88LyHAJSsMJkaB9s9/bnCRgmPj5EQv/8HfRkdGxEe3da0nwNwWNYbpgKIWJRgkVeYTLI5O2ecrDf8cse63d8BEFKmjtAmWeRHn3tk2FKnM2Te+rawpU6nft76thBzdo7akakpXyIkmZIr310uAHA1Vdj+b8sz6/8qxFuHpz7yeB7PEbrU5SIAyPM3z5IBhF8yc/IyAF+W35o1fWVBwQcAjilBfpejuGjfkecL2zV1UAAwYqnTGaLcg35hebmacWJYW9P+zzmPe8v0389ZAuAX91wwRl2Eyxk73F2ZQTJvWxsiyZRTrGJBcfu4pU6nsNTpDFGWyahZHYYrz21Y6nTqn9u3X137SFyhBj7Gst+01OnkF5aXG121pf/9svq9N4R467ClTqeguOMs/ssEKygsLf/cQkFv+o8eOUoAcPiD12tej4gZc37C7MXJSnCYTEtJngvAKPDyixExY+AnyPimqvmHFSZT59o5EcdWmEyetXMiOufcMPW4jXJ5jtD3rnpYCr9nJCfJlDRV2P4m1tvdsVdefx6AYU+FGemSvDyO5whdWF5+sRBvvbTxvbfLANQp4kPUUThzdg637JjLv+4dXGEydSr34FmVnu7RWFGJ/84v2uwKNQhzilc/hu70Jz3eXfnO3bISN5P93p/cvnWr7Jfp4aDy3O4VJpNHI4IUAPZ/6PauMJmkVenpLqWMk4wdbtn78MMyADzz5FPMumIuIeMUkQGEtR88sAnAksTpE2a3DM9511FcJMh6w3wAO49+/N73rtD5uGDsL9yazkq8/NfJ18bdu0MGwPORJu6s1mMNB7ZufDFgzI4A7TgsL5q2UTBn50hjxlpX799r/y2As3iOfHX55s0EBQX4Yu++2bEjz6WHdzd+aM7O4UKrqrSZaKmjuIji6Se6MlhExIzBnOLVj5+TmNgutTrBR5oES8NX5ffOyaxW/i7E01jzH3nvno3c2MRZCbMX3163ofCFDlniXKEGCNHx8DTW+NY52gMX0OeGrsxBVIi3Yk7x6sfOtiS0AwAfadJZGr4qu3dOZg05cJSDnlB9jHWYOTtnpKvjKv3NU92Z5PxxN/6wd0/Z6oKCxqVOJ6cII4MJFqO/buzZlgQc+L5R76ot/bytadZn0BvmO4qLlpizcxIjYsacfWj7tn/Al5IEX376yZUASjWN99wm4CYAPDwQEBn2KYDVJ7rg8zfPkte/tY18u2ePEXqD1mojAEDlH6IBkC/LVr7Hc0R+RqZEExc8DleoAdzYxKsbPaAIM1F4oIs0Df8IQLXm3OJ/q2vuSj//nKsumTm5qG5DYVkoxx/TGsTq7uR9iVdyYxOvaVLn3PmutwtADXxpcTxX/3rc7W1NpsyImNhhrlADGt97+99VD/zp95JMKc8xb5AJFuOU3Vg+0tSB76EH0Mx53Ju5sYl/0McmT7s29bJEANzmRx78T/g9I+uNHe7Ob76svwQAEg62iI2ArvqlmtX7V2X/AZot07QTSnteiQDEF2x2FBfp5CklmRExY74GuvKvqe5UW9zVoBdmLMmQZPrSiEWLefjlu0846MtGbSY6bn/9pyi/NWsaundxRnj3PaiWntFRXFT31kHDC1Pun//HhNmLf9chS7v7GtW4yO3GBz2vdy2AJvX3XQoeN7wTh1v1P+y3r5925dVPb3jp5RsjrBf87qw4y2Rzds4YjiNNy5eD5OezgDuLYTH6ZVmtMBopgKj9e+2XwreRp7Rny0dbAUi/+uu9l0m8MLOtaf8OALteevwpJwBP1IXxIgDUje7ariYElJJ569sESaZkSV4e93K55G9CEN/8p+XEnJ0TosTHxkfEjAn5Yb+9BsDhpU4nd/kVV8gA8IsLuDcAkMTpE37Bc4TOuWGqoObBMmfncObsHOHVui8IADioV234oZJMybz1bbwkUzJ+3HgugNuLpgrbw2K9/atLZk7O3rf3C4uxw92veuygXUkzDZJMiW5+mSDJlDy7vlQr0qRmp3jgngvGfLDt0eUPfbLp/Qwh3jp8WkryHQSgl+a+zEwsZmEx+itYIEQGEA3ggjFjrc8AQN2Gwt2XzJz8TYtH/L+oMEHgJfEOACQ9/LaQ9FdKAP1x+cEkEELXgnrXqjn0KaVY0+MYUREp6vCl9A1Pf6XkcVeogduz5aP31YNWmExUmTBam540/mvoDTn62OSKVenp2wEAxUVwKIHwD4qL/J/Hq1xDWqv8P5ArB8D9yab3H7lk5uSXJF64CwBi4keSutp+l596PZFf023J1Y2OAg63AkDIUqeTeyrMSHiObL9k5uTOMYmJ8QDCZppu7QBuY9MamGAx+oo5OwcOX6MXAUjf7tmjBoEdnMe95axxiYvFentL2YJbtqF7ZyKZ87hlP6slZGF5edjnhreEi9zlYmhVFXfo9nVSqW/TAHXU1ATgmDk7Rz/BFDY7Imn8HUK89fIjm9/YWLeh8OUleXncCpNJmxCx+ZNN7y+9ZObk9TNfKy6R9+5Z9d/qmgrxpsc+Ed68f1zUUXJFy3D6hqO4aJ+Z6FQxMvruw8Bd5HbLHft3CWuXPvYD/EZuL9+8WfjgxhtfTpw+4RpubOKtbfV27aigv0XW9b026K583+N67Zs6uNKX5x1LONhCGwE6+twj8gqTSYbTGWLOzpE4j7t8/177r83ZOcN4jhxT8suzisgEi9FP4VJ3t1HnEdH/Vte8NmuMdfEPHvd2TZyGAAgdNsaqzm/SAUDK7cm/bQfmxwGkPRxS+83nhh0tL1sH4E4AghBvJemvlNSie07aMAD1u59+8c91GwqfANC5sqCgy9rgOUKVzW/fAJB+yUwURIyxPjhrjPVBV+jXrcbM+ZFtTfvxyab3v3QA+xzUKwjxVpJZWbuzHSBxANrDAdHpAYBkM9Fpd5bB3o0VAID12QueTn+l5GYh3hp+YKdNp3lG9WcYNGmt1RgWAE6It3KZlbUf9rjeVDvFy7hqUYLl8PbDreTgNyMEAGjfupU4iouk9w/mfjnl/vnkWkm8uqy46LWFGzdyq4Jw9QMTLEZQoqQpxnWdqd9RScyIGBGxT/O793ccJbNbhtNv0d2oPLwkZk60xLSu9jXEA+ePtqSHcrzu488/5c+LSwAAyptC+KIf2r4BgPYD3zxL21xvjr/oYtohS2Tf3i+42jd3NtdtKNyB7oXgx7lGpS/Pk5R1jm/WbSh8e0le3mXfX3TpWZdedDE+/qoOFQ892xx6w6RKADi/nT4XaqT/BUD37f2COy8ugfKmELJPEgHgUFS4aR0viZ9AWYXgKC4SFbfzY2GbfEP8aHecp7GmGgDEvQUiiE191tkJEZEtiqsqSzKlqwBYGr56ITT2vO0AqOTs5JRnJvskkQL49oV3azuSpY6MUeYvv1oJILSqygsAM+6c/HTbV599HhFhrIfve+YOMhgDAz3tvooyknjC6yzJy2ODOowBhTnhQ4CF5eV8aFUV1eaLyrxtLb81pIpqMyksLC/nw6+7jqoLd3ubvrD+rW3UUVwkL8nL4zpSU3vUEeU6/dmMgCzJyyPa86jnV0XN/xoqq9LTJSXnFafMkj9OEDtSU0mg3Fz+z+r/N71cTwZAF5aX89p7VJ9jYXk59/zNs2SWYobBYDAYDAaDwWAwGAwGg8FgMBgMBoPBYDAYDAaDwWAwGAwGg8FgMBgMho//DxpxXe5ZRJEPAAAAAElFTkSuQmCC";
+    const SPRINT16_TURBINA     = "data:image/png;base64,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";
+
+    // FIX timezone: parser manual para "YYYY-MM-DD"
+    function sprint16FmtData(iso) {
+        if (!iso) return '—';
+        try {
+            const s = String(iso).slice(0, 10);
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+            if (m) {
+                const [, y, mo, d] = m;
+                return `${d}/${mo}/${y}`;
+            }
+            const dt = new Date(iso);
+            return dt.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+        } catch { return '—'; }
+    }
+
+    // Pré-processa a foto: baixa, recorta em quadrado central (cover), redimensiona.
+    // Resolve dois problemas do html2canvas:
+    //   1) object-fit:cover não respeitado em <img> (deforma a foto)
+    //   2) background-image renderiza em baixa resolução
+    // Saída: data URL PNG quadrado de alta qualidade, pronto pra <img>.
+    async function sprint16PreprocessarFoto(signedUrl, tamanhoPx) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                try {
+                    // Tamanho de saída: 3x o tamanho final pra ter resolução de impressão (~240px → 720px)
+                    const outSize = tamanhoPx * 3;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = outSize;
+                    canvas.height = outSize;
+                    const ctx = canvas.getContext('2d');
+
+                    // Lógica do "cover": calcula o lado menor e recorta o centro
+                    const srcW = img.naturalWidth;
+                    const srcH = img.naturalHeight;
+                    const srcSize = Math.min(srcW, srcH);
+                    const srcX = (srcW - srcSize) / 2;
+                    const srcY = (srcH - srcSize) / 2;
+
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, outSize, outSize);
+
+                    resolve(canvas.toDataURL('image/jpeg', 0.92));
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            img.onerror = () => reject(new Error('Falha ao carregar foto'));
+            img.src = signedUrl;
+        });
+    }
+
+    function sprint16MontarHtmlCapa(fotoSignedUrl) {
+        const p = paciente || {};
+        const aplic = aplicadorAtivo?.aplicador || null;
+
+        const nome = (p.nome_completo || '—').toUpperCase();
+        const inicio = sprint16FmtData(p.created_at);
+        const cpf = p.cpf || '—';
+        const dn = sprint16FmtData(p.data_nascimento);
+        const idade = p.idade_humanizada || '—';
+        const escolaridade = p.escolaridade_completa || p.escolaridade || '—';
+
+        // Mãe e Pai sempre aparecem (campos dedicados).
+        // Fallback: se mae_nome vazio mas responsavel_parentesco indica mãe, usa o legado.
+        const respParent = (p.responsavel_parentesco || '').trim();
+        const respEhMae = /mae|mãe/i.test(respParent);
+        const maeNome = p.mae_nome
+            || (respEhMae ? p.responsavel_nome : null)
+            || '—';
+        const paiNome = p.pai_nome || '—';
+
+        // Responsável legal (tutor/curador/etc) — só mostra se preenchido E não for a mãe migrada
+        const temRespAdicional = p.responsavel_nome
+            && !respEhMae
+            && respParent.length > 0;
+        const respLegalStr = temRespAdicional
+            ? `${respParent}: ${p.responsavel_nome}`
+            : null;
+
+        const operadora = p.convenio_nome || '—';
+        const celular = p.responsavel_telefone || p.telefone || '—';
+
+        const medicoStr = p.medico_referencia
+            ? `Dr(a). ${p.medico_referencia}` + (p.medico_crm ? ` — CRM ${p.medico_crm}` : '')
+            : '—';
+
+        const neuro = aplic
+            ? `${aplic.nome_completo}` + (aplic.crp ? ` — ${aplic.crp}` : '')
+            : '— não designado —';
+
+        // Foto já vem pré-processada (quadrada, alta resolução) — só usar <img> simples
+        const fotoHtml = fotoSignedUrl
+            ? `<img src="${fotoSignedUrl}" alt="Foto" style="width:100%;height:100%;display:block;" />`
+            : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#94a3b8;font-size:9px;background:#f1f5f9;">sem foto</div>`;
+
+        const card = (label, valor, fullWidth = false) => `
+            <div style="background:#f8fafc;border-left:4px solid #2e74b5;padding:7px 12px;border-radius:0 4px 4px 0;${fullWidth ? 'grid-column: 1 / -1;' : ''}">
+                <div style="font-size:9px;color:#2e74b5;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1px;">${label}</div>
+                <div style="font-size:12px;color:#1e293b;font-weight:500;line-height:1.3;">${valor}</div>
+            </div>
+        `;
+
+        // IMPORTANTE: box-sizing border-box em TODOS os elementos + width/height explícitos
+        // para evitar margem branca lateral no canvas
+        return `
+            <div id="pdf-capa-prontuario-conteudo" style="
+                width: 720px;
+                height: 1018px;
+                background: #ffffff;
+                font-family: 'Inter', -apple-system, sans-serif;
+                color: #0f172a;
+                box-sizing: border-box;
+                position: relative;
+                overflow: hidden;
+                padding: 0;
+                margin: 0;
+            ">
+                <!-- FAIXA CLARA: position absolute left:0 right:0 garante 100% da largura do canvas.
+                     Pattern: polka dots em #2e74b5 a 12% sobre fundo #ecf8ff. -->
+                <div style="
+                    background-color: #ecf8ff;
+                    background-image: radial-gradient(circle, rgba(46,116,181,0.12) 1.5px, transparent 1.5px);
+                    background-size: 14px 14px;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 170px;
+                    box-sizing: border-box;
+                    padding: 28px 60px 0;
+                    text-align: center;
+                    overflow: hidden;
+                    margin: 0;
+                    border-bottom: 3px solid #2e74b5;
+                ">
+                    <div style="position: relative; z-index: 2;">
+                        <img src="${SPRINT16_LOGO_PRINCIPAL}" alt="Equilibrium Med Center" style="height: 70px; width: auto; display: block; margin: 0 auto;" />
+                    </div>
+                </div>
+
+                <!-- FOTO SOBREPOSTA — margin-top compensa a faixa absolute (170px) e dá overlap negativo -->
+                <div style="text-align: center; margin-top: 110px; position: relative; z-index: 3;">
+                    <div style="
+                        width: 120px;
+                        height: 120px;
+                        border-radius: 50%;
+                        background: #f1f5f9;
+                        border: 4px solid #ffffff;
+                        margin: 0 auto 8px;
+                        overflow: hidden;
+                        box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+                        display: block;
+                    ">
+                        ${fotoHtml}
+                    </div>
+                    <div style="font-size: 22px; font-weight: 700; color: #2e74b5; letter-spacing: 0.5px; margin: 0 50px;">
+                        ${escapeHtml(nome)}
+                    </div>
+                </div>
+
+                <!-- CARDS DE DADOS -->
+                <div style="padding: 16px 50px 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; box-sizing: border-box;">
+                    ${card('Início', escapeHtml(inicio))}
+                    ${card('CPF', escapeHtml(cpf))}
+                    ${card('Data de nascimento', escapeHtml(dn))}
+                    ${card('Idade', escapeHtml(idade))}
+                    ${card('Escolaridade', escapeHtml(escolaridade), true)}
+                    ${card('Mãe', escapeHtml(maeNome), true)}
+                    ${card('Pai', escapeHtml(paiNome), true)}
+                    ${respLegalStr ? card('Responsável legal', escapeHtml(respLegalStr), true) : ''}
+                    ${card('Operadora', escapeHtml(operadora))}
+                    ${card('Celular', escapeHtml(celular))}
+                    ${card('Atendimento', 'Avaliação Neuropsicológica', true)}
+                    ${card('Médico solicitante', escapeHtml(medicoStr), true)}
+                    ${card('Neuropsicólogo', escapeHtml(neuro), true)}
+                </div>
+
+                <!-- TABELA DE SESSÕES -->
+                <div style="padding: 12px 50px 30px; box-sizing: border-box;">
+                    <div style="font-size: 10px; color: #2e74b5; letter-spacing: 0.22em; font-weight: 600; margin-bottom: 7px;">
+                        REGISTRO DE SESSÕES
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; box-sizing: border-box;">
+                        <thead>
+                            <tr>
+                                <th style="padding:7px 10px;text-align:left;width:23%;font-weight:600;color:#ffffff;background:#2e74b5;border:1px solid #2e74b5;font-size:11px;">Aplicador</th>
+                                <th style="padding:7px 10px;text-align:left;width:45%;font-weight:600;color:#ffffff;background:#2e74b5;border:1px solid #2e74b5;font-size:11px;">Observações</th>
+                                <th style="padding:7px 10px;text-align:left;width:18%;font-weight:600;color:#ffffff;background:#2e74b5;border:1px solid #2e74b5;font-size:11px;">Data</th>
+                                <th style="padding:7px 10px;text-align:left;width:14%;font-weight:600;color:#ffffff;background:#2e74b5;border:1px solid #2e74b5;font-size:11px;">Visto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Array.from({length: 5}, (_, i) => `
+                                <tr style="background: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                                    <td style="padding:10px;border:1px solid #cbd5e1;">&nbsp;</td>
+                                    <td style="padding:10px;border:1px solid #cbd5e1;">&nbsp;</td>
+                                    <td style="padding:10px;border:1px solid #cbd5e1;">&nbsp;</td>
+                                    <td style="padding:10px;border:1px solid #cbd5e1;">&nbsp;</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    async function sprint16AbrirModalCapa() {
+        if (!paciente) {
+            window.CortexUI.toast('Paciente não carregado.', 'danger');
+            return;
+        }
+
+        let fotoSignedUrl = null;
+        let fotoProcessada = null;
+        if (paciente.foto_url) {
+            try {
+                fotoSignedUrl = await window.CortexAvatar.buscarUrlAssinada(pacienteId, paciente.foto_url);
+                // Pré-processa em alta resolução (240px = 80px × 3 scale) — quadrado e nítido
+                fotoProcessada = await sprint16PreprocessarFoto(fotoSignedUrl, 80);
+            } catch (err) {
+                console.warn('[sprint16] foto:', err);
+            }
+        }
+
+        const documentoHtml = sprint16MontarHtmlCapa(fotoProcessada);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'sprint16-modal-capa';
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+            <div class="modal-content" style="max-width: 820px; max-height: 92vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h2>Capa de prontuário</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-primary btn-sm" id="btn-baixar-pdf-capa">📥 Baixar PDF</button>
+                        <button class="modal-close" onclick="document.getElementById('sprint16-modal-capa').remove()">×</button>
+                    </div>
+                </div>
+                <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 24px; background: #f1f5f9;">
+                    ${documentoHtml}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        try {
+            await CortexAudit.log('leitura', 'pacientes', pacienteId, {
+                operacao: 'capa_prontuario_visualizada'
+            });
+        } catch (e) { /* silencioso */ }
+
+        document.getElementById('btn-baixar-pdf-capa').addEventListener('click', sprint16GerarPdfCapa);
+    }
+
+    async function sprint16GerarPdfCapa() {
+        if (!window.html2canvas || !window.jspdf) {
+            window.CortexUI.toast('Biblioteca de PDF ainda carregando, tente em 2 segundos...', 'info');
+            return;
+        }
+
+        const btn = document.getElementById('btn-baixar-pdf-capa');
+        const txtOriginal = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+
+        try {
+            const el = document.getElementById('pdf-capa-prontuario-conteudo');
+            if (!el) throw new Error('Elemento da capa não encontrado');
+
+            // Aguarda imagens internas carregarem (logo, turbinas, foto)
+            const imgs = el.querySelectorAll('img');
+            await Promise.all(Array.from(imgs).map(img => {
+                if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                    setTimeout(resolve, 2000);
+                });
+            }));
+
+            // RENDER ALTA QUALIDADE — scale 3.
+            // OBS: NÃO passar width/height aqui — deixa html2canvas medir o elemento real
+            // (a div tem width:720 height:1018 fixos no estilo inline, então a medição é exata)
+            const canvas = await window.html2canvas(el, {
+                scale: 3,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                allowTaint: true,
+                logging: false
+            });
+
+            console.log('[sprint16] canvas size:', canvas.width, 'x', canvas.height, 'ratio:', (canvas.width/canvas.height).toFixed(4));
+
+            // SOLUÇÃO DEFINITIVA: redesenha o canvas em um canvas auxiliar
+            // com proporção MATEMATICAMENTE IDÊNTICA ao A4 (210×297 = ratio 0.70707).
+            // Assim quando o addImage usar 0,0,210,297 não vai sobrar nem 1 pixel branco.
+            const A4_RATIO = 210 / 297;  // 0.70707070...
+            const targetW = canvas.width;
+            const targetH = Math.round(targetW / A4_RATIO);  // altura calculada na proporção A4 exata
+
+            const a4Canvas = document.createElement('canvas');
+            a4Canvas.width = targetW;
+            a4Canvas.height = targetH;
+            const ctx = a4Canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, targetW, targetH);
+            // Desenha o canvas original esticado pra preencher exatamente a proporção A4.
+            // Como o HTML já é 720×1018 (proporção ~A4), o esticamento é < 0.1% — imperceptível.
+            ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, targetW, targetH);
+
+            console.log('[sprint16] a4 canvas size:', targetW, 'x', targetH, 'ratio:', (targetW/targetH).toFixed(4));
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+
+            // addImage forçado: A4 exato, sem cálculo de proporção, sem offsets.
+            // Como o canvas auxiliar tem proporção A4 garantida, encaixe é pixel-perfect.
+            pdf.addImage(a4Canvas.toDataURL('image/png'), 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+
+            const nomeAbreviado = (paciente.nome_completo || 'PACIENTE').toUpperCase()
+                .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
+            const d = new Date();
+            const dataStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const nomeArquivo = `Capa Prontuario - ${nomeAbreviado}_${dataStr}.pdf`;
+
+            pdf.save(nomeArquivo);
+            window.CortexUI.toast('PDF gerado com sucesso', 'success');
+
+            try {
+                await CortexAudit.log('leitura', 'pacientes', pacienteId, {
+                    operacao: 'capa_prontuario_pdf_gerado',
+                    arquivo: nomeArquivo
+                });
+            } catch (e) { /* silencioso */ }
+
+        } catch (err) {
+            console.error('[sprint16] gerar PDF capa:', err);
+            window.CortexUI.toast('Erro ao gerar PDF: ' + (err.message || 'desconhecido'), 'danger');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = txtOriginal; }
+        }
+    }
+
+    // ========================================================================
+    // ENVIAR ACESSO AO PORTAL POR WHATSAPP
+    // ========================================================================
+    async function abrirWhatsAppPortal() {
+        if (!paciente || !paciente.cpf) {
+            window.CortexUI.toast('Paciente sem CPF cadastrado.', 'danger');
+            return;
+        }
+
+        const cpfLimpo = String(paciente.cpf).replace(/\D/g, '');
+        if (cpfLimpo.length !== 11) {
+            window.CortexUI.toast('CPF inválido (precisa ter 11 dígitos).', 'danger');
+            return;
+        }
+
+        // Telefone preferido: mãe > pai > responsável > paciente
+        let tel = paciente.mae_telefone || paciente.pai_telefone
+               || paciente.responsavel_telefone || paciente.telefone;
+        let telLimpo = tel ? String(tel).replace(/\D/g, '') : '';
+
+        // Garante código do Brasil (55) na frente
+        if (telLimpo.length === 10 || telLimpo.length === 11) {
+            telLimpo = '55' + telLimpo;
+        }
+
+        const urlPortal = `https://cortexneuro.com.br/portal/?cpf=${cpfLimpo}`;
+        const primeiroNome = (paciente.nome_completo || '').split(' ')[0];
+
+        const msg = `Olá! Aqui é da Equilibrium Neuropsicologia. ` +
+                    `Liberamos o acesso de ${primeiroNome} ao nosso Portal do Paciente, ` +
+                    `onde você pode responder questionários, acompanhar consultas e baixar laudos.\n\n` +
+                    `🔐 Acesse aqui: ${urlPortal}\n\n` +
+                    `*Login:* CPF do paciente\n` +
+                    `*Senha inicial:* o mesmo CPF (será solicitada a troca no primeiro acesso)\n\n` +
+                    `Qualquer dúvida, é só nos chamar.`;
+
+        const encoded = encodeURIComponent(msg);
+
+        if (telLimpo && telLimpo.length >= 12) {
+            // Abre direto a conversa
+            window.open(`https://wa.me/${telLimpo}?text=${encoded}`, '_blank');
+        } else {
+            // Sem telefone: abre WhatsApp Web genérico e copia mensagem
+            try {
+                await navigator.clipboard.writeText(msg);
+                window.CortexUI.toast('Mensagem copiada. Abrindo WhatsApp Web...', 'info');
+            } catch (e) { /* ignore */ }
+            window.open('https://web.whatsapp.com/', '_blank');
+        }
+    }
+
+    window.CortexPasta = {
+        abrirModalAgendar: async function () {
+            await sprint8AbrirModalAgendar();
+        },
+        abrirModalDesignar: async function () {
+            await sprint8AbrirModalDesignar();
+        },
+        abrirModalCapa: async function () {
+            await sprint16AbrirModalCapa();
+        },
+        enviarPortalWhatsApp: async function () {
+            await abrirWhatsAppPortal();
+        },
+        fecharModal: function () {
+            const m = document.getElementById('sprint8-modal');
+            if (m) m.remove();
+        },
+        selecionarData: async function (dataISO) {
+            _sprint8DataSelecionada = dataISO;
+            await sprint8CarregarSessoesDoDia(dataISO);
+            sprint8RenderHorariosOcupados();
+            // Marca card de data ativo
+            document.querySelectorAll('.sprint8-data-card').forEach(c => {
+                c.classList.toggle('active', c.dataset.data === dataISO);
+            });
+            document.getElementById('sprint8-data-aplicacao').value = dataISO;
+        },
+        salvarSessao: async function (event) {
+            event.preventDefault();
+            await sprint8SalvarSessao(event.target);
+        },
+        designarAplicador: async function (aplicadorId) {
+            await sprint8DesignarAplicador(aplicadorId);
+        },
+        removerAplicador: async function () {
+            await sprint8RemoverAplicador();
+        }
+    };
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MODAL AGENDAR SESSÃO
+    // ────────────────────────────────────────────────────────────────────────
+
+    async function sprint8AbrirModalAgendar() {
+        // Carrega profissionais ativos
+        try {
+            const { data, error } = await window.cortexClient
+                .from('profissionais')
+                .select('id, nome_completo, perfil')
+                .eq('ativo', true)
+                .order('nome_completo');
+            if (error) throw error;
+            _sprint8Profissionais = data || [];
+        } catch (err) {
+            window.CortexUI.toast('Erro ao carregar profissionais: ' + err.message, 'danger');
+            return;
+        }
+
+        // Próximos 14 dias
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const dias = [];
+        for (let i = 0; i < 14; i++) {
+            const d = new Date(hoje); d.setDate(d.getDate() + i);
+            dias.push(d);
+        }
+
+        const profDefault = ehAdmin
+            ? (aplicadorAtivo?.aplicador_id || (window.cortexProfissional?.id ?? ''))
+            : window.cortexProfissional?.id;
+
+        const html = `
+            <div id="sprint8-modal" class="sprint8-modal">
+                <div class="sprint8-modal-box">
+                    <div class="sprint8-modal-header">
+                        <h3>📅 Agendar sessão — ${escapeHtml(paciente.nome_completo)}</h3>
+                        <button class="sprint8-modal-close" onclick="window.CortexPasta.fecharModal()">✕</button>
+                    </div>
+
+                    <form id="sprint8-form-sessao" onsubmit="window.CortexPasta.salvarSessao(event)">
+
+                        <!-- Calendário simples (próximos 14 dias) -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">1. Escolha a data</label>
+                            <div class="sprint8-datas-grid">
+                                ${dias.map(d => sprint8RenderCardData(d)).join('')}
+                            </div>
+                            <input type="hidden" id="sprint8-data-aplicacao" name="data" required>
+                        </div>
+
+                        <!-- Horários ocupados naquele dia -->
+                        <div class="sprint8-bloco" id="sprint8-bloco-ocupados" style="display:none;">
+                            <label class="sprint8-bloco-label">Sessões já marcadas neste dia</label>
+                            <div id="sprint8-ocupados-lista" class="sprint8-ocupados-lista"></div>
+                        </div>
+
+                        <!-- Hora + duração -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">2. Horário</label>
+                            <div class="sprint8-form-grid">
+                                <div class="sprint8-field">
+                                    <label>Hora de início <span style="color:#dc2626">*</span></label>
+                                    <input type="time" id="sprint8-hora-inicio" name="hora_inicio" required>
+                                </div>
+                                <div class="sprint8-field">
+                                    <label>Hora de fim <span style="color:#dc2626">*</span></label>
+                                    <input type="time" id="sprint8-hora-fim" name="hora_fim" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profissional + Tipo -->
+                        <div class="sprint8-bloco">
+                            <label class="sprint8-bloco-label">3. Detalhes</label>
+                            <div class="sprint8-form-grid">
+                                <div class="sprint8-field">
+                                    <label>Profissional <span style="color:#dc2626">*</span></label>
+                                    <select name="profissional_id" required ${ehAdmin ? '' : 'disabled'}>
+                                        ${ehAdmin ? '<option value="">— Selecione —</option>' : ''}
+                                        ${_sprint8Profissionais.map(p =>
+                                            `<option value="${p.id}" ${p.id === profDefault ? 'selected' : ''}>${escapeHtml(p.nome_completo)}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                                <div class="sprint8-field">
+                                    <label>Tipo de sessão <span style="color:#dc2626">*</span></label>
+                                    <select name="tipo" required>
+                                        <option value="">— Selecione —</option>
+                                        ${Object.entries(SPRINT8_TIPOS_SESSAO).map(([v, l]) =>
+                                            `<option value="${v}">${l}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sprint8-bloco">
+                            <div class="sprint8-field">
+                                <label>Observações (opcional)</label>
+                                <textarea name="observacoes" rows="2" placeholder="Anotações sobre a sessão..."></textarea>
+                            </div>
+                        </div>
+
+                        <div id="sprint8-erro" class="sprint8-erro" style="display:none;"></div>
+
+                        <div class="sprint8-actions">
+                            <button type="button" class="btn btn-ghost" onclick="window.CortexPasta.fecharModal()">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="sprint8-btn-salvar">
+                                <span class="btn-text">📅 Agendar sessão</span>
+                                <span class="btn-loading" style="display:none;">Salvando...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        // Pré-seleciona hoje
+        const hojeISO = sprint8DataParaISO(hoje);
+        await window.CortexPasta.selecionarData(hojeISO);
+
+        // ESC fecha
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                window.CortexPasta.fecharModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function sprint8RenderCardData(d) {
+        const iso = sprint8DataParaISO(d);
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const eHoje = d.getTime() === hoje.getTime();
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+        return `
+            <button type="button" class="sprint8-data-card" data-data="${iso}"
+                    onclick="window.CortexPasta.selecionarData('${iso}')">
+                <div class="sprint8-data-dia-semana">${diasSemana[d.getDay()]}</div>
+                <div class="sprint8-data-numero">${String(d.getDate()).padStart(2, '0')}</div>
+                <div class="sprint8-data-mes">${meses[d.getMonth()]}</div>
+                ${eHoje ? '<div class="sprint8-data-hoje">HOJE</div>' : ''}
+            </button>
+        `;
+    }
+
+    function sprint8DataParaISO(d) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    async function sprint8CarregarSessoesDoDia(dataISO) {
+        const inicio = new Date(dataISO + 'T00:00:00');
+        const fim = new Date(dataISO + 'T23:59:59');
+
+        const { data, error } = await window.cortexClient
+            .from('sessoes')
+            .select(`
+                id, data_hora_inicio, data_hora_fim, tipo, status, profissional_id,
+                paciente:pacientes!sessoes_paciente_id_fkey ( nome_completo ),
+                profissional:profissionais!sessoes_profissional_id_fkey ( nome_completo )
+            `)
+            .gte('data_hora_inicio', inicio.toISOString())
+            .lt('data_hora_inicio', fim.toISOString())
+            .neq('status', 'cancelada')
+            .order('data_hora_inicio');
+
+        _sprint8SessoesDoDia = (error ? [] : data) || [];
+    }
+
+    function sprint8RenderHorariosOcupados() {
+        const bloco = document.getElementById('sprint8-bloco-ocupados');
+        const lista = document.getElementById('sprint8-ocupados-lista');
+        if (_sprint8SessoesDoDia.length === 0) {
+            bloco.style.display = 'none';
+            return;
+        }
+        bloco.style.display = 'block';
+        lista.innerHTML = _sprint8SessoesDoDia.map(s => {
+            const di = new Date(s.data_hora_inicio);
+            const df = new Date(s.data_hora_fim);
+            const hi = `${String(di.getHours()).padStart(2,'0')}:${String(di.getMinutes()).padStart(2,'0')}`;
+            const hf = `${String(df.getHours()).padStart(2,'0')}:${String(df.getMinutes()).padStart(2,'0')}`;
+            return `
+                <div class="sprint8-ocupado-item">
+                    <div class="sprint8-ocupado-hora">${hi}–${hf}</div>
+                    <div class="sprint8-ocupado-info">
+                        <div>${escapeHtml(s.paciente?.nome_completo || '—')}</div>
+                        <div class="sprint8-ocupado-meta">${escapeHtml(SPRINT8_TIPOS_SESSAO[s.tipo] || s.tipo)} · ${escapeHtml(s.profissional?.nome_completo || '—')}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function sprint8SalvarSessao(form) {
+        const erro = document.getElementById('sprint8-erro');
+        erro.style.display = 'none';
+        const btn = document.getElementById('sprint8-btn-salvar');
+        const btnText = btn.querySelector('.btn-text');
+        const btnLoading = btn.querySelector('.btn-loading');
+
+        const data = form.elements['data'].value;
+        const horaInicio = form.elements['hora_inicio'].value;
+        const horaFim = form.elements['hora_fim'].value;
+        const profissionalId = form.elements['profissional_id'].value;
+        const tipo = form.elements['tipo'].value;
+        const observacoes = form.elements['observacoes'].value || null;
+
+        // Validações
+        if (!data) { sprint8MostrarErro(erro, 'Escolha uma data.'); return; }
+        if (!horaInicio || !horaFim) { sprint8MostrarErro(erro, 'Preencha hora de início e fim.'); return; }
+        if (horaFim <= horaInicio) { sprint8MostrarErro(erro, 'Hora de fim deve ser depois da hora de início.'); return; }
+        if (!profissionalId) { sprint8MostrarErro(erro, 'Selecione um profissional.'); return; }
+        if (!tipo) { sprint8MostrarErro(erro, 'Selecione o tipo de sessão.'); return; }
+
+        const dtInicio = new Date(`${data}T${horaInicio}:00`);
+        const dtFim = new Date(`${data}T${horaFim}:00`);
+
+        // Checa conflito local (na lista que carregamos)
+        const conflito = _sprint8SessoesDoDia.find(s => {
+            if (s.profissional_id !== profissionalId) return false;
+            const sI = new Date(s.data_hora_inicio);
+            const sF = new Date(s.data_hora_fim);
+            return dtInicio < sF && dtFim > sI;
+        });
+        if (conflito) {
+            const di = new Date(conflito.data_hora_inicio);
+            const df = new Date(conflito.data_hora_fim);
+            const hi = `${String(di.getHours()).padStart(2,'0')}:${String(di.getMinutes()).padStart(2,'0')}`;
+            const hf = `${String(df.getHours()).padStart(2,'0')}:${String(df.getMinutes()).padStart(2,'0')}`;
+            if (!confirm(`⚠ Conflito: o profissional já tem sessão das ${hi} às ${hf}. Deseja continuar mesmo assim?`)) {
+                return;
+            }
+        }
+
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'inline';
+
+        try {
+            const { error } = await window.cortexClient
+                .from('sessoes')
+                .insert({
+                    paciente_id: pacienteId,
+                    profissional_id: profissionalId,
+                    tipo: tipo,
+                    status: 'agendada',
+                    data_hora_inicio: dtInicio.toISOString(),
+                    data_hora_fim: dtFim.toISOString(),
+                    observacoes: observacoes,
+                    agendada_por: window.cortexProfissional?.id,
+                });
+            if (error) throw error;
+
+            await CortexAudit.log('criacao', 'sessoes', null, {
+                pacienteId,
+                detalhes: { data: dtInicio.toISOString(), tipo }
+            });
+
+            window.CortexUI.toast('✓ Sessão agendada com sucesso!', 'success');
+            window.CortexPasta.fecharModal();
+        } catch (err) {
+            console.error('[sprint8] salvar sessão:', err);
+            sprint8MostrarErro(erro, 'Erro ao agendar: ' + (err.message || 'desconhecido'));
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            btnLoading.style.display = 'none';
+        }
+    }
+
+    function sprint8MostrarErro(el, msg) {
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // MODAL DESIGNAR APLICADOR (só admin)
+    // ────────────────────────────────────────────────────────────────────────
+
+    async function sprint8AbrirModalDesignar() {
+        let aplicadores = [];
+        try {
+            const { data, error } = await window.cortexClient
+                .from('profissionais')
+                .select('id, nome_completo, crp, perfil, foto_url')
+                .eq('ativo', true)
+                .in('perfil', ['neuropsicologo_aplicador', 'admin_clinico', 'admin_gestor'])
+                .order('nome_completo');
+            if (error) throw error;
+            aplicadores = data || [];
+        } catch (err) {
+            window.CortexUI.toast('Erro ao carregar profissionais: ' + err.message, 'danger');
+            return;
+        }
+
+        const atualId = aplicadorAtivo?.aplicador_id || null;
+        const atualNome = aplicadorAtivo?.aplicador?.nome_completo || null;
+
+        const html = `
+            <div id="sprint8-modal" class="sprint8-modal">
+                <div class="sprint8-modal-box" style="max-width: 560px;">
+                    <div class="sprint8-modal-header">
+                        <h3>👤 Designar aplicador</h3>
+                        <button class="sprint8-modal-close" onclick="window.CortexPasta.fecharModal()">✕</button>
+                    </div>
+
+                    <div style="padding: 20px 24px;">
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--color-text-muted);">
+                            Defina o profissional responsável por <strong>${escapeHtml(paciente.nome_completo)}</strong>.
+                            ${atualNome ? `<br>Atual: <strong>${escapeHtml(atualNome)}</strong>` : ''}
+                        </p>
+
+                        <div class="sprint8-aplicadores-lista">
+                            ${aplicadores.map(a => sprint8RenderAplicadorOpcao(a, atualId)).join('')}
+                        </div>
+
+                        ${atualId ? `
+                            <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--color-border); text-align: right;">
+                                <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);"
+                                        onclick="window.CortexPasta.removerAplicador()">
+                                    🗑 Remover designação atual
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                window.CortexPasta.fecharModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+
+    function sprint8RenderAplicadorOpcao(a, atualId) {
+        const ehAtual = a.id === atualId;
+        const inicial = (a.nome_completo || '?').charAt(0).toUpperCase();
+        return `
+            <button type="button" class="sprint8-aplicador-opcao ${ehAtual ? 'atual' : ''}"
+                    onclick="window.CortexPasta.designarAplicador('${a.id}')"
+                    ${ehAtual ? 'disabled' : ''}>
+                <div class="sprint8-aplicador-avatar">${escapeHtml(inicial)}</div>
+                <div class="sprint8-aplicador-info">
+                    <div class="sprint8-aplicador-nome">${escapeHtml(a.nome_completo)}</div>
+                    <div class="sprint8-aplicador-meta">
+                        ${a.crp ? `CRP ${escapeHtml(a.crp)} · ` : ''}${escapeHtml(sprint8PerfilLabel(a.perfil))}
+                    </div>
+                </div>
+                ${ehAtual ? '<div class="sprint8-aplicador-tag">ATUAL</div>' : '<div class="sprint8-aplicador-acao">Designar →</div>'}
+            </button>
+        `;
+    }
+
+    function sprint8PerfilLabel(p) {
+        return (window.CortexUI?.PERFIL_LABELS?.[p]) || p;
+    }
+
+    async function sprint8DesignarAplicador(novoAplicadorId) {
+        if (aplicadorAtivo?.aplicador_id === novoAplicadorId) return;
+
+        const profAtualId = window.cortexProfissional?.id;
+        if (!profAtualId) {
+            window.CortexUI.toast('Erro: profissional logado não identificado.', 'danger');
+            return;
+        }
+
+        try {
+            // 1. Encerra vínculo atual (se houver)
+            if (aplicadorAtivo?.id) {
+                const { error: errEnc } = await window.cortexClient
+                    .from('vinculos_paciente_aplicador')
+                    .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0], motivo_encerramento: 'Substituído via designação manual' })
+                    .eq('id', aplicadorAtivo.id);
+                if (errEnc) throw errEnc;
+            }
+
+            // 2. Cria novo vínculo
+            const { error: errIns } = await window.cortexClient
+                .from('vinculos_paciente_aplicador')
+                .insert({
+                    paciente_id: pacienteId,
+                    aplicador_id: novoAplicadorId,
+                    atribuido_por: profAtualId,
+                    ativo: true,
+                    motivo_atribuicao: aplicadorAtivo ? 'Substituição via designação' : 'Designação inicial'
+                });
+            if (errIns) throw errIns;
+
+            await CortexAudit.log('atualizacao', 'vinculos_paciente_aplicador', pacienteId, {
+                pacienteId,
+                detalhes: { aplicador_anterior: aplicadorAtivo?.aplicador_id || null, aplicador_novo: novoAplicadorId }
+            });
+
+            window.CortexUI.toast('✓ Aplicador designado.', 'success');
+            window.CortexPasta.fecharModal();
+
+            // Recarrega vínculo e re-renderiza
+            await carregarAplicadorAtivo();
+            renderizarPasta();
+        } catch (err) {
+            console.error('[sprint8] designar:', err);
+            window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+        }
+    }
+
+    async function sprint8RemoverAplicador() {
+        if (!aplicadorAtivo?.id) return;
+        if (!confirm('Remover a designação atual? O paciente ficará sem aplicador responsável.')) return;
+
+        try {
+            const { error } = await window.cortexClient
+                .from('vinculos_paciente_aplicador')
+                .update({ ativo: false, data_fim: new Date().toISOString().split('T')[0], motivo_encerramento: 'Removido via interface' })
+                .eq('id', aplicadorAtivo.id);
+            if (error) throw error;
+
+            await CortexAudit.log('remocao', 'vinculos_paciente_aplicador', pacienteId, {
+                pacienteId,
+                detalhes: { aplicador_anterior: aplicadorAtivo.aplicador_id }
+            });
+
+            window.CortexUI.toast('Designação removida.', 'success');
+            window.CortexPasta.fecharModal();
+            await carregarAplicadorAtivo();
+            renderizarPasta();
+        } catch (err) {
+            console.error('[sprint8] remover designação:', err);
+            window.CortexUI.toast('Erro: ' + (err.message || 'desconhecido'), 'danger');
+        }
+    }
+
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>

@@ -210,6 +210,15 @@
         const reqMark = f.req ? '<span class="required">*</span>' : '';
         const ph = f.ph || '';
 
+        // Sprint 55: bloco informativo (texto estático, não gera input)
+        if (f.tp === 'info') {
+            return `
+                <div class="form-group fg-full anamnese-info-bloco">
+                    ${f.html || `<p>${escapeHtml(f.lb || '')}</p>`}
+                </div>
+            `;
+        }
+
         if (f.tp === 'sn') {
             return `
                 <div class="form-group ${fullClass}">
@@ -321,9 +330,14 @@
     // -----------------------------------------------------------------------
     function aplicarValores(sec) {
         const col = sec.col;
+        // Sprint 55: seções puramente informativas (boas-vindas) não têm col
+        if (!col) return;
         if (!state.dados[col]) state.dados[col] = {};
 
         (sec.g2 || sec.g3 || []).forEach(f => {
+            // Sprint 55: tipo 'info' é apenas conteúdo estático, ignora
+            if (f.tp === 'info') return;
+
             const v = state.dados[col][f.id];
 
             if (f.tp === 'cks') {
@@ -368,8 +382,12 @@
 
     function setupListeners(sec) {
         const col = sec.col;
+        if (!col) return;  // Sprint 55: seção informativa não tem listeners
 
         (sec.g2 || sec.g3 || []).forEach(f => {
+            // Sprint 55: tipo 'info' não tem listeners
+            if (f.tp === 'info') return;
+
             if (f.tp === 'cks') {
                 document.querySelectorAll(`input[type="checkbox"][data-campo="${f.id}"]`).forEach(cb => {
                     cb.addEventListener('change', () => {

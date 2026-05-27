@@ -254,6 +254,16 @@
                             <label class="form-label">CRM do médico</label>
                             <input type="text" class="form-input" name="medico_crm" maxlength="20">
                         </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Clínica do médico</label>
+                            <input type="text" class="form-input" name="medico_clinica" maxlength="200" placeholder="Nome da clínica">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Telefone do médico</label>
+                            <input type="text" class="form-input" name="medico_telefone" id="medico-tel-input" maxlength="20" placeholder="(34) 99999-8888">
+                        </div>
                     </div>
                 </div>
 
@@ -301,6 +311,7 @@
         window.CortexUI.aplicarMascaraCPF(document.getElementById('cpf-input'));
         window.CortexUI.aplicarMascaraTelefone(document.getElementById('telefone-input'));
         window.CortexUI.aplicarMascaraTelefone(document.getElementById('resp-tel-input'));
+        window.CortexUI.aplicarMascaraTelefone(document.getElementById('medico-tel-input'));
         window.CortexUI.aplicarMascaraCEP(document.getElementById('cep-input'));
 
         await carregarConvenios();
@@ -356,6 +367,7 @@
             'pai_nome', 'pai_telefone',
             'responsavel_nome', 'responsavel_parentesco', 'responsavel_telefone', 'responsavel_email',
             'encaminhado_por', 'medico_referencia', 'medico_crm',
+            'medico_clinica', 'medico_telefone',
             'observacoes',
         ];
         for (const nome of campos) {

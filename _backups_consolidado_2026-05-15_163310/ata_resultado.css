@@ -1,0 +1,154 @@
+/* ============================================================================
+   CORTEX_APP — Laudo ATA — overrides específicos
+   ============================================================================
+   Estrutura base vem de raadsr_resultado.css (laudo-header, laudo-body,
+   laudo-secao-titulo, laudo-identificacao, laudo-cards, laudo-rodape, etc).
+   Aqui só ficam os elementos exclusivos da ATA:
+     - Gráficos de barras (23 itens) e pizza
+     - Lista de itens críticos
+     - Tabela completa de 23 respostas
+   ============================================================================ */
+
+/* ─── Gráficos ────────────────────────────────────────────────────────────── */
+.ata-grafico-wrap {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px 20px;
+    height: 320px;
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.ata-grafico-wrap.ata-grafico-pizza {
+    height: 280px;
+    max-width: 600px;
+    margin: 0 auto 12px;
+}
+
+.ata-grafico-legenda {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #475569;
+    margin: 0 0 24px 0;
+}
+
+.ata-leg-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ata-leg-bola {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+/* ─── Itens críticos ──────────────────────────────────────────────────────── */
+.ata-itens-criticos {
+    background: #fef2f2;
+    border-left: 4px solid #dc2626;
+    border-radius: 0 12px 12px 0;
+    padding: 14px 18px 14px 36px;
+    margin: 0 0 24px 0;
+    list-style-type: disc;
+}
+
+.ata-itens-criticos li {
+    padding: 5px 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #1e293b;
+}
+
+.ata-itens-criticos li strong {
+    color: #dc2626;
+}
+
+/* ─── Tabela ──────────────────────────────────────────────────────────────── */
+.ata-tabela-itens {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 24px;
+}
+
+.ata-tabela-itens thead {
+    background: #0c1f3f;
+    color: #ffffff;
+}
+
+.ata-tabela-itens th {
+    padding: 11px 14px;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+}
+
+.ata-tabela-itens th:first-child,
+.ata-tabela-itens .td-num {
+    text-align: center;
+    width: 50px;
+}
+
+.ata-tabela-itens th:nth-child(3),
+.ata-tabela-itens .td-resposta {
+    text-align: center;
+    width: 60px;
+}
+
+.ata-tabela-itens th:nth-child(4),
+.ata-tabela-itens .td-label {
+    width: 220px;
+}
+
+.ata-tabela-itens tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: background 0.15s;
+}
+
+.ata-tabela-itens tbody tr:hover {
+    background: #f8fafc;
+}
+
+.ata-tabela-itens tbody tr.linha-critica {
+    background: #fef2f2;
+}
+
+.ata-tabela-itens tbody tr.linha-critica:hover {
+    background: #fee2e2;
+}
+
+.ata-tabela-itens td {
+    padding: 10px 14px;
+    color: #1e293b;
+    line-height: 1.45;
+}
+
+.ata-tabela-itens .td-num {
+    font-weight: 600;
+    color: #64748b;
+}
+
+.ata-tabela-itens .td-label {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ─── Responsivo ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .ata-grafico-wrap { height: 260px; padding: 12px; }
+    .ata-tabela-itens th:nth-child(4),
+    .ata-tabela-itens .td-label { display: none; }
+}

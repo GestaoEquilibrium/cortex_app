@@ -171,6 +171,9 @@
                 </div>
                 <div class="anamnese-cabecalho-acoes">
                     ${!finalizada ? `
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.gerarLinkPublico()">
+                            🔗 Gerar link público
+                        </button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.trocarFaixa()">
                             Trocar faixa etária
                         </button>
@@ -819,9 +822,66 @@
         },
 
         // ====================================================================
-        // SPRINT 56 — Geração de link público movida para a pasta do paciente
-        // (botão "📧 Enviar formulário remoto"). Função gerarLinkPublico removida.
+        // SPRINT 18 — Gerar link público de resposta remota
         // ====================================================================
+        gerarLinkPublico: async function() {
+            if (!state.anamneseId) {
+                // Salva primeiro pra ter ID
+                if (state.editado) await salvarSilencioso();
+                if (!state.anamneseId) {
+                    window.CortexUI.toast('Salve a anamnese antes de gerar o link', 'danger');
+                    return;
+                }
+            }
+
+            const confirma = confirm(
+                'Gerar link público de uso único?\n\n' +
+                'O link permite que o paciente/responsável responda a anamnese de casa. ' +
+                'Expira em 7 dias ou após o envio (o que vier primeiro).'
+            );
+            if (!confirma) return;
+
+            try {
+                const { data, error } = await window.cortexClient
+                    .from('anamneses_tokens_publicos')
+                    .insert({
+                        anamnese_id: state.anamneseId,
+                        paciente_id: state.pacienteId,
+                        profissional_id: window.cortexProfissional.id,
+                        paciente_nome: state.paciente.nome_completo,
+                        paciente_data_nascimento: state.paciente.data_nascimento,
+                        faixa_etaria: state.faixa,
+                        created_by: window.cortexProfissional.id
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                const baseOrigin = window.location.origin;
+                const basePath = window.location.pathname.replace(/\/anamnese\/[^/]*$/, '');
+                const url = `${baseOrigin}${basePath}/anamnese-publica/index.html?t=${data.token}`;
+
+                // Tenta copiar pro clipboard
+                let copiou = false;
+                try {
+                    await navigator.clipboard.writeText(url);
+                    copiou = true;
+                } catch (e) { /* segue sem copiar */ }
+
+                const msg = copiou
+                    ? `Link gerado e COPIADO para a área de transferência!\n\nVálido por 7 dias ou até o envio.\n\n${url}`
+                    : `Link gerado!\n\nVálido por 7 dias ou até o envio.\n\nCopie manualmente:\n${url}`;
+
+                alert(msg);
+                if (copiou) {
+                    window.CortexUI.toast('Link copiado!', 'success');
+                }
+            } catch (err) {
+                console.error('Erro ao gerar link:', err);
+                window.CortexUI.toast('Erro ao gerar link: ' + (err.message || err), 'danger');
+            }
+        },
 
         // ====================================================================
         // SPRINT 18 — Baixar PDF da anamnese (delega para pdf.js)

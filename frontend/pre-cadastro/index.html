@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pré-cadastro — Equilibrium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/pacientes.css">
+    <link rel="stylesheet" href="pre-cadastro.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+</head>
+<body class="prc-body">
+    <header class="prc-header">
+        <div class="prc-header-inner">
+            <div class="prc-brand">CORTEX</div>
+            <div class="prc-clinica">Equilibrium Med Center</div>
+        </div>
+    </header>
+
+    <main class="prc-main">
+        <div id="prc-conteudo">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Carregando...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="prc-footer">
+        🔒 Todas as informações são protegidas por sigilo profissional absoluto (LGPD).
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="pre-cadastro.js"></script>
+</body>
+</html>

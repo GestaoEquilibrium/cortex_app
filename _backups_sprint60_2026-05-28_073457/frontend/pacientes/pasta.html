@@ -288,25 +288,9 @@
             carregarChecklistInfo(),
             carregarBateriaInfo(),
             carregarAplicadorAtivo(),
-            carregarRespostasRemotas(),
-            carregarAnamnesesLegado()
+            carregarRespostasRemotas()
         ]);
         renderizarPasta();
-    }
-
-    // Sprint 60: anamneses antigas respondidas (tabela anamneses_remotas),
-    // preenchidas antes da migração. Somente leitura — visualizar + PDF.
-    let anamnesesLegado = [];
-    async function carregarAnamnesesLegado() {
-        const { data, error } = await window.cortexClient
-            .from('anamneses_remotas')
-            .select('id, status, nome_respondente, quem_respondeu, data_resposta')
-            .eq('paciente_id', pacienteId)
-            .eq('status', 'respondida')
-            .order('data_resposta', { ascending: false });
-        if (!error && Array.isArray(data)) {
-            anamnesesLegado = data;
-        }
     }
 
     // Sprint 56: lista tokens públicos (anamneses_tokens_publicos)
@@ -1216,8 +1200,6 @@
     function renderCardAnamnese() {
         // Sprint 17: cards de respostas remotas SEMPRE no topo, independente do estado da anamnese
         const cardsRemotos = renderCardsAnamnesesRemotas();
-        // Sprint 60: anamneses antigas (anamneses_remotas respondidas) — somente leitura
-        const cardsLegado = renderCardsAnamnesesLegado();
 
         // Botão "Enviar para o portal" — SEMPRE disponível
         const btnEnviarRemoto = `
@@ -1240,7 +1222,6 @@
             return `
                 ${btnEnviarRemoto}
                 ${cardsRemotos}
-                ${cardsLegado}
                 <div class="etapa-placeholder">
                     <div class="etapa-placeholder-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -1275,7 +1256,6 @@
             return `
                 ${btnEnviarRemoto}
                 ${cardsRemotos}
-                ${cardsLegado}
                 <div class="anamnese-card-resumo">
                     <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-success">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -1297,7 +1277,6 @@
         return `
             ${btnEnviarRemoto}
             ${cardsRemotos}
-            ${cardsLegado}
             <div class="anamnese-card-resumo">
                 <div class="anamnese-card-resumo-icone anamnese-card-resumo-icone-warning">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -1317,28 +1296,6 @@
                 </div>
             </div>
         `;
-    }
-
-    // Sprint 60: cards das anamneses antigas (somente leitura)
-    function renderCardsAnamnesesLegado() {
-        if (!anamnesesLegado || anamnesesLegado.length === 0) return '';
-
-        return anamnesesLegado.map(a => {
-            const dataResp = a.data_resposta ? new Date(a.data_resposta).toLocaleDateString('pt-BR') : '—';
-            const respondente = a.nome_respondente || a.quem_respondeu || '';
-            const subRespondente = respondente ? ` · por ${escapeHtml(respondente)}` : '';
-            return `
-                <div class="anamnese-card-remoto-pasta" style="border-left:3px solid #5b21b6;">
-                    <div class="anamnese-card-remoto-pasta-info">
-                        <div class="anamnese-card-remoto-pasta-titulo">📁 Anamnese anterior — respondida em ${dataResp}</div>
-                        <div class="anamnese-card-remoto-pasta-sub">Formulário remoto preenchido antes da migração${subRespondente}. Somente leitura.</div>
-                    </div>
-                    <div class="anamnese-card-remoto-pasta-acoes">
-                        <a class="btn btn-secondary btn-sm" href="../anamnese-legado/index.html?id=${a.id}">Visualizar</a>
-                    </div>
-                </div>
-            `;
-        }).join('');
     }
 
     // ════════════════════════════════════════════════════════════════════

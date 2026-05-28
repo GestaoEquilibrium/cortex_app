@@ -1,0 +1,127 @@
+/* ============================================================================
+   CORTEX_APP — Sprint 60 — anamnese-legado.css
+   Visualizador read-only das anamneses antigas (anamneses_remotas).
+   ============================================================================ */
+
+.alg-cartao-paciente {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #0c1f3f;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+}
+.alg-cp-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.alg-cp-item span {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    font-weight: 600;
+}
+.alg-cp-item strong {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.alg-secoes {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.alg-secao {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.alg-secao-titulo {
+    background: #0c1f3f;
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin: 0;
+    padding: 10px 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.alg-campo {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.alg-campo:last-child {
+    border-bottom: none;
+}
+.alg-campo-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 4px;
+}
+.alg-campo-valor {
+    font-size: 14px;
+    color: #1e293b;
+    line-height: 1.5;
+    white-space: normal;
+}
+
+.alg-tag {
+    display: inline-block;
+    background: #ede9fe;
+    color: #5b21b6;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 12.5px;
+    margin: 2px 3px 2px 0;
+}
+
+.alg-vazio {
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
+    padding: 30px;
+}
+
+.alg-erro {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+.alg-erro-icone { font-size: 42px; margin-bottom: 10px; }
+.alg-erro h1 { font-size: 20px; color: #b45309; margin: 0 0 8px; }
+.alg-erro p { color: #64748b; }
+
+.loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+.spinner {
+    display: inline-block;
+    width: 36px; height: 36px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #0c1f3f;
+    border-radius: 50%;
+    animation: alg-spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+@keyframes alg-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+    .alg-cartao-paciente { grid-template-columns: 1fr 1fr; }
+}

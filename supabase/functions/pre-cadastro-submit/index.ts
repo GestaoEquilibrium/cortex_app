@@ -79,7 +79,7 @@ const CAMPOS_PERMITIDOS = [
     "escolaridade", "escolaridade_serie", "profissao", "estado_civil",
     "convenio_id", "numero_convenio",
     "telefone", "email", "endereco", "cidade", "cep",
-    "mae_nome", "mae_telefone",
+    "mae_nome", "mae_telefone", "mae_cpf",
     "pai_nome", "pai_telefone",
     "responsavel_nome", "responsavel_parentesco", "responsavel_telefone", "responsavel_email",
     "encaminhado_por", "medico_referencia", "medico_crm",

@@ -245,6 +245,10 @@
                             <label class="form-label">Telefone da mãe <span class="required">*</span></label>
                             <input type="text" class="form-input" name="mae_telefone" id="prc-mae-tel" required placeholder="(34) 99999-8888" maxlength="20">
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">CPF da mãe</label>
+                            <input type="text" class="form-input" name="mae_cpf" id="prc-mae-cpf" placeholder="000.000.000-00" maxlength="14">
+                        </div>
                     </div>
                 </div>
 

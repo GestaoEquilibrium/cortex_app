@@ -14,7 +14,7 @@
 //   2. Valida o token (pré_cadastros) — existe, não usado, não expirado
 //   3. Valida CPF (obrigatório, 11 dígitos, único no banco)
 //   4. Cria auth.user com supabaseAdmin.auth.admin.createUser
-//        - email  = "{cpf}@portal.cortex.local"  (Supabase exige email único)
+//        - email  = "{cpf}@cortex.local"  (Supabase exige email único)
 //        - senha  = CPF (paciente troca no 1º login)
 //        - email_confirm = true (para login imediato)
 //   5. Insere o paciente em `pacientes` com portal_user_id = auth.user.id
@@ -226,8 +226,10 @@ serve(async (req) => {
 
     // 4) Cria auth.user
     // Email sintético para satisfazer o Supabase (que exige email único).
+    // Formato @cortex.local (igual ao usado pelos cadastros via CORTEX e pela
+    // RPC portal_cpf_para_email que o portal usa pra fazer o login).
     // Senha = CPF (paciente troca no primeiro login).
-    const emailSint = `${cpf}@portal.cortex.local`;
+    const emailSint = `${cpf}@cortex.local`;
 
     // Se já existe (por algum motivo), tenta reaproveitar; senão cria.
     let portalUserId: string | null = null;

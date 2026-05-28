@@ -142,8 +142,8 @@
                     <h2 class="form-section-title">Dados sociodemográficos</h2>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Escolaridade</label>
-                            <select class="form-select" name="escolaridade">
+                            <label class="form-label">Escolaridade <span class="required">*</span></label>
+                            <select class="form-select" name="escolaridade" required>
                                 <option value="">Não informado</option>
                                 <option value="Não alfabetizado">Não alfabetizado</option>
                                 <option value="Educação infantil">Educação infantil</option>
@@ -167,13 +167,13 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Profissão</label>
-                            <input type="text" class="form-input" name="profissao" maxlength="100">
+                            <label class="form-label">Profissão <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="profissao" required maxlength="100">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Estado civil</label>
-                            <select class="form-select" name="estado_civil">
+                            <label class="form-label">Estado civil <span class="required">*</span></label>
+                            <select class="form-select" name="estado_civil" required>
                                 <option value="">Não informado</option>
                                 <option value="Solteiro(a)">Solteiro(a)</option>
                                 <option value="Casado(a)">Casado(a)</option>
@@ -190,8 +190,8 @@
                     <h2 class="form-section-title">Convênio</h2>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Convênio</label>
-                            <select class="form-select" name="convenio_id" id="prc-convenio">
+                            <label class="form-label">Convênio <span class="required">*</span></label>
+                            <select class="form-select" name="convenio_id" id="prc-convenio" required>
                                 <option value="">Não informado</option>
                             </select>
                         </div>
@@ -208,28 +208,28 @@
                     <h2 class="form-section-title">Contatos</h2>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Telefone</label>
-                            <input type="text" class="form-input" name="telefone" id="prc-tel" placeholder="(34) 99999-8888">
+                            <label class="form-label">Telefone <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="telefone" id="prc-tel" required placeholder="(34) 99999-8888">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">E-mail</label>
-                            <input type="email" class="form-input" name="email" maxlength="200">
+                            <label class="form-label">E-mail <span class="required">*</span></label>
+                            <input type="email" class="form-input" name="email" required maxlength="200">
                         </div>
 
                         <div class="form-group span-full">
-                            <label class="form-label">Endereço</label>
-                            <input type="text" class="form-input" name="endereco" maxlength="200">
+                            <label class="form-label">Endereço <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="endereco" required maxlength="200">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Cidade</label>
-                            <input type="text" class="form-input" name="cidade" value="Uberlândia" maxlength="100">
+                            <label class="form-label">Cidade <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="cidade" required value="Uberlândia" maxlength="100">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">CEP</label>
-                            <input type="text" class="form-input" name="cep" id="prc-cep" placeholder="38400-000" maxlength="9">
+                            <label class="form-label">CEP <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="cep" id="prc-cep" required placeholder="38400-000" maxlength="9">
                         </div>
                     </div>
                 </div>
@@ -239,12 +239,12 @@
                     <h2 class="form-section-title">Mãe</h2>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Nome da mãe</label>
-                            <input type="text" class="form-input" name="mae_nome" maxlength="200">
+                            <label class="form-label">Nome da mãe <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="mae_nome" required maxlength="200">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Telefone da mãe</label>
-                            <input type="text" class="form-input" name="mae_telefone" id="prc-mae-tel" placeholder="(34) 99999-8888" maxlength="20">
+                            <label class="form-label">Telefone da mãe <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="mae_telefone" id="prc-mae-tel" required placeholder="(34) 99999-8888" maxlength="20">
                         </div>
                     </div>
                 </div>
@@ -297,8 +297,8 @@
                             <input type="text" class="form-input" name="encaminhado_por" maxlength="200" placeholder="Médico, escola, busca espontânea...">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Médico de referência</label>
-                            <input type="text" class="form-input" name="medico_referencia" maxlength="200">
+                            <label class="form-label">Médico de referência <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="medico_referencia" required maxlength="200">
                         </div>
                         <div class="form-group">
                             <label class="form-label">CRM do médico</label>
@@ -477,8 +477,44 @@
             if (trimmed !== '' && trimmed !== null && trimmed !== undefined) dados[k] = trimmed;
         });
 
-        if (!dados.cpf) {
-            return mostrarErroForm('CPF é obrigatório.');
+        // Sprint 59.1: validação dos campos obrigatórios.
+        // (nome social, RG, pai, responsável, CRM/clínica/telefone do médico,
+        //  encaminhado_por, carteirinha e observações são opcionais)
+        const obrigatorios = [
+            ['nome_completo', 'Nome completo'],
+            ['sexo', 'Sexo'],
+            ['data_nascimento', 'Data de nascimento'],
+            ['cpf', 'CPF'],
+            ['escolaridade', 'Escolaridade'],
+            ['profissao', 'Profissão'],
+            ['estado_civil', 'Estado civil'],
+            ['convenio_id', 'Convênio'],
+            ['telefone', 'Telefone'],
+            ['email', 'E-mail'],
+            ['endereco', 'Endereço'],
+            ['cidade', 'Cidade'],
+            ['cep', 'CEP'],
+            ['mae_nome', 'Nome da mãe'],
+            ['mae_telefone', 'Telefone da mãe'],
+            ['medico_referencia', 'Médico de referência']
+        ];
+
+        const faltando = obrigatorios.filter(([campo]) => !dados[campo]).map(([, label]) => label);
+        if (faltando.length > 0) {
+            // destaca o primeiro campo vazio
+            const primeiro = obrigatorios.find(([campo]) => !dados[campo]);
+            if (primeiro) {
+                const el = form.elements[primeiro[0]];
+                if (el && el.focus) {
+                    el.focus();
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+            return mostrarErroForm(
+                faltando.length === 1
+                    ? `O campo "${faltando[0]}" é obrigatório.`
+                    : `Preencha os campos obrigatórios: ${faltando.join(', ')}.`
+            );
         }
 
         state.enviando = true;

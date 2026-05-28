@@ -166,6 +166,33 @@ serve(async (req) => {
     // 2) Sanitiza e valida dados
     const dados = sanitizarDados(dadosBrutos);
 
+    // Sprint 59.1: campos obrigatórios (espelha a validação do frontend)
+    const obrigatorios: [string, string][] = [
+        ["nome_completo", "Nome completo"],
+        ["sexo", "Sexo"],
+        ["data_nascimento", "Data de nascimento"],
+        ["cpf", "CPF"],
+        ["escolaridade", "Escolaridade"],
+        ["profissao", "Profissão"],
+        ["estado_civil", "Estado civil"],
+        ["convenio_id", "Convênio"],
+        ["telefone", "Telefone"],
+        ["email", "E-mail"],
+        ["endereco", "Endereço"],
+        ["cidade", "Cidade"],
+        ["cep", "CEP"],
+        ["mae_nome", "Nome da mãe"],
+        ["mae_telefone", "Telefone da mãe"],
+        ["medico_referencia", "Médico de referência"],
+    ];
+    const faltando = obrigatorios.filter(([c]) => !dados[c]).map(([, l]) => l);
+    if (faltando.length > 0) {
+        return erroResponse(
+            "campos_obrigatorios",
+            `Preencha os campos obrigatórios: ${faltando.join(", ")}.`
+        );
+    }
+
     if (!dados.nome_completo || String(dados.nome_completo).trim().length < 3) {
         return erroResponse("nome_obrigatorio", "Nome completo é obrigatório.");
     }

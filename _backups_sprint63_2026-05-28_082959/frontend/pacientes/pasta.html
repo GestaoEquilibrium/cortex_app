@@ -184,40 +184,6 @@
     @media (max-width: 720px) {
         .sprint8-form-grid { grid-template-columns: 1fr; }
     }
-
-    /* Sprint 63: modal de confirmação centralizado com fundo borrado */
-    .cortex-confirm-overlay {
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        background: rgba(15, 23, 42, 0.55);
-    }
-    .cortex-confirm-box {
-        max-width: 400px;
-        padding: 28px 26px 22px;
-        text-align: center;
-    }
-    .cortex-confirm-icone {
-        font-size: 40px;
-        line-height: 1;
-        margin-bottom: 12px;
-    }
-    .cortex-confirm-titulo {
-        font-size: 19px;
-        color: #0c1f3f;
-        margin: 0 0 8px;
-    }
-    .cortex-confirm-texto {
-        font-size: 14px;
-        color: #475569;
-        line-height: 1.5;
-        margin: 0 0 22px;
-    }
-    .cortex-confirm-acoes {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-    }
-    .cortex-confirm-acoes .btn { min-width: 130px; }
     </style>
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
@@ -1521,48 +1487,20 @@
 
     // Sprint 56: cancela um link remoto (seta expires_at = NOW(), o que faz a
     // RPC pública responder token_expirado se o paciente tentar acessar)
-    // Sprint 63: cancela um envio — modal de confirmação centralizado (fundo
-    // borrado) e DELETA o token (o card some na hora).
-    function cancelarTokenRemoto(token) {
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay cortex-confirm-overlay';
-        overlay.style.display = 'flex';
-        overlay.innerHTML = `
-            <div class="modal-content cortex-confirm-box">
-                <div class="cortex-confirm-icone">⚠️</div>
-                <h2 class="cortex-confirm-titulo">Cancelar este envio?</h2>
-                <p class="cortex-confirm-texto">O link parará de funcionar imediatamente e este aviso será removido.</p>
-                <div class="cortex-confirm-acoes">
-                    <button class="btn btn-secondary" data-acao="nao">Voltar</button>
-                    <button class="btn btn-danger" data-acao="sim">Sim, cancelar</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-
-        const fechar = () => overlay.remove();
-        overlay.querySelector('[data-acao="nao"]').addEventListener('click', fechar);
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) fechar(); });
-
-        overlay.querySelector('[data-acao="sim"]').addEventListener('click', async () => {
-            const btnSim = overlay.querySelector('[data-acao="sim"]');
-            btnSim.disabled = true;
-            btnSim.textContent = 'Cancelando...';
-            try {
-                const { error } = await window.cortexClient
-                    .from('anamneses_tokens_publicos')
-                    .delete()
-                    .eq('token', token);
-                if (error) throw error;
-                fechar();
-                await carregarRespostasRemotas();
-                renderizarPasta();
-                window.CortexUI.toast('Envio cancelado.', 'info');
-            } catch (err) {
-                fechar();
-                window.CortexUI.toast('Erro: ' + err.message, 'danger');
-            }
-        });
+    async function cancelarTokenRemoto(token) {
+        if (!confirm('Cancelar este envio? O link parará de funcionar imediatamente.')) return;
+        try {
+            const { error } = await window.cortexClient
+                .from('anamneses_tokens_publicos')
+                .update({ expires_at: new Date().toISOString() })
+                .eq('token', token);
+            if (error) throw error;
+            await carregarRespostasRemotas();
+            renderizarPasta();
+            window.CortexUI.toast('Link cancelado.', 'info');
+        } catch (err) {
+            window.CortexUI.toast('Erro: ' + err.message, 'danger');
+        }
     }
 
     function renderCardRelatorioEscolar() {

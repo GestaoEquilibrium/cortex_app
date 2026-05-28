@@ -66,11 +66,10 @@
     }
 
     function renderFormulario() {
-        const nomeProf = state.info?.profissional_nome || 'sua equipe clínica';
         document.getElementById('prc-conteudo').innerHTML = `
             <div class="prc-saudacao">
                 <h1>Bem-vindo(a)!</h1>
-                <p>Você foi convidado(a) por <strong>${escapeHtml(nomeProf)}</strong> para completar seu cadastro.
+                <p>Você foi convidado(a) pela <strong>Equilibrium Med Center</strong> para completar seu cadastro.
                 Preencha seus dados abaixo. Tudo é confidencial.</p>
             </div>
 

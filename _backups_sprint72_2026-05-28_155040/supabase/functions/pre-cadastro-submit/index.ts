@@ -121,7 +121,7 @@ serve(async (req) => {
         return erroResponse("metodo_invalido", "Use POST.", 405);
     }
 
-    let body: { token?: string; dados?: Record<string, unknown>; foto_base64?: string; mae_foto_base64?: string };
+    let body: { token?: string; dados?: Record<string, unknown>; foto_base64?: string };
     try {
         body = await req.json();
     } catch {
@@ -131,7 +131,6 @@ serve(async (req) => {
     const token = body.token;
     const dadosBrutos = body.dados || {};
     const fotoBase64 = body.foto_base64 || null;
-    const maeFotoBase64 = body.mae_foto_base64 || null;
 
     if (!token || typeof token !== "string") {
         return erroResponse("token_invalido", "Token ausente.");
@@ -324,38 +323,6 @@ serve(async (req) => {
         } catch (e) {
             console.warn("Falha ao salvar foto:", e);
             // Não falha o cadastro por causa da foto
-        }
-    }
-
-    // 6b) Sprint 72 — Foto da mãe (opcional do ponto de vista da Edge,
-    // a obrigatoriedade pra menores é validada no frontend antes do envio)
-    if (maeFotoBase64) {
-        try {
-            const bytes = base64ToBytes(maeFotoBase64);
-            if (bytes.length > 3 * 1024 * 1024) {
-                console.warn("Foto da mãe muito grande, ignorando", bytes.length);
-            } else {
-                let ext = "jpg";
-                if (maeFotoBase64.startsWith("data:image/png")) ext = "png";
-                else if (maeFotoBase64.startsWith("data:image/webp")) ext = "webp";
-
-                const path = `${pacienteId}/mae.${ext}`;
-                const { error: errUp } = await supabase.storage
-                    .from("maes-fotos")
-                    .upload(path, bytes, {
-                        contentType: `image/${ext}`,
-                        upsert: true,
-                    });
-
-                if (!errUp) {
-                    await supabase
-                        .from("pacientes")
-                        .update({ mae_foto_url: path })
-                        .eq("id", pacienteId);
-                }
-            }
-        } catch (e) {
-            console.warn("Falha ao salvar foto da mãe:", e);
         }
     }
 

@@ -246,7 +246,6 @@
     </div>
 
     <input type="file" id="foto-input-hidden" accept="image/jpeg,image/png,image/webp" style="display:none">
-    <input type="file" id="mae-foto-input-hidden" accept="image/jpeg,image/png,image/webp" style="display:none">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Sprint 17 — pra gerar PDF de anamnese remota -->
@@ -519,9 +518,6 @@
                         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
                             ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
                         </button>
-                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mae-foto-input-hidden').click()">
-                            ${paciente.mae_foto_url ? 'Alterar foto da mãe' : 'Adicionar foto da mãe'}
-                        </button>
                         <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.enviarPortalWhatsApp()">📱 Enviar acesso ao portal</button>
@@ -564,7 +560,6 @@
         document.getElementById('pasta-conteudo').innerHTML = cabecalho + etapasHtml + conteudoEtapa;
 
         document.getElementById('foto-input-hidden').onchange = uploadFoto;
-        document.getElementById('mae-foto-input-hidden').onchange = uploadFotoMae;
     }
 
     function trocarEtapa(novaEtapa) {
@@ -1956,78 +1951,6 @@
         }
     }
 
-    // Sprint 72: signed URL pro bucket maes-fotos (paralela a CortexAvatar.buscarUrlAssinada)
-    async function sprint72BuscarUrlMae(pacId, path) {
-        if (!path || !window.cortexClient) return null;
-        try {
-            const { data, error } = await window.cortexClient
-                .storage
-                .from('maes-fotos')
-                .createSignedUrl(path, 60);
-            if (error || !data) return null;
-            return data.signedUrl;
-        } catch (err) {
-            console.warn('Erro ao buscar foto da mãe:', err);
-            return null;
-        }
-    }
-
-    // Sprint 72: upload da foto da mãe (mesmo padrão de uploadFoto, bucket maes-fotos)
-    async function uploadFotoMae(event) {
-        const fileOriginal = event.target.files[0];
-        if (!fileOriginal) return;
-        event.target.value = '';
-
-        if (fileOriginal.size > 8 * 1024 * 1024) {
-            window.CortexUI.toast('Arquivo muito grande. Máximo: 8MB.', 'danger');
-            return;
-        }
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(fileOriginal.type)) {
-            window.CortexUI.toast('Formato não suportado. Use JPG, PNG ou WEBP.', 'danger');
-            return;
-        }
-
-        let file;
-        try {
-            const result = await CortexCropper.abrir(fileOriginal, { tamanho: 512 });
-            file = result.file;
-        } catch (e) {
-            return; // cancelou
-        }
-
-        window.CortexUI.toast('Enviando foto da mãe...', 'info');
-
-        const path = `${pacienteId}/mae.jpg`;
-        try {
-            const { error: uploadError } = await window.cortexClient
-                .storage
-                .from('maes-fotos')
-                .upload(path, file, { upsert: true, contentType: 'image/jpeg' });
-
-            if (uploadError) throw uploadError;
-
-            const { error: updateError } = await window.cortexClient
-                .from('pacientes')
-                .update({ mae_foto_url: path })
-                .eq('id', pacienteId);
-
-            if (updateError) throw updateError;
-
-            await CortexAudit.log('edicao', 'pacientes', pacienteId, {
-                pacienteId,
-                detalhes: { campo: 'mae_foto_url' }
-            });
-
-            window.CortexUI.toast('Foto da mãe enviada com sucesso!', 'success');
-            paciente.mae_foto_url = path;
-            renderizarPasta();
-
-        } catch (err) {
-            console.error('Erro no upload da foto da mãe:', err);
-            window.CortexUI.toast('Erro ao enviar foto da mãe: ' + err.message, 'danger');
-        }
-    }
-
     // ============================================================================
     // SPRINT 8: Modal Agendar Sessão (calendário simples, dentro da pasta)
     //          + Modal Designar Aplicador (só admin)
@@ -2115,7 +2038,7 @@
         });
     }
 
-    function sprint16MontarHtmlCapa(fotoSignedUrl, maeFotoSignedUrl) {
+    function sprint16MontarHtmlCapa(fotoSignedUrl) {
         const p = paciente || {};
         const aplic = aplicadorAtivo?.aplicador || null;
 
@@ -2203,40 +2126,21 @@
                 </div>
 
                 <!-- FOTO SOBREPOSTA — margin-top compensa a faixa absolute (170px) e dá overlap negativo -->
-                <!-- Sprint 72: foto da mãe (70x70) ao lado da foto do paciente, se houver -->
                 <div style="text-align: center; margin-top: 110px; position: relative; z-index: 3;">
-                    <div style="display:inline-flex; align-items:flex-end; gap:14px; justify-content:center;">
-                        <div style="
-                            width: 120px;
-                            height: 120px;
-                            border-radius: 50%;
-                            background: #f1f5f9;
-                            border: 4px solid #ffffff;
-                            overflow: hidden;
-                            box-shadow: 0 3px 10px rgba(0,0,0,0.18);
-                            flex-shrink: 0;
-                        ">
-                            ${fotoHtml}
-                        </div>
-                        ${maeFotoSignedUrl ? `
-                            <div style="text-align:center; padding-bottom: 4px;">
-                                <div style="
-                                    width: 70px;
-                                    height: 70px;
-                                    border-radius: 50%;
-                                    background: #f1f5f9;
-                                    border: 3px solid #ffffff;
-                                    overflow: hidden;
-                                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-                                    margin: 0 auto 4px;
-                                ">
-                                    <img src="${maeFotoSignedUrl}" alt="Mãe" style="width:100%;height:100%;display:block;" />
-                                </div>
-                                <div style="font-size:9px;color:#64748b;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Mãe</div>
-                            </div>
-                        ` : ''}
+                    <div style="
+                        width: 120px;
+                        height: 120px;
+                        border-radius: 50%;
+                        background: #f1f5f9;
+                        border: 4px solid #ffffff;
+                        margin: 0 auto 8px;
+                        overflow: hidden;
+                        box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+                        display: block;
+                    ">
+                        ${fotoHtml}
                     </div>
-                    <div style="font-size: 22px; font-weight: 700; color: #2e74b5; letter-spacing: 0.5px; margin: 10px 50px 0;">
+                    <div style="font-size: 22px; font-weight: 700; color: #2e74b5; letter-spacing: 0.5px; margin: 0 50px;">
                         ${escapeHtml(nome)}
                     </div>
                 </div>
@@ -2306,18 +2210,7 @@
             }
         }
 
-        // Sprint 72: foto da mãe (bucket separado, 70x70)
-        let maeFotoProcessada = null;
-        if (paciente.mae_foto_url) {
-            try {
-                const signed = await sprint72BuscarUrlMae(pacienteId, paciente.mae_foto_url);
-                if (signed) maeFotoProcessada = await sprint16PreprocessarFoto(signed, 50);
-            } catch (err) {
-                console.warn('[sprint72] foto mae:', err);
-            }
-        }
-
-        const documentoHtml = sprint16MontarHtmlCapa(fotoProcessada, maeFotoProcessada);
+        const documentoHtml = sprint16MontarHtmlCapa(fotoProcessada);
 
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';

@@ -16,7 +16,6 @@
         token: null,
         info: null,
         foto_base64: null,
-        mae_foto_base64: null,  // Sprint 72
         enviando: false
     };
 
@@ -251,24 +250,6 @@
                             <input type="text" class="form-input" name="mae_cpf" id="prc-mae-cpf" placeholder="000.000.000-00" maxlength="14">
                         </div>
                     </div>
-
-                    <!-- Sprint 72: Foto da mãe (obrigatória se paciente menor de 18) -->
-                    <div class="prc-foto-wrap" style="margin-top: 14px;">
-                        <div class="prc-foto-preview" id="prc-mae-foto-preview">
-                            <span class="prc-foto-placeholder">📷</span>
-                        </div>
-                        <div class="prc-foto-acoes">
-                            <label class="form-label" id="prc-mae-foto-label">Foto da mãe</label>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                <label class="btn btn-secondary btn-sm" for="prc-mae-foto-input">
-                                    <span id="prc-mae-foto-label-texto">Escolher foto</span>
-                                </label>
-                                <button type="button" class="btn btn-ghost btn-sm" id="prc-mae-foto-remover" style="display:none;">Remover</button>
-                            </div>
-                            <input type="file" id="prc-mae-foto-input" accept="image/*" capture="user" style="display:none;">
-                            <p class="form-help" id="prc-mae-foto-ajuda" style="margin-top:6px;">Opcional. Obrigatória se o paciente for menor de 18 anos.</p>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Pai -->
@@ -429,13 +410,11 @@
         });
     }
 
-    // Setup genérico — usado pra foto do paciente e foto da mãe (Sprint 72)
-    function setupFotoCampo(opts) {
-        const { inputId, previewId, btnRemoverId, labelTextoId, stateKey } = opts;
-        const input = document.getElementById(inputId);
-        const preview = document.getElementById(previewId);
-        const btnRem = document.getElementById(btnRemoverId);
-        const labelTxt = document.getElementById(labelTextoId);
+    function setupFoto() {
+        const input = document.getElementById('prc-foto-input');
+        const preview = document.getElementById('prc-foto-preview');
+        const btnRem = document.getElementById('prc-foto-remover');
+        const labelTxt = document.getElementById('prc-foto-label-texto');
 
         input.addEventListener('change', () => {
             const f = input.files && input.files[0];
@@ -447,72 +426,23 @@
             }
             // Sprint 68: abre o cropper quadrado antes de aceitar a foto
             CortexCropper.abrir(f, { tamanho: 512 }).then(result => {
-                state[stateKey] = result.dataUrl;
-                preview.innerHTML = `<img src="${state[stateKey]}" alt="Foto">`;
+                state.foto_base64 = result.dataUrl;
+                preview.innerHTML = `<img src="${state.foto_base64}" alt="Foto">`;
                 btnRem.style.display = 'inline-flex';
                 labelTxt.textContent = 'Trocar foto';
-                input.value = '';
-                // Atualiza indicador de obrigatoriedade da foto da mãe
-                if (stateKey === 'mae_foto_base64') atualizarObrigatoriedadeMaeFoto();
+                input.value = ''; // permite reescolher o mesmo arquivo
             }).catch(() => {
-                input.value = '';
+                input.value = ''; // cancelou
             });
         });
 
         btnRem.addEventListener('click', () => {
-            state[stateKey] = null;
+            state.foto_base64 = null;
             input.value = '';
             preview.innerHTML = '<span class="prc-foto-placeholder">📷</span>';
             btnRem.style.display = 'none';
             labelTxt.textContent = 'Escolher foto';
-            if (stateKey === 'mae_foto_base64') atualizarObrigatoriedadeMaeFoto();
         });
-    }
-
-    function setupFoto() {
-        setupFotoCampo({
-            inputId: 'prc-foto-input', previewId: 'prc-foto-preview',
-            btnRemoverId: 'prc-foto-remover', labelTextoId: 'prc-foto-label-texto',
-            stateKey: 'foto_base64'
-        });
-        // Sprint 72: foto da mãe (cropper + obrigatoriedade dinâmica se menor de 18)
-        setupFotoCampo({
-            inputId: 'prc-mae-foto-input', previewId: 'prc-mae-foto-preview',
-            btnRemoverId: 'prc-mae-foto-remover', labelTextoId: 'prc-mae-foto-label-texto',
-            stateKey: 'mae_foto_base64'
-        });
-        // Reage à mudança de data de nascimento pra mostrar/esconder o asterisco
-        const dn = document.querySelector('[name="data_nascimento"]');
-        if (dn) dn.addEventListener('change', atualizarObrigatoriedadeMaeFoto);
-        atualizarObrigatoriedadeMaeFoto();
-    }
-
-    // Sprint 72: paciente menor de 18 → foto da mãe vira obrigatória
-    function ehMenorDeIdade() {
-        const dn = document.querySelector('[name="data_nascimento"]');
-        if (!dn || !dn.value) return false;
-        const d = new Date(dn.value);
-        if (isNaN(d)) return false;
-        const hoje = new Date();
-        let idade = hoje.getFullYear() - d.getFullYear();
-        const m = hoje.getMonth() - d.getMonth();
-        if (m < 0 || (m === 0 && hoje.getDate() < d.getDate())) idade--;
-        return idade < 18;
-    }
-
-    function atualizarObrigatoriedadeMaeFoto() {
-        const label = document.getElementById('prc-mae-foto-label');
-        const ajuda = document.getElementById('prc-mae-foto-ajuda');
-        if (!label || !ajuda) return;
-        if (ehMenorDeIdade()) {
-            label.innerHTML = 'Foto da mãe <span class="required">*</span>';
-            ajuda.innerHTML = '<strong>Obrigatória</strong> — o paciente é menor de 18 anos.';
-            ajuda.style.color = state.mae_foto_base64 ? '' : '#b91c1c';
-        } else {
-            label.innerHTML = 'Foto da mãe';
-            ajuda.textContent = 'Opcional. Obrigatória se o paciente for menor de 18 anos.';
-            ajuda.style.color = '';
-        }
     }
 
     async function carregarConvenios() {
@@ -591,13 +521,6 @@
             );
         }
 
-        // Sprint 72: se paciente menor de 18, foto da mãe é obrigatória
-        if (ehMenorDeIdade() && !state.mae_foto_base64) {
-            const el = document.getElementById('prc-mae-foto-preview');
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return mostrarErroForm('A foto da mãe é obrigatória para pacientes menores de 18 anos.');
-        }
-
         state.enviando = true;
         const btn = document.getElementById('prc-submit');
         btn.disabled = true;
@@ -611,12 +534,12 @@
                 headers: {
                     'Content-Type': 'application/json',
                     'apikey': SUPABASE_CONFIG.anonKey
+                    // Sem Authorization (deploy --no-verify-jwt)
                 },
                 body: JSON.stringify({
                     token: state.token,
                     dados: dados,
-                    foto_base64: state.foto_base64,
-                    mae_foto_base64: state.mae_foto_base64
+                    foto_base64: state.foto_base64
                 })
             });
 

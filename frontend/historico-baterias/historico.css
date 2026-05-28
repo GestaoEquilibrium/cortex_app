@@ -1,0 +1,77 @@
+/* ============================================================================
+   CORTEX_APP — Sprint 71 — historico.css
+   ============================================================================ */
+
+.hist-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.hist-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.hist-item:hover { border-color: #0c1f3f; box-shadow: 0 2px 8px rgba(12,31,63,0.06); }
+
+.hist-item-link {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+.hist-foto {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.hist-foto-placeholder {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+}
+.hist-info { flex: 1; min-width: 0; }
+.hist-nome {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0c1f3f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.hist-meta {
+    font-size: 12.5px;
+    color: #64748b;
+    margin-top: 1px;
+}
+
+.hist-vazio {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+.hist-vazio-ic { font-size: 42px; margin-bottom: 10px; }
+.hist-vazio h2 { font-size: 18px; color: #0c1f3f; margin: 0 0 6px; }
+
+.loading-state { text-align: center; padding: 60px 20px; color: #64748b; }
+.spinner {
+    display: inline-block; width: 36px; height: 36px;
+    border: 3px solid #e2e8f0; border-top-color: #0c1f3f;
+    border-radius: 50%; animation: hist-spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+@keyframes hist-spin { to { transform: rotate(360deg); } }

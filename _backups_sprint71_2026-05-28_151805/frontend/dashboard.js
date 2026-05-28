@@ -178,10 +178,9 @@
 
     // Sprint 69: pacientes com bateria 100% concluída (todas as aplicações em
     // 'concluido_aplicacao' ou 'corrigido'). Exclui arquivados.
-    // Sprint 71: oculta pacientes já marcados como "visto" (com data >= concluidaEm).
-    // Estratégia: 1 query de aplicações + 1 query de pacientes + 1 de vistas → agrupa no JS.
+    // Estratégia: 1 query de aplicações + 1 query de pacientes → agrupa no JS.
     async function carregarBateriasConcluidas() {
-        // 1. Todas as aplicações com paciente_id e status (RLS filtra automaticamente)
+        // 1. Todas as aplicações com paciente_id e status (não-arquivados)
         const { data: apps, error: errA } = await window.cortexClient
             .from('aplicacoes_instrumento')
             .select('paciente_id, status, updated_at')
@@ -195,50 +194,37 @@
 
         // 2. Agrupa por paciente: pra cada um, verifica se TODAS as aplicações estão concluídas
         const CONCLUIDOS = new Set(['concluido_aplicacao', 'corrigido']);
-        const porPaciente = new Map();
+        const porPaciente = new Map(); // paciente_id → { total, concluidas, ultimaAtualizacao }
         for (const a of (apps || [])) {
             if (!a.paciente_id) continue;
             const rec = porPaciente.get(a.paciente_id) || { total: 0, concluidas: 0, ultimaAtualizacao: null };
             rec.total++;
             if (CONCLUIDOS.has(a.status)) rec.concluidas++;
+            // Como o array já vem ordenado desc, a primeira ocorrência é a mais recente
             if (!rec.ultimaAtualizacao) rec.ultimaAtualizacao = a.updated_at;
             porPaciente.set(a.paciente_id, rec);
         }
 
-        // 3. Filtra os 100% concluídos
+        // 3. Filtra os 100% concluídos com pelo menos 1 aplicação
         const candidatos = [];
         for (const [pacId, rec] of porPaciente) {
             if (rec.total > 0 && rec.total === rec.concluidas) {
                 candidatos.push({ pacienteId: pacId, total: rec.total, em: rec.ultimaAtualizacao });
             }
         }
+
         if (candidatos.length === 0) { state.bateriasConcluidas = []; return; }
 
-        // 4. Sprint 71: carrega registros de "visto" e filtra
+        // 4. Hidrata com dados do paciente (excluindo arquivados)
         const pacIds = candidatos.map(c => c.pacienteId);
-        const { data: vistas } = await window.cortexClient
-            .from('baterias_vistas')
-            .select('paciente_id, vista_ate')
-            .in('paciente_id', pacIds);
-        const mapaVistas = new Map((vistas || []).map(v => [v.paciente_id, v.vista_ate]));
-
-        const naoVistos = candidatos.filter(c => {
-            const ate = mapaVistas.get(c.pacienteId);
-            // Visto só esconde se a marca cobre a última atualização
-            return !ate || new Date(ate) < new Date(c.em);
-        });
-        if (naoVistos.length === 0) { state.bateriasConcluidas = []; return; }
-
-        // 5. Hidrata com dados do paciente (excluindo arquivados)
-        const idsNaoVistos = naoVistos.map(c => c.pacienteId);
         const { data: pacs } = await window.cortexClient
             .from('vw_pacientes_lista')
             .select('id, nome_completo, idade_humanizada, sexo, status, foto_url')
-            .in('id', idsNaoVistos)
+            .in('id', pacIds)
             .neq('status', 'arquivado');
 
         const pacMap = new Map((pacs || []).map(p => [p.id, p]));
-        const lista = naoVistos
+        const lista = candidatos
             .filter(c => pacMap.has(c.pacienteId))
             .map(c => ({ ...pacMap.get(c.pacienteId), totalAplicacoes: c.total, concluidaEm: c.em }))
             .sort((a, b) => new Date(b.concluidaEm) - new Date(a.concluidaEm))
@@ -454,20 +440,16 @@
     }
 
     // Sprint 69: bloco "Baterias concluídas" no lugar dos atalhos antigos.
-    // Sprint 71: + botão "marcar como visto" + link "Ver histórico"
     function renderBateriasConcluidas() {
         const lista = state.bateriasConcluidas || [];
-
-        const linkHist = '<a href="historico-baterias/index.html" class="dash-link">Ver histórico →</a>';
 
         if (lista.length === 0) {
             return `
                 <div class="dash-bloco-header">
                     <h3>✅ Baterias concluídas</h3>
-                    ${linkHist}
                 </div>
                 <div class="dash-empty" style="padding: 20px 0;">
-                    <p style="margin:0;font-size:13px;color:#64748b;">Nenhuma bateria nova para revisar.</p>
+                    <p style="margin:0;font-size:13px;color:#64748b;">Nenhuma bateria concluída no momento.</p>
                 </div>
             `;
         }
@@ -475,7 +457,7 @@
         return `
             <div class="dash-bloco-header">
                 <h3>✅ Baterias concluídas</h3>
-                ${linkHist}
+                <span class="dash-link" style="cursor:default;">${lista.length}</span>
             </div>
             <div class="dash-bat-lista">
                 ${lista.map(p => renderBateriaLinha(p)).join('')}
@@ -492,54 +474,15 @@
             : `<div class="dash-bat-foto dash-bat-foto-placeholder">${escapeHtml((p.nome_completo || '?').charAt(0))}</div>`;
         const aplics = `${p.totalAplicacoes} ${p.totalAplicacoes === 1 ? 'teste' : 'testes'}`;
         return `
-            <div class="dash-bat-item" data-pid="${escapeHtml(p.id)}" data-em="${escapeHtml(p.concluidaEm || '')}" data-nome="${escapeHtml(p.nome_completo)}">
-                <a href="pacientes/pasta.html?id=${escapeHtml(p.id)}" class="dash-bat-item-link" title="Abrir pasta">
-                    ${avatar}
-                    <div class="dash-bat-info">
-                        <div class="dash-bat-nome">${escapeHtml(p.nome_completo)}</div>
-                        <div class="dash-bat-meta">${escapeHtml(aplics)}${dataLabel ? ' · ' + escapeHtml(dataLabel) : ''}</div>
-                    </div>
-                </a>
-                <button class="dash-bat-visto" data-acao="marcar-visto" title="Marcar como visto" aria-label="Marcar como visto">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </button>
-            </div>
+            <a href="pacientes/pasta.html?id=${p.id}" class="dash-bat-item" title="Abrir pasta">
+                ${avatar}
+                <div class="dash-bat-info">
+                    <div class="dash-bat-nome">${escapeHtml(p.nome_completo)}</div>
+                    <div class="dash-bat-meta">${escapeHtml(aplics)}${dataLabel ? ' · ' + escapeHtml(dataLabel) : ''}</div>
+                </div>
+            </a>
         `;
     }
-
-    // Sprint 71: marcar bateria como vista (RPC) com modal de confirmação.
-    async function marcarBateriaVista(pacienteId, vistaAte, nome) {
-        await window.CortexConfirm.mostrar({
-            icone: '✅',
-            titulo: 'Marcar como visto?',
-            texto: `O paciente "${nome}" sai deste bloco para toda a clínica. Se houver nova atividade, ele volta a aparecer.`,
-            btnSim: 'Sim, marcar como visto',
-            btnNao: 'Cancelar',
-            onSim: async () => {
-                const { error } = await window.cortexClient.rpc('marcar_bateria_vista', {
-                    p_paciente_id: pacienteId,
-                    p_vista_ate: vistaAte
-                });
-                if (error) {
-                    window.CortexUI.toast('Erro: ' + error.message, 'danger');
-                    throw error;
-                }
-                window.CortexUI.toast('Marcado como visto.', 'success');
-                await carregarBateriasConcluidas();
-                renderizar();
-            }
-        });
-    }
-
-    // Delega cliques no botão "marcar visto"
-    document.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-acao="marcar-visto"]');
-        if (!btn) return;
-        const item = btn.closest('.dash-bat-item');
-        if (!item) return;
-        e.preventDefault();
-        marcarBateriaVista(item.dataset.pid, item.dataset.em, item.dataset.nome);
-    });
 
     function mostrarErro(msg) {
         document.getElementById('dash-conteudo').innerHTML = `

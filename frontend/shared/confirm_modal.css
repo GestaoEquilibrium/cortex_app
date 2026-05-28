@@ -1,0 +1,49 @@
+/* ============================================================================
+   CORTEX_APP — Sprint 71 — confirm_modal.css
+   ============================================================================ */
+
+.cortex-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.cortex-confirm-box {
+    background: #fff;
+    border-radius: 14px;
+    max-width: 400px;
+    width: 100%;
+    padding: 28px 26px 22px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+.cortex-confirm-icone {
+    font-size: 40px;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+.cortex-confirm-titulo {
+    font-size: 19px;
+    color: #0c1f3f;
+    margin: 0 0 8px;
+}
+.cortex-confirm-texto {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.5;
+    margin: 0 0 22px;
+}
+.cortex-confirm-acoes {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.cortex-confirm-acoes .btn {
+    min-width: 130px;
+}

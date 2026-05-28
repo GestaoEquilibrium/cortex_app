@@ -21,7 +21,6 @@
         pacienteId: null,
         paciente: null,
         hipoteseId: null,
-        hipoteseChecklist: '',         // Sprint 62: texto livre da hipótese
         instrumentosSelecionados: [], // array de UUIDs
         catalogo: [],                  // array de { id, sigla, nome_completo, ... }
         catalogoFiltrado: [],          // só os da faixa do paciente
@@ -96,7 +95,7 @@
     async function carregarHipotese() {
         const { data, error } = await window.cortexClient
             .from('hipoteses')
-            .select('id, instrumentos_sugeridos, hipotese_checklist')
+            .select('id, instrumentos_sugeridos')
             .eq('paciente_id', state.pacienteId)
             .maybeSingle();
 
@@ -108,7 +107,6 @@
         if (data) {
             state.hipoteseId = data.id;
             state.instrumentosSelecionados = data.instrumentos_sugeridos || [];
-            state.hipoteseChecklist = data.hipotese_checklist || '';
         }
     }
 
@@ -186,22 +184,6 @@
             </div>
         ` : '';
 
-        // Sprint 62: campo de hipótese diagnóstica (texto livre)
-        const blocoHipotese = `
-            <div class="checklist-hipotese-bloco">
-                <label class="checklist-hipotese-label" for="checklist-hipotese-input">
-                    💡 Hipótese diagnóstica
-                </label>
-                <input type="text" id="checklist-hipotese-input"
-                       class="checklist-hipotese-input"
-                       placeholder="Ex.: Suspeita de TEA, investigar TDAH, dificuldades de aprendizagem..."
-                       value="${escapeHtml(state.hipoteseChecklist)}"
-                       ${state.ehAdmin ? '' : 'disabled'}
-                       maxlength="300">
-                <span class="checklist-hipotese-help">Aparece no topo do PDF do checklist.</span>
-            </div>
-        `;
-
         // Lista por categoria (mantém ordem dos PDFs Equilibrium oficiais)
         const ORDEM_CATEGORIAS = [
             'Inteligência / Raciocínio',
@@ -252,16 +234,7 @@
             </div>
         `;
 
-        container.innerHTML = cabecalho + aviso + blocoHipotese + lista + navegacao;
-
-        // Sprint 62: listener da hipótese (auto-save igual aos instrumentos)
-        const inputHip = document.getElementById('checklist-hipotese-input');
-        if (inputHip && state.ehAdmin) {
-            inputHip.addEventListener('input', (e) => {
-                state.hipoteseChecklist = e.target.value;
-                marcarEditado();
-            });
-        }
+        container.innerHTML = cabecalho + aviso + lista + navegacao;
     }
 
     function renderItem(inst) {
@@ -411,10 +384,7 @@
             // Atualiza hipótese existente
             const { error } = await window.cortexClient
                 .from('hipoteses')
-                .update({
-                    instrumentos_sugeridos: state.instrumentosSelecionados,
-                    hipotese_checklist: state.hipoteseChecklist || null
-                })
+                .update({ instrumentos_sugeridos: state.instrumentosSelecionados })
                 .eq('id', state.hipoteseId);
             if (error) throw error;
 
@@ -429,7 +399,6 @@
                 .insert({
                     paciente_id: state.pacienteId,
                     instrumentos_sugeridos: state.instrumentosSelecionados,
-                    hipotese_checklist: state.hipoteseChecklist || null,
                     preenchido_por: window.cortexProfissional.id
                 })
                 .select()
@@ -541,9 +510,9 @@
                         <div class="print-label">IDADE</div>
                         <span class="print-valor">${pacienteIdade}</span>
                     </div>
-                    <div class="print-paciente-bloco print-paciente-bloco-hipotese">
-                        <div class="print-label">HIPÓTESE</div>
-                        <span class="print-valor print-valor-hipotese">${state.hipoteseChecklist ? escapeHtml(state.hipoteseChecklist) : '—'}</span>
+                    <div class="print-paciente-bloco">
+                        <div class="print-label">DATA</div>
+                        <span class="print-valor print-valor-data">${dataHoje}</span>
                     </div>
                 </div>
 

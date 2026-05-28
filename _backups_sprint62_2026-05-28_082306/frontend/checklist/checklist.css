@@ -392,7 +392,7 @@
 .print-tabela {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9.5px; /* Sprint 62: -1pt (era 10.5px) para caber em uma página */
+    font-size: 10.5px;
 }
 
 .print-tabela thead th {
@@ -415,7 +415,7 @@
 
 /* Linhas de teste */
 .print-tabela tbody tr.linha-teste td {
-    padding: 5.5px 8px; /* Sprint 62: era 7px — comprime para caber em 1 página */
+    padding: 7px 8px;
     border-bottom: 1px solid #f1f5f9;
     color: #1e293b;
 }
@@ -473,10 +473,10 @@
     background: #eaf1fb !important;
     background-color: #eaf1fb !important;
     color: #1e3a8a !important;
-    padding: 6px 8px; /* Sprint 62: era 8px */
+    padding: 8px 8px;
     border: none;
     font-weight: 700;
-    font-size: 9px; /* Sprint 62: era 10px */
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     -webkit-print-color-adjust: exact;
@@ -546,58 +546,4 @@
     .checklist-itens {
         grid-template-columns: 1fr;
     }
-}
-
-/* ============================================================================
-   Sprint 62 — Campo de hipótese diagnóstica (tela de edição)
-   ============================================================================ */
-.checklist-hipotese-bloco {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-left: 3px solid #5b21b6;
-    border-radius: 10px;
-    padding: 16px 18px;
-    margin-bottom: 20px;
-}
-.checklist-hipotese-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 700;
-    color: #0c1f3f;
-    margin-bottom: 8px;
-}
-.checklist-hipotese-input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 14px;
-    color: #0f172a;
-    font-family: inherit;
-    box-sizing: border-box;
-}
-.checklist-hipotese-input:focus {
-    outline: none;
-    border-color: #5b21b6;
-    box-shadow: 0 0 0 3px rgba(91,33,182,0.10);
-}
-.checklist-hipotese-input:disabled {
-    background: #f8fafc;
-    color: #64748b;
-}
-.checklist-hipotese-help {
-    display: block;
-    font-size: 11.5px;
-    color: #64748b;
-    margin-top: 5px;
-}
-
-/* Bloco hipótese no PDF — ocupa mais largura que a antiga DATA */
-.print-paciente-bloco-hipotese {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-.print-valor-hipotese {
-    font-weight: 600;
-    word-break: break-word;
 }

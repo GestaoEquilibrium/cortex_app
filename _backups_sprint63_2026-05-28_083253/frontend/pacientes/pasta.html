@@ -1433,38 +1433,7 @@
     // - Insere um token na anamneses_tokens_publicos (expira em 7 dias)
     // - Silêncio total (sem modal, sem WhatsApp): só registra e mostra toast
     // - O paciente vê o card "Responder anamnese" na aba Anamnese do portal
-    // Sprint 63: gatekeeper do envio ao portal.
-    // - Se já existe token pendente válido, NÃO duplica: avisa e oferece reenviar WhatsApp.
-    // - Caso contrário, abre modal de confirmação (fundo borrado) antes de criar.
-    function enviarAnamnesePortal() {
-        // respostasRemotas já contém os tokens pendentes (enviado_em IS NULL).
-        // Filtra os que ainda estão válidos (não expirados).
-        const agora = new Date();
-        const pendenteValido = (respostasRemotas || []).some(t => new Date(t.expires_at) > agora);
-
-        if (pendenteValido) {
-            mostrarConfirmacao({
-                icone: 'ℹ️',
-                titulo: 'Já existe um envio ativo',
-                texto: 'Este paciente já tem uma anamnese disponível no portal aguardando resposta. Não é preciso enviar de novo — você pode avisá-lo pelo WhatsApp.',
-                btnSim: 'Avisar por WhatsApp',
-                btnNao: 'Fechar',
-                onSim: () => avisarPortalWhatsApp()
-            });
-            return;
-        }
-
-        mostrarConfirmacao({
-            icone: '📲',
-            titulo: 'Enviar anamnese para o portal?',
-            texto: 'O paciente vai poder responder a anamnese pelo portal. As respostas voltam direto para o prontuário.',
-            btnSim: 'Enviar',
-            btnNao: 'Cancelar',
-            onSim: () => _executarEnvioPortal()
-        });
-    }
-
-    async function _executarEnvioPortal() {
+    async function enviarAnamnesePortal() {
         try {
             // 1) Garante que existe uma anamnese pra esse paciente
             let anamneseId = anamneseExistente?.id;
@@ -1552,20 +1521,20 @@
 
     // Sprint 56: cancela um link remoto (seta expires_at = NOW(), o que faz a
     // RPC pública responder token_expirado se o paciente tentar acessar)
-    // Sprint 63: modal de confirmação genérico centralizado (fundo borrado).
-    // opts: { icone, titulo, texto, btnSim, btnNao, onSim }
-    function mostrarConfirmacao(opts) {
+    // Sprint 63: cancela um envio — modal de confirmação centralizado (fundo
+    // borrado) e DELETA o token (o card some na hora).
+    function cancelarTokenRemoto(token) {
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay cortex-confirm-overlay';
         overlay.style.display = 'flex';
         overlay.innerHTML = `
             <div class="modal-content cortex-confirm-box">
-                <div class="cortex-confirm-icone">${opts.icone || '⚠️'}</div>
-                <h2 class="cortex-confirm-titulo">${escapeHtml(opts.titulo || 'Confirmar?')}</h2>
-                <p class="cortex-confirm-texto">${escapeHtml(opts.texto || '')}</p>
+                <div class="cortex-confirm-icone">⚠️</div>
+                <h2 class="cortex-confirm-titulo">Cancelar este envio?</h2>
+                <p class="cortex-confirm-texto">O link parará de funcionar imediatamente e este aviso será removido.</p>
                 <div class="cortex-confirm-acoes">
-                    <button class="btn btn-secondary" data-acao="nao">${escapeHtml(opts.btnNao || 'Cancelar')}</button>
-                    <button class="btn ${opts.btnSimDanger ? 'btn-danger' : 'btn-primary'}" data-acao="sim">${escapeHtml(opts.btnSim || 'Confirmar')}</button>
+                    <button class="btn btn-secondary" data-acao="nao">Voltar</button>
+                    <button class="btn btn-danger" data-acao="sim">Sim, cancelar</button>
                 </div>
             </div>
         `;
@@ -1578,36 +1547,20 @@
         overlay.querySelector('[data-acao="sim"]').addEventListener('click', async () => {
             const btnSim = overlay.querySelector('[data-acao="sim"]');
             btnSim.disabled = true;
+            btnSim.textContent = 'Cancelando...';
             try {
-                if (typeof opts.onSim === 'function') await opts.onSim();
-            } finally {
+                const { error } = await window.cortexClient
+                    .from('anamneses_tokens_publicos')
+                    .delete()
+                    .eq('token', token);
+                if (error) throw error;
                 fechar();
-            }
-        });
-    }
-
-    // Sprint 63: cancela um envio — confirma (fundo borrado) e DELETA o token.
-    function cancelarTokenRemoto(token) {
-        mostrarConfirmacao({
-            icone: '⚠️',
-            titulo: 'Cancelar este envio?',
-            texto: 'O link parará de funcionar imediatamente e este aviso será removido.',
-            btnSim: 'Sim, cancelar',
-            btnNao: 'Voltar',
-            btnSimDanger: true,
-            onSim: async () => {
-                try {
-                    const { error } = await window.cortexClient
-                        .from('anamneses_tokens_publicos')
-                        .delete()
-                        .eq('token', token);
-                    if (error) throw error;
-                    await carregarRespostasRemotas();
-                    renderizarPasta();
-                    window.CortexUI.toast('Envio cancelado.', 'info');
-                } catch (err) {
-                    window.CortexUI.toast('Erro: ' + err.message, 'danger');
-                }
+                await carregarRespostasRemotas();
+                renderizarPasta();
+                window.CortexUI.toast('Envio cancelado.', 'info');
+            } catch (err) {
+                fechar();
+                window.CortexUI.toast('Erro: ' + err.message, 'danger');
             }
         });
     }

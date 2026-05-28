@@ -18,7 +18,6 @@
         metricas: null,
         proximasSessoes: [],
         pacientesAtivos: [],
-        bateriasConcluidas: [],  // Sprint 69: pacientes com 100% das aplicações concluídas
     };
 
     window.addEventListener('cortex:auth-ready', async () => {
@@ -32,7 +31,6 @@
                 carregarMetricas(),
                 carregarProximasSessoes(),
                 carregarPacientesAtivos(),
-                carregarBateriasConcluidas(),
             ]);
             renderizar();
         } catch (err) {
@@ -174,71 +172,6 @@
         }));
 
         state.pacientesAtivos = pacientes;
-    }
-
-    // Sprint 69: pacientes com bateria 100% concluída (todas as aplicações em
-    // 'concluido_aplicacao' ou 'corrigido'). Exclui arquivados.
-    // Estratégia: 1 query de aplicações + 1 query de pacientes → agrupa no JS.
-    async function carregarBateriasConcluidas() {
-        // 1. Todas as aplicações com paciente_id e status (não-arquivados)
-        const { data: apps, error: errA } = await window.cortexClient
-            .from('aplicacoes_instrumento')
-            .select('paciente_id, status, updated_at')
-            .order('updated_at', { ascending: false });
-
-        if (errA) {
-            console.warn('[dashboard] baterias:', errA);
-            state.bateriasConcluidas = [];
-            return;
-        }
-
-        // 2. Agrupa por paciente: pra cada um, verifica se TODAS as aplicações estão concluídas
-        const CONCLUIDOS = new Set(['concluido_aplicacao', 'corrigido']);
-        const porPaciente = new Map(); // paciente_id → { total, concluidas, ultimaAtualizacao }
-        for (const a of (apps || [])) {
-            if (!a.paciente_id) continue;
-            const rec = porPaciente.get(a.paciente_id) || { total: 0, concluidas: 0, ultimaAtualizacao: null };
-            rec.total++;
-            if (CONCLUIDOS.has(a.status)) rec.concluidas++;
-            // Como o array já vem ordenado desc, a primeira ocorrência é a mais recente
-            if (!rec.ultimaAtualizacao) rec.ultimaAtualizacao = a.updated_at;
-            porPaciente.set(a.paciente_id, rec);
-        }
-
-        // 3. Filtra os 100% concluídos com pelo menos 1 aplicação
-        const candidatos = [];
-        for (const [pacId, rec] of porPaciente) {
-            if (rec.total > 0 && rec.total === rec.concluidas) {
-                candidatos.push({ pacienteId: pacId, total: rec.total, em: rec.ultimaAtualizacao });
-            }
-        }
-
-        if (candidatos.length === 0) { state.bateriasConcluidas = []; return; }
-
-        // 4. Hidrata com dados do paciente (excluindo arquivados)
-        const pacIds = candidatos.map(c => c.pacienteId);
-        const { data: pacs } = await window.cortexClient
-            .from('vw_pacientes_lista')
-            .select('id, nome_completo, idade_humanizada, sexo, status, foto_url')
-            .in('id', pacIds)
-            .neq('status', 'arquivado');
-
-        const pacMap = new Map((pacs || []).map(p => [p.id, p]));
-        const lista = candidatos
-            .filter(c => pacMap.has(c.pacienteId))
-            .map(c => ({ ...pacMap.get(c.pacienteId), totalAplicacoes: c.total, concluidaEm: c.em }))
-            .sort((a, b) => new Date(b.concluidaEm) - new Date(a.concluidaEm))
-            .slice(0, 8);
-
-        // Avatares
-        await Promise.all(lista.map(async (p) => {
-            if (p.foto_url && window.CortexAvatar) {
-                try { p._signedUrl = await window.CortexAvatar.buscarUrlAssinada(p.id, p.foto_url); }
-                catch (_) { p._signedUrl = null; }
-            }
-        }));
-
-        state.bateriasConcluidas = lista;
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -421,7 +354,23 @@
     function renderAtalhos() {
         return `
             <div class="dash-bloco">
-                ${renderBateriasConcluidas()}
+                <div class="dash-bloco-header">
+                    <h3>⚡ Atalhos</h3>
+                </div>
+                <div class="dash-atalhos">
+                    <a href="pacientes/novo.html" class="dash-atalho">
+                        <span class="dash-atalho-icone">➕</span>
+                        <span class="dash-atalho-label">Novo paciente</span>
+                    </a>
+                    <a href="pacientes/lista.html" class="dash-atalho">
+                        <span class="dash-atalho-icone">📋</span>
+                        <span class="dash-atalho-label">Lista de pacientes</span>
+                    </a>
+                    <a href="agenda/agenda.html" class="dash-atalho">
+                        <span class="dash-atalho-icone">📅</span>
+                        <span class="dash-atalho-label">Agenda</span>
+                    </a>
+                </div>
 
                 <div class="dash-bloco-header" style="margin-top: 18px;">
                     <h3>👤 Meu perfil</h3>
@@ -436,51 +385,6 @@
                     ` : ''}
                 </div>
             </div>
-        `;
-    }
-
-    // Sprint 69: bloco "Baterias concluídas" no lugar dos atalhos antigos.
-    function renderBateriasConcluidas() {
-        const lista = state.bateriasConcluidas || [];
-
-        if (lista.length === 0) {
-            return `
-                <div class="dash-bloco-header">
-                    <h3>✅ Baterias concluídas</h3>
-                </div>
-                <div class="dash-empty" style="padding: 20px 0;">
-                    <p style="margin:0;font-size:13px;color:#64748b;">Nenhuma bateria concluída no momento.</p>
-                </div>
-            `;
-        }
-
-        return `
-            <div class="dash-bloco-header">
-                <h3>✅ Baterias concluídas</h3>
-                <span class="dash-link" style="cursor:default;">${lista.length}</span>
-            </div>
-            <div class="dash-bat-lista">
-                ${lista.map(p => renderBateriaLinha(p)).join('')}
-            </div>
-        `;
-    }
-
-    function renderBateriaLinha(p) {
-        const dataLabel = p.concluidaEm
-            ? new Date(p.concluidaEm).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-            : '';
-        const avatar = p._signedUrl
-            ? `<img src="${escapeHtml(p._signedUrl)}" alt="" class="dash-bat-foto">`
-            : `<div class="dash-bat-foto dash-bat-foto-placeholder">${escapeHtml((p.nome_completo || '?').charAt(0))}</div>`;
-        const aplics = `${p.totalAplicacoes} ${p.totalAplicacoes === 1 ? 'teste' : 'testes'}`;
-        return `
-            <a href="pacientes/pasta.html?id=${p.id}" class="dash-bat-item" title="Abrir pasta">
-                ${avatar}
-                <div class="dash-bat-info">
-                    <div class="dash-bat-nome">${escapeHtml(p.nome_completo)}</div>
-                    <div class="dash-bat-meta">${escapeHtml(aplics)}${dataLabel ? ' · ' + escapeHtml(dataLabel) : ''}</div>
-                </div>
-            </a>
         `;
     }
 

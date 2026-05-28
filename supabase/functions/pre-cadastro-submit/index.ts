@@ -175,7 +175,6 @@ serve(async (req) => {
         ["escolaridade", "Escolaridade"],
         ["profissao", "Profissão"],
         ["estado_civil", "Estado civil"],
-        ["convenio_id", "Convênio"],
         ["telefone", "Telefone"],
         ["email", "E-mail"],
         ["endereco", "Endereço"],

@@ -189,8 +189,8 @@
                     <h2 class="form-section-title">Convênio</h2>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Convênio <span class="required">*</span></label>
-                            <select class="form-select" name="convenio_id" id="prc-convenio" required>
+                            <label class="form-label">Convênio</label>
+                            <select class="form-select" name="convenio_id" id="prc-convenio">
                                 <option value="">Não informado</option>
                             </select>
                         </div>
@@ -487,7 +487,6 @@
             ['escolaridade', 'Escolaridade'],
             ['profissao', 'Profissão'],
             ['estado_civil', 'Estado civil'],
-            ['convenio_id', 'Convênio'],
             ['telefone', 'Telefone'],
             ['email', 'E-mail'],
             ['endereco', 'Endereço'],

@@ -1,0 +1,99 @@
+/* ============================================================================
+   CORTEX_APP — Sprint 68 — image_cropper.css
+   ============================================================================ */
+
+.cortex-cropper-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.cortex-cropper-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+.cortex-cropper-titulo {
+    font-size: 19px;
+    font-weight: 700;
+    color: #0c1f3f;
+    margin: 0 0 4px;
+}
+.cortex-cropper-ajuda {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 18px;
+}
+
+.cortex-cropper-palco {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 0 auto 18px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    background: #0f172a;
+}
+.cortex-cropper-palco:active { cursor: grabbing; }
+
+.cortex-cropper-palco canvas {
+    display: block;
+    width: 300px;
+    height: 300px;
+}
+
+/* Máscara circular sutil pra mostrar como vai ficar o avatar */
+.cortex-cropper-mascara {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(255,255,255,0); /* sem corte externo */
+    border: 2px solid rgba(255,255,255,0.85);
+    border-radius: 12px;
+}
+.cortex-cropper-mascara::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,255,255,0.45);
+}
+
+.cortex-cropper-zoom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.cortex-cropper-zoom-ico {
+    font-size: 20px;
+    font-weight: 700;
+    color: #64748b;
+    width: 18px;
+    text-align: center;
+}
+.cortex-cropper-zoom input[type="range"] {
+    flex: 1;
+    accent-color: #0c1f3f;
+    cursor: pointer;
+}
+
+.cortex-cropper-acoes {
+    display: flex;
+    gap: 10px;
+}
+.cortex-cropper-acoes .btn { flex: 1; }

@@ -419,21 +419,19 @@
         input.addEventListener('change', () => {
             const f = input.files && input.files[0];
             if (!f) return;
-            if (f.size > 8 * 1024 * 1024) {
-                alert('Foto muito grande (máx 8 MB). Tente uma menor.');
+            if (f.size > 5 * 1024 * 1024) {
+                alert('Foto muito grande (máx 5 MB). Tente uma menor.');
                 input.value = '';
                 return;
             }
-            // Sprint 68: abre o cropper quadrado antes de aceitar a foto
-            CortexCropper.abrir(f, { tamanho: 512 }).then(result => {
-                state.foto_base64 = result.dataUrl;
+            const reader = new FileReader();
+            reader.onload = e => {
+                state.foto_base64 = e.target.result;
                 preview.innerHTML = `<img src="${state.foto_base64}" alt="Foto">`;
                 btnRem.style.display = 'inline-flex';
                 labelTxt.textContent = 'Trocar foto';
-                input.value = ''; // permite reescolher o mesmo arquivo
-            }).catch(() => {
-                input.value = ''; // cancelou
-            });
+            };
+            reader.readAsDataURL(f);
         });
 
         btnRem.addEventListener('click', () => {

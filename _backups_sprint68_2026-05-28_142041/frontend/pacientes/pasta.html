@@ -224,7 +224,6 @@
     <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
     <link rel="manifest" href="../site.webmanifest">
-    <link rel="stylesheet" href="../shared/image_cropper.css">
 </head>
 <body>
     <div class="app-shell">
@@ -252,7 +251,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../config.js"></script>
-    <script src="../shared/image_cropper.js"></script>
     <script src="../shared/supabase_client.js"></script>
     <script src="../shared/auth_guard.js"></script>
     <script src="../shared/audit.js"></script>
@@ -1892,39 +1890,29 @@
     }
 
     async function uploadFoto(event) {
-        const fileOriginal = event.target.files[0];
-        if (!fileOriginal) return;
-        // permite reescolher o mesmo arquivo depois
-        event.target.value = '';
+        const file = event.target.files[0];
+        if (!file) return;
 
-        if (fileOriginal.size > 8 * 1024 * 1024) {
-            window.CortexUI.toast('Arquivo muito grande. Máximo: 8MB.', 'danger');
+        if (file.size > 2 * 1024 * 1024) {
+            window.CortexUI.toast('Arquivo muito grande. Máximo: 2MB.', 'danger');
             return;
         }
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(fileOriginal.type)) {
+
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
             window.CortexUI.toast('Formato não suportado. Use JPG, PNG ou WEBP.', 'danger');
             return;
         }
 
-        // Sprint 68: enquadrar no cropper quadrado antes de enviar
-        let file;
-        try {
-            const result = await CortexCropper.abrir(fileOriginal, { tamanho: 512 });
-            file = result.file; // sempre JPG quadrado
-        } catch (e) {
-            return; // usuário cancelou
-        }
-
         window.CortexUI.toast('Enviando foto...', 'info');
 
-        // Cropper sempre devolve JPG
-        const path = `${pacienteId}/perfil.jpg`;
+        const ext = file.name.split('.').pop().toLowerCase();
+        const path = `${pacienteId}/perfil.${ext}`;
 
         try {
             const { error: uploadError } = await window.cortexClient
                 .storage
                 .from('pacientes-fotos')
-                .upload(path, file, { upsert: true, contentType: 'image/jpeg' });
+                .upload(path, file, { upsert: true, contentType: file.type });
 
             if (uploadError) throw uploadError;
 

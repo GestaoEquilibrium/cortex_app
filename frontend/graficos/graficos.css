@@ -1,0 +1,175 @@
+/* ============================================================================
+   CORTEX_APP — Sprint 64 — graficos.css
+   ============================================================================ */
+
+/* ─── Seleção de categoria ───────────────────────────────────────────────── */
+.grafico-cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+}
+.grafico-cat-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px 20px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    font-family: inherit;
+}
+.grafico-cat-card:hover {
+    border-color: #0c1f3f;
+    box-shadow: 0 4px 12px rgba(12,31,63,0.08);
+    transform: translateY(-1px);
+}
+.grafico-cat-icone {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #ede9fe;
+    color: #5b21b6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.grafico-cat-icone svg { width: 24px; height: 24px; }
+.grafico-cat-info { flex: 1; min-width: 0; }
+.grafico-cat-nome {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0c1f3f;
+    margin-bottom: 3px;
+}
+.grafico-cat-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.4;
+}
+.grafico-cat-seta {
+    width: 20px;
+    height: 20px;
+    color: #cbd5e1;
+    flex-shrink: 0;
+}
+
+/* ─── Layout form + resultado ────────────────────────────────────────────── */
+.grafico-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.grafico-form-card,
+.grafico-resultado-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+.grafico-form-titulo {
+    font-size: 16px;
+    color: #0c1f3f;
+    margin: 0 0 4px;
+}
+.grafico-form-ajuda {
+    font-size: 12.5px;
+    color: #64748b;
+    margin: 0 0 16px;
+}
+
+.grafico-form-linha {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.grafico-form-label {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    cursor: pointer;
+}
+.grafico-form-slug {
+    font-size: 12px;
+    font-weight: 700;
+    color: #5b21b6;
+}
+.grafico-form-nome {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.2;
+}
+.grafico-form-input {
+    width: 72px;
+    flex-shrink: 0;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    color: #0f172a;
+    font-family: inherit;
+}
+.grafico-form-input:focus {
+    outline: none;
+    border-color: #5b21b6;
+    box-shadow: 0 0 0 3px rgba(91,33,182,0.10);
+}
+
+.grafico-form-acoes {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* ─── Resultado / gráfico ────────────────────────────────────────────────── */
+.grafico-perfil-wrap {
+    width: 100%;
+}
+.grafico-perfil-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 420px;
+}
+.grafico-dica-print {
+    font-size: 12px;
+    color: #64748b;
+    font-style: italic;
+    margin: 14px 0 0;
+    text-align: center;
+}
+
+/* ─── Loading ────────────────────────────────────────────────────────────── */
+.loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+.spinner {
+    display: inline-block;
+    width: 36px; height: 36px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #0c1f3f;
+    border-radius: 50%;
+    animation: graf-spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+@keyframes graf-spin { to { transform: rotate(360deg); } }
+
+/* ─── Responsivo ─────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+    .grafico-layout { grid-template-columns: 1fr; }
+    .grafico-perfil-canvas-container { height: 360px; }
+}

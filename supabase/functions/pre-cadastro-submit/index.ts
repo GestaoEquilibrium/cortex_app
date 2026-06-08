@@ -264,9 +264,12 @@ serve(async (req) => {
     }
 
     // 5) Cria o paciente
+    // Sprint 76: created_by = profissional que GEROU o link de pré-cadastro
+    // (já está em pc.created_by, vindo da validação do token na etapa 1)
     const pacientePayload = {
         ...dados,
         portal_user_id: portalUserId,
+        created_by: pc.created_by || null,
     };
 
     const { data: novoPac, error: errPac } = await supabase

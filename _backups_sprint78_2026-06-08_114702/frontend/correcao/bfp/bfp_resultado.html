@@ -1,0 +1,57 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BFP — CORTEX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles/base.css">
+    <link rel="stylesheet" href="../../styles/components.css">
+    <link rel="stylesheet" href="../raadsr/raadsr_resultado.css">
+    <link rel="stylesheet" href="bfp_resultado.css">
+    <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../../apple-touch-icon.png">
+    <link rel="manifest" href="../../site.webmanifest">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <main class="app-main">
+            <a href="#" id="back-link" class="page-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Voltar à Bateria
+            </a>
+
+            <!-- Botões aparecem dinamicamente conforme modo (edição vs laudo) -->
+            <div class="resultado-acoes-topo" id="acoes-topo" style="display:none;"></div>
+
+            <div id="laudo-conteudo">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando BFP...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../config.js"></script>
+    <script src="../../shared/supabase_client.js"></script>
+    <script src="../../shared/auth_guard.js"></script>
+    <script src="../../shared/audit.js"></script>
+    <script src="../../shared/ui_helpers.js"></script>
+    <script src="../../shared/permissoes.js"></script>
+    <script src="../../shared/correcao_guard.js"></script>
+    <script src="../../shared/sidebar.js"></script>
+    <script src="../../shared/copy_to_clipboard.js"></script>
+    <script src="bfp_resultado.js"></script>
+</body>
+</html>

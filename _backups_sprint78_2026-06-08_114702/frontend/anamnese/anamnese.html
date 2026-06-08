@@ -1,15 +1,15 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurações — CORTEX</title>
+    <title>Anamnese — CORTEX</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles/base.css">
     <link rel="stylesheet" href="../styles/components.css">
-    <link rel="stylesheet" href="configuracoes.css">
+    <link rel="stylesheet" href="anamnese.css">
     <link rel="icon" type="image/svg+xml" href="../favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16.png">
@@ -21,31 +21,13 @@
         <div id="sidebar-container"></div>
 
         <main class="app-main">
-            <div class="page-header">
-                <div class="page-title">
-                    <h1>Configurações</h1>
-                    <p>Gerencie seu perfil e os convênios atendidos.</p>
-                </div>
-            </div>
+            <a href="#" id="back-link" class="page-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Voltar à pasta do paciente
+            </a>
 
-            <!-- Abas -->
-            <div class="cfg-tabs">
-                <button class="cfg-tab active" data-tab="perfil">
-                    <span class="cfg-tab-icone">👤</span>
-                    <span>Meu Perfil</span>
-                </button>
-                <button class="cfg-tab" data-tab="convenios">
-                    <span class="cfg-tab-icone">🏥</span>
-                    <span>Convênios</span>
-                </button>
-                <button class="cfg-tab" data-tab="profissionais" id="tab-profissionais" style="display:none;">
-                    <span class="cfg-tab-icone">👥</span>
-                    <span>Profissionais</span>
-                </button>
-            </div>
-
-            <div id="cfg-conteudo">
-                <div class="cfg-loading">
+            <div id="anamnese-conteudo">
+                <div class="loading-state">
                     <div class="spinner"></div>
                     <p>Carregando...</p>
                 </div>
@@ -61,7 +43,10 @@
     <script src="../shared/ui_helpers.js"></script>
     <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
-    <script src="../shared/avatar.js"></script>
-    <script src="configuracoes.js"></script>
+    <script src="forms.js"></script>
+    <!-- Sprint 18 — Geração de PDF da anamnese -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="pdf.js"></script>
+    <script src="anamnese.js"></script>
 </body>
 </html>

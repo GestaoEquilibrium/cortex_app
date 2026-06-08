@@ -26,7 +26,7 @@
 //   Anamnese (editar) |    ✅    |    ✅    |    ✅     |    ❌    |    ❌
 //   Designar aplicador|    ✅    |    ✅    |    ❌     |    ❌    |    ❌
 //   Relatórios        |    ✅    |    ✅    |    ❌     |    ❌    |    ❌
-//   Configurações     |    ✅    |    ❌    |    ❌     |    ❌    |    ❌  (só admin clínico)
+//   Configurações     |    ✅    |    ✅    |    ❌     |    ❌    |    ❌
 // ============================================================================
 
 window.CortexPerfil = (function () {
@@ -39,12 +39,10 @@ window.CortexPerfil = (function () {
     }
 
     // ── Identidade de perfil ────────────────────────────────────────────────
-    function isAdmin()        { return ADMINS.includes(perfilAtual()); }
-    function isAdminClinico() { return perfilAtual() === 'admin_clinico'; }
-    function isAdminGestor()  { return perfilAtual() === 'admin_gestor'; }
-    function isAplicador()    { return perfilAtual() === 'neuropsicologo_aplicador'; }
-    function isCorretor()     { return perfilAtual() === 'corretor'; }
-    function isEstagiario()   { return perfilAtual() === 'estagiario'; }
+    function isAdmin()      { return ADMINS.includes(perfilAtual()); }
+    function isAplicador()  { return perfilAtual() === 'neuropsicologo_aplicador'; }
+    function isCorretor()   { return perfilAtual() === 'corretor'; }
+    function isEstagiario() { return perfilAtual() === 'estagiario'; }
 
     // ── Capacidades de UI ─────────────────────────────────────────────────────
     // Pasta — editar dados/fotos/agendar/capa/portal: admin + aplicador
@@ -72,11 +70,11 @@ window.CortexPerfil = (function () {
     // Designar aplicador a um paciente (ação de coordenação): só admin
     function podeDesignarAplicador()     { return isAdmin(); }
 
-    // Relatórios: admins (clínico + gestor)
+    // Relatórios: só admin
     function podeVerRelatorios()         { return isAdmin(); }
 
-    // Configurações: SÓ admin clínico (gestor faz todo o resto, menos isto)
-    function podeVerConfiguracoes()      { return isAdminClinico(); }
+    // Configurações: só admin
+    function podeVerConfiguracoes()      { return isAdmin(); }
 
     // ── Label amigável do perfil ──────────────────────────────────────────────
     function labelPerfil(perfil) {
@@ -86,7 +84,7 @@ window.CortexPerfil = (function () {
 
     return {
         perfilAtual,
-        isAdmin, isAdminClinico, isAdminGestor, isAplicador, isCorretor, isEstagiario,
+        isAdmin, isAplicador, isCorretor, isEstagiario,
         podeEditarPasta, podeCadastrarPaciente,
         podeUsarChecklist, podeAlterarFaixaChecklist,
         podeCorrigir, podeEditarAnamnese, podeDesignarAplicador,

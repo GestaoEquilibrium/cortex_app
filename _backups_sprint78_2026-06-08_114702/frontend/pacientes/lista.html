@@ -1,0 +1,482 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacientes — CORTEX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/base.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/pacientes.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="manifest" href="../site.webmanifest">
+</head>
+<body>
+    <div class="app-shell">
+        <div id="sidebar-container"></div>
+
+        <main class="app-main">
+            <div class="page-header">
+                <div class="page-title">
+                    <h1>Pacientes</h1>
+                    <p id="contagem-pacientes">Carregando...</p>
+                </div>
+                <div class="page-actions">
+                    <button type="button" id="btn-pre-cadastro" class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <line x1="19" y1="8" x2="19" y2="14"/>
+                            <line x1="22" y1="11" x2="16" y2="11"/>
+                        </svg>
+                        Pré-cadastrar paciente
+                    </button>
+                    <button type="button" id="btn-novo-paciente" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Novo paciente
+                    </button>
+                </div>
+            </div>
+
+            <div class="lista-filtros">
+                <div class="lista-filtros-busca">
+                    <input type="text" id="busca" placeholder="Buscar por nome..." autocomplete="off">
+                </div>
+                <select id="filtro-status">
+                    <option value="">Todos os status</option>
+                    <option value="cadastrado">Cadastrado</option>
+                    <option value="em_avaliacao">Em avaliação</option>
+                    <option value="pronto_para_laudo">Pronto para laudo</option>
+                    <option value="laudo_pronto">Laudo pronto</option>
+                    <option value="entregue">Entregue</option>
+                    <option value="pendente">Pendente</option>
+                </select>
+                <select id="filtro-convenio">
+                    <option value="">Todos os convênios</option>
+                </select>
+                <div class="view-toggle">
+                    <button id="view-cards" class="active" title="Visualizar em cards">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                        Cards
+                    </button>
+                    <button id="view-tabela" title="Visualizar em tabela">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                            <line x1="3" y1="18" x2="21" y2="18"/>
+                        </svg>
+                        Lista
+                    </button>
+                </div>
+            </div>
+
+            <div id="lista-conteudo">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando pacientes...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/supabase_client.js"></script>
+    <script src="../shared/auth_guard.js"></script>
+    <script src="../shared/audit.js"></script>
+    <script src="../shared/avatar.js"></script>
+    <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/permissoes.js"></script>
+    <script src="../shared/sidebar.js"></script>
+
+    <script>
+    let pacientes = [];
+    let modoVisualizacao = localStorage.getItem('cortex_view_pacientes') || 'cards';
+    let busca = '';
+    let filtroStatus = '';
+    let filtroConvenio = '';
+
+    window.addEventListener('cortex:auth-ready', async (e) => {
+        await CortexSidebar.render('pacientes');
+
+        aplicarModoVisualizacao(modoVisualizacao);
+        await carregarConvenios();
+        await carregarPacientes();
+        setupListeners();
+        await CortexAudit.log('leitura', 'pacientes_lista');
+    });
+
+    function setupListeners() {
+        document.getElementById('busca').addEventListener('input', (e) => {
+            busca = e.target.value.toLowerCase();
+            renderizar();
+        });
+
+        document.getElementById('filtro-status').addEventListener('change', (e) => {
+            filtroStatus = e.target.value;
+            renderizar();
+        });
+
+        document.getElementById('filtro-convenio').addEventListener('change', (e) => {
+            filtroConvenio = e.target.value;
+            renderizar();
+        });
+
+        document.getElementById('view-cards').addEventListener('click', () => {
+            aplicarModoVisualizacao('cards');
+            renderizar();
+        });
+
+        document.getElementById('view-tabela').addEventListener('click', () => {
+            aplicarModoVisualizacao('tabela');
+            renderizar();
+        });
+
+        // Sprint 59: pré-cadastrar paciente
+        document.getElementById('btn-pre-cadastro').addEventListener('click', gerarPreCadastro);
+
+        // Sprint 78: + Novo paciente (gate de permissão)
+        document.getElementById('btn-novo-paciente').addEventListener('click', () => {
+            if (window.CortexPerfil && !window.CortexPerfil.podeCadastrarPaciente()) {
+                window.CortexUI.toast('Você não tem permissão para cadastrar pacientes.', 'warning');
+                return;
+            }
+            window.location.href = 'novo.html';
+        });
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Sprint 59 — Pré-cadastro de paciente
+    // ────────────────────────────────────────────────────────────────────
+    async function gerarPreCadastro() {
+        // Sprint 78: gate de permissão
+        if (window.CortexPerfil && !window.CortexPerfil.podeCadastrarPaciente()) {
+            window.CortexUI.toast('Você não tem permissão para cadastrar pacientes.', 'warning');
+            return;
+        }
+
+        const btn = document.getElementById('btn-pre-cadastro');
+        const txtOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = 'Gerando...';
+
+        try {
+            const profId = window.cortexProfissional?.id;
+            if (!profId) throw new Error('Profissional não identificado.');
+
+            const { data, error } = await window.cortexClient
+                .from('pre_cadastros')
+                .insert({ created_by: profId })
+                .select('token, expires_at')
+                .single();
+            if (error) throw error;
+
+            const base = window.location.origin + window.location.pathname.replace(/pacientes\/lista\.html$/, '');
+            const link = `${base}pre-cadastro/index.html?t=${data.token}`;
+            const dataExp = new Date(data.expires_at).toLocaleDateString('pt-BR');
+
+            mostrarModalLinkPreCadastro(link, dataExp);
+        } catch (err) {
+            console.error('Erro pré-cadastro:', err);
+            window.CortexUI.toast('Erro ao gerar link: ' + (err.message || ''), 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = txtOriginal;
+        }
+    }
+
+    function mostrarModalLinkPreCadastro(link, dataExp) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+
+        const msgWhats = encodeURIComponent(
+            'Olá! Aqui é da Equilibrium Neuropsicologia.\n\n' +
+            'Para iniciar seu atendimento, precisamos do seu cadastro. ' +
+            'Clique no link abaixo e preencha seus dados:\n\n' +
+            link + '\n\n' +
+            'O link é pessoal e expira em 30 dias.\n\n' +
+            'Qualquer dúvida, é só nos chamar.'
+        );
+
+        overlay.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Link de pré-cadastro gerado</h2>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin: 0 0 14px; color: #475569; font-size: 14px;">
+                        Envie o link abaixo ao paciente. Ele vai preencher os dados sozinho e ganhar acesso ao portal automaticamente.
+                    </p>
+                    <input type="text" class="form-input" id="link-prc-input" readonly value="${escapeHtml(link)}" style="width: 100%; font-size: 13px;">
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button class="btn btn-secondary" id="btn-copiar-prc" style="flex: 1;">📋 Copiar link</button>
+                        <a class="btn btn-primary" style="flex: 1; text-decoration: none; text-align: center;"
+                           href="https://wa.me/?text=${msgWhats}" target="_blank" rel="noopener">📱 Enviar por WhatsApp</a>
+                    </div>
+                    <p style="margin: 18px 0 0; color: #64748b; font-size: 12.5px; font-style: italic;">
+                        💡 Válido até ${dataExp}. O link só pode ser usado uma vez — após o cadastro, ele expira automaticamente.
+                    </p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('btn-copiar-prc').addEventListener('click', () => {
+            const inp = document.getElementById('link-prc-input');
+            inp.select();
+            document.execCommand('copy');
+            window.CortexUI.toast('Link copiado!', 'success');
+        });
+    }
+
+    function aplicarModoVisualizacao(modo) {
+        modoVisualizacao = modo;
+        localStorage.setItem('cortex_view_pacientes', modo);
+        document.getElementById('view-cards').classList.toggle('active', modo === 'cards');
+        document.getElementById('view-tabela').classList.toggle('active', modo === 'tabela');
+    }
+
+    async function carregarConvenios() {
+        const { data, error } = await window.cortexClient
+            .from('convenios')
+            .select('id, nome')
+            .eq('ativo', true)
+            .order('nome');
+
+        if (error || !data) return;
+
+        const select = document.getElementById('filtro-convenio');
+        data.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = c.nome;
+            select.appendChild(option);
+        });
+    }
+
+    async function carregarPacientes() {
+        const { data, error } = await window.cortexClient
+            .from('vw_pacientes_lista')
+            .select('*')
+            .order('nome_completo');
+
+        if (error) {
+            CortexUI.toast('Erro ao carregar pacientes: ' + error.message, 'danger');
+            console.error(error);
+            return;
+        }
+
+        pacientes = data || [];
+        renderizar();
+    }
+
+    function filtrarPacientes() {
+        return pacientes.filter(p => {
+            if (busca && !p.nome_completo.toLowerCase().includes(busca)) return false;
+            if (filtroStatus && p.status !== filtroStatus) return false;
+            if (filtroConvenio) {
+                const select = document.getElementById('filtro-convenio');
+                const optionSelecionada = select.options[select.selectedIndex];
+                if (optionSelecionada && p.convenio_nome !== optionSelecionada.text) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+    function renderizar() {
+        const filtrados = filtrarPacientes();
+        const container = document.getElementById('lista-conteudo');
+
+        document.getElementById('contagem-pacientes').textContent =
+            `${filtrados.length} ${filtrados.length === 1 ? 'paciente' : 'pacientes'}` +
+            (filtrados.length !== pacientes.length ? ` (de ${pacientes.length})` : '');
+
+        if (filtrados.length === 0) {
+            container.innerHTML = renderEmpty();
+            return;
+        }
+
+        if (modoVisualizacao === 'cards') {
+            container.innerHTML = renderCards(filtrados);
+        } else {
+            container.innerHTML = renderTabela(filtrados);
+        }
+
+        container.querySelectorAll('[data-paciente-id]').forEach(el => {
+            el.addEventListener('click', () => {
+                const id = el.dataset.pacienteId;
+                window.location.href = `pasta.html?id=${id}`;
+            });
+        });
+
+        // Em background, busca URLs assinadas e troca os avatares de iniciais por fotos
+        carregarFotosEmBackground(filtrados);
+    }
+
+    /**
+     * Pra cada paciente com foto_url, busca a URL assinada e substitui o
+     * avatar-iniciais pela imagem. Funciona em background sem bloquear a UI.
+     */
+    async function carregarFotosEmBackground(lista) {
+        for (const p of lista) {
+            if (!p.foto_url) continue;
+            try {
+                const signedUrl = await window.CortexAvatar.buscarUrlAssinada(p.id, p.foto_url);
+                if (!signedUrl) continue;
+                // Substitui só o conteúdo do avatar deste paciente
+                const card = document.querySelector(`[data-paciente-id="${p.id}"]`);
+                if (!card) continue;
+                const avatarEl = card.querySelector('.avatar');
+                if (!avatarEl) continue;
+                avatarEl.classList.remove('avatar-iniciais');
+                avatarEl.classList.add('avatar-com-foto');
+                const altText = (p.nome_completo || 'Paciente').replace(/"/g, '&quot;');
+                avatarEl.innerHTML = `<img src="${signedUrl}" alt="${altText}" loading="lazy" />`;
+            } catch (e) {
+                // Silencioso: se falhar, mantém as iniciais como fallback
+                console.warn('Erro ao carregar foto do paciente', p.id, e);
+            }
+        }
+    }
+
+    function renderEmpty() {
+        if (pacientes.length === 0) {
+            return `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <line x1="19" y1="8" x2="19" y2="14"/>
+                            <line x1="22" y1="11" x2="16" y2="11"/>
+                        </svg>
+                    </div>
+                    <div class="empty-state-title">Nenhum paciente cadastrado ainda</div>
+                    <div class="empty-state-text">Comece cadastrando o primeiro paciente do CORTEX.</div>
+                    <a href="novo.html" class="btn btn-primary">+ Cadastrar primeiro paciente</a>
+                </div>
+            `;
+        }
+        return `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </div>
+                <div class="empty-state-title">Nenhum paciente encontrado</div>
+                <div class="empty-state-text">Tente ajustar os filtros de busca.</div>
+            </div>
+        `;
+    }
+
+    function renderCards(lista) {
+        const cards = lista.map(p => {
+            const avatar = window.CortexAvatar.render(p, { tamanho: 'md' });
+            const statusLabel = window.CortexUI.STATUS_LABELS[p.status] || p.status;
+            const statusClass = window.CortexUI.STATUS_CLASSES[p.status] || 'status-info';
+
+            return `
+                <div class="paciente-card" data-paciente-id="${p.id}">
+                    <div class="paciente-card-header">
+                        ${avatar}
+                        <div class="paciente-card-info">
+                            <div class="paciente-card-nome">${escapeHtml(p.nome_completo)}</div>
+                            <div class="paciente-card-idade">${p.idade_humanizada}</div>
+                        </div>
+                    </div>
+                    <div class="paciente-card-meta">
+                        ${p.convenio_nome ? `
+                            <div class="paciente-card-meta-item">
+                                <span class="paciente-card-meta-label">Convênio:</span>
+                                <span>${escapeHtml(p.convenio_nome)}</span>
+                            </div>
+                        ` : ''}
+                        ${p.aplicador_nome ? `
+                            <div class="paciente-card-meta-item">
+                                <span class="paciente-card-meta-label">Aplicador:</span>
+                                <span>${escapeHtml(p.aplicador_nome)}</span>
+                            </div>
+                        ` : `
+                            <div class="paciente-card-meta-item" style="color: var(--color-text-soft);">
+                                Sem aplicador atribuído
+                            </div>
+                        `}
+                    </div>
+                    <div class="paciente-card-footer">
+                        <span class="badge ${statusClass}">${statusLabel}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `<div class="pacientes-grid">${cards}</div>`;
+    }
+
+    function renderTabela(lista) {
+        const linhas = lista.map(p => {
+            const avatar = window.CortexAvatar.render(p, { tamanho: 'sm' });
+            const statusLabel = window.CortexUI.STATUS_LABELS[p.status] || p.status;
+            const statusClass = window.CortexUI.STATUS_CLASSES[p.status] || 'status-info';
+
+            return `
+                <tr data-paciente-id="${p.id}">
+                    <td>
+                        <div class="col-nome">
+                            ${avatar}
+                            <span>${escapeHtml(p.nome_completo)}</span>
+                        </div>
+                    </td>
+                    <td>${p.idade_humanizada}</td>
+                    <td>${escapeHtml(p.convenio_nome || '—')}</td>
+                    <td>${escapeHtml(p.aplicador_nome || '—')}</td>
+                    <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <div class="pacientes-table-wrapper">
+                <table class="pacientes-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Idade</th>
+                            <th>Convênio</th>
+                            <th>Aplicador</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    </script>
+</body>
+</html>

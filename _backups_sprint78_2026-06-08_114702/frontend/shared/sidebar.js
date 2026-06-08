@@ -54,7 +54,7 @@ window.CortexSidebar = (function() {
             id: 'configuracoes',
             label: 'Configurações',
             href: '../configuracoes/configuracoes.html',
-            clinicoOnly: true,
+            adminOnly: true,
             icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
         }
     ];
@@ -168,14 +168,9 @@ window.CortexSidebar = (function() {
         // Recupera estado de colapso (preferência salva)
         const colapsada = localStorage.getItem('cortex_sidebar_collapsed') === 'true';
 
-        // Filtra itens com restrição de perfil (Sprint 74/78)
+        // Filtra itens com restrição de admin (Sprint 74)
         const ehAdmin = (prof?.perfil === 'admin_clinico' || prof?.perfil === 'admin_gestor');
-        const ehClinico = (prof?.perfil === 'admin_clinico');
-        const navHtml = NAV_ITEMS.filter(item => {
-            if (item.adminOnly && !ehAdmin) return false;       // relatórios: clínico + gestor
-            if (item.clinicoOnly && !ehClinico) return false;   // configurações: só clínico
-            return true;
-        }).map(item => {
+        const navHtml = NAV_ITEMS.filter(item => !item.adminOnly || ehAdmin).map(item => {
             const ativa = item.id === itemAtivoId ? 'active' : '';
             const hrefFinal = item.disabled ? item.href : getRelativePath(item.href);
             const onclick = item.disabled

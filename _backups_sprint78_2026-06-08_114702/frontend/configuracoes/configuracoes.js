@@ -20,17 +20,6 @@
     };
 
     window.addEventListener('cortex:auth-ready', async () => {
-        // Sprint 78: Configurações é exclusiva do admin clínico.
-        // Gestor (e demais perfis) que abrir a URL direto é redirecionado.
-        const podeVer = window.CortexPerfil
-            ? window.CortexPerfil.podeVerConfiguracoes()
-            : (window.cortexProfissional?.perfil === 'admin_clinico');
-        if (!podeVer) {
-            window.CortexUI.toast('Você não tem acesso às Configurações.', 'warning');
-            setTimeout(() => { window.location.href = '../dashboard.html'; }, 1000);
-            return;
-        }
-
         await CortexSidebar.render('configuracoes');
 
         state.profissional = window.cortexProfissional;

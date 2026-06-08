@@ -1,0 +1,189 @@
+/* ============================================================================
+   CORTEX_APP — Sprint 74 — relatorios.css
+   ============================================================================ */
+
+.rel-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 22px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.rel-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+}
+.rel-tab:hover { color: #0c1f3f; }
+.rel-tab.ativa {
+    color: #0c1f3f;
+    border-bottom-color: #2e74b5;
+}
+
+.rel-filtros {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+.rel-nav-mes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.rel-nav-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    color: #0c1f3f;
+    cursor: pointer;
+    font-weight: 700;
+}
+.rel-nav-btn:hover { border-color: #2e74b5; }
+.rel-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.rel-nav-mes-label {
+    min-width: 170px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0c1f3f;
+    text-transform: capitalize;
+}
+.rel-filtro-extra {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.rel-filtro-extra label {
+    font-size: 13px;
+    color: #475569;
+    font-weight: 500;
+}
+.rel-filtro-extra select {
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #fff;
+    color: #0c1f3f;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.rel-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
+}
+.rel-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+.rel-card-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+.rel-card-valor {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0c1f3f;
+    line-height: 1.1;
+}
+.rel-card-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.rel-secao-titulo {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0c1f3f;
+    margin: 0 0 10px;
+}
+
+.rel-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 13.5px;
+}
+.rel-tabela th {
+    background: #f8fafc;
+    color: #0c1f3f;
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.rel-tabela td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #0c1f3f;
+}
+.rel-tabela tbody tr:last-child td { border-bottom: none; }
+.rel-tabela tbody tr:hover { background: #f8fafc; }
+.rel-tabela .col-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.rel-tabela .col-total { background: #f8fafc; font-weight: 700; }
+
+.rel-vazio {
+    text-align: center;
+    padding: 50px 20px;
+    color: #64748b;
+}
+.rel-vazio-ic { font-size: 36px; margin-bottom: 8px; }
+
+.rel-export {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.rel-restrito {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+.rel-restrito h2 { color: #0c1f3f; margin: 0 0 8px; font-size: 18px; }
+
+.loading-state { text-align: center; padding: 60px 20px; color: #64748b; }
+.spinner {
+    display: inline-block; width: 36px; height: 36px;
+    border: 3px solid #e2e8f0; border-top-color: #0c1f3f;
+    border-radius: 50%; animation: rel-spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+@keyframes rel-spin { to { transform: rotate(360deg); } }

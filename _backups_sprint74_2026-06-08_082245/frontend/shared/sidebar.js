@@ -38,10 +38,17 @@ window.CortexSidebar = (function() {
             icon: '<rect x="3" y="4" width="18" height="18" rx="2.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'
         },
         {
+            id: 'graficos',
+            label: 'Gráficos',
+            href: '../graficos/index.html',
+            icon: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>'
+        },
+        {
             id: 'relatorios',
             label: 'Relatórios',
-            href: '../relatorios/relatorios.html',
-            adminOnly: true,
+            href: '#',
+            disabled: true,
+            disabledLabel: 'Em breve',
             icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'
         },
         {
@@ -161,9 +168,7 @@ window.CortexSidebar = (function() {
         // Recupera estado de colapso (preferência salva)
         const colapsada = localStorage.getItem('cortex_sidebar_collapsed') === 'true';
 
-        // Filtra itens com restrição de admin (Sprint 74)
-        const ehAdmin = (prof?.perfil === 'admin_clinico' || prof?.perfil === 'admin_gestor');
-        const navHtml = NAV_ITEMS.filter(item => !item.adminOnly || ehAdmin).map(item => {
+        const navHtml = NAV_ITEMS.map(item => {
             const ativa = item.id === itemAtivoId ? 'active' : '';
             const hrefFinal = item.disabled ? item.href : getRelativePath(item.href);
             const onclick = item.disabled

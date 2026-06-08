@@ -502,15 +502,9 @@
                 }, 600);
 
             } else {
-                // Sprint 77: passa created_by explicitamente (o trigger no banco já preenche
-                // se vier NULL, mas isso garante consistência caso o trigger esteja desabilitado)
-                const dadosNovo = {
-                    ...dados,
-                    created_by: window.cortexProfissional?.id || null
-                };
                 const { data: novoPaciente, error } = await window.cortexClient
                     .from('pacientes')
-                    .insert(dadosNovo)
+                    .insert(dados)
                     .select()
                     .single();
 

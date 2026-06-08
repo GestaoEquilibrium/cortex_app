@@ -27,7 +27,8 @@
         // uma chave por coluna JSONB do banco
         dados: {},
         salvando: false,
-        editado: false
+        editado: false,
+        podeEditar: true   // Sprint 78: corretor/estagiário entram em modo leitura
     };
 
     let autoSaveTimeout = null;
@@ -37,6 +38,9 @@
     // ============================================================================
     window.addEventListener('cortex:auth-ready', async () => {
         await CortexSidebar.render('pacientes');
+
+        // Sprint 78: anamnese é somente leitura para corretor/estagiário
+        state.podeEditar = !window.CortexPerfil || window.CortexPerfil.podeEditarAnamnese();
 
         const urlParams = new URLSearchParams(window.location.search);
         state.anamneseId = urlParams.get('id');
@@ -170,16 +174,16 @@
                     <p class="anamnese-cabecalho-sub">${state.form.icon} ${state.form.tt} · ${state.form.rg}</p>
                 </div>
                 <div class="anamnese-cabecalho-acoes">
-                    ${!finalizada ? `
-                        <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.trocarFaixa()">
-                            Trocar faixa etária
-                        </button>
-                    ` : `
+                    ${finalizada ? `
                         <span class="badge status-success">✓ Finalizada</span>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.baixarPDF()">
                             📄 Baixar PDF
                         </button>
-                    `}
+                    ` : (state.podeEditar ? `
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexAnamnese.trocarFaixa()">
+                            Trocar faixa etária
+                        </button>
+                    ` : '')}
                     <span id="indicador-save" class="indicador-save"></span>
                 </div>
             </div>
@@ -228,14 +232,14 @@
                 </button>
 
                 <div class="wizard-navegacao-direita">
-                    ${!finalizada ? `
+                    ${(!finalizada && state.podeEditar) ? `
                         <button class="btn btn-ghost" onclick="window.CortexAnamnese.salvarManualmente()">
                             Salvar rascunho
                         </button>
                     ` : ''}
 
                     ${eUltima ? `
-                        ${!finalizada ? `
+                        ${(!finalizada && state.podeEditar) ? `
                             <button class="btn btn-primary btn-lg" onclick="window.CortexAnamnese.finalizar()">
                                 Finalizar anamnese
                             </button>
@@ -249,12 +253,33 @@
             </div>
         `;
 
-        container.innerHTML = cabecalho + progressBar + stepperPills + blocoIdentif + formularioEtapa + navegacao;
+        // Sprint 78: banner "Modo somente leitura" para corretor/estagiário
+        const bannerReadOnly = !state.podeEditar ? `
+            <div style="
+                display:flex; align-items:center; gap:14px;
+                margin-bottom:18px; padding:14px 20px; border-radius:14px;
+                background:linear-gradient(135deg,#f97316 0%,#fb923c 100%);
+                color:#fff; box-shadow:0 6px 18px rgba(249,115,22,0.30);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                     stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <div style="line-height:1.45;">
+                    <strong style="font-size:15px;">Modo somente leitura</strong><br>
+                    <span style="font-size:13.5px; opacity:0.95;">
+                        Você está visualizando a anamnese de <strong>${escapeHtml(state.paciente.nome_completo)}</strong> sem permissão para editar.
+                    </span>
+                </div>
+            </div>
+        ` : '';
+
+        container.innerHTML = bannerReadOnly + cabecalho + progressBar + stepperPills + blocoIdentif + formularioEtapa + navegacao;
 
         aplicarValoresNosCampos(sec);
         setupCampoListeners(sec);
 
-        if (finalizada) {
+        if (finalizada || !state.podeEditar) {
             container.querySelectorAll('input, select, textarea').forEach(el => {
                 el.disabled = true;
             });
@@ -613,6 +638,7 @@
 
     async function salvarSilencioso() {
         if (!state.editado || state.salvando) return;
+        if (!state.podeEditar) return; // Sprint 78
         if (state.anamnese && state.anamnese.status === 'concluida') return;
 
         state.salvando = true;
@@ -752,6 +778,7 @@
         },
 
         trocarFaixa: function() {
+            if (!state.podeEditar) return; // Sprint 78
             if (state.anamnese && state.anamnese.status === 'concluida') return;
 
             const faixas = CortexAnamneseForms.listarFaixas();
@@ -777,6 +804,7 @@
         },
 
         finalizar: async function() {
+            if (!state.podeEditar) return; // Sprint 78
             // Aviso especial sobre sobrescrita
             if (state.editado) await salvarSilencioso();
 

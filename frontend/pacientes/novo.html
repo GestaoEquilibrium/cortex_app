@@ -293,6 +293,7 @@
     <script src="../shared/auth_guard.js"></script>
     <script src="../shared/audit.js"></script>
     <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
 
     <script>
@@ -307,6 +308,23 @@
         const urlParams = new URLSearchParams(window.location.search);
         pacienteIdEdicao = urlParams.get('id');
         modoEdicao = !!pacienteIdEdicao;
+
+        // Sprint 78 — gate de permissão (UI). Corretor/estagiário não cadastram
+        // nem editam; redireciona com toast.
+        const P = window.CortexPerfil;
+        if (modoEdicao) {
+            if (P && !P.podeEditarPasta()) {
+                window.CortexUI.toast('Você não tem permissão para editar este paciente.', 'warning');
+                setTimeout(() => { window.location.href = `pasta.html?id=${pacienteIdEdicao}`; }, 1000);
+                return;
+            }
+        } else {
+            if (P && !P.podeCadastrarPaciente()) {
+                window.CortexUI.toast('Você não tem permissão para cadastrar pacientes.', 'warning');
+                setTimeout(() => { window.location.href = 'lista.html'; }, 1000);
+                return;
+            }
+        }
 
         window.CortexUI.aplicarMascaraCPF(document.getElementById('cpf-input'));
         window.CortexUI.aplicarMascaraTelefone(document.getElementById('telefone-input'));

@@ -29,7 +29,8 @@
         faixaPacienteAuto: null,       // Sprint 73: faixa calculada pela idade (pra mostrar aviso quando diferente)
         salvando: false,
         editado: false,
-        ehAdmin: false
+        ehAdmin: false,      // só admin: controla a FAIXA do checklist
+        podeEditar: false    // admin + aplicador: controla a MARCAÇÃO (Sprint 78)
     };
 
     let autoSaveTimeout = null;
@@ -54,6 +55,8 @@
         // Verifica perfil
         const perfil = window.cortexProfissional?.perfil;
         state.ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
+        // Sprint 78: aplicador também pode marcar/desmarcar (faixa continua só admin)
+        state.podeEditar = window.CortexPerfil ? window.CortexPerfil.podeUsarChecklist() : state.ehAdmin;
 
         try {
             await Promise.all([
@@ -208,9 +211,9 @@
             </div>
         `;
 
-        const aviso = !state.ehAdmin ? `
+        const aviso = !state.podeEditar ? `
             <div class="aviso-permissao">
-                ⚠️ Apenas administradores podem editar o checklist. Você pode visualizar e imprimir.
+                ⚠️ Você pode visualizar e imprimir o checklist, mas não editá-lo.
             </div>
         ` : '';
 
@@ -255,7 +258,7 @@
                     <button class="btn btn-ghost" onclick="window.CortexChecklist.imprimirPDF()" ${totalSelecionados === 0 ? 'disabled' : ''}>
                         📄 Imprimir PDF (${totalSelecionados})
                     </button>
-                    ${state.ehAdmin ? `
+                    ${state.podeEditar ? `
                         <button class="btn btn-primary" onclick="window.CortexChecklist.salvarManualmente()">
                             Salvar
                         </button>
@@ -302,7 +305,7 @@
 
     function renderItem(inst) {
         const selecionado = state.instrumentosSelecionados.includes(inst.id);
-        const disabled = !state.ehAdmin;
+        const disabled = !state.podeEditar;
 
         return `
             <label class="checklist-item ${selecionado ? 'selecionado' : ''} ${disabled ? 'disabled' : ''}">
@@ -343,7 +346,7 @@
 
     window.CortexChecklist = {
         toggle: function(uuid, checked) {
-            if (!state.ehAdmin) return;
+            if (!state.podeEditar) return;
 
             if (checked) {
                 if (!state.instrumentosSelecionados.includes(uuid)) {

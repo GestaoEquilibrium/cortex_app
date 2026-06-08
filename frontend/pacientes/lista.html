@@ -36,13 +36,13 @@
                         </svg>
                         Pré-cadastrar paciente
                     </button>
-                    <a href="novo.html" class="btn btn-primary">
+                    <button type="button" id="btn-novo-paciente" class="btn btn-primary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                             <line x1="12" y1="5" x2="12" y2="19"/>
                             <line x1="5" y1="12" x2="19" y2="12"/>
                         </svg>
                         Novo paciente
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -99,6 +99,7 @@
     <script src="../shared/audit.js"></script>
     <script src="../shared/avatar.js"></script>
     <script src="../shared/ui_helpers.js"></script>
+    <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
 
     <script>
@@ -146,12 +147,27 @@
 
         // Sprint 59: pré-cadastrar paciente
         document.getElementById('btn-pre-cadastro').addEventListener('click', gerarPreCadastro);
+
+        // Sprint 78: + Novo paciente (gate de permissão)
+        document.getElementById('btn-novo-paciente').addEventListener('click', () => {
+            if (window.CortexPerfil && !window.CortexPerfil.podeCadastrarPaciente()) {
+                window.CortexUI.toast('Você não tem permissão para cadastrar pacientes.', 'warning');
+                return;
+            }
+            window.location.href = 'novo.html';
+        });
     }
 
     // ────────────────────────────────────────────────────────────────────
     // Sprint 59 — Pré-cadastro de paciente
     // ────────────────────────────────────────────────────────────────────
     async function gerarPreCadastro() {
+        // Sprint 78: gate de permissão
+        if (window.CortexPerfil && !window.CortexPerfil.podeCadastrarPaciente()) {
+            window.CortexUI.toast('Você não tem permissão para cadastrar pacientes.', 'warning');
+            return;
+        }
+
         const btn = document.getElementById('btn-pre-cadastro');
         const txtOriginal = btn.innerHTML;
         btn.disabled = true;

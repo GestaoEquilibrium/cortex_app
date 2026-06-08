@@ -1,36 +1,53 @@
 // ============================================================================
-// CORTEX_APP — Sprint 74 — relatorios.js
-// Página de relatórios com 4 abas:
-//   1. Cadastros de pacientes
-//   2. Testes corrigidos
-//   3. Conclusões de bateria
-//   4. Produtividade por aplicador
-//
+// CORTEX_APP — Sprint 75 — relatorios.js
+// Página de relatórios com 4 abas, visual interativo e colorido.
 // Acesso restrito a admin (clínico ou gestor).
-// Cada aba tem filtro próprio de período (mês). Default = mês atual.
 // ============================================================================
 
 (function() {
     'use strict';
 
-    // Estado por aba — cada uma cuida do próprio período
+    const ICONES = {
+        cadastros:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+        corrigidos:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        baterias:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+        produtividade:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+        users:          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
+        userPlus:       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+        check:          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        chart:          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+        calendar:       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        award:          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
+        xCircle:        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        target:         '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+        package:        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+        lock:           '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+        ranking:        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+        list:           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'
+    };
+
+    const TAB_LABELS = {
+        cadastros: 'Cadastros',
+        corrigidos: 'Testes corrigidos',
+        baterias: 'Conclusões de bateria',
+        produtividade: 'Produtividade'
+    };
+
     const state = {
         abaAtiva: 'cadastros',
         ehAdmin: false,
-        profissionais: [], // lista pra filtros e join
+        profissionais: [],
         abas: {
-            cadastros:     { mes: new Date(), filtroProfissional: '', dados: null, carregando: false },
-            corrigidos:    { mes: new Date(), filtroProfissional: '', dados: null, carregando: false },
-            baterias:      { mes: new Date(),                          dados: null, carregando: false },
-            produtividade: { mes: new Date(),                          dados: null, carregando: false }
+            cadastros:     { mes: new Date(), filtroProfissional: '', dados: null },
+            corrigidos:    { mes: new Date(), filtroProfissional: '', dados: null },
+            baterias:      { mes: new Date(),                          dados: null },
+            produtividade: { mes: new Date(),                          dados: null }
         }
     };
 
-    // ─── Init ────────────────────────────────────────────────────────────────
     window.addEventListener('cortex:auth-ready', async () => {
         await CortexSidebar.render('relatorios');
 
-        // Gate de permissão (admin clínico ou gestor)
         const perfil = window.cortexProfissional?.perfil;
         state.ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
         if (!state.ehAdmin) {
@@ -38,7 +55,6 @@
             return;
         }
 
-        // Carrega lista de profissionais (pra filtros e nomes)
         try {
             const { data } = await window.cortexClient
                 .from('profissionais')
@@ -51,7 +67,6 @@
             state.profissionais = [];
         }
 
-        // Normaliza mes pra dia 1
         for (const k of Object.keys(state.abas)) {
             const m = state.abas[k].mes;
             state.abas[k].mes = new Date(m.getFullYear(), m.getMonth(), 1);
@@ -61,16 +76,17 @@
         await trocarAba('cadastros');
     });
 
-    // ─── Esqueleto da página (tabs + container) ──────────────────────────────
     function renderEsqueleto() {
         document.getElementById('rel-conteudo').innerHTML = `
             <div class="rel-tabs">
-                <button class="rel-tab" data-aba="cadastros">Cadastros</button>
-                <button class="rel-tab" data-aba="corrigidos">Testes corrigidos</button>
-                <button class="rel-tab" data-aba="baterias">Conclusões de bateria</button>
-                <button class="rel-tab" data-aba="produtividade">Produtividade por aplicador</button>
+                ${Object.keys(TAB_LABELS).map(k => `
+                    <button class="rel-tab" data-aba="${k}">
+                        <span class="rel-tab-ico">${ICONES[k]}</span>
+                        <span>${TAB_LABELS[k]}</span>
+                    </button>
+                `).join('')}
             </div>
-            <div id="rel-painel"></div>
+            <div id="rel-painel" class="rel-painel" data-aba="cadastros"></div>
         `;
         document.querySelectorAll('.rel-tab').forEach(btn => {
             btn.addEventListener('click', () => trocarAba(btn.dataset.aba));
@@ -80,7 +96,7 @@
     function renderSemPermissao() {
         document.getElementById('rel-conteudo').innerHTML = `
             <div class="rel-restrito">
-                <div class="rel-vazio-ic">🔒</div>
+                <div class="rel-restrito-ico">${ICONES.lock}</div>
                 <h2>Acesso restrito</h2>
                 <p>Apenas administradores podem acessar a página de relatórios.</p>
             </div>
@@ -92,21 +108,23 @@
         document.querySelectorAll('.rel-tab').forEach(b => {
             b.classList.toggle('ativa', b.dataset.aba === aba);
         });
+        const painel = document.getElementById('rel-painel');
+        painel.setAttribute('data-aba', aba);
+        painel.style.animation = 'none';
+        void painel.offsetWidth;
+        painel.style.animation = '';
         await renderAba();
     }
 
-    // ─── Roteador da aba ativa ───────────────────────────────────────────────
     async function renderAba() {
         const painel = document.getElementById('rel-painel');
         const aba = state.abaAtiva;
-        const st = state.abas[aba];
 
-        // Mostra esqueleto da aba (filtros) imediatamente
         painel.innerHTML = renderFiltrosHTML(aba) + `<div id="rel-aba-corpo"></div>`;
         bindFiltros(aba);
 
         const corpo = document.getElementById('rel-aba-corpo');
-        corpo.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Carregando...</p></div>`;
+        corpo.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Carregando dados...</p></div>`;
 
         try {
             if (aba === 'cadastros')          await carregarCadastros();
@@ -115,8 +133,7 @@
             else if (aba === 'produtividade') await carregarProdutividade();
         } catch (err) {
             console.error('[relatorios]', aba, err);
-            corpo.innerHTML = `<div class="rel-vazio"><div class="rel-vazio-ic">⚠️</div>
-                <p>Erro ao carregar: ${escapeHtml(err.message || 'desconhecido')}</p></div>`;
+            corpo.innerHTML = vazio('⚠️', 'Erro ao carregar', err.message || 'Tente novamente em instantes.');
             return;
         }
 
@@ -126,7 +143,6 @@
         else if (aba === 'produtividade') corpo.innerHTML = renderProdutividade();
     }
 
-    // ─── Filtros (nav de mês + filtros específicos da aba) ───────────────────
     function renderFiltrosHTML(aba) {
         const st = state.abas[aba];
         const mesLabel = st.mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -155,7 +171,7 @@
                     <button class="rel-nav-btn" data-nav="ant" title="Mês anterior">‹</button>
                     <span class="rel-nav-mes-label">${escapeHtml(mesLabel)}</span>
                     <button class="rel-nav-btn" data-nav="prox" title="Mês seguinte" ${ehMesAtual ? 'disabled' : ''}>›</button>
-                    ${!ehMesAtual ? `<button class="rel-nav-btn" data-nav="hoje" title="Voltar ao mês atual" style="width:auto;padding:0 10px;">Hoje</button>` : ''}
+                    ${!ehMesAtual ? `<button class="rel-nav-btn rel-nav-btn-texto" data-nav="hoje" title="Voltar ao mês atual">Hoje</button>` : ''}
                 </div>
                 ${extra}
             </div>
@@ -192,7 +208,7 @@
         }
     }
 
-    // ─── ABA 1: Cadastros de pacientes ───────────────────────────────────────
+    // ─── ABA 1: Cadastros ────────────────────────────────────────────────────
     async function carregarCadastros() {
         const st = state.abas.cadastros;
         const { inicio, fim } = mesIntervalo(st.mes);
@@ -216,7 +232,6 @@
         const lista = st.dados || [];
         const total = lista.length;
 
-        // Agrupa por profissional
         const porProf = new Map();
         for (const p of lista) {
             const nome = nomeProf(p.created_by) || '— Sem profissional —';
@@ -226,62 +241,46 @@
 
         const cards = `
             <div class="rel-cards">
-                <div class="rel-card">
-                    <div class="rel-card-label">Total no mês</div>
-                    <div class="rel-card-valor">${total}</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Profissionais ativos</div>
-                    <div class="rel-card-valor">${porProf.size}</div>
-                    <div class="rel-card-sub">cadastraram pelo menos 1</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Média por dia útil</div>
-                    <div class="rel-card-valor">${diasUteisDoMes(st.mes) ? (total / diasUteisDoMes(st.mes)).toFixed(1) : 0}</div>
-                </div>
+                ${renderCard(ICONES.userPlus, 'Total no mês', total)}
+                ${renderCard(ICONES.users, 'Profissionais ativos', porProf.size, 'cadastraram pelo menos 1')}
+                ${renderCard(ICONES.chart, 'Média por dia útil', diasUteisDoMes(st.mes) ? (total / diasUteisDoMes(st.mes)).toFixed(1) : 0)}
             </div>
         `;
 
-        if (total === 0) return cards + vazio('Nenhum cadastro no período.');
+        if (total === 0) return cards + vazio('📭', 'Nenhum cadastro neste período', 'Os novos pacientes cadastrados aparecerão aqui.');
 
-        const tabelaRanking = `
-            <h2 class="rel-secao-titulo">Ranking por profissional</h2>
-            <table class="rel-tabela">
-                <thead><tr><th>Profissional</th><th class="col-num">Cadastros</th></tr></thead>
-                <tbody>
-                    ${ranking.map(([nome, qtd]) => `
-                        <tr><td>${escapeHtml(nome)}</td><td class="col-num">${qtd}</td></tr>
-                    `).join('')}
-                    <tr class="col-total"><td>Total</td><td class="col-num">${total}</td></tr>
-                </tbody>
-            </table>
-        `;
-
-        const tabelaLista = `
-            <h2 class="rel-secao-titulo" style="margin-top:22px;">Pacientes cadastrados</h2>
-            <table class="rel-tabela">
-                <thead><tr><th>Data</th><th>Paciente</th><th>Cadastrado por</th></tr></thead>
-                <tbody>
-                    ${lista.map(p => `
-                        <tr>
-                            <td>${formatDataHora(p.created_at)}</td>
-                            <td><a href="../pacientes/pasta.html?id=${escapeHtml(p.id)}">${escapeHtml(p.nome_completo)}</a></td>
-                            <td>${escapeHtml(nomeProf(p.created_by) || '—')}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-
-        return cards + tabelaRanking + tabelaLista;
+        return cards
+            + renderBarras('Ranking por profissional', ICONES.ranking, ranking)
+            + renderTabelaListaCadastros(lista);
     }
 
-    // ─── ABA 2: Testes corrigidos ────────────────────────────────────────────
+    function renderTabelaListaCadastros(lista) {
+        return `
+            <div class="rel-secao">
+                <h2 class="rel-secao-titulo"><span class="rel-secao-ico">${ICONES.list}</span> Pacientes cadastrados</h2>
+                <div class="rel-tabela-wrap">
+                    <table class="rel-tabela">
+                        <thead><tr><th>Data</th><th>Paciente</th><th>Cadastrado por</th></tr></thead>
+                        <tbody>
+                            ${lista.map(p => `
+                                <tr>
+                                    <td>${formatDataHora(p.created_at)}</td>
+                                    <td><a href="../pacientes/pasta.html?id=${escapeHtml(p.id)}">${escapeHtml(p.nome_completo)}</a></td>
+                                    <td>${escapeHtml(nomeProf(p.created_by) || '—')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    // ─── ABA 2: Corrigidos ───────────────────────────────────────────────────
     async function carregarCorrigidos() {
         const st = state.abas.corrigidos;
         const { inicio, fim } = mesIntervalo(st.mes);
 
-        // aplicacoes_instrumento em status 'corrigido' no período (usa updated_at como proxy de quando foi corrigido)
         let q = window.cortexClient
             .from('aplicacoes_instrumento')
             .select('id, paciente_id, instrumento_id, aplicador_id, updated_at, status')
@@ -296,7 +295,6 @@
         if (error) throw error;
         const apps = data || [];
 
-        // Hidrata nomes de paciente e instrumento (lote)
         const pacIds  = [...new Set(apps.map(a => a.paciente_id).filter(Boolean))];
         const instIds = [...new Set(apps.map(a => a.instrumento_id).filter(Boolean))];
 
@@ -313,7 +311,7 @@
 
         st.dados = apps.map(a => ({
             ...a,
-            pacienteNome:    pacMap.get(a.paciente_id) || '—',
+            pacienteNome:     pacMap.get(a.paciente_id) || '—',
             instrumentoSigla: instMap.get(a.instrumento_id)?.sigla || '—',
             instrumentoNome:  instMap.get(a.instrumento_id)?.nome_completo || '—'
         }));
@@ -324,7 +322,6 @@
         const lista = st.dados || [];
         const total = lista.length;
 
-        // Agrupa por aplicador e por instrumento
         const porAplicador = new Map();
         const porInstrumento = new Map();
         for (const a of lista) {
@@ -337,67 +334,46 @@
 
         const cards = `
             <div class="rel-cards">
-                <div class="rel-card">
-                    <div class="rel-card-label">Total corrigidos</div>
-                    <div class="rel-card-valor">${total}</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Aplicadores envolvidos</div>
-                    <div class="rel-card-valor">${porAplicador.size}</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Instrumentos diferentes</div>
-                    <div class="rel-card-valor">${porInstrumento.size}</div>
+                ${renderCard(ICONES.check, 'Total corrigidos', total)}
+                ${renderCard(ICONES.users, 'Aplicadores envolvidos', porAplicador.size)}
+                ${renderCard(ICONES.package, 'Instrumentos diferentes', porInstrumento.size)}
+            </div>
+        `;
+        if (total === 0) return cards + vazio('🎯', 'Nenhum teste corrigido neste período', 'Quando aplicações forem corrigidas, aparecem aqui.');
+
+        return cards + `
+            <div class="rel-grid-2">
+                ${renderBarras('Por aplicador', ICONES.ranking, rankAp)}
+                ${renderBarras('Por instrumento', ICONES.ranking, rankInst)}
+            </div>
+            <div class="rel-secao">
+                <h2 class="rel-secao-titulo"><span class="rel-secao-ico">${ICONES.list}</span> Lista detalhada</h2>
+                <div class="rel-tabela-wrap">
+                    <table class="rel-tabela">
+                        <thead>
+                            <tr><th>Data</th><th>Paciente</th><th>Instrumento</th><th>Aplicador</th></tr>
+                        </thead>
+                        <tbody>
+                            ${lista.map(a => `
+                                <tr>
+                                    <td>${formatDataHora(a.updated_at)}</td>
+                                    <td><a href="../pacientes/pasta.html?id=${escapeHtml(a.paciente_id)}">${escapeHtml(a.pacienteNome)}</a></td>
+                                    <td title="${escapeHtml(a.instrumentoNome)}"><span class="rel-pill">${escapeHtml(a.instrumentoSigla)}</span></td>
+                                    <td>${escapeHtml(nomeProf(a.aplicador_id) || '—')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
-        if (total === 0) return cards + vazio('Nenhum teste corrigido no período.');
-
-        return cards + `
-            <h2 class="rel-secao-titulo">Por aplicador</h2>
-            <table class="rel-tabela">
-                <thead><tr><th>Aplicador</th><th class="col-num">Corrigidos</th></tr></thead>
-                <tbody>
-                    ${rankAp.map(([n, q]) => `<tr><td>${escapeHtml(n)}</td><td class="col-num">${q}</td></tr>`).join('')}
-                    <tr class="col-total"><td>Total</td><td class="col-num">${total}</td></tr>
-                </tbody>
-            </table>
-
-            <h2 class="rel-secao-titulo" style="margin-top:22px;">Por instrumento</h2>
-            <table class="rel-tabela">
-                <thead><tr><th>Sigla</th><th class="col-num">Corrigidos</th></tr></thead>
-                <tbody>
-                    ${rankInst.map(([n, q]) => `<tr><td>${escapeHtml(n)}</td><td class="col-num">${q}</td></tr>`).join('')}
-                </tbody>
-            </table>
-
-            <h2 class="rel-secao-titulo" style="margin-top:22px;">Lista detalhada</h2>
-            <table class="rel-tabela">
-                <thead>
-                    <tr><th>Data</th><th>Paciente</th><th>Instrumento</th><th>Aplicador</th></tr>
-                </thead>
-                <tbody>
-                    ${lista.map(a => `
-                        <tr>
-                            <td>${formatDataHora(a.updated_at)}</td>
-                            <td><a href="../pacientes/pasta.html?id=${escapeHtml(a.paciente_id)}">${escapeHtml(a.pacienteNome)}</a></td>
-                            <td title="${escapeHtml(a.instrumentoNome)}">${escapeHtml(a.instrumentoSigla)}</td>
-                            <td>${escapeHtml(nomeProf(a.aplicador_id) || '—')}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
     }
 
-    // ─── ABA 3: Conclusões de bateria ────────────────────────────────────────
-    // Critério: paciente cuja ÚLTIMA aplicação concluida/corrigida caiu no período
-    //           E todas as aplicações dele estão em concluido_aplicacao/corrigido.
+    // ─── ABA 3: Baterias ─────────────────────────────────────────────────────
     async function carregarBaterias() {
         const st = state.abas.baterias;
         const { inicio, fim } = mesIntervalo(st.mes);
 
-        // Pega todas as aplicações (RLS já filtra)
         const { data: apps, error } = await window.cortexClient
             .from('aplicacoes_instrumento')
             .select('paciente_id, status, updated_at');
@@ -418,7 +394,6 @@
             porPac.set(a.paciente_id, rec);
         }
 
-        // Filtra: bateria 100% concluída E última atualização dentro do mês
         const candidatos = [];
         for (const [pacId, rec] of porPac) {
             if (rec.total === 0 || rec.total !== rec.concluidas) continue;
@@ -453,53 +428,45 @@
         const lista = st.dados || [];
         const total = lista.length;
         const totalTestes = lista.reduce((acc, p) => acc + (p.totalAplicacoes || 0), 0);
-        const arquivados = lista.filter(p => p.status === 'arquivado').length;
 
         const cards = `
             <div class="rel-cards">
-                <div class="rel-card">
-                    <div class="rel-card-label">Baterias concluídas</div>
-                    <div class="rel-card-valor">${total}</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Total de testes</div>
-                    <div class="rel-card-valor">${totalTestes}</div>
-                    <div class="rel-card-sub">soma das aplicações</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Média de testes/bateria</div>
-                    <div class="rel-card-valor">${total ? (totalTestes/total).toFixed(1) : 0}</div>
+                ${renderCard(ICONES.award, 'Baterias concluídas', total)}
+                ${renderCard(ICONES.package, 'Total de testes', totalTestes, 'soma das aplicações')}
+                ${renderCard(ICONES.target, 'Média testes/bateria', total ? (totalTestes/total).toFixed(1) : 0)}
+            </div>
+        `;
+        if (total === 0) return cards + vazio('🏆', 'Nenhuma bateria concluída neste mês', 'Quando todos os testes de um paciente forem concluídos, ele aparece aqui.');
+
+        return cards + `
+            <div class="rel-secao">
+                <h2 class="rel-secao-titulo"><span class="rel-secao-ico">${ICONES.list}</span> Pacientes com bateria concluída</h2>
+                <div class="rel-tabela-wrap">
+                    <table class="rel-tabela">
+                        <thead>
+                            <tr><th>Concluída em</th><th>Paciente</th><th class="col-num">Testes</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            ${lista.map(p => `
+                                <tr>
+                                    <td>${formatDataHora(p.concluidaEm)}</td>
+                                    <td><a href="../pacientes/pasta.html?id=${escapeHtml(p.id)}">${escapeHtml(p.nome_completo)}</a></td>
+                                    <td class="col-num">${p.totalAplicacoes}</td>
+                                    <td><span class="rel-pill ${p.status === 'arquivado' ? 'arquivado' : 'ativo'}">${escapeHtml(p.status === 'arquivado' ? 'Arquivado' : 'Ativo')}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
-        if (total === 0) return cards + vazio('Nenhuma bateria concluída no período.');
-
-        return cards + `
-            <h2 class="rel-secao-titulo">Pacientes</h2>
-            <table class="rel-tabela">
-                <thead>
-                    <tr><th>Concluída em</th><th>Paciente</th><th class="col-num">Testes</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                    ${lista.map(p => `
-                        <tr>
-                            <td>${formatDataHora(p.concluidaEm)}</td>
-                            <td><a href="../pacientes/pasta.html?id=${escapeHtml(p.id)}">${escapeHtml(p.nome_completo)}</a></td>
-                            <td class="col-num">${p.totalAplicacoes}</td>
-                            <td>${escapeHtml(p.status === 'arquivado' ? 'Arquivado' : 'Ativo')}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
     }
 
-    // ─── ABA 4: Produtividade por aplicador ──────────────────────────────────
+    // ─── ABA 4: Produtividade ────────────────────────────────────────────────
     async function carregarProdutividade() {
         const st = state.abas.produtividade;
         const { inicio, fim } = mesIntervalo(st.mes);
 
-        // Sessões agendadas no mês
         const { data: sessoes, error: errS } = await window.cortexClient
             .from('sessoes')
             .select('id, profissional_id, paciente_id, status, data_hora_inicio')
@@ -507,7 +474,6 @@
             .lt('data_hora_inicio', fim.toISOString());
         if (errS) throw errS;
 
-        // Testes corrigidos no mês
         const { data: corrigidos, error: errC } = await window.cortexClient
             .from('aplicacoes_instrumento')
             .select('aplicador_id, updated_at')
@@ -516,7 +482,6 @@
             .lt('updated_at', fim.toISOString());
         if (errC) throw errC;
 
-        // Agrupa por profissional
         const map = new Map();
         const ensure = (id) => {
             if (!map.has(id)) map.set(id, {
@@ -547,7 +512,6 @@
             r.testesCorrigidos++;
         }
 
-        // Converte Set → number e nome
         st.dados = Array.from(map.values()).map(r => ({
             ...r,
             nome: nomeProf(r.profissional_id) || '— Sem nome —',
@@ -566,65 +530,107 @@
 
         const cards = `
             <div class="rel-cards">
-                <div class="rel-card">
-                    <div class="rel-card-label">Sessões agendadas</div>
-                    <div class="rel-card-valor">${totSessoes}</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Realizadas</div>
-                    <div class="rel-card-valor">${totRealiz}</div>
-                    <div class="rel-card-sub">${totSessoes ? Math.round(100*totRealiz/totSessoes) : 0}% das agendadas</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Faltas</div>
-                    <div class="rel-card-valor">${totFaltas}</div>
-                    <div class="rel-card-sub">${totSessoes ? Math.round(100*totFaltas/totSessoes) : 0}% das agendadas</div>
-                </div>
-                <div class="rel-card">
-                    <div class="rel-card-label">Testes corrigidos</div>
-                    <div class="rel-card-valor">${totCorrig}</div>
+                ${renderCard(ICONES.calendar, 'Sessões agendadas', totSessoes)}
+                ${renderCard(ICONES.check, 'Realizadas', totRealiz, totSessoes ? `${Math.round(100*totRealiz/totSessoes)}% das agendadas` : '')}
+                ${renderCard(ICONES.xCircle, 'Faltas', totFaltas, totSessoes ? `${Math.round(100*totFaltas/totSessoes)}% das agendadas` : '')}
+                ${renderCard(ICONES.check, 'Testes corrigidos', totCorrig)}
+            </div>
+        `;
+        if (lista.length === 0) return cards + vazio('📊', 'Nenhuma atividade neste período', 'Quando profissionais agendarem ou aplicarem, aparece aqui.');
+
+        const rankRealiz = lista
+            .map(r => [r.nome, r.realizadas])
+            .filter(([, v]) => v > 0)
+            .sort((a, b) => b[1] - a[1]);
+
+        return cards + `
+            ${rankRealiz.length ? renderBarras('Sessões realizadas por aplicador', ICONES.ranking, rankRealiz) : ''}
+            <div class="rel-secao">
+                <h2 class="rel-secao-titulo"><span class="rel-secao-ico">${ICONES.list}</span> Detalhamento completo</h2>
+                <div class="rel-tabela-wrap">
+                    <table class="rel-tabela">
+                        <thead>
+                            <tr>
+                                <th>Aplicador</th>
+                                <th class="col-num">Agendadas</th>
+                                <th class="col-num">Realizadas</th>
+                                <th class="col-num">Faltas</th>
+                                <th class="col-num">Canceladas</th>
+                                <th class="col-num">Pacientes</th>
+                                <th class="col-num">Testes corrigidos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${lista.map(r => `
+                                <tr>
+                                    <td>${escapeHtml(r.nome)}</td>
+                                    <td class="col-num">${r.sessoes}</td>
+                                    <td class="col-num">${r.realizadas}</td>
+                                    <td class="col-num">${r.faltas}</td>
+                                    <td class="col-num">${r.canceladas}</td>
+                                    <td class="col-num">${r.pacientesAtendidos}</td>
+                                    <td class="col-num">${r.testesCorrigidos}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="col-total">
+                                <td>Total</td>
+                                <td class="col-num">${totSessoes}</td>
+                                <td class="col-num">${totRealiz}</td>
+                                <td class="col-num">${totFaltas}</td>
+                                <td class="col-num">${lista.reduce((a,r)=>a+r.canceladas,0)}</td>
+                                <td class="col-num">—</td>
+                                <td class="col-num">${totCorrig}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
-        if (lista.length === 0) return cards + vazio('Nenhuma atividade no período.');
+    }
 
-        return cards + `
-            <h2 class="rel-secao-titulo">Detalhamento por aplicador</h2>
-            <table class="rel-tabela">
-                <thead>
-                    <tr>
-                        <th>Aplicador</th>
-                        <th class="col-num">Agendadas</th>
-                        <th class="col-num">Realizadas</th>
-                        <th class="col-num">Faltas</th>
-                        <th class="col-num">Canceladas</th>
-                        <th class="col-num">Pacientes</th>
-                        <th class="col-num">Testes corrigidos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${lista.map(r => `
-                        <tr>
-                            <td>${escapeHtml(r.nome)}</td>
-                            <td class="col-num">${r.sessoes}</td>
-                            <td class="col-num">${r.realizadas}</td>
-                            <td class="col-num">${r.faltas}</td>
-                            <td class="col-num">${r.canceladas}</td>
-                            <td class="col-num">${r.pacientesAtendidos}</td>
-                            <td class="col-num">${r.testesCorrigidos}</td>
-                        </tr>
-                    `).join('')}
-                    <tr class="col-total">
-                        <td>Total</td>
-                        <td class="col-num">${totSessoes}</td>
-                        <td class="col-num">${totRealiz}</td>
-                        <td class="col-num">${totFaltas}</td>
-                        <td class="col-num">${lista.reduce((a,r)=>a+r.canceladas,0)}</td>
-                        <td class="col-num">—</td>
-                        <td class="col-num">${totCorrig}</td>
-                    </tr>
-                </tbody>
-            </table>
+    // ─── Componentes ─────────────────────────────────────────────────────────
+    function renderCard(icone, label, valor, sub) {
+        return `
+            <div class="rel-card">
+                <div class="rel-card-ico">${icone}</div>
+                <div class="rel-card-label">${escapeHtml(label)}</div>
+                <div class="rel-card-valor">${escapeHtml(String(valor))}</div>
+                ${sub ? `<div class="rel-card-sub">${escapeHtml(sub)}</div>` : ''}
+            </div>
+        `;
+    }
+
+    function renderBarras(titulo, icone, ranking) {
+        if (!ranking || ranking.length === 0) return '';
+        const maxVal = Math.max(...ranking.map(([, v]) => v), 1);
+        return `
+            <div class="rel-secao">
+                <h2 class="rel-secao-titulo"><span class="rel-secao-ico">${icone}</span> ${escapeHtml(titulo)}</h2>
+                <div class="rel-bars">
+                    ${ranking.map(([nome, qtd]) => {
+                        const pct = (qtd / maxVal) * 100;
+                        return `
+                            <div class="rel-bar-row">
+                                <div class="rel-bar-label" title="${escapeHtml(nome)}">${escapeHtml(nome)}</div>
+                                <div class="rel-bar-track">
+                                    <div class="rel-bar-fill" style="width: ${pct}%;"></div>
+                                </div>
+                                <div class="rel-bar-val">${qtd}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function vazio(emoji, titulo, msg) {
+        return `
+            <div class="rel-vazio">
+                <div class="rel-vazio-ic">${emoji}</div>
+                <h3>${escapeHtml(titulo)}</h3>
+                <p>${escapeHtml(msg)}</p>
+            </div>
         `;
     }
 
@@ -658,9 +664,6 @@
         const d = new Date(iso);
         return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
              + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    }
-    function vazio(msg) {
-        return `<div class="rel-vazio"><div class="rel-vazio-ic">📭</div><p>${escapeHtml(msg)}</p></div>`;
     }
     function escapeHtml(t) {
         if (t == null) return '';

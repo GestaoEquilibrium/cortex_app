@@ -376,23 +376,19 @@
 
         const { data: apps, error } = await window.cortexClient
             .from('aplicacoes_instrumento')
-            .select('paciente_id, aplicador_id, status, updated_at');
+            .select('paciente_id, status, updated_at');
         if (error) throw error;
 
         const CONCLUIDOS = new Set(['concluido_aplicacao', 'corrigido']);
         const porPac = new Map();
         for (const a of (apps || [])) {
             if (!a.paciente_id) continue;
-            const rec = porPac.get(a.paciente_id) || { total: 0, concluidas: 0, ultima: null, aplicadores: new Map() };
+            const rec = porPac.get(a.paciente_id) || { total: 0, concluidas: 0, ultima: null };
             rec.total++;
             if (CONCLUIDOS.has(a.status)) {
                 rec.concluidas++;
                 if (!rec.ultima || new Date(a.updated_at) > new Date(rec.ultima)) {
                     rec.ultima = a.updated_at;
-                }
-                // conta quantas aplicações concluídas cada aplicador fez nesta bateria
-                if (a.aplicador_id) {
-                    rec.aplicadores.set(a.aplicador_id, (rec.aplicadores.get(a.aplicador_id) || 0) + 1);
                 }
             }
             porPac.set(a.paciente_id, rec);
@@ -404,25 +400,11 @@
             if (!rec.ultima) continue;
             const d = new Date(rec.ultima);
             if (d >= inicio && d < fim) {
-                // aplicador dominante = quem aplicou mais testes da bateria (vínculo = aplicador)
-                let aplicadorId = null, maxc = 0;
-                for (const [aid, c] of rec.aplicadores) {
-                    if (c > maxc) { maxc = c; aplicadorId = aid; }
-                }
-                candidatos.push({ pacienteId: pacId, total: rec.total, em: rec.ultima, aplicadorId });
+                candidatos.push({ pacienteId: pacId, total: rec.total, em: rec.ultima });
             }
         }
 
-        if (candidatos.length === 0) { st.dados = []; st.porProfissional = []; return; }
-
-        // ranking: nº de pacientes que finalizaram a bateria, por profissional
-        const contagem = new Map();
-        for (const c of candidatos) {
-            contagem.set(c.aplicadorId, (contagem.get(c.aplicadorId) || 0) + 1);
-        }
-        st.porProfissional = Array.from(contagem.entries())
-            .map(([aid, qtd]) => [nomeProf(aid) || '— Sem aplicador —', qtd])
-            .sort((a, b) => b[1] - a[1]);
+        if (candidatos.length === 0) { st.dados = []; return; }
 
         const pacIds = candidatos.map(c => c.pacienteId);
         const { data: pacs } = await window.cortexClient
@@ -436,8 +418,7 @@
             .map(c => ({
                 ...pacMap.get(c.pacienteId),
                 totalAplicacoes: c.total,
-                concluidaEm: c.em,
-                aplicadorNome: nomeProf(c.aplicadorId) || '— Sem aplicador —'
+                concluidaEm: c.em
             }))
             .sort((a, b) => new Date(b.concluidaEm) - new Date(a.concluidaEm));
     }
@@ -457,23 +438,19 @@
         `;
         if (total === 0) return cards + vazio('🏆', 'Nenhuma bateria concluída neste mês', 'Quando todos os testes de um paciente forem concluídos, ele aparece aqui.');
 
-        const ranking = st.porProfissional || [];
-
         return cards + `
-            ${ranking.length ? renderBarras('Baterias finalizadas por profissional', ICONES.award, ranking) : ''}
             <div class="rel-secao">
                 <h2 class="rel-secao-titulo"><span class="rel-secao-ico">${ICONES.list}</span> Pacientes com bateria concluída</h2>
                 <div class="rel-tabela-wrap">
                     <table class="rel-tabela">
                         <thead>
-                            <tr><th>Concluída em</th><th>Paciente</th><th>Aplicador</th><th class="col-num">Testes</th><th>Status</th></tr>
+                            <tr><th>Concluída em</th><th>Paciente</th><th class="col-num">Testes</th><th>Status</th></tr>
                         </thead>
                         <tbody>
                             ${lista.map(p => `
                                 <tr>
                                     <td>${formatDataHora(p.concluidaEm)}</td>
                                     <td><a href="../pacientes/pasta.html?id=${escapeHtml(p.id)}">${escapeHtml(p.nome_completo)}</a></td>
-                                    <td>${escapeHtml(p.aplicadorNome || '—')}</td>
                                     <td class="col-num">${p.totalAplicacoes}</td>
                                     <td><span class="rel-pill ${p.status === 'arquivado' ? 'arquivado' : 'ativo'}">${escapeHtml(p.status === 'arquivado' ? 'Arquivado' : 'Ativo')}</span></td>
                                 </tr>

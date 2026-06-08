@@ -89,38 +89,16 @@ window.CortexAvatar = (function() {
      * Busca a URL assinada da foto do paciente no Supabase Storage.
      * Retorna null se não houver foto ou der erro.
      */
-    // ── Cache de signed URLs (Sprint 81) ─────────────────────────────────────
-    // Evita gerar uma URL nova a cada render/navegação. Chave: bucket::path.
-    const TTL_SEG = 3600; // 1h
-    const _cache = new Map();
-
-    function _ck(bucket, path) { return bucket + '::' + path; }
-    function _getCache(bucket, path) {
-        const e = _cache.get(_ck(bucket, path));
-        return (e && e.exp > Date.now()) ? e.url : null;
-    }
-    function _setCache(bucket, path, url) {
-        // expira 2 min antes do TTL real, por margem de segurança
-        _cache.set(_ck(bucket, path), { url, exp: Date.now() + (TTL_SEG - 120) * 1000 });
-    }
-
-    /**
-     * Busca a URL assinada de UMA foto (com cache).
-     */
-    async function buscarUrlAssinada(pacienteId, fotoUrl, bucket) {
-        bucket = bucket || 'pacientes-fotos';
+    async function buscarUrlAssinada(pacienteId, fotoUrl) {
         if (!fotoUrl || !window.cortexClient) return null;
-
-        const cached = _getCache(bucket, fotoUrl);
-        if (cached) return cached;
 
         try {
             const { data, error } = await window.cortexClient
-                .storage.from(bucket)
-                .createSignedUrl(fotoUrl, TTL_SEG);
+                .storage
+                .from('pacientes-fotos')
+                .createSignedUrl(fotoUrl, 60); // URL válida por 60s
 
             if (error || !data) return null;
-            _setCache(bucket, fotoUrl, data.signedUrl);
             return data.signedUrl;
         } catch (err) {
             console.warn('Erro ao buscar foto:', err);
@@ -128,46 +106,9 @@ window.CortexAvatar = (function() {
         }
     }
 
-    /**
-     * Busca VÁRIAS signed URLs em UMA ida ao servidor (createSignedUrls).
-     * Retorna Map<path, signedUrl>. Reaproveita o cache.
-     */
-    async function buscarUrlsAssinadas(fotoUrls, bucket) {
-        bucket = bucket || 'pacientes-fotos';
-        const out = new Map();
-        if (!window.cortexClient) return out;
-
-        const paths = [...new Set((fotoUrls || []).filter(Boolean))];
-        const faltando = [];
-        for (const p of paths) {
-            const c = _getCache(bucket, p);
-            if (c) out.set(p, c); else faltando.push(p);
-        }
-        if (faltando.length === 0) return out;
-
-        try {
-            const { data, error } = await window.cortexClient
-                .storage.from(bucket)
-                .createSignedUrls(faltando, TTL_SEG);
-
-            if (!error && data) {
-                for (const item of data) {
-                    if (item.signedUrl && !item.error) {
-                        _setCache(bucket, item.path, item.signedUrl);
-                        out.set(item.path, item.signedUrl);
-                    }
-                }
-            }
-        } catch (err) {
-            console.warn('Erro ao buscar fotos (lote):', err);
-        }
-        return out;
-    }
-
     return {
         render,
         buscarUrlAssinada,
-        buscarUrlsAssinadas,
         extrairIniciais
     };
 })();

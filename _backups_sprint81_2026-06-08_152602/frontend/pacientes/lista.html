@@ -335,15 +335,10 @@
      * avatar-iniciais pela imagem. Funciona em background sem bloquear a UI.
      */
     async function carregarFotosEmBackground(lista) {
-        const comFoto = (lista || []).filter(p => p.foto_url);
-        if (!comFoto.length) return;
-
-        // Sprint 81: 1 ida ao Storage pra TODAS as fotos (em vez de N)
-        const urls = await window.CortexAvatar.buscarUrlsAssinadas(comFoto.map(p => p.foto_url));
-
-        for (const p of comFoto) {
+        for (const p of lista) {
+            if (!p.foto_url) continue;
             try {
-                const signedUrl = urls.get(p.foto_url);
+                const signedUrl = await window.CortexAvatar.buscarUrlAssinada(p.id, p.foto_url);
                 if (!signedUrl) continue;
                 // Substitui só o conteúdo do avatar deste paciente
                 const card = document.querySelector(`[data-paciente-id="${p.id}"]`);

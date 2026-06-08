@@ -44,39 +44,6 @@
         }, 50);
     }
 
-    // ── Sprint 81: logout por inatividade (15 min) ──────────────────────────
-    function iniciarMonitorInatividade(raiz) {
-        const LIMITE = 15 * 60 * 1000;          // 15 minutos
-        const KEY = 'cortex_last_activity';
-        const ultima = () => {
-            const v = sessionStorage.getItem(KEY);
-            return v ? parseInt(v, 10) : Date.now();
-        };
-        const marcar = () => { try { sessionStorage.setItem(KEY, String(Date.now())); } catch (e) {} };
-
-        async function sairPorInatividade() {
-            try { await window.cortexClient.auth.signOut(); } catch (e) {}
-            try { sessionStorage.removeItem(KEY); } catch (e) {}
-            window.location.href = raiz + 'index.html?timeout=1';
-        }
-
-        // Se já estourou o limite enquanto a página carregava, sai já
-        if (Date.now() - ultima() >= LIMITE) { sairPorInatividade(); return; }
-        marcar();
-
-        let ultimaMarca = 0;
-        const aoInteragir = () => {
-            const n = Date.now();
-            if (n - ultimaMarca > 5000) { ultimaMarca = n; marcar(); } // throttle 5s
-        };
-        ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click']
-            .forEach(ev => window.addEventListener(ev, aoInteragir, { passive: true }));
-
-        setInterval(() => {
-            if (Date.now() - ultima() >= LIMITE) sairPorInatividade();
-        }, 30000); // checa a cada 30s
-    }
-
     try {
         const { data: { session }, error } = await window.cortexClient.auth.getSession();
 
@@ -101,34 +68,22 @@
         // Sessão válida — armazena info do usuário globalmente
         window.cortexUser = session.user;
 
-        // ── Sprint 81: cache do perfil pra navegação rápida ────────────────
-        // Evita uma query ao banco a cada troca de aba. Validade curta (5 min)
-        // pra não ficar stale. Em sessionStorage → some ao fechar a aba.
-        const CACHE_KEY = 'cortex_prof_' + session.user.id;
-        const CACHE_TTL = 5 * 60 * 1000;
-        let profissional = null;
-        try {
-            const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
-            if (c && c.dados && (Date.now() - c.ts) < CACHE_TTL) profissional = c.dados;
-        } catch (e) { /* cache inválido: ignora e busca no banco */ }
+        // Busca dados do profissional
+        const { data: profissional, error: profError } = await window.cortexClient
+            .from('profissionais')
+            .select('id, nome_completo, email, perfil, foto_url')
+            .eq('auth_user_id', session.user.id)
+            .maybeSingle(); // maybeSingle: 0 linhas = null (sem erro), não levanta PGRST116
+
+        if (profError) throw profError;
 
         if (!profissional) {
-            const { data, error: profError } = await window.cortexClient
-                .from('profissionais')
-                .select('id, nome_completo, email, perfil, foto_url')
-                .eq('auth_user_id', session.user.id)
-                .maybeSingle(); // 0 linhas = null (sem erro), não levanta PGRST116
-
-            if (profError) throw profError;
-
-            if (!data) {
-                // Sessão de auth.users válida mas SEM vínculo em `profissionais`.
-                console.error('Profissional não encontrado para auth_user_id:', session.user.id);
-                await redirecionarParaLogin('sem_vinculo_profissional');
-                return;
-            }
-            profissional = data;
-            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), dados: profissional })); } catch (e) {}
+            // Sessão de auth.users válida mas SEM vínculo em `profissionais`.
+            // Pode ser: paciente sem flag, ex-funcionário desvinculado, ou
+            // conta órfã. Em todos os casos, limpa e manda pro login.
+            console.error('Profissional não encontrado para auth_user_id:', session.user.id);
+            await redirecionarParaLogin('sem_vinculo_profissional');
+            return;
         }
 
         window.cortexProfissional = profissional;
@@ -141,9 +96,6 @@
         window.dispatchEvent(new CustomEvent('cortex:auth-ready', {
             detail: { profissional, session }
         }));
-
-        // Sprint 81: monitor de inatividade (15 min de inatividade → logout)
-        iniciarMonitorInatividade(caminhoRaiz);
 
     } catch (err) {
         console.error('Erro no auth guard:', err);

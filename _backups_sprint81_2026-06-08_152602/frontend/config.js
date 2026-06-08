@@ -22,11 +22,7 @@ const SUPABASE_CONFIG = {
         auth: {
             autoRefreshToken: true,
             persistSession: true,
-            detectSessionInUrl: true,
-            // Sprint 81: sessão em sessionStorage → fechar a aba/navegador derruba
-            // o login. Persiste entre navegações na MESMA aba (sidebar etc.);
-            // NÃO é compartilhada entre abas (abrir nova aba pede login).
-            storage: window.sessionStorage
+            detectSessionInUrl: true
         }
     }
 };

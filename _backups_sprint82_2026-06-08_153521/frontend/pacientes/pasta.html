@@ -2164,11 +2164,7 @@
         const cpf = p.cpf || '—';
         const dn = sprint16FmtData(p.data_nascimento);
         const idade = p.idade_humanizada || '—';
-        // Sprint 82: inclui o ano/série na escolaridade da capa, quando preenchido
-        const serie = (p.escolaridade_serie || '').trim();
-        const escolBase = p.escolaridade_completa || p.escolaridade || '';
-        const escolaridade = (escolBase && serie) ? `${escolBase} — ${serie}`
-                           : (serie || escolBase || '—');
+        const escolaridade = p.escolaridade_completa || p.escolaridade || '—';
 
         // Mãe e Pai sempre aparecem (campos dedicados).
         // Fallback: se mae_nome vazio mas responsavel_parentesco indica mãe, usa o legado.
@@ -2336,22 +2332,6 @@
         if (!paciente) {
             window.CortexUI.toast('Paciente não carregado.', 'danger');
             return;
-        }
-
-        // Sprint 82: garante o "Ano/série" na capa. A view vw_pacientes_lista pode
-        // não expor escolaridade_serie — se vier undefined, busca direto em pacientes.
-        if (paciente.escolaridade_serie === undefined) {
-            try {
-                const { data } = await window.cortexClient
-                    .from('pacientes')
-                    .select('escolaridade_serie')
-                    .eq('id', pacienteId)
-                    .single();
-                paciente.escolaridade_serie = data ? data.escolaridade_serie : null;
-            } catch (e) {
-                console.warn('[capa] escolaridade_serie:', e);
-                paciente.escolaridade_serie = null;
-            }
         }
 
         let fotoSignedUrl = null;

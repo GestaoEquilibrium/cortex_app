@@ -7,7 +7,7 @@
 // Heteroaplicação. Sem normas/pontos de corte publicados → SOMA por subescala.
 //
 // Laudo (decisão B — JS recalcula do zero a partir de escores_brutos):
-//   - Visão geral: destaques (mais/menos expressivas) + resumo.
+//   - Visão geral: radar (% do máximo de cada subescala) + destaques.
 //   - Perfil: barras ordenadas (mais expressiva no topo).
 //   - Detalhe por subescala: medidor mín→máx (onde caiu) + tira item a item.
 //   - Comparativo cognitivo (opcional): índices WISC-IV/WAIS-III do paciente
@@ -38,6 +38,7 @@
         correcao: null,
         scores: null,
         cognitivo: null,   // { wais: compostos|null, wisc: compostos|null }
+        chartRadar: null,
         chartBarras: null,
         chartCognitivo: null
     };
@@ -177,11 +178,7 @@
             }
         }
         const subescalas = Object.values(porFator).sort((a, b) => a.ordem - b.ordem);
-        for (const s of subescalas) {
-            s.pct = s.maxScore > 0 ? Math.round((s.soma / s.maxScore) * 100) : 0;
-            s.cor = paletaCor(s.ordem - 1, 14, 56);
-            s.corClara = paletaCor(s.ordem - 1, 14, 94);
-        }
+        for (const s of subescalas) s.pct = s.maxScore > 0 ? Math.round((s.soma / s.maxScore) * 100) : 0;
 
         const porPct = [...subescalas].sort((a, b) => b.pct - a.pct);
         const respondidos = Object.keys(respostas).length;
@@ -222,6 +219,7 @@
         });
 
         setTimeout(() => {
+            renderRadar();
             renderBarras();
             renderCognitivo();
         }, 60);
@@ -270,19 +268,22 @@
                 </div>
 
                 <div class="laudo-secao-titulo"><span class="laudo-secao-tag">3</span> Visão geral do perfil</div>
-                <div class="srbcss-destaques-box">
-                    <div class="srbcss-dq srbcss-dq-alto">
-                        <div class="srbcss-dq-titulo">▲ Mais expressivas</div>
-                        ${s.destaquesAlto.map(d => `<div class="srbcss-chip" data-goto="${d.codigo}" style="border-left-color:${d.cor};"><span>${escapeHtml(d.nomeCurto)}</span><strong style="color:${d.cor};">${d.pct}%</strong></div>`).join('')}
-                    </div>
-                    <div class="srbcss-dq srbcss-dq-baixo">
-                        <div class="srbcss-dq-titulo">▼ Menos expressivas</div>
-                        ${s.destaquesBaixo.map(d => `<div class="srbcss-chip srbcss-chip-baixo" data-goto="${d.codigo}" style="border-left-color:${d.cor};"><span>${escapeHtml(d.nomeCurto)}</span><strong style="color:${d.cor};">${d.pct}%</strong></div>`).join('')}
+                <div class="srbcss-geral">
+                    <div class="srbcss-radar-wrap"><canvas id="srbcss-radar"></canvas></div>
+                    <div class="srbcss-destaques-box">
+                        <div class="srbcss-dq srbcss-dq-alto">
+                            <div class="srbcss-dq-titulo">▲ Mais expressivas</div>
+                            ${s.destaquesAlto.map(d => `<div class="srbcss-chip" data-goto="${d.codigo}"><span>${escapeHtml(d.nomeCurto)}</span><strong>${d.pct}%</strong></div>`).join('')}
+                        </div>
+                        <div class="srbcss-dq srbcss-dq-baixo">
+                            <div class="srbcss-dq-titulo">▼ Menos expressivas</div>
+                            ${s.destaquesBaixo.map(d => `<div class="srbcss-chip srbcss-chip-baixo" data-goto="${d.codigo}"><span>${escapeHtml(d.nomeCurto)}</span><strong>${d.pct}%</strong></div>`).join('')}
+                        </div>
                     </div>
                 </div>
                 <p class="srbcss-resumo-texto">${renderResumoTexto()}</p>
 
-                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">4</span> Perfil das 14 subescalas (% do máximo)</div>
+                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">4</span> Perfil detalhado (ordenado)</div>
                 <p class="srbcss-dica">Clique numa barra para ir ao detalhe da subescala.</p>
                 <div class="srbcss-barras-wrap"><canvas id="srbcss-barras"></canvas></div>
 
@@ -333,19 +334,19 @@
         }).join('');
 
         return `
-            <div class="srbcss-card" id="sub-${sub.codigo}" style="border-top:3px solid ${sub.cor};">
+            <div class="srbcss-card" id="sub-${sub.codigo}">
                 <div class="srbcss-card-topo">
-                    <div class="srbcss-card-nome"><span class="srbcss-card-rom" style="background:${sub.cor};">${escapeHtml(romano(sub.ordem))}</span> ${escapeHtml(sub.nomeCurto)}</div>
-                    <div class="srbcss-card-pct" style="color:${sub.cor};background:${sub.corClara};">${sub.pct}%</div>
+                    <div class="srbcss-card-nome"><span class="srbcss-card-rom">${escapeHtml(romano(sub.ordem))}</span> ${escapeHtml(sub.nomeCurto)}</div>
+                    <div class="srbcss-card-pct">${sub.pct}%</div>
                 </div>
                 <div class="srbcss-gauge">
                     <div class="srbcss-gauge-trilho">
-                        <div class="srbcss-gauge-fill" style="width:${posMarcador}%;background:linear-gradient(90deg, ${sub.corClara}, ${sub.cor});"></div>
-                        <div class="srbcss-gauge-marcador" style="left:${posMarcador}%;background:${sub.cor};"></div>
+                        <div class="srbcss-gauge-fill" style="width:${posMarcador}%;"></div>
+                        <div class="srbcss-gauge-marcador" style="left:${posMarcador}%;"></div>
                     </div>
                     <div class="srbcss-gauge-legenda">
                         <span>mín ${sub.minScore}</span>
-                        <span class="srbcss-gauge-valor" style="color:${sub.cor};">${sub.soma} pts</span>
+                        <span class="srbcss-gauge-valor">${sub.soma} pts</span>
                         <span>máx ${sub.maxScore}</span>
                     </div>
                 </div>
@@ -390,12 +391,41 @@
     // ============================================================================
     // GRÁFICOS
     // ============================================================================
+    function renderRadar() {
+        const c = document.getElementById('srbcss-radar');
+        if (!c) return;
+        if (state.chartRadar) state.chartRadar.destroy();
+        const subs = state.scores.subescalas;
+        state.chartRadar = new Chart(c, {
+            type: 'radar',
+            data: {
+                labels: subs.map(s => s.nomeCurto),
+                datasets: [{
+                    label: '% do máximo', data: subs.map(s => s.pct),
+                    backgroundColor: 'rgba(46,116,181,0.18)', borderColor: COR,
+                    borderWidth: 2, pointBackgroundColor: COR, pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => {
+                        const sub = state.scores.subescalas[ctx.dataIndex];
+                        return `${sub.soma}/${sub.maxScore} (${sub.pct}%)`;
+                    } } } },
+                scales: { r: { min: 0, max: 100, ticks: { stepSize: 25, callback: v => v + '%', backdropColor: 'transparent', font: { size: 9 } },
+                    pointLabels: { font: { size: 10 } }, grid: { color: '#e2e8f0' }, angleLines: { color: '#e2e8f0' } } }
+            }
+        });
+    }
+
     function renderBarras() {
         const c = document.getElementById('srbcss-barras');
         if (!c) return;
         if (state.chartBarras) state.chartBarras.destroy();
         const ord = state.scores.porPct;
-        const cores = ord.map(s => s.cor);
+        const maxPct = Math.max(...ord.map(s => s.pct), 0);
+        const cores = ord.map(s => s.pct === maxPct && maxPct > 0 ? COR_DESTAQUE : COR);
         state.chartBarras = new Chart(c, {
             type: 'bar',
             data: { labels: ord.map(s => s.nomeCurto),
@@ -512,11 +542,6 @@
     // ============================================================================
     // UTILS
     // ============================================================================
-    function paletaCor(i, n, l) {
-        // gradiente harmônico azul → violeta → rosa (colorido, sem vermelho/verde de "bom/ruim")
-        const h = 205 + (i / Math.max(n - 1, 1)) * 125; // 205 (azul) → 330 (rosa)
-        return `hsl(${Math.round(h)}, 68%, ${l == null ? 56 : l}%)`;
-    }
     function romano(n) {
         const r = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV'];
         return r[n] || String(n);

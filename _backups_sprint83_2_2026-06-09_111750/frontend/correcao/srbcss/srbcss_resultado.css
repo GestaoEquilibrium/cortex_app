@@ -270,14 +270,3 @@
 
 /* ── Exportação PDF: garante respiro ────────────────────────────────────── */
 body.exportando .srbcss-card { break-inside: avoid; }
-
-/* ── Sprint 83.2 — visão geral sem radar; destaques lado a lado + cor por subescala ── */
-.srbcss-destaques-box { flex-direction: row; gap: 14px; margin-bottom: 14px; }
-.srbcss-dq { flex: 1; }
-.srbcss-chip {
-    background: #fff; border: 1px solid #eef2f7; border-left: 4px solid #cbd5e1;
-    border-radius: 8px;
-}
-.srbcss-chip:hover { box-shadow: 0 3px 10px rgba(46,116,181,.14); }
-.srbcss-card-rom { background: #2e74b5; }  /* fallback; cor real vem inline */
-@media (max-width: 820px) { .srbcss-destaques-box { flex-direction: column; } }

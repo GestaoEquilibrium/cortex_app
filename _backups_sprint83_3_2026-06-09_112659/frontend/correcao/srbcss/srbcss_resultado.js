@@ -38,6 +38,8 @@
         correcao: null,
         scores: null,
         cognitivo: null,   // { wais: compostos|null, wisc: compostos|null }
+        chartBarras: null,
+        chartCognitivo: null
     };
 
     // ============================================================================
@@ -218,6 +220,11 @@
                 }
             });
         });
+
+        setTimeout(() => {
+            renderBarras();
+            renderCognitivo();
+        }, 60);
     }
 
     function renderLaudo() {
@@ -277,7 +284,7 @@
 
                 <div class="laudo-secao-titulo"><span class="laudo-secao-tag">4</span> Perfil das 14 subescalas (% do máximo)</div>
                 <p class="srbcss-dica">Clique numa barra para ir ao detalhe da subescala.</p>
-                ${renderPerfilBarras()}
+                <div class="srbcss-barras-wrap"><canvas id="srbcss-barras"></canvas></div>
 
                 <div class="laudo-secao-titulo"><span class="laudo-secao-tag">5</span> Detalhe por subescala</div>
                 <div class="srbcss-cards">
@@ -348,6 +355,18 @@
     }
 
     // ── Comparativo cognitivo ───────────────────────────────────────────────
+    const COG_LABELS = { ICV: 'ICV', IOP: 'IOP', IRP: 'IRP', IMO: 'IMO', IVP: 'IVP', QI_TOTAL: 'QIT' };
+    const COG_ORDEM  = ['ICV', 'IOP', 'IRP', 'IMO', 'IVP', 'QI_TOTAL'];
+
+    function cogSerie(compostos) {
+        const pts = [];
+        for (const k of COG_ORDEM) {
+            const c = compostos?.[k]?.composto;
+            if (c != null) pts.push({ sigla: COG_LABELS[k], valor: +c });
+        }
+        return pts;
+    }
+
     function renderCognitivoBloco() {
         const cog = state.cognitivo;
         if (!cog || (!cog.wais && !cog.wisc)) {
@@ -360,103 +379,96 @@
             <div class="laudo-caixa-descricao">
                 <p>O perfil da SRBCSS (observação comportamental, <strong>% do máximo</strong>) e o <strong>${qual}</strong> (desempenho cognitivo padronizado, <strong>média 100</strong>) são <strong>medidas complementares</strong> e <strong>não diretamente equiparáveis</strong>. A leitura conjunta ajuda a contextualizar onde habilidade observada e desempenho medido convergem ou divergem.</p>
             </div>
-            ${renderICForest()}
+            <div class="srbcss-cog-wrap"><canvas id="srbcss-cog"></canvas></div>
+            <p class="srbcss-grafico-legenda srbcss-cog-leg">
+                <span class="srbcss-leg-item"><span class="srbcss-leg-bola" style="background:#cbd5e1"></span> Faixa média (85–115)</span>
+                <span class="srbcss-leg-item"><span class="srbcss-leg-bola" style="background:#16a34a"></span> ≥ 130 (muito superior)</span>
+            </p>
         `;
     }
 
     // ============================================================================
-    // GRÁFICOS (HTML — padrão do laudo WAIS, entram inteiros no PDF)
+    // GRÁFICOS
     // ============================================================================
-
-    // Perfil em barras estilo "subtestes" (imagem 2) — ordenado, clicável
-    function renderPerfilBarras() {
+    function renderBarras() {
+        const c = document.getElementById('srbcss-barras');
+        if (!c) return;
+        if (state.chartBarras) state.chartBarras.destroy();
         const ord = state.scores.porPct;
-        const linhas = ord.map(sub => {
-            const fillW = Math.max(sub.pct, 2);
-            return `<div class="srbcss-bar-row" data-goto="${sub.codigo}" title="Ver detalhe da subescala">
-                <div class="srbcss-bar-nome">${escapeHtml(sub.nomeCurto)}</div>
-                <div class="srbcss-bar-track">
-                    <div class="srbcss-bar-fill" style="width:${fillW}%; background:${sub.cor};"></div>
-                </div>
-                <div class="srbcss-bar-val">${sub.soma}/${sub.maxScore}</div>
-                <div class="srbcss-bar-chip" style="color:${sub.cor}; background:${sub.corClara};">${sub.pct}%</div>
-            </div>`;
-        }).join('');
-        return `<div class="srbcss-perfil-bloco">${linhas}</div>`;
+        const cores = ord.map(s => s.cor);
+        state.chartBarras = new Chart(c, {
+            type: 'bar',
+            data: { labels: ord.map(s => s.nomeCurto),
+                datasets: [{ data: ord.map(s => s.pct), backgroundColor: cores, borderRadius: 4 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                onClick: (e, els) => { if (els.length) {
+                    const sub = ord[els[0].index];
+                    const alvo = document.getElementById('sub-' + sub.codigo);
+                    if (alvo) { alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        alvo.classList.add('srbcss-card-foco'); setTimeout(() => alvo.classList.remove('srbcss-card-foco'), 1400); }
+                } },
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => {
+                        const sub = state.scores.porPct[ctx.dataIndex];
+                        return `${sub.soma}/${sub.maxScore} (${sub.pct}%) — clique p/ detalhe`;
+                    } } } },
+                scales: { x: { beginAtZero: true, max: 100, ticks: { stepSize: 20, callback: v => v + '%' },
+                    grid: { color: '#e2e8f0' }, title: { display: true, text: '% do máximo da subescala', color: '#64748b' } },
+                    y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
+            }
+        });
     }
 
-    // Forest plot IC95 estilo "índices" (imagem 3) — dado WISC/WAIS (normativo)
-    function renderICForest() {
-        const cog = state.cognitivo;
-        if (!cog) return '';
-        const ehWisc = !!cog.wisc;
-        const compostos = cog.wisc || cog.wais || {};
-        const items = ehWisc
-            ? [{ s: 'QIT', k: 'QI_TOTAL' }, { s: 'ICV', k: 'ICV' }, { s: 'IOP', k: 'IOP' }, { s: 'IRP', k: 'IRP' }, { s: 'IMO', k: 'IMO' }, { s: 'IVP', k: 'IVP' }]
-            : [{ s: 'QIV', k: 'QI_VERBAL' }, { s: 'QIE', k: 'QI_EXECUCAO' }, { s: 'QIT', k: 'QI_TOTAL' }, { s: 'ICV', k: 'ICV' }, { s: 'IOP', k: 'IOP' }, { s: 'IMO', k: 'IMO' }, { s: 'IVP', k: 'IVP' }];
-
-        const linhas = items.map(it => {
-            const c = compostos[it.k];
-            if (!c || c.composto == null) return '';
-            const comp = +c.composto;
-            const cl = classByComposite(comp);
-            const col = icColor(comp);
-            const ic = Array.isArray(c.ic95) && c.ic95.length === 2 ? c.ic95 : [comp - 5, comp + 5];
-            const grid = [60, 80, 100, 120, 140].map(v => {
-                const main = v === 100;
-                return `<div class="srbcss-ic-gridline" style="left:${icScale(v)}%; ${main ? 'width:2px; background:rgba(100,116,139,.3);' : 'width:1px; background:rgba(203,213,225,.4);'}"></div>`;
-            }).join('');
-            return `<div class="srbcss-ic-row">
-                <div class="srbcss-ic-label" style="color:${col};">${it.s}</div>
-                <div class="srbcss-ic-track">
-                    ${grid}
-                    <div class="srbcss-ic-bar" style="left:${icScale(ic[0])}%; width:${(icScale(ic[1]) - icScale(ic[0])).toFixed(2)}%; background:${col}30; border:1px solid ${col}80;"></div>
-                    <div class="srbcss-ic-whisker" style="left:${icScale(ic[0])}%; background:${col}80;"></div>
-                    <div class="srbcss-ic-whisker" style="left:${icScale(ic[1])}%; background:${col}80;"></div>
-                    <div class="srbcss-ic-dot" style="left:${icScale(comp)}%; background:${col}; box-shadow:0 2px 6px ${col}50;">${comp}</div>
-                </div>
-                <div class="srbcss-ic-badge">${clBadge(cl)}</div>
-            </div>`;
-        }).join('');
-
-        return `<div class="srbcss-ic-chart">
-            <div class="srbcss-ic-scale">
-                <span>40</span><span>60</span><span>80</span>
-                <span style="font-weight:800; color:#475569;">100</span>
-                <span>120</span><span>140</span><span>160</span>
-            </div>
-            ${linhas}
-            <div class="srbcss-ic-legenda">Linha escura = média normativa (100) · Faixa colorida = IC 95% · Círculo = composto obtido (${ehWisc ? 'WISC-IV' : 'WAIS-III'})</div>
-        </div>`;
+    function renderCognitivo() {
+        const c = document.getElementById('srbcss-cog');
+        if (!c || !state.cognitivo) return;
+        if (state.chartCognitivo) state.chartCognitivo.destroy();
+        const compostos = state.cognitivo.wisc || state.cognitivo.wais;
+        const serie = cogSerie(compostos);
+        if (!serie.length) return;
+        const cores = serie.map(p => p.valor >= 130 ? '#16a34a' : p.valor >= 120 ? '#22c55e'
+            : p.valor >= 90 ? COR : p.valor >= 80 ? '#f59e0b' : '#dc2626');
+        state.chartCognitivo = new Chart(c, {
+            type: 'bar',
+            data: { labels: serie.map(p => p.sigla),
+                datasets: [{ data: serie.map(p => p.valor), backgroundColor: cores, borderRadius: 4 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => `Composto ${ctx.parsed.y} — ${classWechsler(ctx.parsed.y)}` } } },
+                scales: { y: { min: 40, max: 160, ticks: { stepSize: 20 }, grid: { color: '#e2e8f0' },
+                    title: { display: true, text: 'Pontuação composta (média 100)', color: '#64748b' } },
+                    x: { grid: { display: false } } }
+            },
+            plugins: [{
+                id: 'faixaMedia',
+                beforeDraw: (chart) => {
+                    const { ctx, chartArea, scales } = chart;
+                    if (!chartArea) return;
+                    const y115 = scales.y.getPixelForValue(115);
+                    const y85 = scales.y.getPixelForValue(85);
+                    const y100 = scales.y.getPixelForValue(100);
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(203,213,225,0.30)';
+                    ctx.fillRect(chartArea.left, y115, chartArea.right - chartArea.left, y85 - y115);
+                    ctx.strokeStyle = '#94a3b8'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(chartArea.left, y100); ctx.lineTo(chartArea.right, y100); ctx.stroke();
+                    ctx.setLineDash([]); ctx.restore();
+                }
+            }]
+        });
     }
 
-    // helpers do padrão WAIS
-    function icScale(v) { return ((v - 40) / 130) * 100; }
-    function icColor(comp) {
-        if (comp >= 110) return '#059669';
-        if (comp >= 90)  return '#1a56db';
-        if (comp >= 80)  return '#f59e0b';
-        return '#dc2626';
+    function classWechsler(v) {
+        if (v >= 130) return 'Muito superior';
+        if (v >= 120) return 'Superior';
+        if (v >= 110) return 'Médio superior';
+        if (v >= 90)  return 'Médio';
+        if (v >= 80)  return 'Médio inferior';
+        if (v >= 70)  return 'Limítrofe';
+        return 'Muito baixo';
     }
-    function classByComposite(score) {
-        const s = Number(score);
-        if (Number.isNaN(s)) return '—';
-        if (s >= 130) return 'Muito Superior';
-        if (s >= 120) return 'Superior';
-        if (s >= 110) return 'Médio Superior';
-        if (s >= 90)  return 'Médio';
-        if (s >= 80)  return 'Médio Inferior';
-        if (s >= 70)  return 'Limítrofe';
-        return 'Extremamente Baixo';
-    }
-    function clBadgeClass(cl) {
-        return {
-            'Muito Superior': 'cl-vs', 'Superior': 'cl-s', 'Médio Superior': 'cl-ms',
-            'Médio': 'cl-m', 'Médio Inferior': 'cl-mi', 'Limítrofe': 'cl-l',
-            'Extremamente Baixo': 'cl-eb', 'Inferior': 'cl-inf'
-        }[cl] || 'cl-m';
-    }
-    function clBadge(cl) { return `<span class="cl-badge ${clBadgeClass(cl)}">${escapeHtml(cl)}</span>`; }
 
     // ============================================================================
     // PDF

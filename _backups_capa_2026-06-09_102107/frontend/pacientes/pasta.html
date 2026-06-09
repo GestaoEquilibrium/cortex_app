@@ -2164,12 +2164,11 @@
         const cpf = p.cpf || '—';
         const dn = sprint16FmtData(p.data_nascimento);
         const idade = p.idade_humanizada || '—';
-        // Sprint 82 (corrigido): escolaridade_completa da view JÁ concatena escolaridade + serie.
-        // Bug anterior: estava concatenando a serie DE NOVO, duplicando o texto.
+        // Sprint 82: inclui o ano/série na escolaridade da capa, quando preenchido
         const serie = (p.escolaridade_serie || '').trim();
-        const escolaridade = (p.escolaridade_completa || '').trim()
-            || (p.escolaridade && serie ? `${p.escolaridade} — ${serie}`
-                                        : (p.escolaridade || serie || '—'));
+        const escolBase = p.escolaridade_completa || p.escolaridade || '';
+        const escolaridade = (escolBase && serie) ? `${escolBase} — ${serie}`
+                           : (serie || escolBase || '—');
 
         // Mãe e Pai sempre aparecem (campos dedicados).
         // Fallback: se mae_nome vazio mas responsavel_parentesco indica mãe, usa o legado.

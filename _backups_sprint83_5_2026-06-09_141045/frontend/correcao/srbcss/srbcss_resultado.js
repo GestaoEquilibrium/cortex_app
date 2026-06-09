@@ -177,8 +177,8 @@
         const subescalas = Object.values(porFator).sort((a, b) => a.ordem - b.ordem);
         for (const s of subescalas) {
             s.pct = s.maxScore > 0 ? Math.round((s.soma / s.maxScore) * 100) : 0;
-            s.cor = corAzulPct(s.pct);
-            s.corClara = '#dbeafe';
+            s.cor = paletaCor(s.ordem - 1, 14, 56);
+            s.corClara = paletaCor(s.ordem - 1, 14, 94);
         }
 
         const porPct = [...subescalas].sort((a, b) => b.pct - a.pct);
@@ -206,8 +206,6 @@
         document.getElementById('acoes-topo').style.display = 'flex';
         document.getElementById('back-link').href = `../../bateria/bateria.html?paciente=${state.paciente.id}`;
         document.getElementById('btn-gerar-pdf').addEventListener('click', gerarPDF);
-        const btnTeste = document.getElementById('btn-imprimir-teste');
-        if (btnTeste) btnTeste.addEventListener('click', imprimirTeste);
 
         // clicar numa barra rola até o card da subescala
         document.querySelectorAll('[data-goto]').forEach(el => {
@@ -461,24 +459,6 @@
     function clBadge(cl) { return `<span class="cl-badge ${clBadgeClass(cl)}">${escapeHtml(cl)}</span>`; }
 
     // ============================================================================
-    // IMPRESSÃO DE TESTE (uso interno) — senha + window.print() com quebras
-    // ============================================================================
-    function imprimirTeste() {
-        const senha = window.prompt('Senha para impressão de teste:');
-        if (senha === null) return; // cancelou
-        if (String(senha).trim() !== '3226') {
-            window.CortexUI.toast('Senha incorreta.', 'danger');
-            return;
-        }
-        // Impressão pelo navegador: respeita as quebras do @media print
-        // (cards e gráficos não são cortados no meio).
-        document.body.classList.add('imprimindo-teste');
-        const limpar = () => document.body.classList.remove('imprimindo-teste');
-        window.addEventListener('afterprint', limpar, { once: true });
-        setTimeout(() => { window.print(); }, 60);
-    }
-
-    // ============================================================================
     // PDF
     // ============================================================================
     async function gerarPDF() {
@@ -520,11 +500,10 @@
     // ============================================================================
     // UTILS
     // ============================================================================
-    // Azul do padrão WAIS, mais escuro conforme a % do máximo (mesma família de cor)
-    function corAzulPct(pct) {
-        const p = Math.max(0, Math.min(100, pct || 0));
-        const l = Math.round(58 - (p / 100) * 18); // 58% (claro) → 40% (forte)
-        return `hsl(222, 72%, ${l}%)`;
+    function paletaCor(i, n, l) {
+        // gradiente harmônico azul → violeta → rosa (colorido, sem vermelho/verde de "bom/ruim")
+        const h = 205 + (i / Math.max(n - 1, 1)) * 125; // 205 (azul) → 330 (rosa)
+        return `hsl(${Math.round(h)}, 68%, ${l == null ? 56 : l}%)`;
     }
     function romano(n) {
         const r = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV'];

@@ -134,6 +134,22 @@
         return 'adulto';
     }
 
+    // Idade do paciente em meses (na data de hoje), a partir de data_nascimento.
+    // Usada para filtrar instrumentos pelos limites faixa_etaria_min/max_meses.
+    function calcularIdadeMeses() {
+        const nasc = state.paciente.data_nascimento;
+        if (!nasc) {
+            // sem data: cai pra anos*12 se houver, senão não filtra por meses
+            return (state.paciente.idade_anos != null) ? state.paciente.idade_anos * 12 : null;
+        }
+        const d = new Date(nasc);
+        const hoje = new Date();
+        if (isNaN(d) || hoje < d) return null;
+        let meses = (hoje.getFullYear() - d.getFullYear()) * 12 + (hoje.getMonth() - d.getMonth());
+        if (hoje.getDate() < d.getDate()) meses -= 1; // ainda não fez aniversário no mês
+        return Math.max(0, meses);
+    }
+
     function filtrarECategorizar() {
         // Converte sexo do paciente ('Masculino'/'Feminino'/'Outro') para CHAR(1)
         // usado no instrumentos_catalogo.sexo_filtro
@@ -142,10 +158,21 @@
         else if (state.paciente.sexo === 'Feminino') sexoChar = 'F';
         // 'Outro' ou null → fica null = só instrumentos sem filtro de sexo
 
-        // Filtra: faixa etária + (sexo_filtro NULL OU sexo_filtro = sexoChar)
+        // Idade real do paciente em meses (cruza com faixa_etaria_min/max_meses)
+        const idadeMeses = calcularIdadeMeses();
+
+        // Filtra: faixa (pre/escolar/adulto) + IDADE EM MESES + sexo
         state.catalogoFiltrado = state.catalogo.filter(i => {
             const faixaOk = (i.faixas_aplicaveis || []).includes(state.faixaPaciente);
             if (!faixaOk) return false;
+
+            // Idade em meses: respeita os limites do instrumento quando definidos.
+            // (corrige teste que começa em 10 anos aparecer p/ paciente de 8 anos)
+            if (idadeMeses !== null) {
+                if (i.faixa_etaria_min_meses != null && idadeMeses < i.faixa_etaria_min_meses) return false;
+                if (i.faixa_etaria_max_meses != null && idadeMeses > i.faixa_etaria_max_meses) return false;
+            }
+
             // Sexo: NULL no instrumento = qualquer paciente. Caso contrário, precisa bater.
             if (i.sexo_filtro === null || i.sexo_filtro === undefined) return true;
             return i.sexo_filtro === sexoChar;

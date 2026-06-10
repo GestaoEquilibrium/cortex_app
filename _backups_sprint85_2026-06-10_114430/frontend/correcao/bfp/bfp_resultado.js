@@ -439,7 +439,6 @@
             state.respostas[num] = val;
             e.target.classList.remove('invalid');
             row.classList.add('filled');
-            focarProximo(e.target); // auto-avança ao digitar um valor válido (1-7)
         } else if (e.target.value === '') {
             delete state.respostas[num];
             e.target.classList.remove('invalid');
@@ -452,19 +451,15 @@
         atualizarProgresso();
     }
 
-    function focarProximo(atual) {
-        const inputs = Array.from(document.querySelectorAll('.bfp-item-input input'));
-        const idx = inputs.indexOf(atual);
-        if (idx >= 0 && idx < inputs.length - 1) {
-            inputs[idx + 1].focus();
-            inputs[idx + 1].select();
-        }
-    }
-
     function onItemKey(e) {
         if (e.key === 'Enter' || e.key === 'Tab') {
-            e.preventDefault();
-            focarProximo(e.target);
+            const inputs = Array.from(document.querySelectorAll('.bfp-item-input input'));
+            const idx = inputs.indexOf(e.target);
+            if (idx >= 0 && idx < inputs.length - 1) {
+                e.preventDefault();
+                inputs[idx + 1].focus();
+                inputs[idx + 1].select();
+            }
         }
     }
 

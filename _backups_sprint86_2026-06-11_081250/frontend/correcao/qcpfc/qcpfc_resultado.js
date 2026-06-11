@@ -363,6 +363,8 @@
         document.getElementById('back-link').href =
             `../../bateria/bateria.html?paciente=${state.paciente.id}`;
         document.getElementById('btn-gerar-pdf').addEventListener('click', gerarPDF);
+
+        setTimeout(renderGrafico, 50);
     }
 
     function renderLaudo() {
@@ -434,7 +436,14 @@
                     <span class="laudo-secao-tag">3</span>
                     Perfil Z-Score (Comparação com Norma Clínica N=683)
                 </div>
-                ${renderGraficoHTML()}
+                <div class="qcpfc-grafico-wrap">
+                    <div class="qcpfc-grafico-canvas-container">
+                        <canvas id="qcpfc-chart"></canvas>
+                    </div>
+                    <div class="qcpfc-grafico-legenda">
+                        Linha laranja em Z=1 indica limite de elevação. Linha vermelha em Z=2 indica limite de significação clínica.
+                    </div>
+                </div>
 
                 <div class="laudo-secao-titulo">
                     <span class="laudo-secao-tag">4</span>
@@ -479,12 +488,19 @@
             const r = state.scores[code];
             const e = ESCALAS[code];
             const zTxt = r.z != null ? r.z.toFixed(2) : '—';
+            const zClass = r.z > 0 ? 'color:#dc2626;' : 'color:#10b981;';
             const badge = `<span class="qcpfc-badge qcpfc-badge-${r.classifSlug}">${r.classifLabel}</span>`;
 
             return `<tr>
-                <td><span class="nome-escala" style="color:${e.cor};">${code} — ${e.nome}</span></td>
-                <td class="ctr"><span class="escore-bruto">${r.bruto}</span></td>
-                <td class="ctr"><span class="z-score">${zTxt}</span></td>
+                <td>
+                    <span class="nome-escala">
+                        <span class="nome-escala-bullet" style="background:${e.cor};"></span>
+                        ${code} — ${e.nome}
+                    </span>
+                </td>
+                <td class="ctr">${e.itens.length}</td>
+                <td class="ctr"><span class="escore-bruto">${r.bruto} / 28</span></td>
+                <td class="ctr"><span class="z-score" style="${zClass}">${zTxt}</span></td>
                 <td class="ctr">${badge}</td>
             </tr>`;
         }).join('');
@@ -495,8 +511,9 @@
                     <thead>
                         <tr>
                             <th>Escala</th>
-                            <th class="ctr">Bruto (máx. 28)</th>
-                            <th class="ctr">Escore Z</th>
+                            <th class="ctr">Itens</th>
+                            <th class="ctr">Bruto</th>
+                            <th class="ctr">Z-Score</th>
                             <th class="ctr">Classificação</th>
                         </tr>
                     </thead>
@@ -528,84 +545,88 @@
         `;
     }
 
-    // ============================================================================
-    // GRÁFICO — barras verticais coloridas por escala, com faixas de fundo
-    // (Média / Elevado / Clín. Significativo). HTML/CSS puro: renderiza idêntico
-    // em tela e no PDF (html2canvas), sem depender de Chart.js.
-    // O domínio do eixo Y expande automaticamente se algum Z ultrapassar -2..3,
-    // garantindo que nenhum escore real seja cortado.
-    // ============================================================================
-    function renderGraficoHTML() {
-        const H = 340;                                  // altura da área de plotagem (px)
-        const GUT_L = 36, GUT_R = 84;                   // gutters: rótulos Y / faixas
+    function renderGrafico() {
+        const canvas = document.getElementById('qcpfc-chart');
+        if (!canvas || typeof Chart === 'undefined') return;
 
-        const zVals = ESCALAS_ORDEM.map(c => state.scores[c].z ?? 0);
-        const zTop  = Math.max(3, Math.ceil(Math.max(...zVals, 0)));
-        const zBot  = Math.min(-2, Math.floor(Math.min(...zVals, 0)));
-        const range = zTop - zBot;
-        const px    = H / range;
-        const yOf   = z => (zTop - z) * px;             // valor Z → pixels do topo
+        if (state.chartInstance) state.chartInstance.destroy();
 
-        // ── Faixas de fundo ────────────────────────────────────────────────
-        const bandas = [
-            `<div class="qcpfc-zone qcpfc-zone-media"   style="top:${yOf(1)}px;height:${yOf(0) - yOf(1)}px;"><span>MÉDIA</span></div>`,
-            `<div class="qcpfc-zone qcpfc-zone-elevado" style="top:${yOf(2)}px;height:${yOf(1) - yOf(2)}px;"><span>ELEVADO</span></div>`,
-        ];
-        if (zTop > 2) {
-            bandas.push(`<div class="qcpfc-zone qcpfc-zone-clin" style="top:${yOf(zTop)}px;height:${yOf(2) - yOf(zTop)}px;"><span>CLÍN. SIGNIF.</span></div>`);
-        }
+        const labels = ESCALAS_ORDEM.map(c => c + ' — ' + ESCALAS[c].nome);
+        const cores  = ESCALAS_ORDEM.map(c => ESCALAS[c].cor);
+        const zValues = ESCALAS_ORDEM.map(c => state.scores[c].z ?? 0);
 
-        // ── Linhas-guia e rótulos do eixo Y ────────────────────────────────
-        let ticks = '';
-        for (let t = zBot; t <= zTop; t++) {
-            ticks += `<div class="qcpfc-ytick${t === 0 ? ' is-zero' : ''}" style="top:${yOf(t)}px;">
-                <span class="qcpfc-ytick-lbl">${t}</span>
-                <span class="qcpfc-ytick-line"></span>
-            </div>`;
-        }
+        // Plugin inline: desenha as linhas de corte Z=1 (laranja) e Z=2 (vermelha)
+        // sem depender do chartjs-plugin-annotation (que nao esta carregado).
+        const linhasCorte = {
+            id: 'qcpfcLinhasCorte',
+            afterDatasetsDraw(chart) {
+                const { ctx, chartArea, scales } = chart;
+                if (!chartArea || !scales.x) return;
+                const desenha = (valor, cor) => {
+                    const x = scales.x.getPixelForValue(valor);
+                    if (x < chartArea.left || x > chartArea.right) return;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.setLineDash([4, 4]);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = cor;
+                    ctx.moveTo(x, chartArea.top);
+                    ctx.lineTo(x, chartArea.bottom);
+                    ctx.stroke();
+                    ctx.restore();
+                };
+                desenha(1, '#f59e0b'); // limite de elevação
+                desenha(2, '#dc2626'); // limite de significação clínica
+            }
+        };
 
-        // ── Barras ─────────────────────────────────────────────────────────
-        const barras = ESCALAS_ORDEM.map(c => {
-            const e = ESCALAS[c];
-            const r = state.scores[c];
-            const z = r.z ?? 0;
-            const top = yOf(Math.max(z, 0));
-            const h   = Math.max(Math.abs(z) * px, 3);
-            const valTop = z >= 0 ? (top - 20) : (top + h + 2);
-            const tip = `Z=${z.toFixed(2)} · ${r.classifLabel} · bruto ${r.bruto}`;
-            return `
-                <div class="qcpfc-barcol">
-                    <div class="qcpfc-barval" style="top:${valTop}px;color:${e.cor};">${z.toFixed(1)}</div>
-                    <div class="qcpfc-bar" style="top:${top}px;height:${h}px;background:${e.cor};"></div>
-                    <div class="qcpfc-tip">${tip}</div>
-                </div>`;
-        }).join('');
-
-        // ── Rótulos do eixo X (sigla + nome, na cor da escala) ─────────────
-        const xlabels = ESCALAS_ORDEM.map(c => {
-            const e = ESCALAS[c];
-            return `<div class="qcpfc-xlbl">
-                <span class="qcpfc-xsig"  style="color:${e.cor};">${c}</span>
-                <span class="qcpfc-xnome" style="color:${e.cor};">${escapeHtml(e.nome)}</span>
-            </div>`;
-        }).join('');
-
-        return `
-            <div class="qcpfc-grafico-wrap qcpfc-zchart">
-                <div class="qcpfc-zchart-titulo">Perfil de Escores Z por Escala</div>
-                <div class="qcpfc-zchart-plot" style="height:${H}px;--gut-l:${GUT_L}px;--gut-r:${GUT_R}px;">
-                    ${bandas.join('')}
-                    <div class="qcpfc-yticks">${ticks}</div>
-                    <div class="qcpfc-bars">${barras}</div>
-                </div>
-                <div class="qcpfc-xaxis" style="--gut-l:${GUT_L}px;--gut-r:${GUT_R}px;">${xlabels}</div>
-                <div class="qcpfc-zchart-legenda">
-                    <span class="qcpfc-leg"><i class="qcpfc-leg-sw" style="background:#bfdbfe;border-color:#3b82f6;"></i> Média (Z 0–1)</span>
-                    <span class="qcpfc-leg"><i class="qcpfc-leg-sw" style="background:#fde2c0;border-color:#f59e0b;"></i> Elevado (Z 1–2)</span>
-                    <span class="qcpfc-leg"><i class="qcpfc-leg-sw" style="background:#fecaca;border-color:#dc2626;"></i> Clín. Significativo (Z &gt; 2)</span>
-                </div>
-            </div>
-        `;
+        state.chartInstance = new Chart(canvas, {
+            type: 'bar',
+            plugins: [linhasCorte],
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Z-Score',
+                    data: zValues,
+                    backgroundColor: cores,
+                    borderRadius: 6,
+                    barPercentage: 0.7
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const code = ESCALAS_ORDEM[ctx.dataIndex];
+                                const r = state.scores[code];
+                                const zTxt = (r.z != null && !isNaN(r.z)) ? r.z.toFixed(2) : '—';
+                                return ` Z=${zTxt} · ${r.classifLabel} · bruto=${r.bruto}/28`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        min: -3,
+                        max: 4,
+                        title: { display: true, text: 'Z-Score (média populacional clínica = 0)' },
+                        grid: {
+                            color: (ctx) => ctx.tick.value === 0 ? '#64748b' : '#f1f5f9',
+                            lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1
+                        }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: '600' } }
+                    }
+                }
+            }
+        });
     }
 
     function renderDetalhesItens() {

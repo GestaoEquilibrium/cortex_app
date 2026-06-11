@@ -24,23 +24,15 @@
 }
 
 .qcpfc-tab-escalas th {
-    background: linear-gradient(180deg, #eef5ff 0%, #e6f0ff 100%);
-    padding: 13px 16px;
+    background: #f8fafc;
+    padding: 12px 16px;
     font-size: 11px;
-    font-weight: 800;
-    color: #2563eb;
+    font-weight: 700;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     text-align: left;
-    border-bottom: 1px solid #dbe7fb;
-}
-
-.qcpfc-tab-escalas tbody tr {
-    transition: background 0.15s ease;
-}
-
-.qcpfc-tab-escalas tbody tr:hover {
-    background: #f8fbff;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .qcpfc-tab-escalas th.ctr,
@@ -60,6 +52,16 @@
 
 .qcpfc-tab-escalas .nome-escala {
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qcpfc-tab-escalas .nome-escala-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .qcpfc-tab-escalas .escore-bruto {
@@ -69,9 +71,8 @@
 }
 
 .qcpfc-tab-escalas .z-score {
-    font-weight: 800;
+    font-weight: 700;
     font-size: 14px;
-    color: #1e293b;
 }
 
 /* ─── BADGES DE CLASSIFICAÇÃO (4 níveis) ────────────────────────────────── */
@@ -90,171 +91,28 @@
 .qcpfc-badge-elevado           { background: #fef3c7; color: #92400e; }
 .qcpfc-badge-significativo     { background: #fee2e2; color: #991b1b; }
 
-/* ─── GRÁFICO Z-SCORE (barras verticais + faixas) ───────────────────────── */
+/* ─── GRÁFICO Z-SCORE ───────────────────────────────────────────────────── */
 
 .qcpfc-grafico-wrap {
-    background: #fafbff;
+    background: #fafafa;
     border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 24px 24px 18px;
+    border-radius: 12px;
+    padding: 24px;
     margin-bottom: 24px;
 }
 
-.qcpfc-zchart-titulo {
-    text-align: center;
-    font-size: 16px;
-    font-weight: 800;
-    color: #1e293b;
-    margin-bottom: 18px;
-}
-
-/* área de plotagem (altura definida inline) */
-.qcpfc-zchart-plot {
+.qcpfc-grafico-canvas-container {
     position: relative;
+    height: 380px;
     width: 100%;
 }
 
-/* faixas de fundo */
-.qcpfc-zone {
-    position: absolute;
-    left: var(--gut-l, 36px);
-    right: 0;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    overflow: hidden;
-}
-.qcpfc-zone > span {
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    padding-right: 10px;
-    white-space: nowrap;
-}
-.qcpfc-zone-media   { background: #eff6ff; }
-.qcpfc-zone-media   > span { color: #3b82f6; }
-.qcpfc-zone-elevado { background: #fffaf0; }
-.qcpfc-zone-elevado > span { color: #f59e0b; }
-.qcpfc-zone-clin    { background: #fef2f2; }
-.qcpfc-zone-clin    > span { color: #dc2626; }
-
-/* linhas-guia + rótulos do eixo Y */
-.qcpfc-yticks { position: absolute; inset: 0; }
-.qcpfc-ytick  { position: absolute; left: 0; right: 0; height: 0; }
-.qcpfc-ytick-lbl {
-    position: absolute;
-    left: 0;
-    top: -8px;
-    width: calc(var(--gut-l, 36px) - 8px);
-    text-align: right;
-    font-size: 10px;
-    font-weight: 600;
-    color: #94a3b8;
-}
-.qcpfc-ytick-line {
-    position: absolute;
-    left: var(--gut-l, 36px);
-    right: var(--gut-r, 84px);
-    top: 0;
-    border-top: 1px dashed #e2e8f0;
-}
-.qcpfc-ytick.is-zero .qcpfc-ytick-line {
-    border-top: 1.5px solid #94a3b8;
-}
-.qcpfc-ytick.is-zero .qcpfc-ytick-lbl { color: #475569; font-weight: 700; }
-
-/* barras */
-.qcpfc-bars {
-    position: absolute;
-    left: var(--gut-l, 36px);
-    right: var(--gut-r, 84px);
-    top: 0;
-    bottom: 0;
-    display: flex;
-}
-.qcpfc-barcol { flex: 1; position: relative; }
-.qcpfc-bar {
-    position: absolute;
-    left: 16%;
-    right: 16%;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
-    transition: filter 0.15s ease, transform 0.15s ease;
-}
-.qcpfc-barcol:hover .qcpfc-bar { filter: brightness(1.1); transform: scaleX(1.06); }
-.qcpfc-barval {
-    position: absolute;
-    left: 0;
-    right: 0;
+.qcpfc-grafico-legenda {
     text-align: center;
     font-size: 12px;
-    font-weight: 800;
-}
-
-/* tooltip (apenas em tela) */
-.qcpfc-tip {
-    position: absolute;
-    top: -6px;
-    left: 50%;
-    transform: translate(-50%, -100%);
-    background: #0f172a;
-    color: #fff;
-    font-size: 10.5px;
-    font-weight: 600;
-    padding: 6px 10px;
-    border-radius: 8px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
-    z-index: 5;
-}
-.qcpfc-barcol:hover .qcpfc-tip { opacity: 1; }
-
-/* eixo X (sigla + nome coloridos) */
-.qcpfc-xaxis {
-    display: flex;
-    padding-top: 8px;
-    padding-left: var(--gut-l, 36px);
-    padding-right: var(--gut-r, 84px);
-}
-.qcpfc-xlbl {
-    flex: 1;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    line-height: 1.15;
-    min-width: 0;
-}
-.qcpfc-xsig  { font-size: 12px; font-weight: 800; }
-.qcpfc-xnome { font-size: 8.5px; font-weight: 600; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; }
-
-/* legenda */
-.qcpfc-zchart-legenda {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 22px;
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 1px solid #eef2f7;
-}
-.qcpfc-leg {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #475569;
-}
-.qcpfc-leg-sw {
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
-    border: 1.5px solid;
-    flex-shrink: 0;
+    color: #64748b;
+    margin-top: 14px;
+    font-style: italic;
 }
 
 /* ─── CARDS DE DETALHAMENTO POR ESCALA ──────────────────────────────────── */
@@ -341,11 +199,60 @@
 /* ─── RESPONSIVO ────────────────────────────────────────────────────────── */
 
 @media (max-width: 700px) {
-    .qcpfc-zchart-plot { --gut-l: 26px; --gut-r: 18px; }
-    .qcpfc-xaxis { --gut-l: 26px; --gut-r: 18px; }
-    .qcpfc-zone > span { font-size: 8px; padding-right: 4px; }
-    .qcpfc-xsig { font-size: 10px; }
-    .qcpfc-xnome { display: none; }
+    .qcpfc-grafico-canvas-container { height: 320px; }
     .qcpfc-escala-card-header { flex-direction: column; align-items: flex-start; }
-    .qcpfc-zchart-legenda { gap: 12px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Cores à prova de sobreposição — garante que tabela/badges/cards do QCP
+   apareçam coloridos como no PDF, mesmo que outra folha de estilo tente
+   achatar. Escopo em #laudo-conteudo eleva a especificidade.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Bolinhas coloridas por escala (tabela e cards) */
+#laudo-conteudo .qcpfc-tab-escalas .nome-escala-bullet,
+#laudo-conteudo .qcpfc-escala-card-bullet {
+    display: inline-block !important;
+    width: 11px !important;
+    height: 11px !important;
+    border-radius: 50% !important;
+}
+
+/* Z-score colorido (vermelho positivo / verde negativo) — o inline já põe a cor;
+   aqui só garante peso visual */
+#laudo-conteudo .qcpfc-tab-escalas .z-score {
+    font-weight: 800 !important;
+    font-size: 14px !important;
+}
+
+/* Badges de classificação — fundo + cor forçados (4 níveis) */
+#laudo-conteudo .qcpfc-badge,
+#laudo-conteudo .qcpfc-escala-card-classif-meta {
+    display: inline-block !important;
+    padding: 4px 14px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.02em !important;
+    border: none !important;
+}
+#laudo-conteudo .qcpfc-badge-abaixo        { background: #d1fae5 !important; color: #065f46 !important; }
+#laudo-conteudo .qcpfc-badge-media         { background: #dbeafe !important; color: #1e40af !important; }
+#laudo-conteudo .qcpfc-badge-elevado       { background: #fef3c7 !important; color: #92400e !important; }
+#laudo-conteudo .qcpfc-badge-significativo { background: #fee2e2 !important; color: #991b1b !important; }
+
+/* Card com faixa lateral colorida na cor da escala (inline define a cor) */
+#laudo-conteudo .qcpfc-escala-card {
+    border-left-width: 4px !important;
+    border-left-style: solid !important;
+}
+
+/* Cabeçalho escuro do laudo — garante o gradiente mesmo se o raadsr não pegar */
+#laudo-conteudo .laudo-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%) !important;
+    color: #fff !important;
+}
+#laudo-conteudo .laudo-header-logo {
+    background: linear-gradient(135deg, #14b8a6 0%, #2563eb 100%) !important;
+    color: #fff !important;
 }

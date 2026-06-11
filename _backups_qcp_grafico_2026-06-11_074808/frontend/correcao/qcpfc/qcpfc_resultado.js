@@ -555,34 +555,8 @@
         const cores  = ESCALAS_ORDEM.map(c => ESCALAS[c].cor);
         const zValues = ESCALAS_ORDEM.map(c => state.scores[c].z ?? 0);
 
-        // Plugin inline: desenha as linhas de corte Z=1 (laranja) e Z=2 (vermelha)
-        // sem depender do chartjs-plugin-annotation (que nao esta carregado).
-        const linhasCorte = {
-            id: 'qcpfcLinhasCorte',
-            afterDatasetsDraw(chart) {
-                const { ctx, chartArea, scales } = chart;
-                if (!chartArea || !scales.x) return;
-                const desenha = (valor, cor) => {
-                    const x = scales.x.getPixelForValue(valor);
-                    if (x < chartArea.left || x > chartArea.right) return;
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.setLineDash([4, 4]);
-                    ctx.lineWidth = 2;
-                    ctx.strokeStyle = cor;
-                    ctx.moveTo(x, chartArea.top);
-                    ctx.lineTo(x, chartArea.bottom);
-                    ctx.stroke();
-                    ctx.restore();
-                };
-                desenha(1, '#f59e0b'); // limite de elevação
-                desenha(2, '#dc2626'); // limite de significação clínica
-            }
-        };
-
         state.chartInstance = new Chart(canvas, {
             type: 'bar',
-            plugins: [linhasCorte],
             data: {
                 labels: labels,
                 datasets: [{
@@ -604,8 +578,25 @@
                             label: (ctx) => {
                                 const code = ESCALAS_ORDEM[ctx.dataIndex];
                                 const r = state.scores[code];
-                                const zTxt = (r.z != null && !isNaN(r.z)) ? r.z.toFixed(2) : '—';
-                                return ` Z=${zTxt} · ${r.classifLabel} · bruto=${r.bruto}/28`;
+                                return ` Z=${r.z.toFixed(2)} · ${r.classifLabel} · bruto=${r.bruto}/28`;
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            line1: {
+                                type: 'line',
+                                xMin: 1, xMax: 1,
+                                borderColor: '#f59e0b',
+                                borderWidth: 2,
+                                borderDash: [4, 4]
+                            },
+                            line2: {
+                                type: 'line',
+                                xMin: 2, xMax: 2,
+                                borderColor: '#dc2626',
+                                borderWidth: 2,
+                                borderDash: [4, 4]
                             }
                         }
                     }

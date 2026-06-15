@@ -1,54 +1,77 @@
 // ============================================================================
-// CORTEX_APP — Resultado ICA (Inventário de Comportamentos Autísticos / ABC)
+// CORTEX_APP — Resultado ICA (laudo) — mesmo padrão visual do ASSQ
 // ============================================================================
 // URL: ?aplicacao_id=<uuid>
 //
-// Krug (ABC) | trad. Pedromônico & Marteletto (2005) | 57 itens binários (Sim/Não)
-// Peso 1-4 por item | 5 áreas | heteroaplicação (responsável).
+// ICA — Inventário de Comportamentos Autísticos (Autism Behavior Checklist)
+// Krug (ABC); trad. BR Pedromônico & Marteletto (2005)
+// 57 itens binários (Sim/Não) · peso 1-4 por item · 5 áreas · heteroaplicação
 //
-// Laudo (JS recalcula a partir de escores_brutos.respostas = {numero: 0|1}):
-//   - "Sim" soma o PESO do item; "Não" soma 0. Sem itens invertidos.
-//   - Subtotal por área (5) + escore total ponderado (0-158).
-//   - Classificação por corte do total (fonte: material Genial Care):
-//       >=68 Alta probabilidade | 54-67 Moderada | 47-53 Duvidosa | <47 Tipico.
-//   - Pesos vivem AQUI (banco nao tem coluna de peso) — area vem do fator (DB).
-//   - Triagem; nao substitui avaliacao diagnostica.
+// DECISÃO ARQUITETURAL:
+//   Banco grava 0/1 (Não=0, Sim=1) em escores_brutos.respostas. A ÁREA de cada
+//   item vem do fator (DB). O PESO vive no JS (banco não tem coluna de peso).
+//   JS no laudo:
+//     1. Lê respostas (0/1)
+//     2. "Sim" soma o PESO do item; "Não" soma 0 (sem reversos)
+//     3. Soma TOTAL ponderado (0-158) e POR ÁREA (5)
+//     4. Classifica por corte: >=68 Alta | 54-67 Moderada | 47-53 Duvidosa | <47 Tipico
 // ============================================================================
 
 (function() {
     'use strict';
 
     const SIGLA_ESPERADA = 'ICA';
-    const TOTAL_ITENS = 57;
+    const SCORE_MAX = 158;
 
-    // Peso por item (1-4) — protocolo oficial. NÃO está no banco; vive aqui.
+    // Peso por item (1-4) — protocolo oficial. Vive aqui (banco não tem peso).
     const PESOS = {
         1:4,2:2,3:4,4:1,5:2,6:2,7:2,8:3,9:3,10:3,11:4,12:4,13:2,14:3,15:2,16:4,17:3,18:2,19:4,20:1,
         21:3,22:4,23:3,24:4,25:4,26:3,27:3,28:2,29:2,30:2,31:2,32:3,33:3,34:1,35:2,36:2,37:1,38:4,39:4,40:4,
         41:1,42:2,43:3,44:3,45:1,46:3,47:4,48:4,49:2,50:4,51:3,52:3,53:4,54:2,55:1,56:3,57:4
     };
 
-    // Cortes do escore TOTAL ponderado (0-158)
-    const FAIXAS = [
-        { min: 68, max: 158, label: 'Alta probabilidade de autismo', cor: '#dc2626', corClara: '#fee2e2', classe: 'ica-alta' },
-        { min: 54, max: 67,  label: 'Probabilidade moderada',        cor: '#ea580c', corClara: '#ffedd5', classe: 'ica-moderada' },
-        { min: 47, max: 53,  label: 'Avaliação duvidosa',            cor: '#d97706', corClara: '#fef3c7', classe: 'ica-duvidosa' },
-        { min: 0,  max: 46,  label: 'Desenvolvimento típico',        cor: '#16a34a', corClara: '#dcfce7', classe: 'ica-tipico' }
-    ];
-    const MAX_TOTAL = 158;
+    // Áreas (5) — rótulo, cor, máx ponderado, descrição (código do fator no DB)
+    const AREAS_INFO = {
+        ES: { label: 'Estímulo Sensorial', cor: '#0d9488', max: 26,
+              descricao: 'Respostas atípicas a estímulos visuais, auditivos, táteis e dolorosos; padrões sensoriais incomuns.' },
+        RE: { label: 'Relacionamento', cor: '#3b82f6', max: 38,
+              descricao: 'Reciprocidade social, contato visual, vínculo afetivo, resposta a expressões e a outras pessoas.' },
+        CO: { label: 'Uso do Corpo e Objetos', cor: '#7c3aed', max: 38,
+              descricao: 'Estereotipias motoras, balanceios, manuseio atípico de objetos e brinquedos, autoagressão.' },
+        LG: { label: 'Linguagem', cor: '#f59e0b', max: 31,
+              descricao: 'Comunicação verbal e não-verbal, ecolalia, uso de pronomes, repetição de frases, gestos.' },
+        PS: { label: 'Desenvolvimento Pessoal e Social', cor: '#dc2626', max: 25,
+              descricao: 'Autonomia em atividades diárias, autocuidado, regulação, marcos de desenvolvimento.' }
+    };
+    const AREAS_ORDEM = ['ES', 'RE', 'CO', 'LG', 'PS'];
+
+    // Cortes do escore total ponderado (régua: 47 / 54 / 68)
+    const CORTES = [47, 54, 68];
 
     function classificarTotal(total) {
-        return FAIXAS.find(f => total >= f.min && total <= f.max) || FAIXAS[FAIXAS.length - 1];
+        if (total >= 68) return {
+            label: 'Alta probabilidade', slug: 'alta', cor: '#dc2626',
+            desc: `A pontuação total ponderada (${total}/${SCORE_MAX}) está no nível de <strong>alta probabilidade</strong> de comportamentos do espectro autista (≥ 68 pontos). Indica forte recomendação de avaliação diagnóstica formal.`
+        };
+        if (total >= 54) return {
+            label: 'Probabilidade moderada', slug: 'moderada', cor: '#ea580c',
+            desc: `A pontuação total ponderada (${total}/${SCORE_MAX}) está na faixa de <strong>probabilidade moderada</strong> (54–67 pontos). Recomenda-se aprofundar a investigação clínica.`
+        };
+        if (total >= 47) return {
+            label: 'Avaliação duvidosa', slug: 'duvidosa', cor: '#d97706',
+            desc: `A pontuação total ponderada (${total}/${SCORE_MAX}) está na faixa <strong>duvidosa/limítrofe</strong> (47–53 pontos). O resultado é inconclusivo e pede reavaliação e observação complementar.`
+        };
+        return {
+            label: 'Desenvolvimento típico', slug: 'tipico', cor: '#16a34a',
+            desc: `A pontuação total ponderada (${total}/${SCORE_MAX}) está <strong>abaixo do ponto de corte</strong> (< 47 pontos). Este resultado de triagem não sugere comportamentos do espectro autista em nível clinicamente significativo.`
+        };
     }
 
     const state = {
         aplicacaoId: null, aplicacao: null, paciente: null,
-        norma: null, itens: [], fatores: [], correcao: null, scores: null
+        norma: null, itens: [], correcao: null, scores: null, chartInstance: null
     };
 
-    // ============================================================================
-    // BOOT
-    // ============================================================================
     window.addEventListener('cortex:auth-ready', async () => {
         await CortexSidebar.render('pacientes');
         const params = new URLSearchParams(window.location.search);
@@ -70,8 +93,7 @@
         state.aplicacao = aplicacao;
 
         const { data: paciente, error: errP } = await window.cortexClient
-            .from('pacientes')
-            .select('id, nome_completo, sexo, data_nascimento, cpf, escolaridade, escolaridade_serie')
+            .from('pacientes').select('id, nome_completo, sexo, data_nascimento, cpf, escolaridade')
             .eq('id', aplicacao.paciente_id).single();
         if (errP) throw new Error('Paciente: ' + errP.message);
         state.paciente = paciente;
@@ -90,19 +112,16 @@
         state.norma = norma;
 
         const { data: fatores } = await window.cortexClient
-            .from('instrumentos_fatores')
-            .select('id, fator_codigo, fator_label, ordem, min_score, max_score, eh_total')
-            .eq('norma_id', norma.id).order('ordem');
-        state.fatores = fatores || [];
+            .from('instrumentos_fatores').select('id, fator_codigo')
+            .eq('norma_id', norma.id);
+        const mapFator = {};
+        for (const f of (fatores || [])) mapFator[f.id] = f.fator_codigo;
 
-        const { data: itensRaw } = await window.cortexClient
+        const { data: itens } = await window.cortexClient
             .from('instrumentos_itens').select('numero, texto, fator_id')
             .eq('norma_id', norma.id).order('numero');
-        const mapFator = {};
-        for (const f of state.fatores) mapFator[f.id] = f.fator_codigo;
-        state.itens = (itensRaw || []).map(i => ({
-            numero: i.numero, texto: i.texto,
-            fator_codigo: mapFator[i.fator_id] || 'desconhecido'
+        state.itens = (itens || []).map(i => ({
+            numero: i.numero, texto: i.texto, area: mapFator[i.fator_id] || null
         }));
 
         const { data: correcao, error: errC } = await window.cortexClient
@@ -119,236 +138,264 @@
         });
     }
 
-    // ============================================================================
-    // CÁLCULO — Sim=peso, Não=0; subtotal por área + total ponderado + classificação
-    // ============================================================================
     function calcularResultados(correcao) {
         const respostas = (correcao?.escores_brutos || {}).respostas || {};
-        const respPorNum = {};
-        for (const [k, v] of Object.entries(respostas)) respPorNum[parseInt(k)] = parseInt(v) || 0;
-
-        const porFator = {};
-        for (const f of state.fatores) {
-            if (f.eh_total) continue;
-            porFator[f.fator_codigo] = {
-                codigo: f.fator_codigo, nome: f.fator_label, ordem: f.ordem,
-                minScore: f.min_score || 0, maxScore: f.max_score || 0,
-                itens: [], soma: 0, n: 0, simCount: 0, pct: 0
-            };
-        }
+        // contribuição por item: Sim(1) -> peso; Não(0) -> 0
+        const pontosItem = {}, respItem = {};
         for (const item of state.itens) {
-            const valor = respPorNum[item.numero] ?? 0;      // 0 (Não) | 1 (Sim)
-            const peso = PESOS[item.numero] || 0;
-            const contrib = valor === 1 ? peso : 0;
-            const fc = item.fator_codigo;
-            if (porFator[fc]) {
-                porFator[fc].itens.push({ numero: item.numero, valor, peso, contrib, texto: item.texto });
-                porFator[fc].soma += contrib; porFator[fc].n += 1;
-                if (valor === 1) porFator[fc].simCount += 1;
+            const r = respostas[item.numero];
+            const resp = (r != null && !isNaN(r)) ? parseInt(r, 10) : 0;
+            respItem[item.numero] = resp;
+            pontosItem[item.numero] = resp === 1 ? (PESOS[item.numero] || 0) : 0;
+        }
+        let total = 0;
+        const subscores = {}; for (const c of AREAS_ORDEM) subscores[c] = 0;
+        const simPorArea = {}; for (const c of AREAS_ORDEM) simPorArea[c] = 0;
+        for (const item of state.itens) {
+            total += pontosItem[item.numero];
+            if (subscores[item.area] !== undefined) {
+                subscores[item.area] += pontosItem[item.numero];
+                if (respItem[item.numero] === 1) simPorArea[item.area] += 1;
             }
         }
-        const areas = Object.values(porFator).sort((a, b) => a.ordem - b.ordem);
-        let total = 0;
-        for (const a of areas) {
-            total += a.soma;
-            a.pct = a.maxScore > 0 ? Math.round((a.soma / a.maxScore) * 100) : 0;
-            a.cor = corAzulPct(a.pct);
-            a.corClara = '#dbeafe';
-        }
-
         const respondidos = Object.keys(respostas).length;
-        const faixa = classificarTotal(total);
-        return {
-            areas,
-            porPct: [...areas].sort((a, b) => b.pct - a.pct),
-            total, maxTotal: MAX_TOTAL, faixa,
-            pctTotal: Math.round((total / MAX_TOTAL) * 100),
-            respondidos, faltam: TOTAL_ITENS - respondidos
-        };
+        return { pontosItem, respItem, total, subscores, simPorArea,
+                 totalClassif: classificarTotal(total), respondidos };
     }
 
-    // ============================================================================
-    // RENDER
-    // ============================================================================
     function renderizar() {
         const cont = document.getElementById('laudo-conteudo');
         cont.innerHTML = renderLaudo();
         document.getElementById('acoes-topo').style.display = 'flex';
         document.getElementById('back-link').href = `../../bateria/bateria.html?paciente=${state.paciente.id}`;
         document.getElementById('btn-gerar-pdf').addEventListener('click', gerarPDF);
-        const btnTeste = document.getElementById('btn-imprimir-teste');
-        if (btnTeste) btnTeste.addEventListener('click', imprimirTeste);
-
-        document.querySelectorAll('[data-goto]').forEach(el => {
-            el.addEventListener('click', () => {
-                const alvo = document.getElementById('area-' + el.dataset.goto);
-                if (alvo) {
-                    alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    alvo.classList.add('ica-card-foco');
-                    setTimeout(() => alvo.classList.remove('ica-card-foco'), 1400);
-                }
-            });
-        });
+        setTimeout(renderGrafico, 60);
     }
 
     function renderLaudo() {
-        const s = state.scores;
-        const p = state.paciente;
-        const idade = calcularIdadeAnos(p.data_nascimento, state.aplicacao.created_at);
-        const dataAplic = formatarDataBR(state.aplicacao.created_at);
-        const nascStr = formatarDataBR(p.data_nascimento);
-        const sexoStr = p.sexo === 'M' ? 'Masculino' : (p.sexo === 'F' ? 'Feminino' : '—');
+        const total = state.scores.total;
+        const cl = state.scores.totalClassif;
+        const idade = calcularIdade(state.paciente.data_nascimento, state.aplicacao.created_at);
+        const nascStr = formatarDataBR(state.paciente.data_nascimento);
+        const dataApl = state.aplicacao.created_at;
+        const pctBarra = Math.min(100, Math.round((total / SCORE_MAX) * 100));
 
         return `
-        <div class="laudo ica-laudo">
-            ${renderCabecalho(p, idade, sexoStr, nascStr, dataAplic)}
-            ${renderTotal(s)}
-            ${renderPerfil(s)}
-            ${renderAreasDetalhe(s)}
-            ${renderRodape(s)}
+        <div class="laudo">
+            <div class="laudo-header">
+                <div class="laudo-header-esq">
+                    <div class="laudo-header-logo">E</div>
+                    <div class="laudo-header-textos">
+                        <div class="laudo-header-supratitulo">Relatório de Avaliação Neuropsicológica</div>
+                        <h1 class="laudo-header-titulo">ICA</h1>
+                        <div class="laudo-header-subtitulo">Inventário de Comportamentos Autísticos / Autism Behavior Checklist (Heteroaplicação)<br>Krug (ABC) · trad. BR Pedromônico &amp; Marteletto (2005) · 57 itens · peso 1-4 · 5 áreas</div>
+                    </div>
+                </div>
+                <div class="laudo-header-pontuacao">
+                    <div class="laudo-header-pontuacao-label">Escore Total</div>
+                    <div class="laudo-header-pontuacao-valor">${total}</div>
+                    <div class="laudo-header-pontuacao-detalhe">de ${SCORE_MAX} (ponderado)</div>
+                </div>
+            </div>
+
+            <div class="laudo-body">
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">1</span>
+                    Identificação
+                </div>
+                <div class="laudo-identificacao">
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Criança/Adolescente:</span><span class="laudo-identif-valor">${escapeHtml(state.paciente.nome_completo)}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Idade:</span><span class="laudo-identif-valor">${idade !== null ? idade + ' anos' : '—'}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Sexo:</span><span class="laudo-identif-valor">${escapeHtml(state.paciente.sexo || '—')}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Nascimento:</span><span class="laudo-identif-valor">${nascStr}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Avaliação:</span><span class="laudo-identif-valor">${formatarDataBR(dataApl)}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Modalidade:</span><span class="laudo-identif-valor">Heteroaplicação (responsável)</span></div>
+                </div>
+
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">2</span>
+                    Escore Total e Classificação
+                </div>
+                <div class="ica-total-card" style="border-left-color:${cl.cor};">
+                    <div class="ica-total-card-header">
+                        <span class="ica-total-card-numero" style="color:${cl.cor};">${total}</span>
+                        <span class="ica-total-card-de">/ ${SCORE_MAX} pontos</span>
+                        <span class="ica-total-card-classif ica-badge-${cl.slug}">${cl.label}</span>
+                    </div>
+                    <p class="ica-total-card-desc">${cl.desc}</p>
+                    <div class="ica-total-barra-wrap">
+                        <div class="ica-total-barra-bg">
+                            <div class="ica-total-barra-fill" style="width:${pctBarra}%;background:${cl.cor};"></div>
+                            ${CORTES.map(c => {
+                                const left = (c / SCORE_MAX) * 100;
+                                return `<div class="ica-total-cutoff-tic" style="left:${left}%;"></div><div class="ica-total-cutoff-cap" style="left:${left}%;">${c}</div>`;
+                            }).join('')}
+                        </div>
+                        <div class="ica-total-barra-escala">
+                            <span>0</span><span>47</span><span>54</span><span>68</span><span>${SCORE_MAX}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">3</span>
+                    Pontuação por Área
+                </div>
+                ${renderTabelaAreas()}
+
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">4</span>
+                    Perfil Gráfico das Áreas
+                </div>
+                <div class="ica-grafico-wrap">
+                    <div class="ica-grafico-canvas-container">
+                        <canvas id="ica-chart"></canvas>
+                    </div>
+                    <div class="ica-grafico-legenda">
+                        Pontuação ponderada de cada área em % do seu máximo.
+                    </div>
+                </div>
+
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">5</span>
+                    Detalhamento por Área
+                </div>
+                ${AREAS_ORDEM.map(renderAreaCard).join('')}
+
+                <div class="ica-nota-tecnica">
+                    <strong>Nota técnica:</strong> O ICA / ABC (Krug; tradução brasileira de
+                    Pedromônico &amp; Marteletto, 2005) é instrumento de <strong>rastreio</strong>
+                    de comportamentos do espectro autista, aplicado por <strong>heteroaplicação</strong>
+                    (responsável/cuidador). São 57 comportamentos binários (Sim/Não), cada um com
+                    peso de 1 a 4, distribuídos em 5 áreas. O escore total ponderado varia de 0 a 158:
+                    <strong>≥ 68</strong> alta probabilidade, <strong>54–67</strong> moderada,
+                    <strong>47–53</strong> duvidosa e <strong>&lt; 47</strong> desenvolvimento típico.
+                    Trata-se de instrumento dimensional de triagem — os resultados devem ser
+                    interpretados em conjunto com entrevista clínica, observação direta, anamnese e
+                    demais dados da avaliação neuropsicológica, não constituindo diagnóstico isolado.
+                </div>
+
+                ${renderDetalhesItens()}
+            </div>
+
+            <div class="laudo-rodape">
+                <div class="laudo-rodape-esq">
+                    <div class="laudo-rodape-org">Equilibrium Neuropsicologia</div>
+                    <div class="laudo-rodape-tipo">Correção automatizada — ICA</div>
+                </div>
+                <div class="laudo-rodape-dir">
+                    <div class="laudo-rodape-data">Documento gerado em ${formatarDataBR(new Date().toISOString())}</div>
+                    <div class="laudo-rodape-confidencial">Documento confidencial — uso restrito ao profissional solicitante.</div>
+                </div>
+            </div>
         </div>`;
     }
 
-    function renderCabecalho(p, idade, sexoStr, nascStr, dataAplic) {
-        const idadeStr = idade !== null ? `${idade} anos` : '—';
-        return `
-        <header class="ica-header">
-            <div class="ica-header-top">
-                <div class="ica-header-marca">
-                    <div class="ica-logo-mark">E</div>
-                    <div>
-                        <div class="ica-header-clinica">Equilibrium · Neuropsicologia</div>
-                        <div class="ica-header-instr">ICA — Inventário de Comportamentos Autísticos (ABC)</div>
-                    </div>
-                </div>
-                <span class="ica-header-chip">🧩 Rastreio TEA</span>
-            </div>
-            <div class="ica-paciente-grid">
-                <div><span class="ica-pl">Paciente</span><span class="ica-pv">${escapeHtml(p.nome_completo)}</span></div>
-                <div><span class="ica-pl">Idade</span><span class="ica-pv">${idadeStr}</span></div>
-                <div><span class="ica-pl">Sexo</span><span class="ica-pv">${sexoStr}</span></div>
-                <div><span class="ica-pl">Nascimento</span><span class="ica-pv">${nascStr}</span></div>
-                <div><span class="ica-pl">Aplicação</span><span class="ica-pv">${dataAplic}</span></div>
-                <div><span class="ica-pl">Respondente</span><span class="ica-pv">Heteroaplicação (responsável)</span></div>
-            </div>
-        </header>`;
-    }
-
-    // Painel do escore total + faixa de classificação + régua das 4 faixas
-    function renderTotal(s) {
-        const f = s.faixa;
-        // posição do marcador na régua (0-158)
-        const posPct = Math.max(0, Math.min(100, (s.total / s.maxTotal) * 100));
-        // larguras das faixas na régua (proporcional ao intervalo de pontos)
-        const segs = [
-            { lbl: 'Típico', ini: 0,  fim: 46,  cor: '#16a34a' },
-            { lbl: 'Duvidosa', ini: 47, fim: 53, cor: '#d97706' },
-            { lbl: 'Moderada', ini: 54, fim: 67, cor: '#ea580c' },
-            { lbl: 'Alta', ini: 68, fim: 158, cor: '#dc2626' }
-        ];
-        const reguaSegs = segs.map(g => {
-            const w = ((g.fim - g.ini + 1) / (s.maxTotal + 1)) * 100;
-            return `<div class="ica-regua-seg" style="width:${w}%;background:${g.cor};" title="${g.lbl} (${g.ini}–${g.fim})">
-                        <span class="ica-regua-seg-lbl">${g.lbl}</span>
-                    </div>`;
+    function renderTabelaAreas() {
+        const linhas = AREAS_ORDEM.map(code => {
+            const info = AREAS_INFO[code];
+            const score = state.scores.subscores[code];
+            const pct = Math.round((score / info.max) * 100);
+            const itensCount = state.itens.filter(i => i.area === code).length;
+            return `<tr>
+                <td><span class="nome-sub"><span class="nome-sub-bullet" style="background:${info.cor};"></span>${info.label}</span></td>
+                <td class="ctr">${itensCount}</td>
+                <td class="ctr"><span class="escore-bruto">${score} / ${info.max}</span></td>
+                <td class="ctr">${pct}%</td>
+            </tr>`;
         }).join('');
-
         return `
-        <section class="ica-total" style="--faixa:${f.cor};--faixaClara:${f.corClara};">
-            <div class="ica-total-grid">
-                <div class="ica-total-num">
-                    <div class="ica-total-valor">${s.total}<span class="ica-total-max"> / ${s.maxTotal}</span></div>
-                    <div class="ica-total-cap">Escore total ponderado</div>
-                </div>
-                <div class="ica-total-class">
-                    <span class="ica-badge ${f.classe}">${f.label}</span>
-                    <div class="ica-total-sub">${s.respondidos}/${TOTAL_ITENS} itens respondidos${s.faltam > 0 ? ` · ${s.faltam} em branco` : ''}</div>
-                </div>
-            </div>
-            <div class="ica-regua">
-                <div class="ica-regua-track">${reguaSegs}
-                    <div class="ica-regua-marker" style="left:${posPct}%;" title="Escore: ${s.total}">
-                        <div class="ica-regua-marker-pin"></div>
-                        <div class="ica-regua-marker-val">${s.total}</div>
-                    </div>
-                </div>
-                <div class="ica-regua-eixo"><span>0</span><span>47</span><span>54</span><span>68</span><span>158</span></div>
-            </div>
-        </section>`;
-    }
-
-    // Perfil das 5 áreas em barras (peso ponderado / máx), ordenadas pela mais expressiva
-    function renderPerfil(s) {
-        const barras = s.porPct.map(a => {
-            const w = Math.max(2, a.pct);
-            return `
-            <div class="ica-bar-row" data-goto="${a.codigo}" role="button" tabindex="0">
-                <div class="ica-bar-nome">${escapeHtml(a.nome)}</div>
-                <div class="ica-bar-track">
-                    <div class="ica-bar-fill" style="width:${w}%;background:${a.cor};"></div>
-                </div>
-                <div class="ica-bar-val">${a.soma}<span class="ica-bar-max">/${a.maxScore}</span></div>
+            <div class="ica-tab-subescalas">
+                <table>
+                    <thead><tr><th>Área</th><th class="ctr">Itens</th><th class="ctr">Pontuação</th><th class="ctr">% do máximo</th></tr></thead>
+                    <tbody>${linhas}</tbody>
+                </table>
             </div>`;
-        }).join('');
-        return `
-        <section class="ica-secao">
-            <h2 class="ica-secao-titulo">Perfil por área</h2>
-            <p class="ica-secao-nota">Soma ponderada de cada área (peso dos itens marcados “Sim”), em relação ao máximo da área. Clique numa barra para ver os itens.</p>
-            <div class="ica-bars">${barras}</div>
-        </section>`;
     }
 
-    // Detalhe por área: cabeçalho + tira item a item (Sim/Não + peso)
-    function renderAreasDetalhe(s) {
-        const cards = s.areas.map(a => {
-            const itensHtml = a.itens.map(it => {
-                const sim = it.valor === 1;
-                return `
-                <div class="ica-item ${sim ? 'ica-item-sim' : 'ica-item-nao'}">
-                    <span class="ica-item-num">${it.numero}</span>
-                    <span class="ica-item-txt">${escapeHtml(it.texto)}</span>
-                    <span class="ica-item-peso" title="Peso do item">×${it.peso}</span>
-                    <span class="ica-item-resp">${sim ? `Sim <b>+${it.contrib}</b>` : 'Não'}</span>
-                </div>`;
-            }).join('');
-            return `
-            <div class="ica-area-card" id="area-${a.codigo}">
-                <div class="ica-area-head" style="--ac:${a.cor};">
-                    <div class="ica-area-head-nome">${escapeHtml(a.nome)}</div>
-                    <div class="ica-area-head-stats">
-                        <span><b>${a.soma}</b>/${a.maxScore} pts</span>
-                        <span>${a.simCount}/${a.n} “Sim”</span>
-                    </div>
+    function renderAreaCard(code) {
+        const info = AREAS_INFO[code];
+        const score = state.scores.subscores[code];
+        const pct = Math.round((score / info.max) * 100);
+        const sims = state.scores.simPorArea[code];
+        const itensCount = state.itens.filter(i => i.area === code).length;
+        return `
+            <div class="ica-sub-card" style="border-left-color:${info.cor};">
+                <div class="ica-sub-card-header">
+                    <div class="ica-sub-card-titulo"><span class="ica-sub-card-bullet" style="background:${info.cor};"></span>${info.label}</div>
+                    <span class="ica-sub-card-escore">${score} / ${info.max} (${pct}%) · ${sims}/${itensCount} “Sim”</span>
                 </div>
-                <div class="ica-area-itens">${itensHtml}</div>
+                <p class="ica-sub-card-corpo">${escapeHtml(info.descricao)}</p>
             </div>`;
+    }
+
+    function renderGrafico() {
+        const canvas = document.getElementById('ica-chart');
+        if (!canvas || typeof Chart === 'undefined') return;
+        if (state.chartInstance) state.chartInstance.destroy();
+
+        const labels = AREAS_ORDEM.map(c => AREAS_INFO[c].label);
+        const cores  = AREAS_ORDEM.map(c => AREAS_INFO[c].cor);
+        const scores = AREAS_ORDEM.map(c => state.scores.subscores[c]);
+        const maxes  = AREAS_ORDEM.map(c => AREAS_INFO[c].max);
+        const pcts   = scores.map((s, i) => Math.round((s / maxes[i]) * 100));
+
+        state.chartInstance = new Chart(canvas, {
+            type: 'bar',
+            data: { labels, datasets: [{ data: pcts, backgroundColor: cores, borderRadius: 6, barPercentage: 0.65 }] },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => {
+                        const code = AREAS_ORDEM[ctx.dataIndex]; const info = AREAS_INFO[code];
+                        const sc = state.scores.subscores[code];
+                        return ` ${sc} / ${info.max} pontos (${ctx.parsed.x}%)`;
+                    } } }
+                },
+                scales: {
+                    x: { min: 0, max: 100, ticks: { stepSize: 25, callback: (v) => v + '%' }, grid: { color: '#f1f5f9' } },
+                    y: { grid: { display: false }, ticks: { font: { size: 12, weight: '600' } } }
+                }
+            }
+        });
+    }
+
+    function renderDetalhesItens() {
+        if (!state.itens.length) return '';
+        const respostas = state.correcao?.escores_brutos?.respostas || {};
+        const linhas = state.itens.map(item => {
+            const area = item.area;
+            const areaTxt = area && AREAS_INFO[area]
+                ? `<span style="background:${AREAS_INFO[area].cor}22;color:${AREAS_INFO[area].cor};padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;">${area}</span>`
+                : '—';
+            const resp = state.scores.respItem[item.numero];
+            const respTxt = resp === 1 ? 'Sim' : (resp === 0 ? 'Não' : '—');
+            const ponto = state.scores.pontosItem[item.numero];
+            return `<tr>
+                <td style="text-align:center;font-weight:700;color:#1e40af;">${item.numero}</td>
+                <td>${escapeHtml(item.texto)}</td>
+                <td>${areaTxt}</td>
+                <td style="text-align:center;color:#64748b;">×${PESOS[item.numero] || 0}</td>
+                <td style="text-align:center;">${respTxt}</td>
+                <td style="text-align:center;font-weight:700;color:${ponto > 0 ? '#dc2626' : '#94a3b8'};">${ponto}</td>
+            </tr>`;
         }).join('');
         return `
-        <section class="ica-secao">
-            <h2 class="ica-secao-titulo">Itens por área</h2>
-            <div class="ica-areas">${cards}</div>
-        </section>`;
-    }
-
-    function renderRodape(s) {
-        return `
-        <section class="ica-rodape">
-            <p><strong>Interpretação:</strong> o escore total ponderado (0–158) classifica em faixas de probabilidade — <em>≥68</em> alta, <em>54–67</em> moderada, <em>47–53</em> duvidosa, <em>&lt;47</em> desenvolvimento típico.</p>
-            <p class="ica-rodape-aviso">⚠️ O ICA/ABC é um <strong>instrumento de triagem</strong> por observação do responsável. Não estabelece diagnóstico; deve compor uma avaliação multiprofissional. Krug, D. (ABC) — tradução brasileira: Pedromônico, M.R.M.; Marteletto, M.R.F. (2005).</p>
-        </section>`;
-    }
-
-    // ============================================================================
-    // IMPRESSÃO / PDF
-    // ============================================================================
-    function imprimirTeste() {
-        const senha = window.prompt('Senha para impressão de teste:');
-        if (senha === null) return;
-        if (String(senha).trim() !== '3226') { window.CortexUI.toast('Senha incorreta.', 'danger'); return; }
-        document.body.classList.add('imprimindo-teste');
-        const limpar = () => document.body.classList.remove('imprimindo-teste');
-        window.addEventListener('afterprint', limpar, { once: true });
-        setTimeout(() => { window.print(); }, 60);
+            <details class="laudo-detalhes-toggle">
+                <summary>▾ Ver respostas item a item (${state.itens.length} itens)</summary>
+                <table class="laudo-detalhes-tabela">
+                    <thead><tr>
+                        <th style="width:40px;text-align:center;">Nº</th>
+                        <th>Item</th>
+                        <th>Área</th>
+                        <th style="text-align:center;width:50px;">Peso</th>
+                        <th style="text-align:center;width:80px;">Resposta</th>
+                        <th style="text-align:center;width:60px;">Pontos</th>
+                    </tr></thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+            </details>`;
     }
 
     async function gerarPDF() {
@@ -357,7 +404,7 @@
         btn.disabled = true; btn.textContent = '⏳ Gerando PDF...';
         try {
             document.body.classList.add('exportando');
-            await new Promise(r => setTimeout(r, 120));
+            await new Promise(r => setTimeout(r, 100));
             const laudo = document.querySelector('.laudo');
             if (!laudo) throw new Error('Laudo não encontrado');
             const canvas = await html2canvas(laudo, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
@@ -375,8 +422,8 @@
                     if (restante > 0) pdf.addPage();
                 }
             }
-            const nome = state.paciente.nome_completo.toUpperCase().replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
-            pdf.save(`ICA - ${nome}_${formatarDataArquivo(new Date())}.pdf`);
+            const nomeAbreviado = state.paciente.nome_completo.toUpperCase().replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
+            pdf.save(`ICA - ${nomeAbreviado}_${formatarDataArquivo(new Date())}.pdf`);
             window.CortexUI.toast('PDF gerado com sucesso', 'success');
         } catch (err) {
             console.error('Erro ao gerar PDF:', err);
@@ -387,46 +434,36 @@
         }
     }
 
-    // ============================================================================
-    // UTILS
-    // ============================================================================
-    function corAzulPct(pct) {
-        const p = Math.max(0, Math.min(100, pct || 0));
-        const l = Math.round(58 - (p / 100) * 18);
-        return `hsl(222, 72%, ${l}%)`;
-    }
-    function calcularIdadeAnos(nascISO, aplISO) {
+    function calcularIdade(nascISO, aplISO) {
         if (!nascISO) return null;
         const ref = aplISO ? new Date(aplISO) : new Date();
         const n = new Date(nascISO);
         if (isNaN(n) || isNaN(ref) || ref < n) return null;
         let anos = ref.getFullYear() - n.getFullYear();
-        if (ref.getMonth() < n.getMonth() || (ref.getMonth() === n.getMonth() && ref.getDate() < n.getDate())) anos--;
+        const m = ref.getMonth() - n.getMonth();
+        if (m < 0 || (m === 0 && ref.getDate() < n.getDate())) anos--;
         return anos;
     }
     function formatarDataBR(iso) {
         if (!iso) return '—';
-        const s = String(iso).slice(0, 10);
-        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-        if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-        return new Date(iso).toLocaleDateString('pt-BR');
+        const d = iso.includes('T') ? new Date(iso) : new Date(iso + 'T00:00:00');
+        return d.toLocaleDateString('pt-BR');
     }
     function formatarDataArquivo(d) {
-        const p = n => String(n).padStart(2, '0');
-        return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
+        const ano = d.getFullYear(), mes = String(d.getMonth() + 1).padStart(2, '0'), dia = String(d.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+    function mostrarErro(msg) {
+        document.getElementById('laudo-conteudo').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+                <div class="empty-state-title">${escapeHtml(msg)}</div>
+            </div>`;
     }
     function escapeHtml(text) {
         if (text === null || text === undefined) return '';
         const div = document.createElement('div');
         div.textContent = String(text);
         return div.innerHTML;
-    }
-    function mostrarErro(msg) {
-        document.getElementById('laudo-conteudo').innerHTML = `
-            <div class="erro-state">
-                <h2>⚠️ Não foi possível carregar o laudo</h2>
-                <p>${escapeHtml(msg)}</p>
-                <button class="btn btn-primary" onclick="history.back()">Voltar</button>
-            </div>`;
     }
 })();

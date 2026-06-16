@@ -204,3 +204,13 @@
     .etdah-grafico-canvas-container { height: 240px; }
     .etdah-fator-card-header { flex-direction: column; align-items: flex-start; }
 }
+
+/* === Tabela de fatores: cores de classificação INVERTIDAS ===
+   Nestes instrumentos, percentil ALTO = mais sintomas. Override escopado ao
+   container da tabela (.etdah-tab-fatores); os cards mantêm as cores originais.
+   Superior=vermelho · Médio Superior=laranja · Médio=amarelo · Médio Inferior=ciano · Inferior=azul */
+.etdah-tab-fatores .etdah-badge-superior       { background: #fee2e2; color: #991b1b; }
+.etdah-tab-fatores .etdah-badge-medio-superior { background: #fed7aa; color: #9a3412; }
+.etdah-tab-fatores .etdah-badge-medio          { background: #fef9c3; color: #854d0e; }
+.etdah-tab-fatores .etdah-badge-medio-inferior { background: #cffafe; color: #155e75; }
+.etdah-tab-fatores .etdah-badge-inferior       { background: #dbeafe; color: #1e40af; }

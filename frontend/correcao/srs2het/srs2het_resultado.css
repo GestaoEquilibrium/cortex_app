@@ -240,3 +240,12 @@
     .srs2-interp-grid { grid-template-columns: 1fr; }
     .srs2-perfil-canvas-container { height: 280px; }
 }
+
+/* Seção 6 — Respostas por item e categoria */
+.srs2-tab-itens table { font-size: 12.5px; }
+.srs2-tab-itens td { vertical-align: top; }
+.srs2-tab-itens td:nth-child(2) { text-align: left; }
+.srs2-cat-chip { display: inline-block; padding: 1px 7px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .02em; }
+.srs2-cat-nome { font-size: 11.5px; color: #475569; }
+.srs2-resp-val { font-weight: 700; color: #1e40af; }
+.srs2-itens-legenda { font-size: 12px; color: #64748b; margin-top: 8px; line-height: 1.5; }

@@ -247,8 +247,8 @@
                             <input type="text" class="form-input" name="mae_telefone" id="prc-mae-tel" required placeholder="(34) 99999-8888" maxlength="20">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">CPF da mãe/responsável <span class="required">*</span></label>
-                            <input type="text" class="form-input" name="mae_cpf" id="prc-mae-cpf" required placeholder="000.000.000-00" maxlength="14">
+                            <label class="form-label">CPF da mãe</label>
+                            <input type="text" class="form-input" name="mae_cpf" id="prc-mae-cpf" placeholder="000.000.000-00" maxlength="14">
                         </div>
                     </div>
 
@@ -390,7 +390,6 @@
     function aplicarMascaras() {
         // Não temos ui_helpers aqui (público) — aplicamos máscaras simples inline
         mascararCpf(document.getElementById('prc-cpf'));
-        mascararCpf(document.getElementById('prc-mae-cpf'));
         ['prc-tel','prc-mae-tel','prc-pai-tel','prc-resp-tel','prc-med-tel'].forEach(id => {
             const el = document.getElementById(id);
             if (el) mascararTel(el);
@@ -571,7 +570,6 @@
             ['cep', 'CEP'],
             ['mae_nome', 'Nome da mãe'],
             ['mae_telefone', 'Telefone da mãe'],
-            ['mae_cpf', 'CPF da mãe/responsável'],
             ['medico_referencia', 'Médico de referência']
         ];
 

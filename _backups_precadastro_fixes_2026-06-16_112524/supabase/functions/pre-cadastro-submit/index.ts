@@ -312,7 +312,7 @@ serve(async (req) => {
                 const { error: errUp } = await supabase.storage
                     .from("pacientes-fotos")
                     .upload(path, bytes, {
-                        contentType: ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg",
+                        contentType: `image/${ext}`,
                         upsert: true,
                     });
 
@@ -346,7 +346,7 @@ serve(async (req) => {
                 const { error: errUp } = await supabase.storage
                     .from("maes-fotos")
                     .upload(path, bytes, {
-                        contentType: ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg",
+                        contentType: `image/${ext}`,
                         upsert: true,
                     });
 

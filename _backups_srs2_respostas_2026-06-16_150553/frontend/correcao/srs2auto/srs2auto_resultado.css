@@ -1,0 +1,251 @@
+/* ============================================================================
+   CORTEX_APP — Laudo SRS-2 (overrides específicos do instrumento)
+   ============================================================================
+   Reusa as classes base do raadsr_resultado.css:
+     .laudo, .laudo-header, .laudo-header-logo, .laudo-header-supratitulo,
+     .laudo-header-titulo, .laudo-header-subtitulo, .laudo-header-pontuacao,
+     .laudo-body, .laudo-secao-titulo, .laudo-secao-tag, .laudo-identificacao,
+     .laudo-identif-item, .laudo-identif-label, .laudo-identif-valor,
+     .laudo-caixa-descricao, .laudo-rodape
+
+   Aqui só specs do SRS-2:
+     - Perfil de Escores T (gráfico horizontal)
+     - Tabela de Resultados (7 escalas + linha total destacada)
+     - Cards de Detalhamento (header azul claro, stats + curva normal)
+     - Interpretação Clínica (4 caixas T≤59 / 60-65 / 66-75 / ≥76)
+     - Badges de classificação (Típico/N1/N2/N3)
+   ============================================================================ */
+
+/* ─── PERFIL (gráfico de Escores T) ─────────────────────────────────────── */
+
+.srs2-perfil-wrap {
+    background: #fafbfc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+}
+
+.srs2-perfil-canvas-container {
+    position: relative;
+    height: 320px;
+    width: 100%;
+}
+
+/* ─── TABELA DE RESULTADOS ──────────────────────────────────────────────── */
+
+.srs2-tab-resultados {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.srs2-tab-resultados table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.srs2-tab-resultados th {
+    background: #f8fafc;
+    padding: 11px 16px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.srs2-tab-resultados th.ctr,
+.srs2-tab-resultados td.ctr {
+    text-align: center;
+}
+
+.srs2-tab-resultados td {
+    padding: 11px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.srs2-tab-resultados tr:last-child td {
+    border-bottom: none;
+}
+
+.srs2-tab-resultados tr.linha-total {
+    background: #f8fafc;
+}
+
+.srs2-tab-resultados tr.linha-total td {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.srs2-tab-resultados .nome-escala {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.srs2-tab-resultados .num-bruto {
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.srs2-tab-resultados .num-t {
+    font-weight: 800;
+    color: #0f172a;
+}
+
+/* ─── CARDS DE DETALHAMENTO POR ESCALA ──────────────────────────────────── */
+
+.srs2-detalhe-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.srs2-detalhe-card-header {
+    background: #eff6ff;
+    padding: 10px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dbeafe;
+}
+
+.srs2-detalhe-card-titulo {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1e40af;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.srs2-detalhe-card-corpo {
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    align-items: start;
+}
+
+.srs2-detalhe-stats {
+    display: flex;
+    flex-direction: column;
+}
+
+.srs2-detalhe-stat-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 12.5px;
+}
+
+.srs2-detalhe-stat-linha:last-child {
+    border-bottom: none;
+}
+
+.srs2-detalhe-stat-label {
+    color: #475569;
+}
+
+.srs2-detalhe-stat-valor {
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.srs2-detalhe-curva {
+    text-align: center;
+}
+
+.srs2-detalhe-descricao {
+    grid-column: 1 / -1;
+    background: #f8fafc;
+    border-left: 3px solid #cbd5e1;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    color: #475569;
+    line-height: 1.6;
+    margin-top: 4px;
+}
+
+/* ─── BADGES DE CLASSIFICAÇÃO ───────────────────────────────────────────── */
+
+.srs2-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 18px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.srs2-badge-tipico { background: #dcfce7; color: #166534; }
+.srs2-badge-n1     { background: #fef3c7; color: #854d0e; }
+.srs2-badge-n2     { background: #ffedd5; color: #9a3412; }
+.srs2-badge-n3     { background: #fee2e2; color: #991b1b; }
+
+/* ─── INTERPRETAÇÃO CLÍNICA (4 caixas) ──────────────────────────────────── */
+
+.srs2-interp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.srs2-interp-card {
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid;
+    font-size: 11.5px;
+    line-height: 1.55;
+}
+
+.srs2-interp-card-tipico { background: #f0fdf4; border-color: #bbf7d0; }
+.srs2-interp-card-n1     { background: #fefce8; border-color: #fde68a; }
+.srs2-interp-card-n2     { background: #fff7ed; border-color: #fed7aa; }
+.srs2-interp-card-n3     { background: #fef2f2; border-color: #fecaca; }
+
+.srs2-interp-faixa {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.srs2-interp-titulo {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.srs2-interp-desc {
+    color: #475569;
+}
+
+/* ─── RESPONSIVO ────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+    .srs2-detalhe-card-corpo { grid-template-columns: 1fr; }
+    .srs2-interp-grid { grid-template-columns: 1fr; }
+    .srs2-perfil-canvas-container { height: 280px; }
+}
+
+/* Seção 6 — Respostas por item e categoria */
+.srs2-tab-itens table { font-size: 12.5px; }
+.srs2-tab-itens td { vertical-align: top; }
+.srs2-tab-itens td:nth-child(2) { text-align: left; }
+.srs2-cat-chip { display: inline-block; padding: 1px 7px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .02em; }
+.srs2-cat-nome { font-size: 11.5px; color: #475569; }
+.srs2-resp-val { font-weight: 700; color: #1e40af; }
+.srs2-itens-legenda { font-size: 12px; color: #64748b; margin-top: 8px; line-height: 1.5; }

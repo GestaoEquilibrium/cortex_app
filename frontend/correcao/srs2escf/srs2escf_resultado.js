@@ -315,6 +315,12 @@
                 </div>
                 ${renderInterpretacaoClinica()}
 
+                <!-- 6. RESPOSTAS POR ITEM E CATEGORIA -->
+                <div class="laudo-secao-titulo">
+                    <span class="laudo-secao-tag">6</span>
+                    Respostas por Item e Categoria
+                </div>
+                ${renderRespostasItens()}
                 <!-- NOTA TÉCNICA (caixa amarela padrão D3) -->
                 <div class="laudo-caixa-descricao" style="margin-top: 18px;">
                     <p>
@@ -347,6 +353,59 @@
             </div>
         </div>
         `;
+    }
+
+    // ============================================================================
+    // Seção 6 — Respostas por Item e Categoria (subescala de cada pergunta)
+    // ============================================================================
+    function renderRespostasItens() {
+        const inst_norms = SRS2_NORMS.instruments[SIGLA_ESPERADA];
+        const i2s = inst_norms.item_to_scale || {};
+        const rev = inst_norms.item_reverse || {};
+        const labels = inst_norms.answer_labels || {};
+        const scales = SRS2_NORMS.scales || {};
+        const CORES_CAT = { PS:'#6366f1', CGS:'#8b5cf6', CMS:'#0ea5e9', MS:'#ec4899', RR:'#f59e0b', CI:'#14b8a6', TOT:'#475569' };
+        const respostas = (state.correcao && state.correcao.escores_brutos ? state.correcao.escores_brutos.respostas : null) || {};
+        const itens = [...state.itens].sort((a, b) => (a.numero || 0) - (b.numero || 0));
+        let respondidos = 0;
+        const linhas = itens.map(it => {
+            const num = it.numero;
+            const slug = i2s[String(num)] || null;
+            const catNome = slug ? (scales[slug] || slug) : '—';
+            const cor = (slug && CORES_CAT[slug]) || '#94a3b8';
+            let raw = respostas[num]; if (raw == null) raw = respostas[String(num)];
+            const val = (raw != null && !isNaN(raw)) ? parseInt(raw) : null;
+            if (val != null) respondidos++;
+            const respLabel = val != null ? (labels[String(val)] || String(val)) : '—';
+            const isRev = rev[String(num)] === true;
+            return `<tr>
+                <td class="ctr">${num}</td>
+                <td>${escapeHtml(it.texto || '')}${isRev ? ' <span title="Item de pontuação invertida" style="color:#a21caf;font-weight:700;font-size:11px;">⇄</span>' : ''}</td>
+                <td><span class="srs2-cat-chip" style="background:${cor}1f;color:${cor};">${escapeHtml(slug || '—')}</span> <span class="srs2-cat-nome">${escapeHtml(catNome)}</span></td>
+                <td class="ctr"><span class="srs2-resp-val">${val != null ? val : '—'}</span></td>
+                <td>${escapeHtml(respLabel)}</td>
+            </tr>`;
+        }).join('');
+        return `
+            <div class="srs2-tab-resultados srs2-tab-itens">
+                <table>
+                    <thead><tr>
+                        <th class="ctr" style="width:42px;">Nº</th>
+                        <th>Item</th>
+                        <th>Categoria</th>
+                        <th class="ctr" style="width:56px;">Resp.</th>
+                        <th style="width:130px;">Significado</th>
+                    </tr></thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+            </div>
+            <p class="srs2-itens-legenda">
+                ${respondidos} de ${itens.length} itens respondidos · Categorias:
+                <strong>PS</strong> Percepção Social · <strong>CGS</strong> Cognição Social ·
+                <strong>CMS</strong> Comunicação Social · <strong>MS</strong> Motivação Social ·
+                <strong>RR</strong> Padrões Restritivos e Repetitivos.
+                <span style="color:#a21caf;">⇄</span> = item de pontuação invertida.
+            </p>`;
     }
 
     function renderTabelaResultados() {

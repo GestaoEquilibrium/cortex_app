@@ -367,19 +367,6 @@
             `../../bateria/bateria.html?paciente=${state.paciente.id}`;
 
         document.getElementById('btn-gerar-pdf').addEventListener('click', gerarPDF);
-
-        // Toggle cabeçalho: alterna Total entre Autorrelato e Heteroaplicação
-        document.querySelectorAll('.scared-toggle-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (btn.hasAttribute('disabled')) return;
-                const alvo = btn.dataset.alvo;
-                document.querySelectorAll('.scared-toggle-btn').forEach(b =>
-                    b.classList.toggle('is-active', b.dataset.alvo === alvo));
-                document.querySelectorAll('.scared-pontos').forEach(p => {
-                    p.style.display = (p.dataset.pont === alvo) ? '' : 'none';
-                });
-            });
-        });
     }
 
     function renderLaudo() {
@@ -420,28 +407,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="laudo-header-pontuacao scared-header-pont">
-                    ${(() => {
-                        const mk = (data, alvo, label, ativo) => {
-                            const tot = data?.scores?.TOTAL;
-                            const has = tot != null;
-                            const cl = has ? classifica(tot, 'TOTAL') : null;
-                            return `<div class="scared-pontos" data-pont="${alvo}"${ativo ? '' : ' style="display:none;"'}>
-                                <div class="laudo-header-pontuacao-label">Total — ${label}</div>
-                                <div class="laudo-header-pontuacao-valor">${has ? tot : '—'}</div>
-                                <div class="laudo-header-pontuacao-max">${has ? 'de 82 · ' + cl : 'sem dados'}</div>
-                            </div>`;
-                        };
-                        const defAuto = temAuto; // ativo inicial: auto se existir, senão hetero
-                        return `
-                            <div class="scared-toggle-btns">
-                                <button type="button" class="scared-toggle-btn ${defAuto ? 'is-active' : ''}" data-alvo="auto" ${temAuto ? '' : 'disabled'}>Autorrelato</button>
-                                <button type="button" class="scared-toggle-btn ${(!defAuto && temHetero) ? 'is-active' : ''}" data-alvo="hetero" ${temHetero ? '' : 'disabled'}>Heteroaplicação</button>
-                            </div>
-                            ${mk(auto, 'auto', 'Autorrelato', defAuto)}
-                            ${mk(hetero, 'hetero', 'Heteroaplicação', !defAuto && temHetero)}
-                        `;
-                    })()}
+                <div class="laudo-header-pontuacao">
+                    <div class="laudo-header-pontuacao-label">Total (auto)</div>
+                    <div class="laudo-header-pontuacao-valor">${auto?.scores?.TOTAL ?? '—'}</div>
+                    <div class="laudo-header-pontuacao-max">de 82 pontos</div>
                 </div>
             </div>
 

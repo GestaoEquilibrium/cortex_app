@@ -1,0 +1,318 @@
+/* ============================================================================
+   CORTEX_APP — Laudo AQ-ADOLESCENTE (AQ-50 Adolescente Heteroaplicação)
+   ============================================================================
+   Específico:
+     - Card destaque do score TOTAL (0-50, cutoff 32)
+     - Barra de progresso horizontal com marcador de cutoff
+     - Tabela "Subescalas" 5 linhas (cada uma 0-10)
+     - Gráfico de barras Chart.js
+     - Cards de detalhamento por subescala
+     - Item 30: indicado visualmente como "item de validação"
+   ============================================================================ */
+
+/* ─── CARD TOTAL DESTACADO ──────────────────────────────────────────────── */
+
+.snap-total-card {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border-left: 6px solid;
+}
+
+.snap-total-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.snap-total-card-numero {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.snap-total-card-de {
+    font-size: 18px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.snap-total-card-classif {
+    margin-left: auto;
+    padding: 8px 18px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.snap-total-card-desc {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 14px;
+    line-height: 1.55;
+}
+
+.snap-total-barra-wrap {
+    position: relative;
+    margin-top: 16px;
+}
+
+.snap-total-barra-bg {
+    height: 14px;
+    background: #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.snap-total-barra-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.4s;
+}
+
+.snap-total-cutoff-marker {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    background: #dc2626;
+}
+
+.snap-total-cutoff-label {
+    position: absolute;
+    top: 22px;
+    transform: translateX(-50%);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #dc2626;
+    white-space: nowrap;
+}
+
+.snap-total-barra-escala {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 36px;
+    font-size: 10.5px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* ─── TABELA DE SUBESCALAS ──────────────────────────────────────────────── */
+
+.snap-tab-subescalas {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.snap-tab-subescalas table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.snap-tab-subescalas th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.snap-tab-subescalas th.ctr,
+.snap-tab-subescalas td.ctr {
+    text-align: center;
+}
+
+.snap-tab-subescalas td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.snap-tab-subescalas tr:last-child td {
+    border-bottom: none;
+}
+
+.snap-tab-subescalas .nome-sub {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.snap-tab-subescalas .nome-sub-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.snap-tab-subescalas .escore-bruto {
+    font-weight: 800;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+/* ─── GRÁFICO ───────────────────────────────────────────────────────────── */
+
+.snap-grafico-wrap {
+    background: #fafafa;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.snap-grafico-canvas-container {
+    position: relative;
+    height: 260px;
+    width: 100%;
+}
+
+.snap-grafico-legenda {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 14px;
+    font-style: italic;
+}
+
+/* ─── CARDS POR SUBESCALA ───────────────────────────────────────────────── */
+
+.snap-sub-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    border-left: 4px solid;
+}
+
+.snap-sub-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.snap-sub-card-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.snap-sub-card-bullet {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.snap-sub-card-escore {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.snap-sub-card-corpo {
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ─── BADGES DE CLASSIFICAÇÃO TOTAL ─────────────────────────────────────── */
+
+.snap-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.snap-badge-baixa            { background: #dcfce7; color: #166534; }
+.snap-badge-media            { background: #cffafe; color: #155e75; }
+.snap-badge-acima            { background: #fef3c7; color: #854d0e; }
+.snap-badge-limitrofe        { background: #ffedd5; color: #9a3412; }
+.snap-badge-clinico          { background: #fee2e2; color: #991b1b; }
+
+/* ─── NOTA TÉCNICA ──────────────────────────────────────────────────────── */
+
+.snap-nota-tecnica {
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 18px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.65;
+}
+
+.snap-nota-tecnica strong {
+    color: #1e293b;
+}
+
+/* ─── RESPONSIVO ────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+    .snap-total-card-numero { font-size: 44px; }
+    .snap-total-card-classif { margin-left: 0; }
+    .snap-grafico-canvas-container { height: 220px; }
+    .snap-sub-card-header { flex-direction: column; align-items: flex-start; }
+}
+
+/* ICA — faixas de classificação (4 bandas do escore total ponderado) */
+.snap-badge-tipico   { background: #dcfce7; color: #166534; }
+.snap-badge-duvidosa { background: #fef3c7; color: #854d0e; }
+.snap-badge-moderada { background: #ffedd5; color: #9a3412; }
+.snap-badge-alta     { background: #fee2e2; color: #991b1b; }
+/* rótulo de cada marcador de corte na régua do total */
+.snap-total-cutoff-tic { position: absolute; top: -4px; width: 2px; height: calc(100% + 8px);
+    background: #475569; transform: translateX(-1px); }
+.snap-total-cutoff-cap { position: absolute; top: -18px; transform: translateX(-50%);
+    font-size: 10px; font-weight: 700; color: #475569; white-space: nowrap; }
+
+/* ===== SNAP-IV — específicos ===== */
+/* Badges de gravidade (4 faixas) */
+.snap-badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+.snap-badge-naosig { background:#dcfce7; color:#166534; }
+.snap-badge-leve   { background:#fef3c7; color:#854d0e; }
+.snap-badge-mod    { background:#ffedd5; color:#9a3412; }
+.snap-badge-grave  { background:#fee2e2; color:#991b1b; }
+
+/* Tabela por subescala (reusa .snap-tab como o ICA .ica-tab-subescalas) */
+.snap-tab { margin-top: 4px; }
+
+/* Réguas de gravidade */
+.snap-reguas { display:flex; flex-direction:column; gap:18px; margin-top:6px; }
+.snap-regua-row { }
+.snap-regua-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; font-size:13.5px; }
+.snap-regua-nome { font-weight:600; color:#334155; display:flex; align-items:center; }
+.snap-regua-score { color:#475569; font-variant-numeric:tabular-nums; }
+.snap-regua-track { position:relative; display:flex; height:22px; border-radius:8px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,.05); }
+.snap-regua-zona { height:100%; }
+.snap-regua-marker { position:absolute; top:-4px; width:3px; height:calc(100% + 8px); background:#0f172a; transform:translateX(-50%); border-radius:2px; box-shadow:0 0 0 2px #fff; }
+.snap-regua-escala { display:flex; justify-content:space-between; font-size:10.5px; color:#94a3b8; margin-top:3px; font-variant-numeric:tabular-nums; }
+.snap-reguas-legenda { display:flex; flex-wrap:wrap; gap:14px; margin-top:6px; padding-top:12px; border-top:1px solid #eef2f7; }
+.snap-leg-item { display:flex; align-items:center; gap:6px; font-size:12px; color:#475569; }
+.snap-leg-dot { width:11px; height:11px; border-radius:3px; }
+
+/* Card por subescala */
+.snap-sub-card-itens { font-size:12px; color:#94a3b8; font-weight:500; }
+.snap-regua-nome .nome-sub-bullet { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:middle; }

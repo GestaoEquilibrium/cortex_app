@@ -47,7 +47,6 @@
 }
 
 .checklist-item {
-    position: relative;
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -598,66 +597,3 @@
     font-weight: 600;
 }
 .checklist-faixa-reset:hover { color: #78350f; }
-
-/* ============================================================================
-   Tooltip de descrição ao passar o mouse (Sprint — hover descrição)
-   ========================================================================== */
-.checklist-item-tip {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    right: 0;
-    z-index: 20;
-    background: var(--color-surface, #fff);
-    border: 1px solid var(--primary-blue-200, #bfdbfe);
-    border-radius: var(--radius-md);
-    padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-4px);
-    transition: opacity 0.18s ease, transform 0.18s ease;
-    pointer-events: none;
-}
-.checklist-item:hover .checklist-item-tip,
-.checklist-item:focus-within .checklist-item-tip {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-.checklist-item-tip::before {
-    content: "";
-    position: absolute;
-    bottom: 100%;
-    left: 22px;
-    border: 7px solid transparent;
-    border-bottom-color: var(--primary-blue-200, #bfdbfe);
-}
-.checklist-item-tip-nome {
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 2px;
-}
-.checklist-item-tip-meta {
-    font-size: 11px;
-    color: var(--primary-blue, #2563eb);
-    margin-bottom: 8px;
-    line-height: 1.4;
-}
-.checklist-item-tip-corpo {
-    font-size: 12.5px;
-    color: var(--color-text-secondary, #475569);
-    line-height: 1.55;
-}
-/* O último item de cada categoria abre o tooltip PRA CIMA, pra não cortar embaixo */
-.checklist-itens .checklist-item:last-child .checklist-item-tip {
-    top: auto;
-    bottom: calc(100% + 8px);
-}
-.checklist-itens .checklist-item:last-child .checklist-item-tip::before {
-    bottom: auto;
-    top: 100%;
-    border-bottom-color: transparent;
-    border-top-color: var(--primary-blue-200, #bfdbfe);
-}

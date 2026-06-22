@@ -88,7 +88,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online')
+            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro')
             .order('dominio_principal')
             .order('sigla');
 
@@ -303,17 +303,6 @@
         }
     }
 
-    function descreverModalidade(inst) {
-        const partes = [];
-        const tr = inst.tipo_respondente;
-        if (tr === 'paciente') partes.push('autoaplicação');
-        else if (tr === 'responsavel_ou_professor') partes.push('heteroaplicação (pais/professor)');
-        else if (tr === 'responsavel') partes.push('heteroaplicação (responsável)');
-        else if (tr === 'professor') partes.push('heteroaplicação (professor)');
-        if (inst.permite_aplicacao_online) partes.push('link / portal');
-        return partes.join(' · ');
-    }
-
     function renderItem(inst) {
         const selecionado = state.instrumentosSelecionados.includes(inst.id);
         const disabled = !state.podeEditar;
@@ -330,11 +319,6 @@
                         ${inst.faixa_etaria_label ? `<span class="checklist-item-idade">${escapeHtml(inst.faixa_etaria_label)}</span>` : ''}
                     </div>
                     <div class="checklist-item-descricao">${escapeHtml(inst.o_que_avalia)}</div>
-                </div>
-                <div class="checklist-item-tip" role="tooltip">
-                    <div class="checklist-item-tip-nome">${escapeHtml(inst.nome_completo || inst.sigla)}</div>
-                    <div class="checklist-item-tip-meta">${escapeHtml([inst.dominio_principal, inst.faixa_etaria_label, descreverModalidade(inst)].filter(Boolean).join(' · '))}</div>
-                    ${inst.o_que_avalia ? `<div class="checklist-item-tip-corpo">${escapeHtml(inst.o_que_avalia)}</div>` : ''}
                 </div>
             </label>
         `;

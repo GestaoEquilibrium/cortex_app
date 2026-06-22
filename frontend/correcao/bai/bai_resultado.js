@@ -113,10 +113,6 @@
         const sexoStr = p.sexo === 'M' ? 'Masculino' : (p.sexo === 'F' ? 'Feminino' : (p.sexo || '—'));
         const cl = state.scores.classif;
         const total = state.scores.total;
-        const markerPct = Math.min(100, Math.max(0, (total / SCORE_MAX) * 100));
-
-        // zonas da régua proporcionais aos cortes
-        const zonas = FAIXAS.map(f => ({ w: ((f.max - f.min + 1) / (SCORE_MAX + 1)) * 100, cor: f.cor }));
 
         return `
         <div class="laudo">
@@ -146,34 +142,19 @@
                     <div class="laudo-identif-item"><span class="laudo-identif-label">Modalidade:</span><span class="laudo-identif-valor">Autoaplicação</span></div>
                 </div>
 
-                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">2</span>Escore Total e Classificação</div>
-                <div class="bai-resultado-card" style="border-color:${cl.cor};">
-                    <div class="bai-resultado-topo">
-                        <div>
-                            <div class="bai-resultado-num" style="color:${cl.cor};">${total}<span class="bai-resultado-max">/${SCORE_MAX}</span></div>
-                            <div class="bai-resultado-resp">${state.scores.respondidos} de ${state.itens.length} itens respondidos</div>
-                        </div>
-                        <span class="bai-badge bai-badge-${cl.slug}">${cl.label}</span>
-                    </div>
-                    <div class="bai-regua-track">
-                        ${zonas.map(z => `<div class="bai-regua-zona" style="width:${z.w}%;background:${z.cor};"></div>`).join('')}
-                        <div class="bai-regua-marker" style="left:${markerPct}%;" title="${total}"></div>
-                    </div>
-                    <div class="bai-regua-escala"><span>0</span><span>10</span><span>19</span><span>30</span><span>63</span></div>
-                    <div class="bai-faixas-legenda">
-                        ${FAIXAS.map(f => `<span class="bai-leg-item"><span class="bai-leg-dot" style="background:${f.cor};"></span>${f.label} (${f.min}–${f.max})</span>`).join('')}
-                    </div>
-                </div>
+                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">2</span>Seu resultado</div>
+                ${renderNiveis()}
+
+                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">3</span>Como foram suas respostas</div>
+                ${renderIntensidade()}
 
                 <div class="bai-nota-tecnica">
-                    <strong>Nota técnica:</strong> O BAI (Inventário de Ansiedade de Beck) é um instrumento de
-                    <strong>autorrelato</strong> com 21 itens que avaliam a intensidade de sintomas de ansiedade na
-                    última semana. O escore total (0-63) classifica a intensidade em <strong>mínima, leve, moderada ou
-                    severa</strong>. Trata-se de medida dimensional de rastreio; os resultados devem ser integrados à
-                    entrevista clínica e aos demais dados da avaliação, não constituindo diagnóstico isolado.
+                    <strong>Importante:</strong> este questionário é uma medida de rastreio dos sintomas de ansiedade
+                    na última semana — <strong>não é um diagnóstico</strong>. Ele é uma fotografia de um momento e faz
+                    parte de uma avaliação maior, conversada com seu profissional.
                 </div>
 
-                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">3</span>Respostas por Item</div>
+                <div class="laudo-secao-titulo laudo-secao-prof"><span class="laudo-secao-tag">4</span>Detalhamento técnico <span class="laudo-secao-prof-tag">uso do profissional</span></div>
                 ${renderDetalhesItens()}
             </div>
 
@@ -188,6 +169,69 @@
                 </div>
             </div>
         </div>`;
+    }
+
+    // Modelo 2: níveis em etapas (didático, pro paciente)
+    function renderNiveis() {
+        const total = state.scores.total;
+        const cl = state.scores.classif;
+        const cards = FAIXAS.map(f => {
+            const ativo = f.slug === cl.slug;
+            return `
+                <div class="bai-nivel-card ${ativo ? 'ativo' : ''}" ${ativo ? `style="border-color:${f.cor};"` : ''}>
+                    <div class="bai-nivel-dot" style="background:${f.cor};"></div>
+                    <div class="bai-nivel-nome">${f.label.replace('Ansiedade ', '')}</div>
+                    <div class="bai-nivel-faixa">${f.min} – ${f.max}</div>
+                    ${ativo ? `<div class="bai-nivel-voce" style="color:${f.cor};">● seu resultado: ${total}</div>` : ''}
+                </div>`;
+        }).join('');
+        return `
+            <div class="bai-niveis-grid">${cards}</div>
+            <div class="bai-nivel-expl" style="border-left-color:${cl.cor};">
+                <strong>Seu nível: ${cl.label.toLowerCase()}.</strong> Sua pontuação foi <strong>${total}</strong> de ${SCORE_MAX}.
+                ${textoNivel(cl.slug)}
+            </div>`;
+    }
+
+    function textoNivel(slug) {
+        switch (slug) {
+            case 'minima': return 'Isso indica poucos sintomas de ansiedade no período avaliado.';
+            case 'leve':   return 'Isso indica alguns sintomas de ansiedade que vale a pena observar.';
+            case 'mod':    return 'Isso indica uma quantidade considerável de sintomas de ansiedade; vale conversar com seu profissional sobre estratégias de cuidado.';
+            case 'severa': return 'Isso indica muitos sintomas de ansiedade no período; é importante conversar com seu profissional sobre os próximos passos.';
+            default: return '';
+        }
+    }
+
+    // Opção B: distribuição das respostas por intensidade (direto dos dados)
+    function renderIntensidade() {
+        const cont = [0, 0, 0, 0]; // índices 0..3
+        let respondidos = 0;
+        for (const item of state.itens) {
+            const r = state.scores.respItem[item.numero];
+            if (r != null && r >= 0 && r <= 3) { cont[r]++; respondidos++; }
+        }
+        const rotulos = [
+            { lbl: labelResposta(0) || 'Ausente', cor: '#16a34a' },
+            { lbl: labelResposta(1) || 'Leve',    cor: '#d97706' },
+            { lbl: labelResposta(2) || 'Moderado',cor: '#ea580c' },
+            { lbl: labelResposta(3) || 'Grave',   cor: '#dc2626' }
+        ];
+        const maxC = Math.max(1, ...cont);
+        const linhas = rotulos.map((r, i) => {
+            const w = Math.round((cont[i] / maxC) * 100);
+            return `
+                <div class="bai-int-row">
+                    <span class="bai-int-lbl" style="color:${r.cor};">${escapeHtml(r.lbl)}</span>
+                    <span class="bai-int-trk"><span class="bai-int-fill" style="width:${w}%;background:${r.cor};"></span></span>
+                    <span class="bai-int-val">${cont[i]} ${cont[i] === 1 ? 'item' : 'itens'}</span>
+                </div>`;
+        }).join('');
+        return `
+            <div class="bai-intensidade">
+                ${linhas}
+                <div class="bai-int-nota">Cada um dos ${respondidos} itens respondidos entra em um destes níveis, conforme o quanto incomodou na última semana.</div>
+            </div>`;
     }
 
     function renderDetalhesItens() {

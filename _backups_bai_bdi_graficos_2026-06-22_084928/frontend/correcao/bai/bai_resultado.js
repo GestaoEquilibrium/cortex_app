@@ -1,29 +1,28 @@
 // ============================================================================
-// CORTEX_APP — Resultado BDI-II (laudo) — padrão visual ICA/ASSQ
+// CORTEX_APP — Resultado BAI (laudo) — padrão visual ICA/ASSQ
 // ============================================================================
 // URL: ?aplicacao_id=<uuid>
 //
-// BDI-II (Inventário de Depressão de Beck II) — autoaplicação, 21 grupos.
-// Cada grupo tem 4 afirmações próprias (item.opcoes); grava o índice escolhido (0-3).
-// Escore total = soma dos 21 (0-63). Faixas: 0-11 Mínima / 12-19 Leve / 20-35 Moderada / 36-63 Severa.
-// ATENÇÃO: item 9 = ideação suicida -> alerta clínico ao profissional.
+// BAI (Inventário de Ansiedade de Beck) — autoaplicação, 21 itens, escala 0-3.
+// Escore total = soma dos 21 (0-63). Sem subescalas, sem invertidos.
+// Faixas (cortes no JS): 0-10 Mínima / 11-19 Leve / 20-30 Moderada / 31-63 Severa.
+// Banco grava 0-3 em escores_brutos.respostas.
 // ============================================================================
 
 (function() {
     'use strict';
 
-    const SIGLA_ESPERADA = 'BDI-II';
+    const SIGLA_ESPERADA = 'BAI';
     const SCORE_MAX = 63;
 
     // 4 faixas de gravidade [limite inferior, rótulo, cor]
     const FAIXAS = [
-        { min: 0,  max: 11, slug: 'minima', label: 'Depressão mínima',   cor: '#16a34a' },
-        { min: 12, max: 19, slug: 'leve',   label: 'Depressão leve',     cor: '#d97706' },
-        { min: 20, max: 35, slug: 'mod',    label: 'Depressão moderada', cor: '#ea580c' },
-        { min: 36, max: 63, slug: 'severa', label: 'Depressão severa',   cor: '#dc2626' }
+        { min: 0,  max: 10, slug: 'minima', label: 'Ansiedade mínima',   cor: '#16a34a' },
+        { min: 11, max: 19, slug: 'leve',   label: 'Ansiedade leve',     cor: '#d97706' },
+        { min: 20, max: 30, slug: 'mod',    label: 'Ansiedade moderada', cor: '#ea580c' },
+        { min: 31, max: 63, slug: 'severa', label: 'Ansiedade severa',   cor: '#dc2626' }
     ];
-    const ITEM_IDEACAO = 9; // grupo de ideação suicida
-    const COR_INSTR = '#6366f1';
+    const COR_INSTR = '#0ea5e9';
 
     function classificar(total) {
         for (const f of FAIXAS) if (total >= f.min && total <= f.max) return f;
@@ -67,7 +66,7 @@
         state.norma = norma;
 
         const { data: itens } = await window.cortexClient
-            .from('instrumentos_itens').select('numero, texto, opcoes').eq('norma_id', norma.id).order('numero');
+            .from('instrumentos_itens').select('numero, texto').eq('norma_id', norma.id).order('numero');
         state.itens = itens || [];
 
         const { data: correcao, error: errC } = await window.cortexClient
@@ -114,6 +113,10 @@
         const sexoStr = p.sexo === 'M' ? 'Masculino' : (p.sexo === 'F' ? 'Feminino' : (p.sexo || '—'));
         const cl = state.scores.classif;
         const total = state.scores.total;
+        const markerPct = Math.min(100, Math.max(0, (total / SCORE_MAX) * 100));
+
+        // zonas da régua proporcionais aos cortes
+        const zonas = FAIXAS.map(f => ({ w: ((f.max - f.min + 1) / (SCORE_MAX + 1)) * 100, cor: f.cor }));
 
         return `
         <div class="laudo">
@@ -122,8 +125,8 @@
                     <div class="laudo-header-logo">E</div>
                     <div class="laudo-header-textos">
                         <div class="laudo-header-supratitulo">Relatório de Avaliação Neuropsicológica</div>
-                        <h1 class="laudo-header-titulo">BDI-II</h1>
-                        <div class="laudo-header-subtitulo">Inventário de Depressão de Beck II — Autoaplicação<br>21 grupos · escore 0-3 por grupo · total (0-63)</div>
+                        <h1 class="laudo-header-titulo">BAI</h1>
+                        <div class="laudo-header-subtitulo">Inventário de Ansiedade de Beck — Autoaplicação<br>21 itens · escala 0-3 · escore total (0-63)</div>
                     </div>
                 </div>
                 <div class="laudo-header-pontuacao">
@@ -143,27 +146,41 @@
                     <div class="laudo-identif-item"><span class="laudo-identif-label">Modalidade:</span><span class="laudo-identif-valor">Autoaplicação</span></div>
                 </div>
 
-                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">2</span>Seu resultado</div>
-                ${renderNiveis()}
-
-                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">3</span>Como foram suas respostas</div>
-                ${renderIntensidade()}
-
-                <div class="bai-nota-tecnica">
-                    <strong>Importante:</strong> este questionário é uma medida de rastreio dos sintomas de depressão
-                    na última semana — <strong>não é um diagnóstico</strong>. Ele é uma fotografia de um momento e faz
-                    parte de uma avaliação maior, conversada com seu profissional.
+                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">2</span>Escore Total e Classificação</div>
+                <div class="bai-resultado-card" style="border-color:${cl.cor};">
+                    <div class="bai-resultado-topo">
+                        <div>
+                            <div class="bai-resultado-num" style="color:${cl.cor};">${total}<span class="bai-resultado-max">/${SCORE_MAX}</span></div>
+                            <div class="bai-resultado-resp">${state.scores.respondidos} de ${state.itens.length} itens respondidos</div>
+                        </div>
+                        <span class="bai-badge bai-badge-${cl.slug}">${cl.label}</span>
+                    </div>
+                    <div class="bai-regua-track">
+                        ${zonas.map(z => `<div class="bai-regua-zona" style="width:${z.w}%;background:${z.cor};"></div>`).join('')}
+                        <div class="bai-regua-marker" style="left:${markerPct}%;" title="${total}"></div>
+                    </div>
+                    <div class="bai-regua-escala"><span>0</span><span>10</span><span>19</span><span>30</span><span>63</span></div>
+                    <div class="bai-faixas-legenda">
+                        ${FAIXAS.map(f => `<span class="bai-leg-item"><span class="bai-leg-dot" style="background:${f.cor};"></span>${f.label} (${f.min}–${f.max})</span>`).join('')}
+                    </div>
                 </div>
 
-                <div class="laudo-secao-titulo laudo-secao-prof"><span class="laudo-secao-tag">4</span>Detalhamento técnico <span class="laudo-secao-prof-tag">uso do profissional</span></div>
-                ${renderAlertaIdeacao()}
+                <div class="bai-nota-tecnica">
+                    <strong>Nota técnica:</strong> O BAI (Inventário de Ansiedade de Beck) é um instrumento de
+                    <strong>autorrelato</strong> com 21 itens que avaliam a intensidade de sintomas de ansiedade na
+                    última semana. O escore total (0-63) classifica a intensidade em <strong>mínima, leve, moderada ou
+                    severa</strong>. Trata-se de medida dimensional de rastreio; os resultados devem ser integrados à
+                    entrevista clínica e aos demais dados da avaliação, não constituindo diagnóstico isolado.
+                </div>
+
+                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">3</span>Respostas por Item</div>
                 ${renderDetalhesItens()}
             </div>
 
             <div class="laudo-rodape">
                 <div class="laudo-rodape-esq">
                     <div class="laudo-rodape-org">Equilibrium Neuropsicologia</div>
-                    <div class="laudo-rodape-tipo">Correção automatizada — BDI-II</div>
+                    <div class="laudo-rodape-tipo">Correção automatizada — BAI</div>
                 </div>
                 <div class="laudo-rodape-dir">
                     <div class="laudo-rodape-data">Documento gerado em ${formatarDataBR(new Date().toISOString())}</div>
@@ -173,111 +190,29 @@
         </div>`;
     }
 
-    // Modelo 2: níveis em etapas (didático, pro paciente)
-    function renderNiveis() {
-        const total = state.scores.total;
-        const cl = state.scores.classif;
-        const cards = FAIXAS.map(f => {
-            const ativo = f.slug === cl.slug;
-            return `
-                <div class="bai-nivel-card ${ativo ? 'ativo' : ''}" ${ativo ? `style="border-color:${f.cor};"` : ''}>
-                    <div class="bai-nivel-dot" style="background:${f.cor};"></div>
-                    <div class="bai-nivel-nome">${f.label.replace('Depressão ', '')}</div>
-                    <div class="bai-nivel-faixa">${f.min} – ${f.max}</div>
-                    ${ativo ? `<div class="bai-nivel-voce" style="color:${f.cor};">● seu resultado: ${total}</div>` : ''}
-                </div>`;
-        }).join('');
-        return `
-            <div class="bai-niveis-grid">${cards}</div>
-            <div class="bai-nivel-expl" style="border-left-color:${cl.cor};">
-                <strong>Seu nível: ${cl.label.toLowerCase()}.</strong> Sua pontuação foi <strong>${total}</strong> de ${SCORE_MAX}.
-                ${textoNivel(cl.slug)}
-            </div>`;
-    }
-
-    function textoNivel(slug) {
-        switch (slug) {
-            case 'minima': return 'Isso indica poucos sintomas de depressão no período avaliado.';
-            case 'leve':   return 'Isso indica alguns sintomas de depressão que vale a pena observar.';
-            case 'mod':    return 'Isso indica uma quantidade considerável de sintomas de depressão; vale conversar com seu profissional sobre estratégias de cuidado.';
-            case 'severa': return 'Isso indica muitos sintomas de depressão no período; é importante conversar com seu profissional sobre os próximos passos.';
-            default: return '';
-        }
-    }
-
-    // Opção B: distribuição das respostas por intensidade (direto dos dados)
-    function renderIntensidade() {
-        const cont = [0, 0, 0, 0];
-        let respondidos = 0;
-        for (const item of state.itens) {
-            const r = state.scores.respItem[item.numero];
-            if (r != null && r >= 0 && r <= 3) { cont[r]++; respondidos++; }
-        }
-        const rotulos = [
-            { lbl: 'Ausente',  cor: '#16a34a' },
-            { lbl: 'Leve',     cor: '#d97706' },
-            { lbl: 'Moderado', cor: '#ea580c' },
-            { lbl: 'Grave',    cor: '#dc2626' }
-        ];
-        const maxC = Math.max(1, ...cont);
-        const linhas = rotulos.map((r, i) => {
-            const w = Math.round((cont[i] / maxC) * 100);
-            return `
-                <div class="bai-int-row">
-                    <span class="bai-int-lbl" style="color:${r.cor};">${escapeHtml(r.lbl)}</span>
-                    <span class="bai-int-trk"><span class="bai-int-fill" style="width:${w}%;background:${r.cor};"></span></span>
-                    <span class="bai-int-val">${cont[i]} ${cont[i] === 1 ? 'grupo' : 'grupos'}</span>
-                </div>`;
-        }).join('');
-        return `
-            <div class="bai-intensidade">
-                ${linhas}
-                <div class="bai-int-nota">Em cada um dos ${respondidos} grupos respondidos você escolheu uma afirmação, que corresponde a um destes níveis de intensidade.</div>
-            </div>`;
-    }
-
     function renderDetalhesItens() {
         if (!state.itens.length) return '';
         const linhas = state.itens.map(item => {
             const resp = state.scores.respItem[item.numero];
-            const opcoes = Array.isArray(item.opcoes) ? item.opcoes : [];
-            const fraseEscolhida = (resp != null && opcoes[resp] !== undefined) ? opcoes[resp] : '—';
+            const cor = resp != null ? (FAIXAS.find(f => resp >= 0)?.cor || '#64748b') : '#cbd5e1';
             const corResp = resp === 3 ? '#dc2626' : resp === 2 ? '#ea580c' : resp === 1 ? '#d97706' : '#16a34a';
-            const ideacao = (item.numero === ITEM_IDEACAO && resp != null && resp > 0);
-            return `<tr${ideacao ? ' style="background:#fef2f2;"' : ''}>
-                <td style="text-align:center;font-weight:700;color:#4f46e5;">${item.numero}${ideacao ? ' <span title="Item de ideação suicida" style="color:#dc2626;">⚠</span>' : ''}</td>
-                <td>${escapeHtml(fraseEscolhida)}</td>
+            return `<tr>
+                <td style="text-align:center;font-weight:700;color:#0369a1;">${item.numero}</td>
+                <td>${escapeHtml(item.texto)}</td>
                 <td style="text-align:center;font-weight:700;color:${resp!=null?corResp:'#cbd5e1'};">${resp != null ? resp : '—'}</td>
+                <td>${escapeHtml(labelResposta(resp))}</td>
             </tr>`;
         }).join('');
         return `
             <div class="bai-tab-itens">
                 <table>
                     <thead><tr>
-                        <th style="width:52px;text-align:center;">Grupo</th>
-                        <th>Afirmação escolhida</th>
-                        <th style="text-align:center;width:64px;">Escore</th>
+                        <th style="width:42px;text-align:center;">Nº</th><th>Sintoma</th>
+                        <th style="text-align:center;width:56px;">Resp.</th>
+                        <th style="width:150px;">Intensidade</th>
                     </tr></thead>
                     <tbody>${linhas}</tbody>
                 </table>
-            </div>`;
-    }
-
-    // Alerta clínico: item 9 (ideação suicida) pontuado (> 0)
-    function renderAlertaIdeacao() {
-        const resp = state.scores.respItem[ITEM_IDEACAO];
-        if (resp == null || resp <= 0) return '';
-        const item = state.itens.find(i => i.numero === ITEM_IDEACAO);
-        const opcoes = item && Array.isArray(item.opcoes) ? item.opcoes : [];
-        const frase = opcoes[resp] !== undefined ? opcoes[resp] : '';
-        return `
-            <div class="bdi-alerta-ideacao">
-                <div class="bdi-alerta-titulo">⚠ Atenção clínica — item de ideação suicida pontuado</div>
-                <div class="bdi-alerta-corpo">
-                    O grupo ${ITEM_IDEACAO} (ideação suicida) foi pontuado com escore <strong>${resp}</strong>${frase ? ' — “' + escapeHtml(frase) + '”' : ''}.
-                    Recomenda-se avaliação clínica detalhada do risco e, conforme o protocolo, considerar a aplicação
-                    da escala de ideação suicida (BSI) e as condutas de segurança cabíveis.
-                </div>
             </div>`;
     }
 
@@ -305,7 +240,7 @@
                 }
             }
             const nome = state.paciente.nome_completo.toUpperCase().replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
-            pdf.save(`BDI-II - ${nome}_${formatarDataArquivo(new Date())}.pdf`);
+            pdf.save(`BAI - ${nome}_${formatarDataArquivo(new Date())}.pdf`);
             window.CortexUI.toast('PDF gerado com sucesso', 'success');
         } catch (err) {
             console.error('Erro ao gerar PDF:', err);

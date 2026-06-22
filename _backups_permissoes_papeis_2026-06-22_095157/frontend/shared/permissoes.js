@@ -48,13 +48,13 @@ window.CortexPerfil = (function () {
 
     // ── Capacidades de UI ─────────────────────────────────────────────────────
     // Pasta — editar dados/fotos/agendar/capa/portal: admin + aplicador
-    function podeEditarPasta()           { return isAdmin(); }
+    function podeEditarPasta()           { return isAdmin() || isAplicador(); }
 
     // Cadastrar / pré-cadastrar paciente: admin + aplicador
-    function podeCadastrarPaciente()     { return isAdmin() || isCorretor(); }
+    function podeCadastrarPaciente()     { return isAdmin() || isAplicador(); }
 
     // Checklist — marcar/desmarcar instrumentos: admin + aplicador
-    function podeUsarChecklist()         { return isAdmin() || isCorretor(); }
+    function podeUsarChecklist()         { return isAdmin() || isAplicador(); }
 
     // Checklist — alterar faixa (override manual): só admin
     function podeAlterarFaixaChecklist() { return isAdmin(); }
@@ -63,15 +63,11 @@ window.CortexPerfil = (function () {
     function podeCorrigir() {
         const p = perfilAtual();
         return p === 'admin_clinico' || p === 'admin_gestor'
-            || p === 'neuropsicologo_aplicador' || p === 'corretor'
-            || p === 'estagiario';
+            || p === 'neuropsicologo_aplicador' || p === 'corretor';
     }
 
-    // Agenda — criar/editar sessões (marcar data de aplicação): admin + neuropsicólogo
-    function podeUsarAgenda()            { return isAdmin() || isAplicador(); }
-
-    // Anamnese — editar: só admin
-    function podeEditarAnamnese()        { return isAdmin(); }
+    // Anamnese — editar: admin + aplicador
+    function podeEditarAnamnese()        { return isAdmin() || isAplicador(); }
 
     // Designar aplicador a um paciente (ação de coordenação): só admin
     function podeDesignarAplicador()     { return isAdmin(); }
@@ -93,7 +89,7 @@ window.CortexPerfil = (function () {
         isAdmin, isAdminClinico, isAdminGestor, isAplicador, isCorretor, isEstagiario,
         podeEditarPasta, podeCadastrarPaciente,
         podeUsarChecklist, podeAlterarFaixaChecklist,
-        podeCorrigir, podeUsarAgenda, podeEditarAnamnese, podeDesignarAplicador,
+        podeCorrigir, podeEditarAnamnese, podeDesignarAplicador,
         podeVerRelatorios, podeVerConfiguracoes,
         labelPerfil
     };

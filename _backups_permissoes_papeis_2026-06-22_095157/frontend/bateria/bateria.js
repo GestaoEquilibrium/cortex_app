@@ -160,8 +160,6 @@
         const perfil = window.cortexProfissional?.perfil;
         state.ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
         state.ehAplicador = (perfil === 'neuropsicologo_aplicador');
-        state.podeCorrigir = window.CortexPerfil ? window.CortexPerfil.podeCorrigir() : (state.ehAdmin || state.ehAplicador);
-        state.podeChecklist = window.CortexPerfil ? window.CortexPerfil.podeUsarChecklist() : state.ehAdmin;
 
         try {
             await Promise.all([
@@ -260,7 +258,7 @@
      * NUNCA remove registros existentes.
      */
     async function sincronizarComChecklist() {
-        if (!state.podeChecklist) return;
+        if (!state.ehAdmin && !state.ehAplicador) return;
         if (state.instrumentosNoChecklist.length === 0) return;
 
         const idsComAplicacao = state.aplicacoes.map(a => a.instrumento_id);
@@ -325,7 +323,7 @@
                     </p>
                 </div>
                 <div class="anamnese-cabecalho-acoes">
-                    ${state.podeChecklist ? `
+                    ${state.ehAdmin || state.ehAplicador ? `
                         <button class="btn btn-ghost btn-sm" onclick="window.CortexBateria.recarregar()">
                             🔄 Sincronizar checklist
                         </button>
@@ -459,7 +457,7 @@
 
     function renderItem(apl) {
         const inst = apl.instrumento;
-        const podeEditar = state.podeCorrigir;  // aplicar/corrigir/gerar link/ver resultado
+        const podeEditar = state.ehAdmin || state.ehAplicador;
         const aplicador = apl.aplicador_id
             ? state.profissionais.find(p => p.id === apl.aplicador_id)?.nome_completo || '—'
             : null;

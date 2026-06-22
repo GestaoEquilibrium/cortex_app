@@ -71,7 +71,7 @@
         const perfil = window.cortexProfissional?.perfil;
         state.ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
         state.ehAplicador = (perfil === 'neuropsicologo_aplicador');
-        state.podeEditar = window.CortexPerfil ? window.CortexPerfil.podeUsarAgenda() : (state.ehAdmin || state.ehAplicador);
+        state.podeEditar = state.ehAdmin || state.ehAplicador;
 
         // Mês atual: primeiro dia
         const hoje = new Date();

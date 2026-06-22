@@ -560,8 +560,6 @@
     top: calc(100% + 8px);
     left: 0;
     right: 0;
-    min-width: 320px;
-    max-width: 460px;
     z-index: 20;
     background: var(--color-surface, #fff);
     border: 1px solid var(--primary-blue-200, #bfdbfe);
@@ -671,22 +669,4 @@
     color: #9a3412;
     background: #ffedd5;
     border-color: #fdba74;
-}
-
-/* ===== Tooltip: descrição longa estruturada (descricao_longa) ===== */
-.checklist-item-tip-corpo .checklist-item-tip-sec {
-    margin-bottom: 4px;
-}
-.checklist-item-tip-corpo .checklist-item-tip-lbl {
-    font-weight: 700;
-    color: var(--color-text, #1e293b);
-    margin-right: 4px;
-}
-.checklist-item-tip-corpo .checklist-item-tip-lista {
-    margin: 4px 0 6px;
-    padding-left: 16px;
-}
-.checklist-item-tip-corpo .checklist-item-tip-lista li {
-    margin: 2px 0;
-    line-height: 1.45;
 }

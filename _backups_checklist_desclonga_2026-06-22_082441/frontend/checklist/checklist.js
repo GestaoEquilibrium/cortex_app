@@ -88,7 +88,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, descricao_longa, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online')
+            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online')
             .order('dominio_principal')
             .order('sigla');
 
@@ -286,33 +286,6 @@
         }
     }
 
-    // Formata a descricao_longa do tooltip de forma SEGURA:
-    // escapa todo o texto e só converte: linha "- item" -> <li>; demais linhas -> <div>.
-    // "Rótulo:" no início da linha vira destaque.
-    function formatarDescricaoLonga(txt) {
-        const linhas = String(txt).split(/\r?\n/);
-        let html = '';
-        let emLista = false;
-        for (const raw of linhas) {
-            const linha = raw.trim();
-            if (!linha) continue;
-            if (linha.startsWith('- ')) {
-                if (!emLista) { html += '<ul class="checklist-item-tip-lista">'; emLista = true; }
-                html += `<li>${escapeHtml(linha.slice(2))}</li>`;
-            } else {
-                if (emLista) { html += '</ul>'; emLista = false; }
-                const m = linha.match(/^([^:]{1,30}:)(.*)$/);
-                if (m) {
-                    html += `<div class="checklist-item-tip-sec"><span class="checklist-item-tip-lbl">${escapeHtml(m[1])}</span>${escapeHtml(m[2])}</div>`;
-                } else {
-                    html += `<div class="checklist-item-tip-sec">${escapeHtml(linha)}</div>`;
-                }
-            }
-        }
-        if (emLista) html += '</ul>';
-        return html;
-    }
-
     function descreverModalidade(inst) {
         const partes = [];
         const tr = inst.tipo_respondente;
@@ -345,9 +318,7 @@
                 <div class="checklist-item-tip" role="tooltip">
                     <div class="checklist-item-tip-nome">${escapeHtml(inst.nome_completo || inst.sigla)}</div>
                     <div class="checklist-item-tip-meta">${escapeHtml([inst.dominio_principal, inst.faixa_etaria_label, descreverModalidade(inst)].filter(Boolean).join(' · '))}</div>
-                    ${inst.descricao_longa
-                        ? `<div class="checklist-item-tip-corpo">${formatarDescricaoLonga(inst.descricao_longa)}</div>`
-                        : (inst.o_que_avalia ? `<div class="checklist-item-tip-corpo">${escapeHtml(inst.o_que_avalia)}</div>` : '')}
+                    ${inst.o_que_avalia ? `<div class="checklist-item-tip-corpo">${escapeHtml(inst.o_que_avalia)}</div>` : ''}
                 </div>
             </label>
         `;

@@ -41,7 +41,9 @@
 }
 
 .checklist-itens {
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 8px;
 }
 
 .checklist-item {
@@ -550,7 +552,52 @@
 /* ============================================================================
    Sprint 73 — Select de faixa do checklist + aviso de alteração manual
    ============================================================================ */
+.checklist-faixa-select {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0c1f3f;
+    font-family: inherit;
+    cursor: pointer;
+    line-height: 1.4;
+    vertical-align: baseline;
+}
+.checklist-faixa-select:hover {
+    border-color: #2e74b5;
+}
+.checklist-faixa-select:focus {
+    outline: none;
+    border-color: #2e74b5;
+    box-shadow: 0 0 0 2px rgba(46,116,181,0.18);
+}
 
+.checklist-faixa-aviso {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 6px;
+    padding: 2px 10px;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+.checklist-faixa-reset {
+    background: transparent;
+    border: none;
+    color: #92400e;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 11.5px;
+    padding: 0 2px;
+    font-weight: 600;
+}
+.checklist-faixa-reset:hover { color: #78350f; }
 
 /* ============================================================================
    Tooltip de descrição ao passar o mouse (Sprint — hover descrição)
@@ -613,60 +660,4 @@
     top: 100%;
     border-bottom-color: transparent;
     border-top-color: var(--primary-blue-200, #bfdbfe);
-}
-
-/* ============================================================================
-   Checklist em LISTA (em vez de cards) + fora-da-faixa + botão admin ver-todos
-   ========================================================================== */
-.checklist-itens .checklist-item {
-    border: none;
-    border-bottom: 1px solid var(--color-border);
-    border-radius: 0;
-    box-shadow: none;
-    padding: 9px 8px;
-}
-.checklist-itens .checklist-item:last-child { border-bottom: none; }
-.checklist-itens .checklist-item:hover {
-    background: var(--slate-50, #f8fafc);
-    box-shadow: none;
-}
-.checklist-itens .checklist-item.selecionado {
-    background: var(--primary-blue-50);
-    border-bottom: 1px solid var(--primary-blue-200, #bfdbfe);
-    border-left: 3px solid var(--primary-blue);
-    padding-left: 8px;
-}
-/* Tag "fora da faixa" */
-.checklist-item-fora-tag {
-    font-size: 10px;
-    font-weight: 700;
-    color: #9a3412;
-    background: #ffedd5;
-    border: 1px solid #fdba74;
-    padding: 1px 7px;
-    border-radius: 999px;
-    margin-left: 6px;
-    white-space: nowrap;
-}
-.checklist-item.fora-faixa .checklist-item-titulo strong { color: #9a3412; }
-
-/* Botão só-admin: aplicar teste fora da faixa */
-.checklist-vertodos-btn {
-    display: inline-block;
-    margin-left: 8px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--primary-blue, #2563eb);
-    background: var(--primary-blue-50, #eff6ff);
-    border: 1px solid var(--primary-blue-200, #bfdbfe);
-    border-radius: var(--radius-md, 8px);
-    padding: 3px 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-.checklist-vertodos-btn:hover { background: var(--primary-blue-100, #dbeafe); }
-.checklist-vertodos-btn.ativo {
-    color: #9a3412;
-    background: #ffedd5;
-    border-color: #fdba74;
 }

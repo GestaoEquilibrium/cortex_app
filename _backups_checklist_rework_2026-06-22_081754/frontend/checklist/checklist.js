@@ -25,8 +25,8 @@
         catalogo: [],                  // array de { id, sigla, nome_completo, ... }
         catalogoFiltrado: [],          // só os da faixa do paciente
         agrupado: {},                  // { categoria: [instrumentos] }
-        faixaPaciente: null,           // pre_escolar / escolar / adulto (apenas rótulo de exibição)
-        verTodos: false,               // toggle só-admin: mostra catálogo completo (fora da faixa)
+        faixaPaciente: null,           // pre_escolar / escolar / adulto (efetiva)
+        faixaPacienteAuto: null,       // Sprint 73: faixa calculada pela idade (pra mostrar aviso quando diferente)
         salvando: false,
         editado: false,
         ehAdmin: false,      // só admin: controla a FAIXA do checklist
@@ -65,7 +65,7 @@
                 carregarHipotese()
             ]);
 
-            state.faixaPaciente = calcularFaixaAuto();
+            determinarFaixaPaciente();
             filtrarECategorizar();
             renderizar();
         } catch (err) {
@@ -114,6 +114,19 @@
         }
     }
 
+    function determinarFaixaPaciente() {
+        // Sprint 73: respeita override manual (se admin tiver definido)
+        const manual = state.paciente.faixa_checklist_manual;
+        if (manual === 'pre_escolar' || manual === 'escolar' || manual === 'adulto') {
+            state.faixaPaciente = manual;
+            state.faixaPacienteAuto = calcularFaixaAuto();
+            return;
+        }
+        const auto = calcularFaixaAuto();
+        state.faixaPaciente = auto;
+        state.faixaPacienteAuto = auto;
+    }
+
     function calcularFaixaAuto() {
         const idadeAnos = state.paciente.idade_anos;
         if (idadeAnos < 6) return 'pre_escolar';
@@ -121,49 +134,21 @@
         return 'adulto';
     }
 
-    // Idade do paciente em MESES (a partir de data_nascimento; fallback idade_anos*12)
-    function idadePacienteMeses() {
-        const dn = state.paciente.data_nascimento;
-        if (dn) {
-            const nasc = new Date(String(dn).includes('T') ? dn : dn + 'T00:00:00');
-            const hoje = new Date();
-            if (!isNaN(nasc)) {
-                let meses = (hoje.getFullYear() - nasc.getFullYear()) * 12 + (hoje.getMonth() - nasc.getMonth());
-                if (hoje.getDate() < nasc.getDate()) meses--;
-                return Math.max(0, meses);
-            }
-        }
-        const a = state.paciente.idade_anos;
-        return (typeof a === 'number' ? a : 0) * 12;
-    }
-
-    function dentroDaFaixa(i, meses) {
-        const min = (i.faixa_etaria_min_meses != null) ? i.faixa_etaria_min_meses : 0;
-        const max = (i.faixa_etaria_max_meses != null) ? i.faixa_etaria_max_meses : Infinity;
-        return meses >= min && meses <= max;
-    }
-
     function filtrarECategorizar() {
-        // Sexo do paciente -> CHAR(1) usado em instrumentos_catalogo.sexo_filtro
+        // Converte sexo do paciente ('Masculino'/'Feminino'/'Outro') para CHAR(1)
+        // usado no instrumentos_catalogo.sexo_filtro
         let sexoChar = null;
         if (state.paciente.sexo === 'Masculino') sexoChar = 'M';
         else if (state.paciente.sexo === 'Feminino') sexoChar = 'F';
-        // 'Outro'/null -> só instrumentos sem filtro de sexo
+        // 'Outro' ou null → fica null = só instrumentos sem filtro de sexo
 
-        const meses = idadePacienteMeses();
-
+        // Filtra: faixa etária + (sexo_filtro NULL OU sexo_filtro = sexoChar)
         state.catalogoFiltrado = state.catalogo.filter(i => {
-            // Sexo SEMPRE filtra (mesmo no modo "ver todos")
-            const sexoOk = (i.sexo_filtro === null || i.sexo_filtro === undefined) || (i.sexo_filtro === sexoChar);
-            if (!sexoOk) return false;
-
-            const naFaixa = dentroDaFaixa(i, meses);
-            i._foraDaFaixa = !naFaixa;
-
-            // Admin com "ver todos" ligado: catálogo completo (só sexo filtra)
-            if (state.verTodos) return true;
-            // Padrão: dentro da faixa OU já selecionado (selecionado sempre aparece, com aviso)
-            return naFaixa || state.instrumentosSelecionados.includes(i.id);
+            const faixaOk = (i.faixas_aplicaveis || []).includes(state.faixaPaciente);
+            if (!faixaOk) return false;
+            // Sexo: NULL no instrumento = qualquer paciente. Caso contrário, precisa bater.
+            if (i.sexo_filtro === null || i.sexo_filtro === undefined) return true;
+            return i.sexo_filtro === sexoChar;
         });
 
         // Agrupa por dominio_principal (categoria)
@@ -189,14 +174,24 @@
             adulto: 'Adulto'
         };
 
+        // Sprint 73: select de faixa (só admin pode trocar). Aviso quando manual ≠ auto.
+        const ehManual = state.paciente.faixa_checklist_manual != null;
         const faixaAtual = state.faixaPaciente;
+        const faixaAuto = state.faixaPacienteAuto;
 
-        // Botão só-admin: aplicar teste fora da faixa (mostra catálogo completo)
-        const botaoVerTodos = state.ehAdmin
-            ? `<button type="button" class="checklist-vertodos-btn ${state.verTodos ? 'ativo' : ''}" id="checklist-vertodos"
-                       title="${state.verTodos ? 'Voltar a mostrar só os testes da faixa etária' : 'Mostrar todos os testes (aplicar fora da faixa etária)'}">
-                   ${state.verTodos ? '↩ Mostrar só a faixa etária' : '⚙ Aplicar teste fora da faixa'}
-               </button>`
+        const selectFaixa = state.ehAdmin
+            ? `<select id="checklist-faixa-select" class="checklist-faixa-select" title="Faixa do checklist">
+                   <option value="pre_escolar" ${faixaAtual === 'pre_escolar' ? 'selected' : ''}>Pré-Escolar</option>
+                   <option value="escolar" ${faixaAtual === 'escolar' ? 'selected' : ''}>Escolar</option>
+                   <option value="adulto" ${faixaAtual === 'adulto' ? 'selected' : ''}>Adulto</option>
+               </select>`
+            : `<strong>${FAIXA_LABEL[faixaAtual]}</strong>`;
+
+        const avisoManual = (ehManual && faixaAtual !== faixaAuto)
+            ? `<span class="checklist-faixa-aviso" title="A faixa foi alterada manualmente. O padrão para esta idade seria ${FAIXA_LABEL[faixaAuto]}.">
+                   ⚠️ Faixa alterada manualmente
+                   ${state.ehAdmin ? `<button type="button" class="checklist-faixa-reset" id="checklist-faixa-reset" title="Voltar para a faixa automática">restaurar</button>` : ''}
+               </span>`
             : '';
 
         const cabecalho = `
@@ -205,9 +200,8 @@
                     <h1>Checklist de Instrumentos — ${escapeHtml(state.paciente.nome_completo)}</h1>
                     <p class="anamnese-cabecalho-sub">
                         ${state.paciente.idade_humanizada} ·
-                        Faixa: <strong>${FAIXA_LABEL[faixaAtual] || '—'}</strong> ·
+                        Faixa: ${selectFaixa} ${avisoManual} ·
                         ${state.catalogoFiltrado.length} instrumentos disponíveis
-                        ${botaoVerTodos}
                     </p>
                 </div>
                 <div class="anamnese-cabecalho-acoes">
@@ -275,14 +269,37 @@
 
         container.innerHTML = cabecalho + aviso + lista + navegacao;
 
-        // Botão só-admin: alternar "ver todos os testes" (aplicar fora da faixa)
+        // Sprint 73: bindar select de faixa (só admin)
         if (state.ehAdmin) {
-            const btnVerTodos = document.getElementById('checklist-vertodos');
-            if (btnVerTodos) btnVerTodos.addEventListener('click', () => {
-                state.verTodos = !state.verTodos;
-                filtrarECategorizar();
-                renderizar();
+            const sel = document.getElementById('checklist-faixa-select');
+            if (sel) sel.addEventListener('change', () => alterarFaixaManualmente(sel.value));
+            const btnReset = document.getElementById('checklist-faixa-reset');
+            if (btnReset) btnReset.addEventListener('click', () => alterarFaixaManualmente(null));
+        }
+    }
+
+    // Sprint 73: salva a faixa via RPC (só admin) e re-renderiza
+    async function alterarFaixaManualmente(novaFaixa) {
+        // novaFaixa = 'pre_escolar' | 'escolar' | 'adulto' | null (null = restaurar automático)
+        try {
+            const { error } = await window.cortexClient.rpc('definir_faixa_checklist', {
+                p_paciente_id: state.paciente.id,
+                p_faixa: novaFaixa
             });
+            if (error) {
+                window.CortexUI.toast('Erro: ' + (error.message || 'falha ao salvar'), 'danger');
+                return;
+            }
+            state.paciente.faixa_checklist_manual = novaFaixa;
+            determinarFaixaPaciente();
+            filtrarECategorizar();
+            renderizar();
+            window.CortexUI.toast(novaFaixa
+                ? 'Faixa do checklist alterada.'
+                : 'Faixa restaurada (automática).', 'success');
+        } catch (err) {
+            console.error('[checklist] alterarFaixa:', err);
+            window.CortexUI.toast('Erro de conexão. Tente novamente.', 'danger');
         }
     }
 
@@ -302,7 +319,7 @@
         const disabled = !state.podeEditar;
 
         return `
-            <label class="checklist-item ${selecionado ? 'selecionado' : ''} ${disabled ? 'disabled' : ''} ${inst._foraDaFaixa ? 'fora-faixa' : ''}">
+            <label class="checklist-item ${selecionado ? 'selecionado' : ''} ${disabled ? 'disabled' : ''}">
                 <input type="checkbox"
                        ${selecionado ? 'checked' : ''}
                        ${disabled ? 'disabled' : ''}
@@ -311,7 +328,6 @@
                     <div class="checklist-item-titulo">
                         <strong>${escapeHtml(inst.sigla)}</strong>
                         ${inst.faixa_etaria_label ? `<span class="checklist-item-idade">${escapeHtml(inst.faixa_etaria_label)}</span>` : ''}
-                        ${inst._foraDaFaixa ? `<span class="checklist-item-fora-tag" title="Este teste está fora da faixa etária do paciente">fora da faixa</span>` : ''}
                     </div>
                     <div class="checklist-item-descricao">${escapeHtml(inst.o_que_avalia)}</div>
                 </div>

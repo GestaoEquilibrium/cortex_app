@@ -338,22 +338,10 @@
 
 .print-paciente-info {
     background: white;
-    padding: 16px 32px;
+    padding: 18px 32px;
     display: flex;
-    gap: 36px;
+    gap: 56px;
     border-bottom: 1px solid #e5e7eb;
-    align-items: flex-start;
-}
-.print-paciente-bloco-hipotese {
-    flex: 1;
-    min-width: 0;
-}
-.print-valor-hipotese {
-    border-bottom: none !important;
-    font-weight: 400 !important;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-word;
 }
 
 .print-paciente-bloco {
@@ -701,46 +689,4 @@
 .checklist-item-tip-corpo .checklist-item-tip-lista li {
     margin: 2px 0;
     line-height: 1.45;
-}
-
-/* ===== Caixa de hipóteses na tela (topo do checklist) ===== */
-.checklist-hipoteses {
-    background: var(--color-surface, #fff);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 14px 18px;
-    margin-bottom: 14px;
-    box-shadow: var(--shadow-xs);
-}
-.checklist-hipoteses-label {
-    display: block;
-    font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--primary-blue-dark, #1e40af);
-    margin-bottom: 8px;
-}
-.checklist-hipoteses-input {
-    width: 100%;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 10px 12px;
-    font-family: inherit;
-    font-size: 13px;
-    color: var(--color-text);
-    line-height: 1.5;
-    resize: vertical;
-    background: var(--slate-50, #f8fafc);
-    transition: border-color 0.15s, box-shadow 0.15s;
-    box-sizing: border-box;
-}
-.checklist-hipoteses-input:focus {
-    outline: none;
-    border-color: var(--primary-blue, #2563eb);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-    background: #fff;
-}
-.checklist-hipoteses-input[readonly] {
-    background: var(--slate-50, #f8fafc);
-    cursor: default;
 }

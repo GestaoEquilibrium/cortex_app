@@ -27,7 +27,6 @@
         agrupado: {},                  // { categoria: [instrumentos] }
         faixaPaciente: null,           // pre_escolar / escolar / adulto (apenas rótulo de exibição)
         verTodos: false,               // toggle só-admin: mostra catálogo completo (fora da faixa)
-        hipoteseTexto: '',             // texto livre de hipóteses (hipotese_checklist)
         salvando: false,
         editado: false,
         ehAdmin: false,      // só admin: controla a FAIXA do checklist
@@ -100,7 +99,7 @@
     async function carregarHipotese() {
         const { data, error } = await window.cortexClient
             .from('hipoteses')
-            .select('id, instrumentos_sugeridos, hipotese_checklist')
+            .select('id, instrumentos_sugeridos')
             .eq('paciente_id', state.pacienteId)
             .maybeSingle();
 
@@ -112,7 +111,6 @@
         if (data) {
             state.hipoteseId = data.id;
             state.instrumentosSelecionados = data.instrumentos_sugeridos || [];
-            state.hipoteseTexto = data.hipotese_checklist || '';
         }
     }
 
@@ -219,15 +217,6 @@
             </div>
         `;
 
-        const caixaHipoteses = `
-            <div class="checklist-hipoteses">
-                <label class="checklist-hipoteses-label" for="checklist-hipotese-texto">Hipóteses diagnósticas</label>
-                <textarea id="checklist-hipotese-texto" class="checklist-hipoteses-input"
-                          placeholder="Descreva as hipóteses diagnósticas que orientam a escolha dos instrumentos..."
-                          rows="3" ${state.podeEditar ? '' : 'readonly'}>${escapeHtml(state.hipoteseTexto)}</textarea>
-            </div>
-        `;
-
         const aviso = !state.podeEditar ? `
             <div class="aviso-permissao">
                 ⚠️ Você pode visualizar e imprimir o checklist, mas não editá-lo.
@@ -284,16 +273,7 @@
             </div>
         `;
 
-        container.innerHTML = cabecalho + aviso + caixaHipoteses + lista + navegacao;
-
-        // Caixa de hipóteses: atualiza estado e marca como editado
-        const txtHip = document.getElementById('checklist-hipotese-texto');
-        if (txtHip && state.podeEditar) {
-            txtHip.addEventListener('input', () => {
-                state.hipoteseTexto = txtHip.value;
-                marcarEditado();
-            });
-        }
+        container.innerHTML = cabecalho + aviso + lista + navegacao;
 
         // Botão só-admin: alternar "ver todos os testes" (aplicar fora da faixa)
         if (state.ehAdmin) {
@@ -499,7 +479,7 @@
             // Atualiza hipótese existente
             const { error } = await window.cortexClient
                 .from('hipoteses')
-                .update({ instrumentos_sugeridos: state.instrumentosSelecionados, hipotese_checklist: state.hipoteseTexto })
+                .update({ instrumentos_sugeridos: state.instrumentosSelecionados })
                 .eq('id', state.hipoteseId);
             if (error) throw error;
 
@@ -514,7 +494,6 @@
                 .insert({
                     paciente_id: state.pacienteId,
                     instrumentos_sugeridos: state.instrumentosSelecionados,
-                    hipotese_checklist: state.hipoteseTexto,
                     preenchido_por: window.cortexProfissional.id
                 })
                 .select()
@@ -626,9 +605,9 @@
                         <div class="print-label">IDADE</div>
                         <span class="print-valor">${pacienteIdade}</span>
                     </div>
-                    <div class="print-paciente-bloco print-paciente-bloco-hipotese">
-                        <div class="print-label">HIPÓTESES DIAGNÓSTICAS</div>
-                        <span class="print-valor print-valor-hipotese">${state.hipoteseTexto ? escapeHtml(state.hipoteseTexto) : '—'}</span>
+                    <div class="print-paciente-bloco">
+                        <div class="print-label">DATA</div>
+                        <span class="print-valor print-valor-data">${dataHoje}</span>
                     </div>
                 </div>
 

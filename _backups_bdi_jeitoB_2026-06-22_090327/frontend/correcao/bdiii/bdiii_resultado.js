@@ -81,36 +81,18 @@
         await CortexAudit.log('leitura', 'correcoes', correcao.id, { detalhes: { aplicacaoId: state.aplicacaoId, sigla: SIGLA_ESPERADA } });
     }
 
-    // Suporta opcoes em 2 formatos: ["frase",...] (nota=índice) e [{texto,valor},...] (nota=valor).
-    function opcaoTexto(item, idx) {
-        const ops = Array.isArray(item.opcoes) ? item.opcoes : [];
-        const op = ops[idx];
-        if (op == null) return null;
-        return (typeof op === 'object') ? (op.texto != null ? op.texto : null) : op;
-    }
-    function opcaoValor(item, idx) {
-        const ops = Array.isArray(item.opcoes) ? item.opcoes : [];
-        const op = ops[idx];
-        if (op == null) return null;
-        if (typeof op === 'object') return (op.valor != null && !isNaN(op.valor)) ? parseInt(op.valor, 10) : null;
-        return idx; // formato antigo: nota = índice
-    }
-
     function calcularResultados(correcao) {
         const respostas = (correcao?.escores_brutos || {}).respostas || {};
-        const respItem = {};   // ÍNDICE da opção escolhida (preserva 1a vs 1b)
-        const notaItem = {};   // NOTA daquela opção (1a e 1b = 1)
+        const respItem = {};
         let total = 0;
         for (const item of state.itens) {
             let r = respostas[item.numero]; if (r == null) r = respostas[String(item.numero)];
-            const idx = (r != null && !isNaN(r)) ? parseInt(r, 10) : null;
-            respItem[item.numero] = idx;
-            const nota = (idx != null) ? opcaoValor(item, idx) : null;
-            notaItem[item.numero] = nota;
-            if (nota != null) total += nota;
+            const resp = (r != null && !isNaN(r)) ? parseInt(r, 10) : null;
+            respItem[item.numero] = resp;
+            if (resp != null) total += resp;
         }
         const respondidos = Object.keys(respostas).length;
-        return { respItem, notaItem, total, classif: classificar(total), respondidos };
+        return { respItem, total, classif: classificar(total), respondidos };
     }
 
     function labelResposta(v) {
@@ -228,8 +210,8 @@
         const cont = [0, 0, 0, 0];
         let respondidos = 0;
         for (const item of state.itens) {
-            const nota = state.scores.notaItem[item.numero];
-            if (nota != null && nota >= 0 && nota <= 3) { cont[nota]++; respondidos++; }
+            const r = state.scores.respItem[item.numero];
+            if (r != null && r >= 0 && r <= 3) { cont[r]++; respondidos++; }
         }
         const rotulos = [
             { lbl: 'Ausente',  cor: '#16a34a' },
@@ -257,15 +239,15 @@
     function renderDetalhesItens() {
         if (!state.itens.length) return '';
         const linhas = state.itens.map(item => {
-            const idx = state.scores.respItem[item.numero];
-            const nota = state.scores.notaItem[item.numero];
-            const fraseEscolhida = (idx != null) ? (opcaoTexto(item, idx) || '—') : '—';
-            const corResp = nota === 3 ? '#dc2626' : nota === 2 ? '#ea580c' : nota === 1 ? '#d97706' : '#16a34a';
-            const ideacao = (item.numero === ITEM_IDEACAO && nota != null && nota > 0);
+            const resp = state.scores.respItem[item.numero];
+            const opcoes = Array.isArray(item.opcoes) ? item.opcoes : [];
+            const fraseEscolhida = (resp != null && opcoes[resp] !== undefined) ? opcoes[resp] : '—';
+            const corResp = resp === 3 ? '#dc2626' : resp === 2 ? '#ea580c' : resp === 1 ? '#d97706' : '#16a34a';
+            const ideacao = (item.numero === ITEM_IDEACAO && resp != null && resp > 0);
             return `<tr${ideacao ? ' style="background:#fef2f2;"' : ''}>
                 <td style="text-align:center;font-weight:700;color:#4f46e5;">${item.numero}${ideacao ? ' <span title="Item de ideação suicida" style="color:#dc2626;">⚠</span>' : ''}</td>
                 <td>${escapeHtml(fraseEscolhida)}</td>
-                <td style="text-align:center;font-weight:700;color:${nota!=null?corResp:'#cbd5e1'};">${nota != null ? nota : '—'}</td>
+                <td style="text-align:center;font-weight:700;color:${resp!=null?corResp:'#cbd5e1'};">${resp != null ? resp : '—'}</td>
             </tr>`;
         }).join('');
         return `
@@ -283,17 +265,16 @@
 
     // Alerta clínico: item 9 (ideação suicida) pontuado (> 0)
     function renderAlertaIdeacao() {
+        const resp = state.scores.respItem[ITEM_IDEACAO];
+        if (resp == null || resp <= 0) return '';
         const item = state.itens.find(i => i.numero === ITEM_IDEACAO);
-        if (!item) return '';
-        const idx = state.scores.respItem[ITEM_IDEACAO];
-        const nota = state.scores.notaItem[ITEM_IDEACAO];
-        if (nota == null || nota <= 0) return '';
-        const frase = (idx != null) ? (opcaoTexto(item, idx) || '') : '';
+        const opcoes = item && Array.isArray(item.opcoes) ? item.opcoes : [];
+        const frase = opcoes[resp] !== undefined ? opcoes[resp] : '';
         return `
             <div class="bdi-alerta-ideacao">
                 <div class="bdi-alerta-titulo">⚠ Atenção clínica — item de ideação suicida pontuado</div>
                 <div class="bdi-alerta-corpo">
-                    O grupo ${ITEM_IDEACAO} (ideação suicida) foi pontuado com escore <strong>${nota}</strong>${frase ? ' — “' + escapeHtml(frase) + '”' : ''}.
+                    O grupo ${ITEM_IDEACAO} (ideação suicida) foi pontuado com escore <strong>${resp}</strong>${frase ? ' — “' + escapeHtml(frase) + '”' : ''}.
                     Recomenda-se avaliação clínica detalhada do risco e, conforme o protocolo, considerar a aplicação
                     da escala de ideação suicida (BSI) e as condutas de segurança cabíveis.
                 </div>

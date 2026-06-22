@@ -298,19 +298,15 @@
             const respondido = state.respostas[item.numero] !== undefined;
             const respondidoClass = respondido ? 'respondido' : '';
 
-            // BDI-II: cada grupo tem afirmações PRÓPRIAS, lidas de item.opcoes (JSONB).
-            // Suporta 2 formatos:
-            //   - antigo: ["frase0","frase1",...]            (nota = índice)
-            //   - novo:   [{"texto":"...","valor":N}, ...]   (nota = valor; ex.: 1a e 1b valem 1)
-            // O data-valor é o ÍNDICE da opção escolhida (preserva qual variante: 1a vs 1b).
+            // BDI-II: cada grupo tem 4 afirmações PRÓPRIAS, lidas de item.opcoes (JSONB).
+            // O valor gravado é o índice da afirmação (0-3). Fallback p/ answer_labels global.
             const itemOpcoes = Array.isArray(item.opcoes) && item.opcoes.length
                 ? item.opcoes
                 : labels;
             let opcoes = '';
             for (let v = 0; v < itemOpcoes.length; v++) {
-                const op = itemOpcoes[v];
-                const labelTexto = (op && typeof op === 'object') ? (op.texto != null ? op.texto : String(v)) : (op != null ? op : String(v));
                 const ativo = state.respostas[item.numero] === v ? 'ativo' : '';
+                const labelTexto = itemOpcoes[v] !== undefined ? itemOpcoes[v] : String(v);
                 opcoes += `
                     <button class="item-opcao item-opcao-bdi ${ativo}" data-numero="${item.numero}" data-valor="${v}" type="button">
                         <span class="item-opcao-bullet"></span>

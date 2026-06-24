@@ -24,17 +24,6 @@
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
-    // Formata data pura (YYYY-MM-DD) como dd/mm/aaaa sem conversao de fuso.
-    // Evita o bug de -1 dia: new Date('YYYY-MM-DD') assume UTC e em UTC-3 volta 1 dia.
-    function formatarDataNasc(valor) {
-        if (!valor) return '';
-        const m = String(valor).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-        // fallback: se vier com hora/ISO completo, usa Date mas fixando meio-dia local
-        const d = new Date(String(valor).slice(0, 10) + 'T12:00:00');
-        return isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
-    }
-
     function escapeHtml(t) {
         if (t === null || t === undefined) return '';
         const div = document.createElement('div');
@@ -140,7 +129,7 @@
         // Sprint 55: mini-cartão de identidade fixo no topo (confirma quem é
         // que está sendo avaliado em todas as telas do questionário)
         const dn = state.info.paciente_data_nascimento
-            ? formatarDataNasc(state.info.paciente_data_nascimento)
+            ? new Date(state.info.paciente_data_nascimento).toLocaleDateString('pt-BR')
             : '';
         const miniCartao = `
             <div class="publica-mini-cartao">
@@ -207,7 +196,7 @@
 
     function renderBoasVindas() {
         const dn = state.info.paciente_data_nascimento
-            ? formatarDataNasc(state.info.paciente_data_nascimento)
+            ? new Date(state.info.paciente_data_nascimento).toLocaleDateString('pt-BR')
             : '';
         return `
             <div class="publica-bemvindo">

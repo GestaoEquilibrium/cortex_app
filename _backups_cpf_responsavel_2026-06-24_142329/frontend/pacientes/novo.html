@@ -221,11 +221,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">CPF do responsável</label>
-                            <input type="text" class="form-input" name="responsavel_cpf" id="resp-cpf-input" maxlength="14" placeholder="000.000.000-00">
-                        </div>
-
-                        <div class="form-group">
                             <label class="form-label">Parentesco</label>
                             <input type="text" class="form-input" name="responsavel_parentesco" maxlength="50" placeholder="Tutor, curador, avó...">
                         </div>
@@ -332,7 +327,6 @@
         }
 
         window.CortexUI.aplicarMascaraCPF(document.getElementById('cpf-input'));
-        window.CortexUI.aplicarMascaraCPF(document.getElementById('resp-cpf-input'));
         window.CortexUI.aplicarMascaraTelefone(document.getElementById('telefone-input'));
         window.CortexUI.aplicarMascaraTelefone(document.getElementById('resp-tel-input'));
         window.CortexUI.aplicarMascaraTelefone(document.getElementById('medico-tel-input'));
@@ -389,7 +383,7 @@
             'telefone', 'email', 'endereco', 'cidade', 'cep',
             'mae_nome', 'mae_telefone',
             'pai_nome', 'pai_telefone',
-            'responsavel_nome', 'responsavel_cpf', 'responsavel_parentesco', 'responsavel_telefone', 'responsavel_email',
+            'responsavel_nome', 'responsavel_parentesco', 'responsavel_telefone', 'responsavel_email',
             'encaminhado_por', 'medico_referencia', 'medico_crm',
             'medico_clinica', 'medico_telefone',
             'observacoes',

@@ -1273,14 +1273,13 @@
                     ${campo('Telefone', paciente.telefone)}
                     ${campo('E-mail', paciente.email)}
                     ${campo('CPF', paciente.cpf)}
-                    ${paciente.responsavel_cpf ? campo('CPF do responsável', paciente.responsavel_cpf) : ''}
                     ${campo('Endereço', paciente.endereco)}
                     ${campo('Cidade', paciente.cidade)}
                     ${campo('Encaminhado por', paciente.encaminhado_por)}
                     ${campo('Médico de referência', paciente.medico_referencia)}
                     ${campo('Clínica do médico', paciente.medico_clinica)}
                     ${campo('Telefone do médico', paciente.medico_telefone)}
-                    ${paciente.responsavel_nome ? campo('Responsável', `${paciente.responsavel_nome} (${paciente.responsavel_parentesco || 'sem parentesco'})${paciente.responsavel_cpf ? ' — CPF ' + paciente.responsavel_cpf : ''}`) : ''}
+                    ${paciente.responsavel_nome ? campo('Responsável', `${paciente.responsavel_nome} (${paciente.responsavel_parentesco || 'sem parentesco'})`) : ''}
                 </div>
             </div>
         `;

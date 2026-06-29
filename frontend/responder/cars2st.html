@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Questionário · Equilibrium Neuropsicologia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="responder.css">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <link rel="manifest" href="../site.webmanifest">
+</head>
+<body>
+
+    <header class="responder-header">
+        <div class="responder-header-inner">
+            <div class="responder-logo">
+                <div class="responder-logo-mark">E</div>
+                <span class="responder-logo-text">Equilibrium</span>
+            </div>
+            <div class="responder-progresso" id="header-progresso" style="display:none;">
+                <span class="responder-progresso-label" id="header-progresso-label">Carregando...</span>
+                <div class="responder-progresso-bar">
+                    <div class="responder-progresso-fill" id="header-progresso-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="responder-main">
+        <div id="responder-conteudo">
+            <div class="tela-loading">
+                <div class="tela-loading-spinner"></div>
+                <p>Carregando questionário...</p>
+            </div>
+        </div>
+    </main>
+
+    <div class="responder-rodape" id="responder-rodape" style="display:none;">
+        <div class="responder-rodape-inner">
+            <span class="responder-rodape-status" id="rodape-status">Carregando...</span>
+            <button class="btn-enviar" id="btn-enviar" disabled>
+                Enviar respostas
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../shared/banner_respondente.js"></script>
+    <script src="cars2st.js"></script>
+</body>
+</html>

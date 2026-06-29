@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "_nota": "Lookup de normas do CARS2 lido pelo laudo. Os 'bands' de gravidade vieram dos pontos de corte fornecidos pelo profissional (doc de correcao CARS-2). A tabela de Escore-T (tscore.by_raw) e CONTEUDO LICENCIADO da editora e deve ser preenchida pelo profissional. Use o ESCORE BRUTO REAL do CARS2 (15 a 60, com meios-pontos) como chave.",
+  "instruments": {
+    "CARS2-ST": {
+      "raw_min": 15,
+      "raw_max": 60,
+      "severity": {
+        "age_groups": [
+          {
+            "id": "2_12",
+            "label": "2 a 12 anos",
+            "age_min_years": 0,
+            "age_max_years": 12,
+            "bands": [
+              { "min": 15, "max": 29.5, "slug": "minimo",   "label": "Sintomas mínimos de TEA" },
+              { "min": 30, "max": 36.5, "slug": "leve_mod",  "label": "Sintomas leves a moderados de TEA" },
+              { "min": 37, "max": 60,   "slug": "grave",     "label": "Sintomas graves de TEA" }
+            ]
+          },
+          {
+            "id": "13_mais",
+            "label": "13 anos ou mais",
+            "age_min_years": 13,
+            "age_max_years": 200,
+            "bands": [
+              { "min": 15, "max": 27.5, "slug": "minimo",   "label": "Sintomas mínimos de TEA" },
+              { "min": 28, "max": 34.5, "slug": "leve_mod",  "label": "Sintomas leves a moderados de TEA" },
+              { "min": 35, "max": 60,   "slug": "grave",     "label": "Sintomas graves de TEA" }
+            ]
+          }
+        ]
+      },
+      "tscore": {
+        "_instrucao": "PREENCHER com a tabela do manual. Chave = escore bruto REAL (string), ex.: \"15\", \"15.5\", ... \"60\". Valor = objeto com a(s) coluna(s) de Escore-T: 'all' (Todas as idades) e, se quiser, '2_12' e '13_mais'. Exemplo: \"30\": { \"all\": 41, \"2_12\": 40, \"13_mais\": 42 }. Enquanto estiver vazio, o laudo mostra 'Escore-T não configurado'.",
+        "by_raw": {}
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+/* ===== CARS2-ST — laudo (complementa a base laudo-*/bai-* do raadsr_resultado.css) ===== */
+
+/* Nota técnica (reaproveita estilo BAI) */
+.bai-nota-tecnica { margin-top: 22px; padding: 16px 18px; background: #f0f9ff; border-left: 4px solid #0ea5e9;
+    border-radius: 8px; font-size: 13px; color: #334155; line-height: 1.6; }
+
+/* Seção "uso do profissional" */
+.laudo-secao-prof { margin-top: 26px; }
+.laudo-secao-prof-tag {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #64748b; background: #f1f5f9; border: 1px solid #e2e8f0;
+    padding: 2px 9px; border-radius: 999px; margin-left: 10px; vertical-align: middle;
+}
+
+/* Níveis de gravidade — 3 cards (mínimo / leve-moderado / grave) */
+.cars-niveis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 4px 0 14px; }
+.cars-nivel-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 10px; text-align: center; background: #fff; opacity: 0.5; }
+.cars-nivel-card.ativo { opacity: 1; border-width: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.bai-nivel-dot { width: 16px; height: 16px; border-radius: 50%; margin: 0 auto 8px; }
+.bai-nivel-nome { font-size: 13.5px; font-weight: 700; color: #1e293b; }
+.bai-nivel-faixa { font-size: 11.5px; color: #94a3b8; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.bai-nivel-voce { font-size: 11.5px; font-weight: 700; margin-top: 7px; }
+.bai-nivel-expl { padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 8px; font-size: 13.5px; color: #334155; line-height: 1.6; }
+
+/* Caixa do Escore-T */
+.cars-tscore { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; padding: 12px 16px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%); border: 1px solid #e2e8f0; border-radius: 10px; }
+.cars-tscore-lbl { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
+.cars-tscore-val { font-size: 26px; font-weight: 800; line-height: 1; }
+.cars-tscore-nota { font-size: 11.5px; color: #94a3b8; }
+.cars-tscore-vazio .cars-tscore-val { font-size: 15px; font-weight: 700; color: #94a3b8; }
+
+/* Distribuição por intensidade (reaproveita estilo BAI) */
+.bai-intensidade { padding: 4px 0; }
+.bai-int-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bai-int-lbl { font-size: 13px; font-weight: 600; width: 200px; flex-shrink: 0; }
+.bai-int-trk { flex: 1; height: 22px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
+.bai-int-fill { height: 100%; border-radius: 6px; min-width: 2px; }
+.bai-int-val { font-size: 12.5px; font-weight: 600; color: #64748b; width: 72px; text-align: right; flex-shrink: 0; }
+.bai-int-nota { font-size: 12px; color: #94a3b8; line-height: 1.5; margin-top: 6px; }
+
+/* Tabela de itens (reaproveita estilo BAI) */
+.bai-tab-itens { margin-top: 4px; }
+.bai-tab-itens table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bai-tab-itens thead th { background: linear-gradient(135deg, #0ea5e9, #0369a1); color: #fff; padding: 10px 12px;
+    text-align: left; font-weight: 600; font-size: 12px; }
+.bai-tab-itens thead th:first-child { border-top-left-radius: 8px; }
+.bai-tab-itens thead th:last-child { border-top-right-radius: 8px; }
+.bai-tab-itens td { padding: 9px 12px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+.bai-tab-itens tbody tr:nth-child(even) { background: #f8fafc; }
+.cars-item-titulo { font-weight: 600; color: #1e293b; }
+.cars-item-frase { font-size: 12px; color: #64748b; margin-top: 2px; }
+.cars-tab-nota { font-size: 12.5px; color: #475569; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eef2f7; }
+
+@media print {
+    .cars-nivel-card, .bai-int-row, .bai-intensidade, .cars-tscore { break-inside: avoid; }
+}

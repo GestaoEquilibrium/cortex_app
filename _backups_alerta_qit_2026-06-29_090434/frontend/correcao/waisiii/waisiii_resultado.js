@@ -1,72 +1,70 @@
 // ============================================================================
-// CORTEX_APP — WISC-IV Resultado (modo edição + modo laudo)
+// CORTEX_APP — WAIS-III Resultado (modo edição + modo laudo)
 // ============================================================================
-// URL: /correcao/wisciv/wisciv_resultado.html?aplicacao_id=<uuid>
+// URL: /correcao/wais/wais_resultado.html?aplicacao_id=<uuid>
 //
 // FLUXO:
-//   1. Carrega aplicacao_instrumento + paciente + brutos + (opcional) wisciv_resultados
+//   1. Carrega aplicacao_instrumento + paciente + brutos + (opcional) wais_resultados
 //   2. Decide modo:
-//      - Sem wisciv_resultados → MODO EDIÇÃO (form pra digitar 15 brutos)
-//      - Com wisciv_resultados → MODO LAUDO (read-only, mas tem botão "Editar brutos")
+//      - Sem wais_resultados → MODO EDIÇÃO (form pra digitar 14 brutos)
+//      - Com wais_resultados → MODO LAUDO (read-only, mas tem botão "Editar brutos")
 //   3. MODO EDIÇÃO:
 //      [💾 Salvar parcial]  — só persiste brutos + textos (status fica 'aguardando')
-//      [📊 Calcular]         — chama Edge Function wisc-iv-calcular → status='corrigido' → modo laudo
+//      [📊 Calcular]         — chama Edge Function wais-calcular → status='corrigido' → modo laudo
 //   4. MODO LAUDO:
-//      [✏️ Editar brutos]    — volta pra modo edição (preserva wisciv_resultados, mas dá pra recalcular)
+//      [✏️ Editar brutos]    — volta pra modo edição (preserva wais_resultados, mas dá pra recalcular)
 //      [📄 Gerar PDF]        — html2canvas + jsPDF
 //
-// PADRÃO VISUAL: usa raadsr_resultado.css (base D3) + wisciv_resultado.css (overrides)
+// PADRÃO VISUAL: usa raadsr_resultado.css (base D3) + wais_resultado.css (overrides)
 // ============================================================================
 
 (function () {
     'use strict';
 
     const SUBTESTES = [
-        { codigo: 'CB',  nome: 'Cubos',                            grupo: 'Perceptual', ordem: 1,  principal: true  },
-        { codigo: 'SM',  nome: 'Semelhanças',                      grupo: 'Verbal',     ordem: 2,  principal: true  },
-        { codigo: 'DG',  nome: 'Dígitos',                          grupo: 'Memória',    ordem: 3,  principal: true  },
-        { codigo: 'CN',  nome: 'Conceitos Figurativos',            grupo: 'Perceptual', ordem: 4,  principal: true  },
-        { codigo: 'CD',  nome: 'Código',                           grupo: 'Velocidade', ordem: 5,  principal: true  },
-        { codigo: 'VC',  nome: 'Vocabulário',                      grupo: 'Verbal',     ordem: 6,  principal: true  },
-        { codigo: 'SNL', nome: 'Seq. de Números e Letras',         grupo: 'Memória',    ordem: 7,  principal: true  },
-        { codigo: 'RM',  nome: 'Raciocínio Matricial',             grupo: 'Perceptual', ordem: 8,  principal: true  },
-        { codigo: 'CO',  nome: 'Compreensão',                      grupo: 'Verbal',     ordem: 9,  principal: true  },
-        { codigo: 'PS',  nome: 'Procurar Símbolos',                grupo: 'Velocidade', ordem: 10, principal: true  },
-        // Suplementares (não entram no QIT, mas podem substituir um principal)
-        { codigo: 'CF',  nome: 'Completar Figuras',                grupo: 'Perceptual', ordem: 11, principal: false },
-        { codigo: 'CA',  nome: 'Cancelamento',                     grupo: 'Velocidade', ordem: 12, principal: false },
-        { codigo: 'IN',  nome: 'Informação',                       grupo: 'Verbal',     ordem: 13, principal: false },
-        { codigo: 'AR',  nome: 'Aritmética',                       grupo: 'Memória',    ordem: 14, principal: false },
-        { codigo: 'RP',  nome: 'Raciocínio com Palavras',          grupo: 'Verbal',     ordem: 15, principal: false },
+        { codigo: 'CF',  nome: 'Completar Figuras',                grupo: 'Execução',  ordem: 1  },
+        { codigo: 'VC',  nome: 'Vocabulário',                      grupo: 'Verbal',    ordem: 2  },
+        { codigo: 'CD',  nome: 'Códigos',                          grupo: 'Execução',  ordem: 3  },
+        { codigo: 'SM',  nome: 'Semelhanças',                      grupo: 'Verbal',    ordem: 4  },
+        { codigo: 'CB',  nome: 'Cubos',                            grupo: 'Execução',  ordem: 5  },
+        { codigo: 'AR',  nome: 'Aritmética',                       grupo: 'Verbal',    ordem: 6  },
+        { codigo: 'RM',  nome: 'Raciocínio Matricial',             grupo: 'Execução',  ordem: 7  },
+        { codigo: 'DG',  nome: 'Dígitos',                          grupo: 'Verbal',    ordem: 8  },
+        { codigo: 'IN',  nome: 'Informação',                       grupo: 'Verbal',    ordem: 9  },
+        { codigo: 'AF',  nome: 'Arranjo de Figuras',               grupo: 'Execução',  ordem: 10 },
+        { codigo: 'CO',  nome: 'Compreensão',                      grupo: 'Verbal',    ordem: 11 },
+        { codigo: 'PS',  nome: 'Procurar Símbolos',                grupo: 'Execução',  ordem: 12 },
+        { codigo: 'SNL', nome: 'Sequência de Números e Letras',    grupo: 'Verbal',    ordem: 13 },
+        { codigo: 'AO',  nome: 'Armar Objetos',                    grupo: 'Execução',  ordem: 14 },
     ];
 
     const ESCALAS_LABEL = {
-        ICV:      'Índice de Compreensão Verbal',
-        IOP:      'Índice de Organização Perceptual',
-        IMO:      'Índice de Memória Operacional',
-        IVP:      'Índice de Velocidade de Processamento',
-        QI_TOTAL: 'QI Total',
+        ICV:         'Índice de Compreensão Verbal',
+        IOP:         'Índice de Organização Perceptual',
+        IMO:         'Índice de Memória Operacional',
+        IVP:         'Índice de Velocidade de Processamento',
+        QI_VERBAL:   'QI Verbal',
+        QI_EXECUCAO: 'QI de Execução',
+        QI_TOTAL:    'QI Total',
     };
 
     const ESCALAS_SIGLA = {
         ICV: 'ICV', IOP: 'IOP', IMO: 'IMO', IVP: 'IVP',
-        QI_TOTAL: 'QIT',
+        QI_VERBAL: 'QIV', QI_EXECUCAO: 'QIE', QI_TOTAL: 'QIT',
     };
 
-    const ORDEM_ESCALAS = ['ICV', 'IOP', 'IMO', 'IVP', 'QI_TOTAL'];
+    const ORDEM_ESCALAS = ['ICV', 'IOP', 'IMO', 'IVP', 'QI_VERBAL', 'QI_EXECUCAO', 'QI_TOTAL'];
 
     const CHIPS_OBSERVACOES = [
-        { label: 'Colaborativa',           texto: 'Colaborativa(o) e engajada(o) durante toda a sessão' },
+        { label: 'Colaborativo',           texto: 'Colaborativo(a) e engajado(a) durante toda a sessão' },
         { label: 'Fadiga',                 texto: 'Sinais de fadiga a partir do 5º subteste' },
-        { label: 'Agitação motora',        texto: 'Agitação motora durante a aplicação' },
-        { label: 'Ansiedade',              texto: 'Ansiedade durante a aplicação' },
         { label: 'Impulsividade',          texto: 'Impulsividade nas respostas verbais' },
+        { label: 'Ansiedade',              texto: 'Ansiedade durante a aplicação' },
         { label: 'Repetição instruções',   texto: 'Necessitou de repetição frequente de instruções' },
         { label: 'Boa compreensão',        texto: 'Boa compreensão das instruções' },
         { label: 'Desatenção',             texto: 'Desatenção intermitente' },
         { label: 'Estratégias',            texto: 'Estratégias organizadas de resolução' },
-        { label: 'Contato visual',         texto: 'Manteve contato visual adequado' },
-        { label: 'Necessitou pausas',      texto: 'Necessitou de pausas durante a aplicação' },
+        { label: 'Contato visual ok',      texto: 'Manteve contato visual adequado' },
     ];
 
     const state = {
@@ -75,7 +73,7 @@
         paciente: null,
         instrumento: null,
         brutos: {},      // { CF: 18, VC: 38, ... }
-        resultado: null, // wisciv_resultados (null se ainda não calculou)
+        resultado: null, // wais_resultados (null se ainda não calculou)
         modo: 'edicao',  // 'edicao' | 'laudo'
         chartInstance: null,
         salvando: false,
@@ -97,7 +95,7 @@
             decidirModo();
             renderizar();
         } catch (err) {
-            console.error('[wisc] erro ao carregar:', err);
+            console.error('[wais] erro ao carregar:', err);
             mostrarErro('Erro: ' + (err.message || 'desconhecido'));
         }
     });
@@ -116,15 +114,15 @@
         if (errA) throw new Error('Aplicação não encontrada: ' + errA.message);
         state.aplicacao = aplicacao;
 
-        // 2. Instrumento (sanity check — confirma que é WISC-IV)
+        // 2. Instrumento (sanity check — confirma que é WAIS-III)
         const { data: instrumento, error: errI } = await window.cortexClient
             .from('instrumentos_catalogo')
             .select('id, sigla, nome_completo, tipo_aplicacao')
             .eq('id', aplicacao.instrumento_id)
             .single();
         if (errI) throw new Error('Instrumento: ' + errI.message);
-        if (instrumento.sigla !== 'WISC-IV') {
-            throw new Error(`Esta página é só pra WISC-IV. Aplicação aponta pra ${instrumento.sigla}.`);
+        if (instrumento.sigla !== 'WAIS-III') {
+            throw new Error(`Esta página é só pra WAIS-III. Aplicação aponta pra ${instrumento.sigla}.`);
         }
         state.instrumento = instrumento;
 
@@ -139,7 +137,7 @@
 
         // 4. Brutos (até 14 linhas)
         const { data: brutosRows, error: errB } = await window.cortexClient
-            .from('wisciv_brutos')
+            .from('wais_brutos')
             .select('codigo, valor_bruto')
             .eq('aplicacao_id', state.aplicacaoId);
         if (errB) throw new Error('Brutos: ' + errB.message);
@@ -150,14 +148,14 @@
 
         // 5. Resultado (1 linha, ou null)
         const { data: resultado } = await window.cortexClient
-            .from('wisciv_resultados')
+            .from('wais_resultados')
             .select('*')
             .eq('aplicacao_id', state.aplicacaoId)
             .maybeSingle();
         state.resultado = resultado || null;
 
-        await CortexAudit.log('leitura', 'wisciv_resultados', state.aplicacaoId, {
-            detalhes: { sigla: 'WISC-IV', tem_resultado: !!resultado }
+        await CortexAudit.log('leitura', 'wais_resultados', state.aplicacaoId, {
+            detalhes: { sigla: 'WAIS-III', tem_resultado: !!resultado }
         });
     }
 
@@ -211,7 +209,7 @@
         bindCamposForm();
 
         // Bind chips de observações
-        document.querySelectorAll('.wisc-chip').forEach(btn => {
+        document.querySelectorAll('.wais-chip').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const texto = btn.dataset.texto;
                 const ta = document.getElementById('obs-comportamentais');
@@ -236,44 +234,44 @@
         const statusBg    = state.aplicacao.status === 'corrigido' ? '#dcfce7' : '#fef3c7';
 
         return `
-        <div class="wisc-aplicar-page">
+        <div class="wais-aplicar-page">
 
-            <div class="wisc-aplicar-header">
+            <div class="wais-aplicar-header">
                 <div>
-                    <div class="wisc-aplicar-supratitulo">Aplicação Neuropsicológica · WISC-IV</div>
-                    <h1 class="wisc-aplicar-titulo">${escapeHtml(state.paciente.nome_completo)}</h1>
-                    <div class="wisc-aplicar-subtitulo">
-                        Escala de Inteligência Wechsler para Crianças — 4ª Edição
+                    <div class="wais-aplicar-supratitulo">Aplicação Neuropsicológica · WAIS-III</div>
+                    <h1 class="wais-aplicar-titulo">${escapeHtml(state.paciente.nome_completo)}</h1>
+                    <div class="wais-aplicar-subtitulo">
+                        Escala de Inteligência Wechsler para Adultos — 3ª Edição
                     </div>
                 </div>
-                <div class="wisc-aplicar-status" style="background:${statusBg}; color:${statusColor};">
+                <div class="wais-aplicar-status" style="background:${statusBg}; color:${statusColor};">
                     ${statusLabel}
                 </div>
             </div>
 
             <!-- 1. PROFISSIONAL -->
-            <div class="wisc-form-card">
-                <div class="wisc-form-card-header">
-                    <span class="wisc-form-card-num">1</span>
+            <div class="wais-form-card">
+                <div class="wais-form-card-header">
+                    <span class="wais-form-card-num">1</span>
                     <div>
-                        <div class="wisc-form-card-title">Dados do Profissional</div>
-                        <div class="wisc-form-card-desc">Aplicador responsável pela avaliação</div>
+                        <div class="wais-form-card-title">Dados do Profissional</div>
+                        <div class="wais-form-card-desc">Aplicador responsável pela avaliação</div>
                     </div>
                 </div>
-                <div class="wisc-form-grid">
-                    <div class="wisc-field">
+                <div class="wais-form-grid">
+                    <div class="wais-field">
                         <label for="prof-nome">Nome do profissional</label>
                         <input type="text" id="prof-nome" value="${escapeHtml(state.resultado?.profissional_nome || profNome)}" placeholder="Nome completo">
                     </div>
-                    <div class="wisc-field">
+                    <div class="wais-field">
                         <label for="prof-crp">CRP</label>
                         <input type="text" id="prof-crp" value="${escapeHtml(state.resultado?.profissional_crp || profCRP)}" placeholder="04/12345">
                     </div>
-                    <div class="wisc-field">
+                    <div class="wais-field">
                         <label for="prof-esp">Especialidade</label>
                         <input type="text" id="prof-esp" value="${escapeHtml(state.resultado?.profissional_especialidade || '')}" placeholder="Ex: Neuropsicóloga">
                     </div>
-                    <div class="wisc-field">
+                    <div class="wais-field">
                         <label for="prof-contato">Contato</label>
                         <input type="text" id="prof-contato" value="${escapeHtml(state.resultado?.profissional_contato || '')}" placeholder="E-mail ou telefone">
                     </div>
@@ -281,49 +279,49 @@
             </div>
 
             <!-- 2. EXAMINANDO -->
-            <div class="wisc-form-card">
-                <div class="wisc-form-card-header">
-                    <span class="wisc-form-card-num">2</span>
+            <div class="wais-form-card">
+                <div class="wais-form-card-header">
+                    <span class="wais-form-card-num">2</span>
                     <div>
-                        <div class="wisc-form-card-title">Dados do Examinando</div>
-                        <div class="wisc-form-card-desc">Informações do paciente avaliado</div>
+                        <div class="wais-form-card-title">Dados do Examinando</div>
+                        <div class="wais-form-card-desc">Informações do paciente avaliado</div>
                     </div>
                 </div>
-                <div class="wisc-form-grid">
-                    <div class="wisc-field">
+                <div class="wais-form-grid">
+                    <div class="wais-field">
                         <label>Nome</label>
                         <input type="text" value="${escapeHtml(state.paciente.nome_completo)}" readonly>
                     </div>
-                    <div class="wisc-field">
+                    <div class="wais-field">
                         <label>Sexo</label>
                         <input type="text" value="${escapeHtml(state.paciente.sexo || '—')}" readonly>
                     </div>
-                    <div class="wisc-field">
+                    <div class="wais-field">
                         <label for="data-nasc-readonly">Data de Nascimento</label>
                         <input type="date" id="data-nasc-readonly" value="${dataNascStr}" readonly>
                     </div>
-                    <div class="wisc-field">
+                    <div class="wais-field">
                         <label for="data-aplicacao">Data de Aplicação <span style="color:#dc2626">*</span></label>
                         <input type="date" id="data-aplicacao" value="${dataAplStr}" required>
-                        <span class="wisc-field-hint" id="hint-idade">Idade na aplicação: ${idadeTxt}</span>
+                        <span class="wais-field-hint" id="hint-idade">Idade na aplicação: ${idadeTxt}</span>
                     </div>
                 </div>
-                <div class="wisc-field" style="margin-top:14px;">
+                <div class="wais-field" style="margin-top:14px;">
                     <label for="motivo">Motivo do encaminhamento</label>
                     <textarea id="motivo" rows="2" placeholder="Ex: Avaliação cognitiva para investigação de queixas de memória">${escapeHtml(state.resultado?.motivo_encaminhamento || '')}</textarea>
                 </div>
             </div>
 
             <!-- 3. BRUTOS -->
-            <div class="wisc-form-card">
-                <div class="wisc-form-card-header">
-                    <span class="wisc-form-card-num">3</span>
+            <div class="wais-form-card">
+                <div class="wais-form-card-header">
+                    <span class="wais-form-card-num">3</span>
                     <div>
-                        <div class="wisc-form-card-title">Pontos Brutos dos Subtestes</div>
-                        <div class="wisc-form-card-desc">Insira os valores obtidos. 10 principais (entram no QI Total) + 5 suplementares (opcionais).</div>
+                        <div class="wais-form-card-title">Pontos Brutos dos Subtestes</div>
+                        <div class="wais-form-card-desc">Insira os valores obtidos nos 14 subtestes</div>
                     </div>
                 </div>
-                <div class="wisc-tab-brutos">
+                <div class="wais-tab-brutos">
                     <table>
                         <thead>
                             <tr>
@@ -332,20 +330,11 @@
                             </tr>
                         </thead>
                         <tbody>
-                            ${SUBTESTES.map((s, idx) => {
-                                const ehPrimeiroSupl = !s.principal && idx > 0 && SUBTESTES[idx-1].principal;
-                                const tagSupl = s.principal ? '' : ' <span class="wisc-tag-supl">suplementar</span>';
-                                const separator = ehPrimeiroSupl ? `
-                                    <tr class="wisc-divisor-supl">
-                                        <td colspan="2">↓ Subtestes Suplementares (opcionais — não entram no QI Total)</td>
-                                    </tr>
-                                ` : '';
-                                return `${separator}
+                            ${SUBTESTES.map(s => `
                                 <tr>
                                     <td>
-                                        <span class="wisc-subnome">${escapeHtml(s.nome)}</span>
-                                        <span class="wisc-subcodigo">(${s.codigo})</span>
-                                        ${tagSupl}
+                                        <span class="wais-subnome">${escapeHtml(s.nome)}</span>
+                                        <span class="wais-subcodigo">(${s.codigo})</span>
                                     </td>
                                     <td class="col-pb">
                                         <input type="number"
@@ -355,43 +344,43 @@
                                                min="0"
                                                placeholder="—">
                                     </td>
-                                </tr>`;
-                            }).join('')}
+                                </tr>
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>
             </div>
 
             <!-- 4. OBSERVAÇÕES COMPORTAMENTAIS -->
-            <div class="wisc-form-card">
-                <div class="wisc-form-card-header">
-                    <span class="wisc-form-card-num">4</span>
+            <div class="wais-form-card">
+                <div class="wais-form-card-header">
+                    <span class="wais-form-card-num">4</span>
                     <div>
-                        <div class="wisc-form-card-title">Observações Comportamentais</div>
-                        <div class="wisc-form-card-desc">Registros qualitativos durante a aplicação</div>
+                        <div class="wais-form-card-title">Observações Comportamentais</div>
+                        <div class="wais-form-card-desc">Registros qualitativos durante a aplicação</div>
                     </div>
                 </div>
-                <div class="wisc-chips">
+                <div class="wais-chips">
                     ${CHIPS_OBSERVACOES.map(c => `
-                        <button type="button" class="wisc-chip" data-texto="${escapeHtml(c.texto)}">${escapeHtml(c.label)}</button>
+                        <button type="button" class="wais-chip" data-texto="${escapeHtml(c.texto)}">${escapeHtml(c.label)}</button>
                     `).join('')}
                 </div>
-                <div class="wisc-field">
+                <div class="wais-field">
                     <label for="obs-comportamentais">Observações</label>
                     <textarea id="obs-comportamentais" rows="4" placeholder="Descreva o comportamento do examinando durante a aplicação...">${escapeHtml(state.resultado?.observacoes_comportamentais || '')}</textarea>
                 </div>
             </div>
 
             <!-- 5. RECOMENDAÇÕES -->
-            <div class="wisc-form-card">
-                <div class="wisc-form-card-header">
-                    <span class="wisc-form-card-num">5</span>
+            <div class="wais-form-card">
+                <div class="wais-form-card-header">
+                    <span class="wais-form-card-num">5</span>
                     <div>
-                        <div class="wisc-form-card-title">Conclusão e Recomendações</div>
-                        <div class="wisc-form-card-desc">Sugestões terapêuticas, educacionais e encaminhamentos</div>
+                        <div class="wais-form-card-title">Conclusão e Recomendações</div>
+                        <div class="wais-form-card-desc">Sugestões terapêuticas, educacionais e encaminhamentos</div>
                     </div>
                 </div>
-                <div class="wisc-field">
+                <div class="wais-field">
                     <label for="recomendacoes">Recomendações</label>
                     <textarea id="recomendacoes" rows="4" placeholder="Recomendações para o paciente, família ou equipe multidisciplinar...">${escapeHtml(state.resultado?.recomendacoes || '')}</textarea>
                 </div>
@@ -409,10 +398,8 @@
                 const idade = calcularIdadeAnos(state.paciente.data_nascimento, dataApl.value);
                 const hint = document.getElementById('hint-idade');
                 if (idade != null) {
-                    // WISC-IV: 6:0 a 16:11. Margem: idade < 6 OU idade > 16
-                    // (16 anos exatos ainda OK; 17+ fora; 5 e abaixo fora)
-                    if (idade < 6 || idade > 16) {
-                        hint.innerHTML = `<span style="color:#dc2626">⚠ Idade ${idade} anos fora da faixa normativa do WISC-IV (6:0-16:11)</span>`;
+                    if (idade < 16 || idade > 89) {
+                        hint.innerHTML = `<span style="color:#dc2626">⚠ Idade ${idade} anos fora da faixa normativa do WAIS-III (16-89)</span>`;
                         hint.classList.add('warn');
                     } else {
                         hint.textContent = `Idade na aplicação: ${idade} anos`;
@@ -470,8 +457,8 @@
                 return;
             }
             const idade = calcularIdadeAnos(state.paciente.data_nascimento, dados.data_aplicacao);
-            if (idade == null || idade < 6 || idade > 16) {
-                window.CortexUI.toast(`Idade ${idade ?? '?'} fora da faixa normativa (6:0-16:11 anos)`, 'danger');
+            if (idade == null || idade < 16 || idade > 89) {
+                window.CortexUI.toast(`Idade ${idade ?? '?'} fora da faixa normativa (16-89 anos)`, 'danger');
                 return;
             }
         }
@@ -497,7 +484,7 @@
             // 2. UPSERT brutos (1 linha por subteste com valor preenchido)
             //    Apaga primeiro pra eliminar brutos que foram zerados no form
             const { error: errDel } = await window.cortexClient
-                .from('wisciv_brutos')
+                .from('wais_brutos')
                 .delete()
                 .eq('aplicacao_id', state.aplicacaoId);
             if (errDel) throw new Error('Erro ao limpar brutos: ' + errDel.message);
@@ -509,12 +496,12 @@
             }));
             if (inserts.length > 0) {
                 const { error: errIns } = await window.cortexClient
-                    .from('wisciv_brutos')
+                    .from('wais_brutos')
                     .insert(inserts);
                 if (errIns) throw new Error('Erro ao salvar brutos: ' + errIns.message);
             }
 
-            // 3. UPSERT campos qualitativos em wisciv_resultados
+            // 3. UPSERT campos qualitativos em wais_resultados
             //    Se ainda não tem cálculo, cria linha placeholder com jsonbs vazios
             //    (pra poder gravar os textos qualitativos antes de calcular)
             const camposQuali = {
@@ -531,12 +518,12 @@
             // 4. Se for "calcular", chama Edge Function
             if (comCalculo) {
                 // Antes de chamar, persiste os campos qualitativos:
-                //   - Se já existe wisciv_resultados (recálculo) → UPDATE só os textos
+                //   - Se já existe wais_resultados (recálculo) → UPDATE só os textos
                 //   - Se não existe → a Edge Function vai fazer o INSERT inicial; os textos
                 //     vão num UPDATE depois
                 if (state.resultado) {
                     const { error: errUp } = await window.cortexClient
-                        .from('wisciv_resultados')
+                        .from('wais_resultados')
                         .update(camposQuali)
                         .eq('aplicacao_id', state.aplicacaoId);
                     if (errUp) throw new Error('Erro ao salvar campos qualitativos: ' + errUp.message);
@@ -544,7 +531,7 @@
 
                 // Chama Edge Function
                 const { data: invokeData, error: errInvoke } =
-                    await window.cortexClient.functions.invoke('wisc-iv-calcular', {
+                    await window.cortexClient.functions.invoke('wais-calcular', {
                         body: { aplicacao_id: state.aplicacaoId },
                     });
                 if (errInvoke) {
@@ -565,7 +552,7 @@
                 // Após Edge Function, faz UPDATE dos textos qualitativos
                 // (que ela não toca — só preenche os campos do cálculo)
                 const { error: errUp2 } = await window.cortexClient
-                    .from('wisciv_resultados')
+                    .from('wais_resultados')
                     .update(camposQuali)
                     .eq('aplicacao_id', state.aplicacaoId);
                 if (errUp2) throw new Error('Erro ao salvar campos qualitativos: ' + errUp2.message);
@@ -577,7 +564,7 @@
                 if (state.resultado) {
                     // Já tem cálculo: UPDATE dos textos
                     const { error: errUp } = await window.cortexClient
-                        .from('wisciv_resultados')
+                        .from('wais_resultados')
                         .update(camposQuali)
                         .eq('aplicacao_id', state.aplicacaoId);
                     if (errUp) throw new Error('Erro ao salvar textos: ' + errUp.message);
@@ -585,7 +572,7 @@
                     // Não tem cálculo ainda: salva textos via UPSERT
                     // (preenche jsonbs com null pra contornar NOT NULL)
                     const { error: errUp } = await window.cortexClient
-                        .from('wisciv_resultados')
+                        .from('wais_resultados')
                         .upsert({
                             ...camposQuali,
                             ponderados: {},
@@ -597,9 +584,9 @@
                 window.CortexUI.toast('💾 Parcial salvo', 'info');
             }
 
-            await CortexAudit.log(comCalculo ? 'calculo' : 'salvamento', 'wisciv_resultados', state.aplicacaoId, {
+            await CortexAudit.log(comCalculo ? 'calculo' : 'salvamento', 'wais_resultados', state.aplicacaoId, {
                 detalhes: {
-                    sigla: 'WISC-IV',
+                    sigla: 'WAIS-III',
                     qtd_brutos: inserts.length,
                     com_calculo: comCalculo,
                 }
@@ -618,7 +605,7 @@
             }
 
         } catch (err) {
-            console.error('[wisc salvar]', err);
+            console.error('[wais salvar]', err);
             window.CortexUI.toast(err.message || 'Erro ao salvar', 'danger');
         } finally {
             state.salvando = false;
@@ -689,22 +676,23 @@
     // Descrição da habilidade por escala (texto formal)
     function abilityDescription(key) {
         const m = {
-            QI_TOTAL: "funcionamento intelectual global",
-            ICV:      "raciocínio verbal, formação de conceitos verbais e conhecimento adquirido",
-            IOP:      "raciocínio não verbal, processamento perceptivo-visual e integração visomotora",
-            IMO:      "atenção, concentração e controle mental para manipular informações",
-            IVP:      "rapidez e eficiência para processar informações visuais simples",
+            QI_TOTAL:    "funcionamento intelectual global",
+            QI_VERBAL:   "conhecimento adquirido, raciocínio verbal e atenção a materiais verbais",
+            QI_EXECUCAO: "raciocínio fluido, processamento espacial, atenção a detalhes e integração visomotora",
+            ICV:         "raciocínio verbal e formação de conceitos",
+            IOP:         "raciocínio não verbal, atenção a detalhes e integração visomotora",
+            IMO:         "atenção, concentração e controle mental para manipular informações",
+            IVP:         "rapidez e eficiência para processar informações visuais simples",
         };
         return m[key] || "habilidades cognitivas avaliadas";
     }
 
-    // Grupos cognitivos (perfil de subtestes) — WISC-IV
-    // Inclui suplementares pra dar visão completa quando aplicados
-    const GRUPOS_WISC = [
-        { titulo: "Compreensão Verbal",          codes: ["SM", "VC", "CO", "IN", "RP"] },
-        { titulo: "Organização Perceptual",      codes: ["CB", "CN", "RM", "CF"] },
-        { titulo: "Memória Operacional",         codes: ["DG", "SNL", "AR"] },
-        { titulo: "Velocidade de Processamento", codes: ["CD", "PS", "CA"] },
+    // Grupos cognitivos (perfil de subtestes)
+    const GRUPOS_WAIS = [
+        { titulo: "Compreensão Verbal",          codes: ["SM", "VC", "IN", "CO"] },
+        { titulo: "Organização Perceptual",      codes: ["CB", "CF", "RM", "AF"] },
+        { titulo: "Memória Operacional",         codes: ["AR", "DG", "SNL"] },
+        { titulo: "Velocidade de Processamento", codes: ["CD", "PS"] },
     ];
 
     function renderModoLaudo() {
@@ -743,9 +731,9 @@
                     <div class="laudo-header-logo">E</div>
                     <div class="laudo-header-textos">
                         <div class="laudo-header-supratitulo">Relatório Neuropsicológico</div>
-                        <h1 class="laudo-header-titulo">WISC-IV</h1>
+                        <h1 class="laudo-header-titulo">WAIS-III</h1>
                         <div class="laudo-header-subtitulo">
-                            Escala Wechsler de Inteligência para Crianças — 4ª Edição<br>
+                            Escala Wechsler de Inteligência para Adultos — 3ª Edição<br>
                             Conversão PB → Ponderado e somatórios por índice
                         </div>
                     </div>
@@ -805,7 +793,7 @@
                         <span class="laudo-secao-tag">2</span>
                         Motivo do Encaminhamento
                     </div>
-                    <div class="wisc-texto-bloco">${escapeHtml(r.motivo_encaminhamento)}</div>
+                    <div class="wais-texto-bloco">${escapeHtml(r.motivo_encaminhamento)}</div>
                 ` : ''}
 
                 <!-- ─── 3. MATRIZ DE CONVERSÃO ─── -->
@@ -832,7 +820,6 @@
                 </div>
                 ${renderICChart()}
                 ${renderTabelaIndices()}
-                ${renderAlertaQIT(classifQIT)}
 
                 <!-- ─── 6. SUBTESTES — DETALHAMENTO ─── -->
                 <div class="laudo-secao-titulo">
@@ -872,7 +859,7 @@
                         <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 10 : 9}</span>
                         Observações Comportamentais
                     </div>
-                    <div class="wisc-texto-bloco">${escapeHtml(r.observacoes_comportamentais)}</div>
+                    <div class="wais-texto-bloco">${escapeHtml(r.observacoes_comportamentais)}</div>
                 ` : ''}
 
                 <!-- ─── 11. RECOMENDAÇÕES ─── -->
@@ -881,7 +868,7 @@
                         <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 11 : 10}</span>
                         Conclusão e Recomendações
                     </div>
-                    <div class="wisc-texto-bloco">${escapeHtml(r.recomendacoes)}</div>
+                    <div class="wais-texto-bloco">${escapeHtml(r.recomendacoes)}</div>
                 ` : ''}
 
             </div>
@@ -891,7 +878,7 @@
                 <div class="laudo-rodape-esq">
                     <div class="laudo-rodape-org">${escapeHtml(r.profissional_nome || 'Profissional')}</div>
                     <div class="laudo-rodape-tipo">${escapeHtml(r.profissional_crp || '—')}${r.profissional_especialidade ? ' · ' + escapeHtml(r.profissional_especialidade) : ''}</div>
-                    <div class="wisc-assinatura-linha">Assinatura do profissional</div>
+                    <div class="wais-assinatura-linha">Assinatura do profissional</div>
                 </div>
                 <div class="laudo-rodape-dir">
                     <div class="laudo-rodape-data">Documento gerado em ${formatarDataBR(new Date().toISOString())}</div>
@@ -915,18 +902,20 @@
         const ponds = r.ponderados || {};
         const somas = r.somas || {};
 
-        const usadosICV = new Set(somas.ICV?.usados      || []);
-        const usadosIOP = new Set(somas.IOP?.usados      || []);
-        const usadosIMO = new Set(somas.IMO?.usados      || []);
-        const usadosIVP = new Set(somas.IVP?.usados      || []);
-        const usadosQIT = new Set(somas.QI_TOTAL?.usados || []);
+        const usadosICV    = new Set(somas.ICV?.usados        || []);
+        const usadosIOP    = new Set(somas.IOP?.usados        || []);
+        const usadosIMO    = new Set(somas.IMO?.usados        || []);
+        const usadosIVP    = new Set(somas.IVP?.usados        || []);
+        const usadosVERBAL = new Set(somas.QI_VERBAL?.usados  || []);
+        const usadosEXEC   = new Set(somas.QI_EXECUCAO?.usados|| []);
 
         const possiveis = {
-            ICV: new Set(['SM','VC','CO','IN','RP']),       // 3 principais + 2 supl
-            IOP: new Set(['CB','CN','RM','CF']),            // 3 principais + 1 supl
-            IMO: new Set(['DG','SNL','AR']),                // 2 principais + 1 supl
-            IVP: new Set(['CD','PS','CA']),                 // 2 principais + 1 supl
-            QIT: new Set(['CB','SM','DG','CN','CD','VC','SNL','RM','CO','PS']), // 10 principais
+            VERBAL: new Set(['VC','SM','AR','DG','IN','CO','SNL']),
+            EXEC:   new Set(['CF','CD','CB','RM','AF','PS','AO']),
+            ICV:    new Set(['SM','VC','IN','CO']),
+            IOP:    new Set(['CB','CF','RM','AF']),
+            IMO:    new Set(['AR','DG','SNL']),
+            IVP:    new Set(['CD','PS']),
         };
 
         function celula(codigo, usadosSet, possiveisSet) {
@@ -934,46 +923,48 @@
             const v = ponds[codigo];
             if (v == null) return `<td></td>`;
             const usado = usadosSet.has(codigo);
-            return `<td><span class="wisc-pill${usado ? '' : ' sup'}">${usado ? v : '(' + v + ')'}</span></td>`;
+            return `<td><span class="wais-pill${usado ? '' : ' sup'}">${usado ? v : '(' + v + ')'}</span></td>`;
         }
 
         const linhas = SUBTESTES.slice().sort((a, b) => a.ordem - b.ordem).map(s => {
             const b = state.brutos[s.codigo] ?? '—';
             const p = ponds[s.codigo] ?? '—';
-            const tagSupl = s.principal ? '' : ' <span style="color:#94a3b8; font-size:10px;">(supl.)</span>';
             return `<tr>
-                <td class="col-sub">${escapeHtml(s.nome)} <span class="wisc-escala-sigla">(${s.codigo})</span>${tagSupl}</td>
+                <td class="col-sub">${escapeHtml(s.nome)} <span class="wais-escala-sigla">(${s.codigo})</span></td>
                 <td class="col-pb">${b}</td>
                 <td class="col-pp">${p}</td>
-                ${celula(s.codigo, usadosICV, possiveis.ICV)}
-                ${celula(s.codigo, usadosIOP, possiveis.IOP)}
-                ${celula(s.codigo, usadosIMO, possiveis.IMO)}
-                ${celula(s.codigo, usadosIVP, possiveis.IVP)}
-                ${celula(s.codigo, usadosQIT, possiveis.QIT)}
+                ${celula(s.codigo, usadosVERBAL, possiveis.VERBAL)}
+                ${celula(s.codigo, usadosEXEC,   possiveis.EXEC)}
+                ${celula(s.codigo, usadosICV,    possiveis.ICV)}
+                ${celula(s.codigo, usadosIOP,    possiveis.IOP)}
+                ${celula(s.codigo, usadosIMO,    possiveis.IMO)}
+                ${celula(s.codigo, usadosIVP,    possiveis.IVP)}
             </tr>`;
         }).join('');
 
-        return `<div class="wisc-matriz"><table>
+        return `<div class="wais-matriz"><table>
             <thead>
                 <tr>
                     <th class="col-sub" rowspan="2">SUBTESTES</th>
                     <th class="col-pb"  rowspan="2">PB</th>
                     <th class="col-pp"  rowspan="2">POND.</th>
-                    <th colspan="5">CONTRIBUIÇÃO (PONTOS PONDERADOS)</th>
+                    <th colspan="6">CONTRIBUIÇÃO (PONTOS PONDERADOS)</th>
                 </tr>
                 <tr>
-                    <th>ICV</th><th>IOP</th><th>IMO</th><th>IVP</th><th>QIT</th>
+                    <th>VERBAL</th><th>EXEC.</th>
+                    <th>ICV</th><th>IOP</th><th>IMO</th><th>IVP</th>
                 </tr>
             </thead>
             <tbody>${linhas}</tbody>
             <tfoot>
                 <tr>
                     <td class="sum-label" colspan="3">SOMA DOS PONTOS PONDERADOS</td>
-                    <td>${somas.ICV?.soma      ?? '—'}</td>
-                    <td>${somas.IOP?.soma      ?? '—'}</td>
-                    <td>${somas.IMO?.soma      ?? '—'}</td>
-                    <td>${somas.IVP?.soma      ?? '—'}</td>
-                    <td>${somas.QI_TOTAL?.soma ?? '—'}</td>
+                    <td>${somas.QI_VERBAL?.soma   ?? '—'}</td>
+                    <td>${somas.QI_EXECUCAO?.soma ?? '—'}</td>
+                    <td>${somas.ICV?.soma         ?? '—'}</td>
+                    <td>${somas.IOP?.soma         ?? '—'}</td>
+                    <td>${somas.IMO?.soma         ?? '—'}</td>
+                    <td>${somas.IVP?.soma         ?? '—'}</td>
                 </tr>
             </tfoot>
         </table></div>`;
@@ -987,7 +978,7 @@
         const r = state.resultado;
         const ponds = r.ponderados || {};
 
-        const blocos = GRUPOS_WISC.map(g => {
+        const blocos = GRUPOS_WAIS.map(g => {
             const linhas = g.codes.map(code => {
                 const p = ponds[code];
                 if (p == null) return '';
@@ -998,24 +989,24 @@
                 const avgW = ((2 / 19) * 100).toFixed(1);
                 const fillW = ((p / 19) * 100).toFixed(1);
 
-                return `<div class="wisc-bar-row">
-                    <div class="wisc-bar-code">${code}</div>
-                    <div class="wisc-bar-track">
-                        <div class="wisc-bar-avg-zone" style="left:${avgL}%; width:${avgW}%;"></div>
-                        <div class="wisc-bar-fill" style="width:${fillW}%; background:${col};"></div>
+                return `<div class="wais-bar-row">
+                    <div class="wais-bar-code">${code}</div>
+                    <div class="wais-bar-track">
+                        <div class="wais-bar-avg-zone" style="left:${avgL}%; width:${avgW}%;"></div>
+                        <div class="wais-bar-fill" style="width:${fillW}%; background:${col};"></div>
                     </div>
-                    <div class="wisc-bar-val">${p}</div>
-                    <div class="wisc-bar-badge">${clBadge(cl)}</div>
+                    <div class="wais-bar-val">${p}</div>
+                    <div class="wais-bar-badge">${clBadge(cl)}</div>
                 </div>`;
             }).join('');
 
-            return `<div class="wisc-bar-group">
-                <div class="wisc-bar-group-titulo">${escapeHtml(g.titulo).toUpperCase()}</div>
+            return `<div class="wais-bar-group">
+                <div class="wais-bar-group-titulo">${escapeHtml(g.titulo).toUpperCase()}</div>
                 ${linhas}
             </div>`;
         }).join('');
 
-        return `<div class="wisc-perfil-bloco">${blocos}</div>`;
+        return `<div class="wais-perfil-bloco">${blocos}</div>`;
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -1027,11 +1018,13 @@
         const compostos = r.compostos || {};
 
         const items = [
+            { sigla: 'QIV', key: 'QI_VERBAL'   },
+            { sigla: 'QIE', key: 'QI_EXECUCAO' },
+            { sigla: 'QIT', key: 'QI_TOTAL'    },
             { sigla: 'ICV', key: 'ICV' },
             { sigla: 'IOP', key: 'IOP' },
             { sigla: 'IMO', key: 'IMO' },
             { sigla: 'IVP', key: 'IVP' },
-            { sigla: 'QIT', key: 'QI_TOTAL' },
         ];
 
         const linhas = items.map(it => {
@@ -1045,30 +1038,30 @@
             // Linhas de grade verticais em valores específicos
             const grid = [60, 80, 100, 120, 140].map(v => {
                 const isMain = (v === 100);
-                return `<div class="wisc-ic-gridline" style="left:${icScale(v)}%; ${isMain ? 'width:2px; background:rgba(100,116,139,.3);' : 'width:1px; background:rgba(203,213,225,.3);'}"></div>`;
+                return `<div class="wais-ic-gridline" style="left:${icScale(v)}%; ${isMain ? 'width:2px; background:rgba(100,116,139,.3);' : 'width:1px; background:rgba(203,213,225,.3);'}"></div>`;
             }).join('');
 
-            return `<div class="wisc-ic-row">
-                <div class="wisc-ic-label" style="color:${col};">${it.sigla}</div>
-                <div class="wisc-ic-track">
+            return `<div class="wais-ic-row">
+                <div class="wais-ic-label" style="color:${col};">${it.sigla}</div>
+                <div class="wais-ic-track">
                     ${grid}
-                    <div class="wisc-ic-bar" style="left:${icScale(ic[0])}%; width:${(icScale(ic[1]) - icScale(ic[0])).toFixed(2)}%; background:${col}30; border:1px solid ${col}80;"></div>
-                    <div class="wisc-ic-whisker" style="left:${icScale(ic[0])}%; background:${col}80;"></div>
-                    <div class="wisc-ic-whisker" style="left:${icScale(ic[1])}%; background:${col}80;"></div>
-                    <div class="wisc-ic-dot" style="left:${icScale(comp)}%; background:${col}; box-shadow:0 2px 6px ${col}50;">${comp}</div>
+                    <div class="wais-ic-bar" style="left:${icScale(ic[0])}%; width:${(icScale(ic[1]) - icScale(ic[0])).toFixed(2)}%; background:${col}30; border:1px solid ${col}80;"></div>
+                    <div class="wais-ic-whisker" style="left:${icScale(ic[0])}%; background:${col}80;"></div>
+                    <div class="wais-ic-whisker" style="left:${icScale(ic[1])}%; background:${col}80;"></div>
+                    <div class="wais-ic-dot" style="left:${icScale(comp)}%; background:${col}; box-shadow:0 2px 6px ${col}50;">${comp}</div>
                 </div>
-                <div class="wisc-ic-badge">${clBadge(cl)}</div>
+                <div class="wais-ic-badge">${clBadge(cl)}</div>
             </div>`;
         }).join('');
 
-        return `<div class="wisc-ic-chart">
-            <div class="wisc-ic-scale">
+        return `<div class="wais-ic-chart">
+            <div class="wais-ic-scale">
                 <span>40</span><span>60</span><span>80</span>
                 <span style="font-weight:800; color:#475569;">100</span>
                 <span>120</span><span>140</span><span>160</span>
             </div>
             ${linhas}
-            <div class="wisc-ic-legenda">Linha escura = média normativa (100) · Faixa colorida = IC 95% · Círculo = composto obtido</div>
+            <div class="wais-ic-legenda">Linha escura = média normativa (100) · Faixa colorida = IC 95% · Círculo = composto obtido</div>
         </div>`;
     }
 
@@ -1082,11 +1075,13 @@
         const somas = r.somas || {};
 
         const items = [
+            { sigla: 'QIV', key: 'QI_VERBAL'   },
+            { sigla: 'QIE', key: 'QI_EXECUCAO' },
+            { sigla: 'QIT', key: 'QI_TOTAL'    },
             { sigla: 'ICV', key: 'ICV' },
             { sigla: 'IOP', key: 'IOP' },
             { sigla: 'IMO', key: 'IMO' },
             { sigla: 'IVP', key: 'IVP' },
-            { sigla: 'QIT', key: 'QI_TOTAL' },
         ];
 
         const linhas = items.map(it => {
@@ -1096,17 +1091,17 @@
             const cl = classByComposite(c.composto);
             const col = icColor(c.composto);
             return `<tr>
-                <td class="wisc-ind-sigla">${it.sigla}</td>
+                <td class="wais-ind-sigla">${it.sigla}</td>
                 <td class="ctr">${s?.soma ?? '—'}</td>
                 <td class="ctr" style="font-weight:800; font-size:14px; color:${col};">${c.composto}</td>
                 <td class="ctr">${c.percentil ?? '—'}</td>
-                <td class="ctr"><span class="wisc-ic">${c.ic90?.[0]}–${c.ic90?.[1]}</span></td>
-                <td class="ctr"><span class="wisc-ic">${c.ic95?.[0]}–${c.ic95?.[1]}</span></td>
+                <td class="ctr"><span class="wais-ic">${c.ic90?.[0]}–${c.ic90?.[1]}</span></td>
+                <td class="ctr"><span class="wais-ic">${c.ic95?.[0]}–${c.ic95?.[1]}</span></td>
                 <td>${clBadge(cl)}</td>
             </tr>`;
         }).join('');
 
-        return `<div class="wisc-tab-qis"><table>
+        return `<div class="wais-tab-qis"><table>
             <thead><tr>
                 <th>ESCALA</th>
                 <th class="ctr">SOMA POND.</th>
@@ -1138,7 +1133,7 @@
             const bruto = state.brutos[s.codigo] ?? '—';
 
             return `<tr>
-                <td class="wisc-detalhe-sub">${escapeHtml(s.nome)} <span class="wisc-escala-sigla">(${s.codigo})</span></td>
+                <td class="wais-detalhe-sub">${escapeHtml(s.nome)} <span class="wais-escala-sigla">(${s.codigo})</span></td>
                 <td class="ctr">${bruto}</td>
                 <td class="ctr" style="font-weight:700; font-size:14px;">${p}</td>
                 <td>${clBadge(cl)}</td>
@@ -1146,7 +1141,7 @@
             </tr>`;
         }).join('');
 
-        return `<div class="wisc-tab-detalhe"><table>
+        return `<div class="wais-tab-detalhe"><table>
             <thead><tr>
                 <th>SUBTESTE</th>
                 <th class="ctr">PB</th>
@@ -1157,7 +1152,7 @@
             <tbody>${linhas}</tbody>
             <tfoot>
                 <tr>
-                    <td colspan="4" class="wisc-detalhe-mp-label">MÉDIA PESSOAL DOS PONDERADOS</td>
+                    <td colspan="4" class="wais-detalhe-mp-label">MÉDIA PESSOAL DOS PONDERADOS</td>
                     <td class="ctr" style="font-weight:800;">${media}</td>
                 </tr>
             </tfoot>
@@ -1174,19 +1169,19 @@
             // 3 níveis: Significativa (sig=true), Notável (8+), Não significativa
             let badge, sigCol, icone = '';
             if (d.sig) {
-                badge = '<span class="wisc-disc-badge sig">SIM</span>';
+                badge = '<span class="wais-disc-badge sig">SIM</span>';
                 sigCol = '#dc2626';
             } else if (Math.abs(d.diff) >= 8) {
-                badge = '<span class="wisc-disc-badge notavel">NÃO</span>';
+                badge = '<span class="wais-disc-badge notavel">NÃO</span>';
                 sigCol = '#f59e0b';
                 icone = ' ⚠';
             } else {
-                badge = '<span class="wisc-disc-badge nao">NÃO</span>';
+                badge = '<span class="wais-disc-badge nao">NÃO</span>';
                 sigCol = '#94a3b8';
             }
 
             return `<tr>
-                <td class="wisc-disc-par">${escapeHtml(d.par)}</td>
+                <td class="wais-disc-par">${escapeHtml(d.par)}</td>
                 <td class="ctr">${d.va}</td>
                 <td class="ctr">${d.vb}</td>
                 <td class="ctr" style="font-weight:700; color:${sigCol};">${d.diff >= 0 ? '+' : ''}${d.diff}${icone}</td>
@@ -1195,7 +1190,7 @@
             </tr>`;
         }).join('');
 
-        return `<div class="wisc-tab-discrep"><table>
+        return `<div class="wais-tab-discrep"><table>
             <thead><tr>
                 <th>COMPARAÇÃO</th>
                 <th class="ctr">ÍNDICE 1</th>
@@ -1206,10 +1201,10 @@
             </tr></thead>
             <tbody>${linhas}</tbody>
         </table>
-        <div class="wisc-disc-legenda">
-            <span><span class="wisc-disc-dot nao"></span> Não significativo</span>
-            <span><span class="wisc-disc-dot notavel"></span> Notável (≥8)</span>
-            <span><span class="wisc-disc-dot sig"></span> Significativo (p &lt; .05)</span>
+        <div class="wais-disc-legenda">
+            <span><span class="wais-disc-dot nao"></span> Não significativo</span>
+            <span><span class="wais-disc-dot notavel"></span> Notável (≥8)</span>
+            <span><span class="wais-disc-dot sig"></span> Significativo (p &lt; .05)</span>
         </div>
         </div>`;
     }
@@ -1224,23 +1219,23 @@
 
         const renderLista = (items, vazioMsg, sinal) => {
             if (!items || items.length === 0) {
-                return `<div class="wisc-ff-vazio">${escapeHtml(vazioMsg)}</div>`;
+                return `<div class="wais-ff-vazio">${escapeHtml(vazioMsg)}</div>`;
             }
             return items.map(it => `
-                <div class="wisc-ff-item">
-                    <div class="wisc-ff-item-titulo">${escapeHtml(it.nome)} <span class="wisc-escala-sigla">(${it.cod})</span></div>
-                    <div class="wisc-ff-item-detalhe">Ponderado: <strong>${it.p}</strong> · Desvio: <strong>${sinal}${Math.abs(it.desvio).toFixed(1)}</strong> ${sinal === '+' ? 'acima' : 'abaixo'} da média pessoal</div>
+                <div class="wais-ff-item">
+                    <div class="wais-ff-item-titulo">${escapeHtml(it.nome)} <span class="wais-escala-sigla">(${it.cod})</span></div>
+                    <div class="wais-ff-item-detalhe">Ponderado: <strong>${it.p}</strong> · Desvio: <strong>${sinal}${Math.abs(it.desvio).toFixed(1)}</strong> ${sinal === '+' ? 'acima' : 'abaixo'} da média pessoal</div>
                 </div>
             `).join('');
         };
 
-        return `<div class="wisc-ff-grid">
-            <div class="wisc-ff-card wisc-ff-card-fortes">
-                <div class="wisc-ff-titulo">▲ Pontos Fortes</div>
+        return `<div class="wais-ff-grid">
+            <div class="wais-ff-card wais-ff-card-fortes">
+                <div class="wais-ff-titulo">▲ Pontos Fortes</div>
                 ${renderLista(ff.fortes, 'Nenhum desvio ≥3 positivo encontrado.', '+')}
             </div>
-            <div class="wisc-ff-card wisc-ff-card-fracos">
-                <div class="wisc-ff-titulo">▼ Pontos Fracos</div>
+            <div class="wais-ff-card wais-ff-card-fracos">
+                <div class="wais-ff-titulo">▼ Pontos Fracos</div>
                 ${renderLista(ff.fracos, 'Nenhum desvio ≥3 negativo encontrado.', '-')}
             </div>
         </div>`;
@@ -1254,17 +1249,19 @@
         const r = state.resultado;
         const compostos = r.compostos || {};
 
-        const ordem = ['QI_TOTAL', 'ICV', 'IOP', 'IMO', 'IVP'];
+        const ordem = ['QI_TOTAL', 'QI_VERBAL', 'QI_EXECUCAO', 'ICV', 'IOP', 'IMO', 'IVP'];
         const aberturas = [
             'Em relação ao', 'Quanto ao', 'Em relação ao',
-            'Quanto ao', 'Em relação ao',
+            'Quanto ao', 'Em relação ao', 'Quanto ao', 'Em relação ao',
         ];
         const labels = {
-            QI_TOTAL: 'QI Total (QIT)',
-            ICV:      'Índice de Compreensão Verbal (ICV)',
-            IOP:      'Índice de Organização Perceptual (IOP)',
-            IMO:      'Índice de Memória Operacional (IMO)',
-            IVP:      'Índice de Velocidade de Processamento (IVP)',
+            QI_TOTAL:    'QI Total (QIT)',
+            QI_VERBAL:   'QI Verbal (QIV)',
+            QI_EXECUCAO: 'QI de Execução (QIE)',
+            ICV:         'Índice de Compreensão Verbal (ICV)',
+            IOP:         'Índice de Organização Perceptual (IOP)',
+            IMO:         'Índice de Memória Operacional (IMO)',
+            IVP:         'Índice de Velocidade de Processamento (IVP)',
         };
 
         const paragrafos = ordem.map((key, i) => {
@@ -1275,10 +1272,10 @@
             const abil = abilityDescription(key);
             const ic95 = c.ic95 ? `${c.ic95[0]}–${c.ic95[1]}` : '—';
 
-            return `<p class="wisc-interp-par">${aberturas[i]} <strong>${escapeHtml(labels[key])}</strong>, as habilidades relacionadas a ${escapeHtml(abil)} ${escapeHtml(verb)} em comparação a crianças e adolescentes de mesma faixa etária (pontuação composta = ${c.composto}; percentil ≈ ${c.percentil}; IC 95% = ${ic95}; classificação: ${escapeHtml(cls)}).</p>`;
+            return `<p class="wais-interp-par">${aberturas[i]} <strong>${escapeHtml(labels[key])}</strong>, as habilidades relacionadas a ${escapeHtml(abil)} ${escapeHtml(verb)} em comparação a pessoas de mesma faixa etária (pontuação composta = ${c.composto}; percentil ≈ ${c.percentil}; IC 95% = ${ic95}; classificação: ${escapeHtml(cls)}).</p>`;
         }).filter(Boolean).join('');
 
-        return `<div class="wisc-interp-bloco">${paragrafos}</div>`;
+        return `<div class="wais-interp-bloco">${paragrafos}</div>`;
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -1336,7 +1333,7 @@
             const nomeAbreviado = state.paciente.nome_completo.toUpperCase()
                 .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
             const dataStr = formatarDataArquivo(new Date());
-            const nomeArquivo = `WISC-IV - ${nomeAbreviado}_${dataStr}.pdf`;
+            const nomeArquivo = `WAIS-III - ${nomeAbreviado}_${dataStr}.pdf`;
             pdf.save(nomeArquivo);
             window.CortexUI.toast('PDF gerado com sucesso', 'success');
         } catch (err) {
@@ -1362,37 +1359,6 @@
         const m = ref.getMonth() - n.getMonth();
         if (m < 0 || (m === 0 && ref.getDate() < n.getDate())) anos--;
         return anos;
-    }
-
-    // Alerta automatico conforme a classificacao do QIT (usa a classificacao ja calculada).
-    // Superior/Muito Superior -> sugestao de investigar altas habilidades (verde).
-    // Limitrofe/Extremamente Baixo -> resultado muito abaixo da media (vermelho).
-    function renderAlertaQIT(classif) {
-        const alto  = (classif === 'Superior' || classif === 'Muito Superior');
-        const baixo = (classif === 'Limítrofe' || classif === 'Extremamente Baixo');
-        if (!alto && !baixo) return '';
-        if (alto) {
-            return `
-                <div class="qit-alerta qit-alerta-alto">
-                    <div class="qit-alerta-icone">▲</div>
-                    <div class="qit-alerta-texto">
-                        <strong>QI Total na faixa ${escapeHtml(classif)}.</strong>
-                        Resultado compatível com desempenho intelectual acima da média. Recomenda-se considerar a
-                        aplicação de instrumentos específicos para investigação de <strong>Altas Habilidades / Superdotação</strong>,
-                        integrando este achado aos demais dados da avaliação.
-                    </div>
-                </div>`;
-        }
-        return `
-            <div class="qit-alerta qit-alerta-baixo">
-                <div class="qit-alerta-icone">▼</div>
-                <div class="qit-alerta-texto">
-                    <strong>QI Total na faixa ${escapeHtml(classif)}.</strong>
-                    Resultado significativamente abaixo da média esperada. Recomenda-se atenção clínica: investigar
-                    fatores que possam ter influenciado o desempenho e considerar avaliação complementar do
-                    funcionamento adaptativo, integrando este achado aos demais dados da avaliação.
-                </div>
-            </div>`;
     }
 
     function classByComposite(score) {

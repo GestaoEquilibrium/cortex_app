@@ -820,6 +820,7 @@
                 </div>
                 ${renderICChart()}
                 ${renderTabelaIndices()}
+                ${renderAlertaQIT(classifQIT)}
 
                 <!-- ─── 6. SUBTESTES — DETALHAMENTO ─── -->
                 <div class="laudo-secao-titulo">
@@ -1359,6 +1360,35 @@
         const m = ref.getMonth() - n.getMonth();
         if (m < 0 || (m === 0 && ref.getDate() < n.getDate())) anos--;
         return anos;
+    }
+
+    // Alerta automatico conforme a classificacao do QIT (usa a classificacao ja calculada).
+    function renderAlertaQIT(classif) {
+        const alto  = (classif === 'Superior' || classif === 'Muito Superior');
+        const baixo = (classif === 'Limítrofe' || classif === 'Extremamente Baixo');
+        if (!alto && !baixo) return '';
+        if (alto) {
+            return `
+                <div class="qit-alerta qit-alerta-alto">
+                    <div class="qit-alerta-icone">▲</div>
+                    <div class="qit-alerta-texto">
+                        <strong>QI Total na faixa ${escapeHtml(classif)}.</strong>
+                        Resultado compatível com desempenho intelectual acima da média. Recomenda-se considerar a
+                        aplicação de instrumentos específicos para investigação de <strong>Altas Habilidades / Superdotação</strong>,
+                        integrando este achado aos demais dados da avaliação.
+                    </div>
+                </div>`;
+        }
+        return `
+            <div class="qit-alerta qit-alerta-baixo">
+                <div class="qit-alerta-icone">▼</div>
+                <div class="qit-alerta-texto">
+                    <strong>QI Total na faixa ${escapeHtml(classif)}.</strong>
+                    Resultado significativamente abaixo da média esperada. Recomenda-se atenção clínica: investigar
+                    fatores que possam ter influenciado o desempenho e considerar avaliação complementar do
+                    funcionamento adaptativo, integrando este achado aos demais dados da avaliação.
+                </div>
+            </div>`;
     }
 
     function classByComposite(score) {

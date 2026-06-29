@@ -1178,31 +1178,3 @@
     padding: 24px 18px 16px 18px;   /* 24 = 16 normal + 8 da barrinha */
     overflow: hidden;
 }
-
-/* ===== Alerta automático conforme classificação do QIT ===== */
-.qit-alerta {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin: 16px 0 4px;
-    padding: 14px 18px;
-    border-radius: 10px;
-    font-size: 13.5px;
-    line-height: 1.6;
-    border: 1px solid transparent;
-}
-.qit-alerta-icone { font-size: 18px; line-height: 1.4; flex-shrink: 0; }
-.qit-alerta-texto strong { font-weight: 700; }
-/* Altas habilidades (Superior / Muito Superior) */
-.qit-alerta-alto {
-    background: #d5f5e3;
-    color: #006100;
-    border-color: #a9dfbf;
-}
-/* Muito abaixo (Limítrofe / Extremamente Baixo) */
-.qit-alerta-baixo {
-    background: #ffc7ce;
-    color: #9c0006;
-    border-color: #f5b7b1;
-}
-@media print { .qit-alerta { break-inside: avoid; } }

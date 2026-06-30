@@ -1,0 +1,30 @@
+{
+  "version": "1.1",
+  "_nota": "Normas do CARS2 lidas pelos laudos. 'bands' de gravidade vieram dos cortes fornecidos pelo profissional. tscore.by_raw e CONTEUDO LICENCIADO e deve ser preenchido pelo profissional. Chave = escore bruto REAL (15-60, com meios-pontos).",
+  "instruments": {
+    "CARS2-ST": {
+      "raw_min": 15, "raw_max": 60,
+      "severity": { "age_groups": [
+        { "id": "2_12", "label": "2 a 12 anos", "age_min_years": 0, "age_max_years": 12, "bands": [
+          { "min": 15, "max": 29.5, "slug": "minimo",  "label": "Sintomas mínimos de TEA" },
+          { "min": 30, "max": 36.5, "slug": "leve_mod", "label": "Sintomas leves a moderados de TEA" },
+          { "min": 37, "max": 60,   "slug": "grave",    "label": "Sintomas graves de TEA" } ] },
+        { "id": "13_mais", "label": "13 anos ou mais", "age_min_years": 13, "age_max_years": 200, "bands": [
+          { "min": 15, "max": 27.5, "slug": "minimo",  "label": "Sintomas mínimos de TEA" },
+          { "min": 28, "max": 34.5, "slug": "leve_mod", "label": "Sintomas leves a moderados de TEA" },
+          { "min": 35, "max": 60,   "slug": "grave",    "label": "Sintomas graves de TEA" } ] }
+      ] },
+      "tscore": { "_instrucao": "PREENCHER. Chave=bruto real (ex. \"30\",\"29.5\"). Valor={\"all\":NN,\"2_12\":NN,\"13_mais\":NN}.", "by_raw": {} }
+    },
+    "CARS2-HF": {
+      "raw_min": 15, "raw_max": 60,
+      "severity": { "age_groups": [
+        { "id": "all", "label": "Todas as idades", "age_min_years": 0, "age_max_years": 200, "bands": [
+          { "min": 15, "max": 27.5, "slug": "minimo",  "label": "Sintomas mínimos de TEA" },
+          { "min": 28, "max": 33.5, "slug": "leve_mod", "label": "Sintomas leves a moderados de TEA" },
+          { "min": 34, "max": 60,   "slug": "grave",    "label": "Sintomas graves de TEA" } ] }
+      ] },
+      "tscore": { "_instrucao": "PREENCHER. HF tem tabela unica (nao estratificada por idade). Chave=bruto real (ex. \"30\",\"33.5\"). Valor={\"all\":NN}.", "by_raw": {} }
+    }
+  }
+}

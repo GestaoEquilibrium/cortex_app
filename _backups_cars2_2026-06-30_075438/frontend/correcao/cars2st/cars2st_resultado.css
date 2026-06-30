@@ -1,0 +1,92 @@
+/* ===== CARS2-ST — laudo (complementa a base laudo-*/bai-* do raadsr_resultado.css) ===== */
+
+/* Nota técnica (reaproveita estilo BAI) */
+.bai-nota-tecnica { margin-top: 22px; padding: 16px 18px; background: #f0f9ff; border-left: 4px solid #0ea5e9;
+    border-radius: 8px; font-size: 13px; color: #334155; line-height: 1.6; }
+
+/* Seção "uso do profissional" */
+.laudo-secao-prof { margin-top: 26px; }
+.laudo-secao-prof-tag {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #64748b; background: #f1f5f9; border: 1px solid #e2e8f0;
+    padding: 2px 9px; border-radius: 999px; margin-left: 10px; vertical-align: middle;
+}
+
+/* Níveis de gravidade — 3 cards (mínimo / leve-moderado / grave) */
+.cars-niveis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 4px 0 14px; }
+.cars-nivel-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 10px; text-align: center; background: #fff; opacity: 0.5; }
+.cars-nivel-card.ativo { opacity: 1; border-width: 2px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.bai-nivel-dot { width: 16px; height: 16px; border-radius: 50%; margin: 0 auto 8px; }
+.bai-nivel-nome { font-size: 13.5px; font-weight: 700; color: #1e293b; }
+.bai-nivel-faixa { font-size: 11.5px; color: #94a3b8; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.bai-nivel-voce { font-size: 11.5px; font-weight: 700; margin-top: 7px; }
+.bai-nivel-expl { padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 8px; font-size: 13.5px; color: #334155; line-height: 1.6; }
+
+/* Caixa do Escore-T */
+.cars-tscore { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; padding: 12px 16px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%); border: 1px solid #e2e8f0; border-radius: 10px; }
+.cars-tscore-lbl { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
+.cars-tscore-val { font-size: 26px; font-weight: 800; line-height: 1; }
+.cars-tscore-nota { font-size: 11.5px; color: #94a3b8; }
+.cars-tscore-vazio .cars-tscore-val { font-size: 15px; font-weight: 700; color: #94a3b8; }
+
+/* Distribuição por intensidade (reaproveita estilo BAI) */
+.bai-intensidade { padding: 4px 0; }
+.bai-int-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bai-int-lbl { font-size: 13px; font-weight: 600; width: 200px; flex-shrink: 0; }
+.bai-int-trk { flex: 1; height: 22px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
+.bai-int-fill { height: 100%; border-radius: 6px; min-width: 2px; }
+.bai-int-val { font-size: 12.5px; font-weight: 600; color: #64748b; width: 72px; text-align: right; flex-shrink: 0; }
+.bai-int-nota { font-size: 12px; color: #94a3b8; line-height: 1.5; margin-top: 6px; }
+
+/* Tabela de itens (reaproveita estilo BAI) */
+.bai-tab-itens { margin-top: 4px; }
+.bai-tab-itens table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bai-tab-itens thead th { background: linear-gradient(135deg, #0ea5e9, #0369a1); color: #fff; padding: 10px 12px;
+    text-align: left; font-weight: 600; font-size: 12px; }
+.bai-tab-itens thead th:first-child { border-top-left-radius: 8px; }
+.bai-tab-itens thead th:last-child { border-top-right-radius: 8px; }
+.bai-tab-itens td { padding: 9px 12px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+.bai-tab-itens tbody tr:nth-child(even) { background: #f8fafc; }
+.cars-item-titulo { font-weight: 600; color: #1e293b; }
+.cars-item-frase { font-size: 12px; color: #64748b; margin-top: 2px; }
+.cars-tab-nota { font-size: 12.5px; color: #475569; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eef2f7; }
+
+@media print {
+    .cars-nivel-card, .bai-int-row, .bai-intensidade, .cars-tscore { break-inside: avoid; }
+}
+
+/* ===== MODO INPUT (aplicador pontua) ===== */
+.cars-input { max-width: 900px; margin: 0 auto; }
+.cars-input-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+    padding: 18px 20px; background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+    border-radius: 14px; color: #fff; margin-bottom: 14px; }
+.cars-input-supra { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; }
+.cars-input-tit { font-size: 26px; font-weight: 800; margin: 2px 0; }
+.cars-input-sub { font-size: 13.5px; opacity: 0.95; }
+.cars-input-prog { text-align: right; min-width: 130px; }
+.cars-input-prog-num { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cars-input-prog-bar { height: 7px; background: rgba(255,255,255,0.3); border-radius: 99px; overflow: hidden; margin-top: 5px; }
+.cars-input-prog-fill { height: 100%; width: 0%; background: #fff; border-radius: 99px; transition: width 0.25s; }
+.cars-input-aviso { font-size: 13px; color: #475569; background: #f0f9ff; border-left: 4px solid #0ea5e9;
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; line-height: 1.55; }
+
+.cars-item { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; background: #fff; transition: border-color 0.2s; }
+.cars-item.respondido { border-color: #86efac; background: #f7fef9; }
+.cars-item-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.cars-item-n { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+    border-radius: 7px; background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+.cars-item-tit { font-size: 14.5px; font-weight: 700; color: #1e293b; }
+.cars-opts { display: flex; flex-direction: column; gap: 6px; }
+.cars-opt { display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
+    padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 9px; background: #fff; cursor: pointer;
+    font-size: 13px; color: #334155; transition: all 0.15s; }
+.cars-opt:hover { border-color: #7dd3fc; background: #f0f9ff; }
+.cars-opt.ativo { border-color: #0ea5e9; background: #e0f2fe; color: #0c4a6e; font-weight: 600; box-shadow: 0 1px 4px rgba(14,165,233,0.18); }
+.cars-opt-nota { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 26px;
+    border-radius: 6px; background: #f1f5f9; color: #64748b; font-weight: 800; font-size: 12.5px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.cars-opt.ativo .cars-opt-nota { background: #0ea5e9; color: #fff; }
+.cars-opt-txt { line-height: 1.4; }
+
+.cars-input-acoes { position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 10px;
+    padding: 14px 0; margin-top: 8px; background: linear-gradient(to top, var(--color-bg, #fff) 70%, transparent); }

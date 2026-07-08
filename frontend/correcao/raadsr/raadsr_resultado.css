@@ -499,9 +499,11 @@
     }
 }
 
+
 /* ============================================================================ */
 /* CABEÇALHO FINO + LOGO CORTEX (símbolo transparente) — afeta os 36 laudos     */
-/* Sobrescreve as regras acima (mesma especificidade, vence por ordem no fim).  */
+/* Correção: usar background-color + background-image (NÃO o shorthand           */
+/* 'background', que reseta a imagem) e !important p/ vencer a regra original.   */
 /* ============================================================================ */
 .laudo-header {
     padding: 15px 28px;
@@ -511,13 +513,14 @@
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    background: transparent !important;
-    box-shadow: none;
-    font-size: 0;                 /* esconde a letra "E" hardcoded nos 36 JS */
-    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj48ZyBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS40IiBmaWxsPSIjZmZmZmZmIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iOSIgeTI9IjkiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iMjMiIHkyPSI5IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjkiIHkyPSIyMyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTYiIHgyPSIyMyIgeTI9IjIzIiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjE2IiB5Mj0iNyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTYiIHgyPSIxNiIgeTI9IjI1IiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIyLjgiLz48Y2lyY2xlIGN4PSI5IiBjeT0iOSIgcj0iMS42Ii8+PGNpcmNsZSBjeD0iMjMiIGN5PSI5IiByPSIxLjYiLz48Y2lyY2xlIGN4PSI5IiBjeT0iMjMiIHI9IjEuNiIvPjxjaXJjbGUgY3g9IjIzIiBjeT0iMjMiIHI9IjEuNiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iNyIgcj0iMS40Ii8+PGNpcmNsZSBjeD0iMTYiIGN5PSIyNSIgcj0iMS40Ii8+PC9nPjwvc3ZnPgo=");
-    background-size: 34px 34px;
-    background-repeat: no-repeat;
-    background-position: center;
+    background-color: transparent !important;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj48ZyBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS40IiBmaWxsPSIjZmZmZmZmIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iOSIgeTI9IjkiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iMjMiIHkyPSI5IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjkiIHkyPSIyMyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTYiIHgyPSIyMyIgeTI9IjIzIiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjE2IiB5Mj0iNyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTYiIHgyPSIxNiIgeTI9IjI1IiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIyLjgiLz48Y2lyY2xlIGN4PSI5IiBjeT0iOSIgcj0iMS42Ii8+PGNpcmNsZSBjeD0iMjMiIGN5PSI5IiByPSIxLjYiLz48Y2lyY2xlIGN4PSI5IiBjeT0iMjMiIHI9IjEuNiIvPjxjaXJjbGUgY3g9IjIzIiBjeT0iMjMiIHI9IjEuNiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iNyIgcj0iMS40Ii8+PGNpcmNsZSBjeD0iMTYiIGN5PSIyNSIgcj0iMS40Ii8+PC9nPjwvc3ZnPgo=") !important;
+    background-size: 34px 34px !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    box-shadow: none !important;
+    color: transparent !important;   /* esconde a letra "E" sem zerar o box */
+    font-size: 0 !important;
 }
 .laudo-header-supratitulo { font-size: 9px;  margin-bottom: 2px; letter-spacing: 0.16em; }
 .laudo-header-titulo      { font-size: 19px;  line-height: 1.15; }
@@ -525,3 +528,23 @@
 .laudo-header-pontuacao-label { font-size: 9px; }
 .laudo-header-pontuacao-valor { font-size: 28px; margin: 2px 0; }
 .laudo-header-pontuacao-max   { font-size: 9.5px; }
+
+/* Botão 📷 do cabeçalho: precisa ser visível sobre o fundo navy escuro         */
+.cortex-copy-header-btn {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background 0.15s ease !important;
+}
+.cortex-copy-header-btn:hover {
+    background: rgba(255, 255, 255, 0.30) !important;
+}

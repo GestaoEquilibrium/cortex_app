@@ -365,3 +365,101 @@
         config: CONFIG,
     };
 })();
+
+// ============================================================================
+// ADIÇÃO — Botão 📷 no CABEÇALHO (copia só o header) + botão "de fora"
+//          (copia o LAUDO INTEIRO em alta resolução). Bloco aditivo e isolado:
+//          não altera o mecanismo por-gráfico acima. Reusa html2canvas 3x.
+// ============================================================================
+(function () {
+    'use strict';
+    const SCALE = 3;
+
+    async function capturar(el) {
+        const canvas = await html2canvas(el, {
+            scale: SCALE,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            logging: false,
+            // Não deixa os próprios botões de copiar aparecerem na imagem
+            ignoreElements: (node) => node.classList &&
+                (node.classList.contains('cortex-copy-btn') ||
+                 node.classList.contains('cortex-copy-laudo-btn'))
+        });
+        return new Promise((res, rej) =>
+            canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob falhou')), 'image/png'));
+    }
+
+    async function copiar(el, btn, labelOk) {
+        if (typeof html2canvas === 'undefined') { return; }
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '⏳';
+        try {
+            const blob = await capturar(el);
+            if (navigator.clipboard && window.ClipboardItem) {
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                btn.innerHTML = labelOk || '✅';
+            } else {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'laudo.png';
+                a.click();
+                URL.revokeObjectURL(a.href);
+                btn.innerHTML = '⬇️';
+            }
+        } catch (e) {
+            console.warn('[copy] header/laudo:', e);
+            btn.innerHTML = '❌';
+        } finally {
+            setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 1600);
+        }
+    }
+
+    // 📷 no canto do cabeçalho — copia só o cabeçalho
+    function botaoHeader() {
+        const header = document.querySelector('.laudo-header');
+        if (!header || header.querySelector('.cortex-copy-header-btn')) return;
+        if (!header.style.position) header.style.position = 'relative';
+        const btn = document.createElement('button');
+        btn.className = 'cortex-copy-btn cortex-copy-header-btn';
+        btn.type = 'button';
+        btn.title = 'Copiar cabeçalho em alta resolução';
+        btn.innerHTML = '📷';
+        btn.style.cssText = 'position:absolute;top:8px;right:10px;z-index:20;';
+        btn.addEventListener('click', (e) => { e.preventDefault(); copiar(header, btn); });
+        header.appendChild(btn);
+    }
+
+    // Botão "de fora" — copia o LAUDO INTEIRO
+    function botaoLaudoInteiro() {
+        const laudo = document.querySelector('.laudo');
+        if (!laudo || document.querySelector('.cortex-copy-laudo-btn')) return;
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary cortex-copy-laudo-btn';
+        btn.type = 'button';
+        btn.innerHTML = '📷 Copiar laudo (alta resolução)';
+        btn.style.cssText = 'margin-left:8px;';
+        btn.addEventListener('click', (e) => { e.preventDefault(); copiar(laudo, btn, '✅ Copiado!'); });
+
+        const acoes = document.getElementById('acoes-topo')
+                   || document.querySelector('.resultado-acoes-topo')
+                   || document.querySelector('.laudo-acoes-topo');
+        if (acoes) acoes.appendChild(btn);
+        else laudo.parentNode.insertBefore(btn, laudo);
+    }
+
+    function aplicarExtra() { botaoHeader(); botaoLaudoInteiro(); }
+
+    function initExtra() {
+        aplicarExtra();
+        const iv = setInterval(aplicarExtra, 400);
+        setTimeout(() => clearInterval(iv), 6000);
+        const obs = new MutationObserver(aplicarExtra);
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => obs.disconnect(), 30000);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initExtra);
+    else initExtra();
+})();

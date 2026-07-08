@@ -313,3 +313,29 @@
     .vineland-cca-card-numero { font-size: 48px; }
     .vineland-cca-card-titulo { font-size: 18px; }
 }
+
+/* ============================================================================ */
+/* AJUSTE: composto (CCA) mais discreto + vermelho "Baixo" -> rosa suave        */
+/* ============================================================================ */
+/* Card menor e mais discreto (todos os estados) */
+.vineland-cca-card {
+    padding: 18px 24px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 12px rgba(30, 58, 138, 0.10);
+}
+.vineland-cca-card-label   { margin-bottom: 6px; }
+.vineland-cca-card-numero  { font-size: 46px; }
+.vineland-cca-card-titulo  { font-size: 17px; margin-bottom: 8px; }
+.vineland-cca-card-classif { padding: 6px 18px; font-size: 12px; margin-bottom: 10px; }
+.vineland-cca-card-desc    { font-size: 12px; line-height: 1.5; max-width: 560px; }
+
+/* Estado "Baixo": rosa/branco suave com texto vinho (discreto e legível) */
+.vineland-cca-card.cca-baixo {
+    background: linear-gradient(135deg, #fdecec 0%, #fbe3e4 100%) !important;
+    color: #9f1239;
+    box-shadow: 0 2px 12px rgba(159, 18, 57, 0.10);
+}
+.vineland-cca-card.cca-baixo .vineland-cca-card-label   { color: #c2607a; }
+.vineland-cca-card.cca-baixo .vineland-cca-card-classif { background: rgba(159, 18, 57, 0.10); color: #9f1239; }
+.vineland-cca-card.cca-baixo .vineland-cca-card-desc    { color: #a13b52; }

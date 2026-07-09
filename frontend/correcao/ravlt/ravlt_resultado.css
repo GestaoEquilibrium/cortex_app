@@ -440,7 +440,7 @@
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    overflow: visible;
+    overflow: hidden;
     position: relative;
     padding: 22px 14px 8px 14px;
 }
@@ -460,9 +460,8 @@
     display: block;
     margin: 0 auto;
     width: 100%;
-    max-width: 720px;
+    max-width: 692px;   /* nunca estica alem do width nativo do SVG (720 - 28 padding) -> html2canvas nao corta o A7 */
     height: auto;
-    aspect-ratio: 720 / 280;
 }
 
 .ravlt-curva-hint {

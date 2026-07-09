@@ -459,6 +459,7 @@
 .ravlt-curva-svg {
     display: block;
     margin: 0 auto;
+    width: 720px;
     max-width: 100%;
     height: auto;
 }

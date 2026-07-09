@@ -490,66 +490,56 @@
             ${renderRodapeLaudo()}
         `;
 
-        // Copiar a curva via SVG NATIVO (sem html2canvas -> nunca corta o A7).
-        // Roda após um tick pra garantir que o script compartilhado já colocou o botão dele.
-        setTimeout(instalarCopiaCurvaSVG, 300);
+        // Ajusta SÓ o botão de copiar DESTE gráfico (a curva) pra sair idêntico ao PDF.
+        // Não toca nos botões "copiar laudo" nem "copiar cabeçalho".
+        setTimeout(ajustarBotaoCopiarCurva, 350);
     }
 
-    // ─── Copiar o gráfico da curva serializando o SVG direto (à prova de corte) ──
-    function instalarCopiaCurvaSVG() {
+    // Faz o botão de copiar da curva usar a MESMA captura do PDF (html2canvas scale:2,
+    // SVG fixado em 720px no clone -> sem esticar, com a moldura do card, igual ao PDF).
+    function ajustarBotaoCopiarCurva() {
         const bloco = document.querySelector('.ravlt-curva-bloco');
         if (!bloco) return;
-        const svg = bloco.querySelector('svg.ravlt-curva-svg');
-        if (!svg) return;
+        const btn = bloco.querySelector('.cortex-copy-btn');
+        if (!btn || btn.dataset.pdfmode === '1') return;
+        btn.dataset.pdfmode = '1';
 
-        // Remove qualquer botão que o copy_to_clipboard compartilhado tenha posto no bloco
-        bloco.querySelectorAll('.cortex-copy-btn').forEach(b => b.remove());
-        if (bloco.querySelector('.ravlt-copy-curva-btn')) return; // já instalado
-
-        if (getComputedStyle(bloco).position === 'static') bloco.style.position = 'relative';
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'cortex-copy-btn ravlt-copy-curva-btn';
-        btn.title = 'Copiar gráfico em alta resolução';
-        btn.textContent = '📋';
-        btn.style.cssText = 'position:absolute;top:8px;right:8px;z-index:20;width:30px;height:30px;' +
-            'background:rgba(255,255,255,0.92);border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;';
-        btn.addEventListener('click', (e) => { e.preventDefault(); copiarCurvaSVG(svg, btn); });
-        bloco.appendChild(btn);
+        // Substitui o handler do script compartilhado por um clone limpo (remove os listeners antigos)
+        const novo = btn.cloneNode(true);
+        btn.parentNode.replaceChild(novo, btn);
+        novo.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            copiarCurvaComoPDF(bloco, novo);
+        });
     }
 
-    async function copiarCurvaSVG(svgEl, btn) {
+    async function copiarCurvaComoPDF(bloco, btn) {
+        if (typeof html2canvas === 'undefined') return;
         const orig = btn.textContent;
         btn.textContent = '⏳';
         try {
-            // Largura/altura nativas do SVG (viewBox), independentes do CSS
-            const vb = (svgEl.getAttribute('viewBox') || '0 0 720 280').split(/\s+/).map(Number);
-            const W = vb[2] || 720, H = vb[3] || 280;
-            const SCALE = 3;
-
-            // Serializa o SVG (garante namespace)
-            const clone = svgEl.cloneNode(true);
-            clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            clone.setAttribute('width', W);
-            clone.setAttribute('height', H);
-            const svgStr = new XMLSerializer().serializeToString(clone);
-            const svg64 = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            await new Promise((res, rej) => {
-                img.onload = res; img.onerror = () => rej(new Error('img load'));
-                img.src = svg64;
+            document.body.classList.add('cortex-copiando'); // esconde outros botões, se houver
+            const canvas = await html2canvas(bloco, {
+                scale: 2,                       // mesma escala do PDF
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false,
+                ignoreElements: (node) =>
+                    node.classList && node.classList.contains('cortex-copy-btn'),
+                onclone: (doc) => {
+                    // Fixa o SVG na largura nativa (720) no clone -> nao estica -> nao corta
+                    const svg = doc.querySelector('.ravlt-curva-bloco svg.ravlt-curva-svg');
+                    if (svg) {
+                        svg.style.width = '720px';
+                        svg.style.maxWidth = '720px';
+                        svg.style.height = '280px';
+                    }
+                    const b = doc.querySelector('.ravlt-curva-bloco');
+                    if (b) { b.style.overflow = 'visible'; b.style.width = 'fit-content'; b.style.margin = '0 auto'; }
+                },
             });
-
-            const canvas = document.createElement('canvas');
-            canvas.width = W * SCALE;
-            canvas.height = H * SCALE;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            document.body.classList.remove('cortex-copiando');
 
             const blob = await new Promise((res, rej) =>
                 canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/png'));
@@ -557,6 +547,7 @@
             if (navigator.clipboard && window.ClipboardItem) {
                 await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
                 btn.textContent = '✅';
+                if (window.CortexUI?.toast) window.CortexUI.toast('✓ Gráfico copiado. Cole com Ctrl+V', 'success');
             } else {
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
@@ -565,7 +556,8 @@
                 btn.textContent = '⬇️';
             }
         } catch (err) {
-            console.error('[ravlt] copiar curva SVG:', err);
+            document.body.classList.remove('cortex-copiando');
+            console.error('[ravlt] copiar curva:', err);
             btn.textContent = '❌';
         } finally {
             setTimeout(() => { btn.textContent = orig; }, 1600);

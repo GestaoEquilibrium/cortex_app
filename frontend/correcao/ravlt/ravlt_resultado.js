@@ -490,43 +490,32 @@
             ${renderRodapeLaudo()}
         `;
 
-        // SÓ o botão de copiar DESTE gráfico (a curva) usa scale 2 — em scale 3 o
-        // html2canvas corta o ponto A7. Não afeta os outros botões nem laudos.
-        setTimeout(forcarScale2NaCurva, 400);
+        // O botão de copiar DESTE gráfico (a curva) NÃO usa html2canvas.
+        // O html2canvas 1.4.1 não respeita aspect-ratio/width:100% em <svg> e,
+        // somado ao overflow:hidden do bloco, corta a borda direita (o ponto A7).
+        // Aqui rasterizamos o próprio SVG nativamente (SVG -> Image -> canvas),
+        // que respeita o viewBox 720x280 e nunca corta o A7.
+        setTimeout(configurarCopiaCurva, 400);
     }
 
-    function forcarScale2NaCurva() {
+    function configurarCopiaCurva() {
         const bloco = document.querySelector('.ravlt-curva-bloco');
         if (!bloco) return;
         const btn = bloco.querySelector('.cortex-copy-btn');
-        if (!btn || btn.dataset.scale2 === '1') return;
-        btn.dataset.scale2 = '1';
+        if (!btn || btn.dataset.curvaNativa === '1') return;
+        btn.dataset.curvaNativa = '1';
 
-        // Clona o botão pra remover o listener do script compartilhado (que usa scale 3)
+        // Clona o botão pra remover o listener do script compartilhado (html2canvas)
         const novo = btn.cloneNode(true);
         btn.parentNode.replaceChild(novo, btn);
 
         novo.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (typeof html2canvas === 'undefined') return;
             const orig = novo.textContent;
             novo.textContent = '⏳';
             try {
-                document.body.classList.add('cortex-copiando');
-                const canvas = await html2canvas(bloco, {
-                    scale: 2,                    // <<< só aqui: scale 2 (nao corta A7)
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    logging: false,
-                    ignoreElements: (node) =>
-                        node.classList && node.classList.contains('cortex-copy-btn'),
-                });
-                document.body.classList.remove('cortex-copiando');
-
-                const blob = await new Promise((res, rej) =>
-                    canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/png'));
-
+                const blob = await rasterizarCurvaSVG(bloco);
                 if (navigator.clipboard && window.ClipboardItem) {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
                     novo.textContent = '✅';
@@ -539,13 +528,99 @@
                     novo.textContent = '⬇️';
                 }
             } catch (err) {
-                document.body.classList.remove('cortex-copiando');
                 console.error('[ravlt] copiar curva:', err);
                 novo.textContent = '❌';
+                if (window.CortexUI?.toast) window.CortexUI.toast('Erro ao copiar gráfico', 'danger');
             } finally {
                 setTimeout(() => { novo.textContent = orig; }, 1600);
             }
         });
+    }
+
+    // Rasteriza a curva (SVG inline) direto num canvas, sem html2canvas.
+    // Reproduz o "card" da tela (fundo branco arredondado, faixa azul no topo,
+    // borda e a legenda-hint embaixo). Nunca corta o A7 porque desenha o SVG
+    // no viewBox intrínseco 720x280.
+    function rasterizarCurvaSVG(bloco) {
+        return new Promise((resolve, reject) => {
+            const svgEl = bloco.querySelector('svg.ravlt-curva-svg') || bloco.querySelector('svg');
+            if (!svgEl) { reject(new Error('SVG da curva não encontrado')); return; }
+
+            const VB_W = 720, VB_H = 280;   // viewBox intrínseco (sempre inclui o A7)
+            const SCALE = 3;                // alta resolução
+            const padX = 14, padTop = 22, padBottom = 8, hintGap = 6;
+
+            // Clona o SVG e fixa dimensões + fonte (evita fallback serifado ao isolar)
+            const clone = svgEl.cloneNode(true);
+            clone.setAttribute('width', VB_W);
+            clone.setAttribute('height', VB_H);
+            clone.setAttribute('viewBox', `0 0 ${VB_W} ${VB_H}`);
+            clone.removeAttribute('class');
+            clone.setAttribute('style', "font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif");
+            if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+            const svgStr = new XMLSerializer().serializeToString(clone);
+            const svgUrl = URL.createObjectURL(new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' }));
+
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const hintEl = bloco.querySelector('.ravlt-curva-hint');
+                    const hintTxt = hintEl ? hintEl.textContent.trim() : '';
+                    const hintLine = hintTxt ? 18 : 0;
+
+                    const cw = VB_W + padX * 2;
+                    const ch = padTop + VB_H + (hintTxt ? hintGap + hintLine : 0) + padBottom;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width  = Math.round(cw * SCALE);
+                    canvas.height = Math.round(ch * SCALE);
+                    const ctx = canvas.getContext('2d');
+                    ctx.scale(SCALE, SCALE);
+
+                    // Card branco arredondado + borda (igual à tela)
+                    const raio = 10;
+                    roundRectPath(ctx, 0.5, 0.5, cw - 1, ch - 1, raio);
+                    ctx.fillStyle = '#ffffff'; ctx.fill();
+                    // Faixa azul no topo (::before do bloco)
+                    ctx.save();
+                    roundRectPath(ctx, 0.5, 0.5, cw - 1, ch - 1, raio); ctx.clip();
+                    ctx.fillStyle = '#d6eaf8'; ctx.fillRect(0, 0, cw, 8);
+                    ctx.restore();
+                    ctx.lineWidth = 1; ctx.strokeStyle = '#e2e8f0';
+                    roundRectPath(ctx, 0.5, 0.5, cw - 1, ch - 1, raio); ctx.stroke();
+
+                    // O SVG completo (A1..A7)
+                    ctx.drawImage(img, padX, padTop, VB_W, VB_H);
+
+                    // Legenda-hint embaixo
+                    if (hintTxt) {
+                        ctx.fillStyle = '#64748b';
+                        ctx.font = "italic 11.5px 'Inter',system-ui,sans-serif";
+                        ctx.textAlign = 'center';
+                        ctx.fillText(hintTxt, cw / 2, padTop + VB_H + hintGap + 12);
+                    }
+
+                    URL.revokeObjectURL(svgUrl);
+                    canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob falhou')), 'image/png');
+                } catch (err) {
+                    URL.revokeObjectURL(svgUrl);
+                    reject(err);
+                }
+            };
+            img.onerror = () => { URL.revokeObjectURL(svgUrl); reject(new Error('falha ao carregar SVG')); };
+            img.src = svgUrl;
+        });
+    }
+
+    function roundRectPath(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
     }
 
     function renderHeaderLaudo() {

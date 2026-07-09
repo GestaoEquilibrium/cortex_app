@@ -489,79 +489,6 @@
             ${renderSecaoInterpretacao()}
             ${renderRodapeLaudo()}
         `;
-
-        // Ajusta SÓ o botão de copiar DESTE gráfico (a curva) pra sair idêntico ao PDF.
-        // Não toca nos botões "copiar laudo" nem "copiar cabeçalho".
-        setTimeout(ajustarBotaoCopiarCurva, 350);
-    }
-
-    // Faz o botão de copiar da curva usar a MESMA captura do PDF (html2canvas scale:2,
-    // SVG fixado em 720px no clone -> sem esticar, com a moldura do card, igual ao PDF).
-    function ajustarBotaoCopiarCurva() {
-        const bloco = document.querySelector('.ravlt-curva-bloco');
-        if (!bloco) return;
-        const btn = bloco.querySelector('.cortex-copy-btn');
-        if (!btn || btn.dataset.pdfmode === '1') return;
-        btn.dataset.pdfmode = '1';
-
-        // Substitui o handler do script compartilhado por um clone limpo (remove os listeners antigos)
-        const novo = btn.cloneNode(true);
-        btn.parentNode.replaceChild(novo, btn);
-        novo.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            copiarCurvaComoPDF(bloco, novo);
-        });
-    }
-
-    async function copiarCurvaComoPDF(bloco, btn) {
-        if (typeof html2canvas === 'undefined') return;
-        const orig = btn.textContent;
-        btn.textContent = '⏳';
-        try {
-            document.body.classList.add('cortex-copiando'); // esconde outros botões, se houver
-            // Largura REAL do bloco na tela (medida) — capturar nesta largura inclui A1..A7 sem cortar.
-            const larguraBloco = Math.ceil(bloco.getBoundingClientRect().width);
-            const canvas = await html2canvas(bloco, {
-                scale: 2,                       // mesma escala do PDF
-                backgroundColor: '#ffffff',
-                useCORS: true,
-                logging: false,
-                width: larguraBloco,            // largura medida do bloco (nao força 720)
-                windowWidth: larguraBloco + 40,
-                ignoreElements: (node) =>
-                    node.classList && node.classList.contains('cortex-copy-btn'),
-                onclone: (doc) => {
-                    // Garante que nada corte à direita durante a captura
-                    const b = doc.querySelector('.ravlt-curva-bloco');
-                    if (b) { b.style.overflow = 'visible'; b.style.margin = '0'; }
-                    const svg = doc.querySelector('.ravlt-curva-bloco svg.ravlt-curva-svg');
-                    if (svg) { svg.style.width = '100%'; svg.style.maxWidth = '100%'; svg.style.height = 'auto'; }
-                },
-            });
-            document.body.classList.remove('cortex-copiando');
-
-            const blob = await new Promise((res, rej) =>
-                canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/png'));
-
-            if (navigator.clipboard && window.ClipboardItem) {
-                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                btn.textContent = '✅';
-                if (window.CortexUI?.toast) window.CortexUI.toast('✓ Gráfico copiado. Cole com Ctrl+V', 'success');
-            } else {
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'ravlt-curva.png';
-                a.click(); URL.revokeObjectURL(a.href);
-                btn.textContent = '⬇️';
-            }
-        } catch (err) {
-            document.body.classList.remove('cortex-copiando');
-            console.error('[ravlt] copiar curva:', err);
-            btn.textContent = '❌';
-        } finally {
-            setTimeout(() => { btn.textContent = orig; }, 1600);
-        }
     }
 
     function renderHeaderLaudo() {
@@ -663,7 +590,7 @@
         const xFn = i => padL + i * stepX;
         const yFn = v => padT + chartH - (v / maxY) * chartH;
 
-        let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" class="ravlt-curva-svg">`;
+        let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="ravlt-curva-svg">`;
 
         // Background
         svg += `<rect x="0" y="0" width="${W}" height="${H}" fill="#fff" rx="8"/>`;

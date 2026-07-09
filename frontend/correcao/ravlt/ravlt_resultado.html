@@ -51,6 +51,11 @@
     <script src="../../shared/permissoes.js"></script>
     <script src="../../shared/correcao_guard.js"></script>
     <script src="../../shared/sidebar.js"></script>
+    <script>
+        // RAVLT: forca scale 2 na copia de graficos. No scale 3, o html2canvas 1.4.1
+        // corta a borda direita do grafico da curva (o ponto A7). Scale 2 captura completo.
+        window.CORTEX_COPY_CONFIG = { scale: 2 };
+    </script>
     <script src="../../shared/copy_to_clipboard.js"></script>
     <script src="ravlt_resultado.js"></script>
 </body>

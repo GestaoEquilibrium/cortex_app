@@ -489,6 +489,63 @@
             ${renderSecaoInterpretacao()}
             ${renderRodapeLaudo()}
         `;
+
+        // SÓ o botão de copiar DESTE gráfico (a curva) usa scale 2 — em scale 3 o
+        // html2canvas corta o ponto A7. Não afeta os outros botões nem laudos.
+        setTimeout(forcarScale2NaCurva, 400);
+    }
+
+    function forcarScale2NaCurva() {
+        const bloco = document.querySelector('.ravlt-curva-bloco');
+        if (!bloco) return;
+        const btn = bloco.querySelector('.cortex-copy-btn');
+        if (!btn || btn.dataset.scale2 === '1') return;
+        btn.dataset.scale2 = '1';
+
+        // Clona o botão pra remover o listener do script compartilhado (que usa scale 3)
+        const novo = btn.cloneNode(true);
+        btn.parentNode.replaceChild(novo, btn);
+
+        novo.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof html2canvas === 'undefined') return;
+            const orig = novo.textContent;
+            novo.textContent = '⏳';
+            try {
+                document.body.classList.add('cortex-copiando');
+                const canvas = await html2canvas(bloco, {
+                    scale: 2,                    // <<< só aqui: scale 2 (nao corta A7)
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false,
+                    ignoreElements: (node) =>
+                        node.classList && node.classList.contains('cortex-copy-btn'),
+                });
+                document.body.classList.remove('cortex-copiando');
+
+                const blob = await new Promise((res, rej) =>
+                    canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/png'));
+
+                if (navigator.clipboard && window.ClipboardItem) {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    novo.textContent = '✅';
+                    if (window.CortexUI?.toast) window.CortexUI.toast('✓ Gráfico copiado. Cole com Ctrl+V', 'success');
+                } else {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'ravlt-curva.png';
+                    a.click(); URL.revokeObjectURL(a.href);
+                    novo.textContent = '⬇️';
+                }
+            } catch (err) {
+                document.body.classList.remove('cortex-copiando');
+                console.error('[ravlt] copiar curva:', err);
+                novo.textContent = '❌';
+            } finally {
+                setTimeout(() => { novo.textContent = orig; }, 1600);
+            }
+        });
     }
 
     function renderHeaderLaudo() {
@@ -590,7 +647,7 @@
         const xFn = i => padL + i * stepX;
         const yFn = v => padT + chartH - (v / maxY) * chartH;
 
-        let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="ravlt-curva-svg">`;
+        let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" class="ravlt-curva-svg">`;
 
         // Background
         svg += `<rect x="0" y="0" width="${W}" height="${H}" fill="#fff" rx="8"/>`;

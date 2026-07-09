@@ -373,7 +373,8 @@
 // ============================================================================
 (function () {
     'use strict';
-    const SCALE = 3;
+    // Respeita o override por-laudo (ex.: RAVLT usa scale 2 p/ nao cortar o A7)
+    const SCALE = (window.CORTEX_COPY_CONFIG && window.CORTEX_COPY_CONFIG.scale) || 3;
 
     async function capturar(el) {
         const canvas = await html2canvas(el, {

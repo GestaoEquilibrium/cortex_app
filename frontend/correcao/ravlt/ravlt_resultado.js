@@ -520,23 +520,23 @@
         btn.textContent = '⏳';
         try {
             document.body.classList.add('cortex-copiando'); // esconde outros botões, se houver
+            // Largura REAL do bloco na tela (medida) — capturar nesta largura inclui A1..A7 sem cortar.
+            const larguraBloco = Math.ceil(bloco.getBoundingClientRect().width);
             const canvas = await html2canvas(bloco, {
                 scale: 2,                       // mesma escala do PDF
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
+                width: larguraBloco,            // largura medida do bloco (nao força 720)
+                windowWidth: larguraBloco + 40,
                 ignoreElements: (node) =>
                     node.classList && node.classList.contains('cortex-copy-btn'),
                 onclone: (doc) => {
-                    // Fixa o SVG na largura nativa (720) no clone -> nao estica -> nao corta
-                    const svg = doc.querySelector('.ravlt-curva-bloco svg.ravlt-curva-svg');
-                    if (svg) {
-                        svg.style.width = '720px';
-                        svg.style.maxWidth = '720px';
-                        svg.style.height = '280px';
-                    }
+                    // Garante que nada corte à direita durante a captura
                     const b = doc.querySelector('.ravlt-curva-bloco');
-                    if (b) { b.style.overflow = 'visible'; b.style.width = 'fit-content'; b.style.margin = '0 auto'; }
+                    if (b) { b.style.overflow = 'visible'; b.style.margin = '0'; }
+                    const svg = doc.querySelector('.ravlt-curva-bloco svg.ravlt-curva-svg');
+                    if (svg) { svg.style.width = '100%'; svg.style.maxWidth = '100%'; svg.style.height = 'auto'; }
                 },
             });
             document.body.classList.remove('cortex-copiando');

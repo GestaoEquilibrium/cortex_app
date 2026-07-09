@@ -489,6 +489,87 @@
             ${renderSecaoInterpretacao()}
             ${renderRodapeLaudo()}
         `;
+
+        // Copiar a curva via SVG NATIVO (sem html2canvas -> nunca corta o A7).
+        // Roda após um tick pra garantir que o script compartilhado já colocou o botão dele.
+        setTimeout(instalarCopiaCurvaSVG, 300);
+    }
+
+    // ─── Copiar o gráfico da curva serializando o SVG direto (à prova de corte) ──
+    function instalarCopiaCurvaSVG() {
+        const bloco = document.querySelector('.ravlt-curva-bloco');
+        if (!bloco) return;
+        const svg = bloco.querySelector('svg.ravlt-curva-svg');
+        if (!svg) return;
+
+        // Remove qualquer botão que o copy_to_clipboard compartilhado tenha posto no bloco
+        bloco.querySelectorAll('.cortex-copy-btn').forEach(b => b.remove());
+        if (bloco.querySelector('.ravlt-copy-curva-btn')) return; // já instalado
+
+        if (getComputedStyle(bloco).position === 'static') bloco.style.position = 'relative';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cortex-copy-btn ravlt-copy-curva-btn';
+        btn.title = 'Copiar gráfico em alta resolução';
+        btn.textContent = '📋';
+        btn.style.cssText = 'position:absolute;top:8px;right:8px;z-index:20;width:30px;height:30px;' +
+            'background:rgba(255,255,255,0.92);border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;';
+        btn.addEventListener('click', (e) => { e.preventDefault(); copiarCurvaSVG(svg, btn); });
+        bloco.appendChild(btn);
+    }
+
+    async function copiarCurvaSVG(svgEl, btn) {
+        const orig = btn.textContent;
+        btn.textContent = '⏳';
+        try {
+            // Largura/altura nativas do SVG (viewBox), independentes do CSS
+            const vb = (svgEl.getAttribute('viewBox') || '0 0 720 280').split(/\s+/).map(Number);
+            const W = vb[2] || 720, H = vb[3] || 280;
+            const SCALE = 3;
+
+            // Serializa o SVG (garante namespace)
+            const clone = svgEl.cloneNode(true);
+            clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            clone.setAttribute('width', W);
+            clone.setAttribute('height', H);
+            const svgStr = new XMLSerializer().serializeToString(clone);
+            const svg64 = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            await new Promise((res, rej) => {
+                img.onload = res; img.onerror = () => rej(new Error('img load'));
+                img.src = svg64;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = W * SCALE;
+            canvas.height = H * SCALE;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            const blob = await new Promise((res, rej) =>
+                canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/png'));
+
+            if (navigator.clipboard && window.ClipboardItem) {
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                btn.textContent = '✅';
+            } else {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'ravlt-curva.png';
+                a.click(); URL.revokeObjectURL(a.href);
+                btn.textContent = '⬇️';
+            }
+        } catch (err) {
+            console.error('[ravlt] copiar curva SVG:', err);
+            btn.textContent = '❌';
+        } finally {
+            setTimeout(() => { btn.textContent = orig; }, 1600);
+        }
     }
 
     function renderHeaderLaudo() {

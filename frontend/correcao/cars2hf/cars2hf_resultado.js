@@ -139,6 +139,11 @@
             let opcoes = '';
             for (let v = 0; v < ops.length; v++) {
                 const txt = opcaoTexto(item, v) || String(v);
+                // Mostra só as alternativas reais cadastradas. Os slots "Ponto
+                // intermediário" (placeholder do sistema, sem texto do item) não
+                // viram botão. O índice (v) e o valor de cada opção seguem iguais,
+                // então a pontuação e as correções já feitas não mudam.
+                if (txt === 'Ponto intermediário') continue;
                 const real = opcaoValorDobrado(item, v);
                 const realLbl = real != null ? fmtNum(real / 2) : '';
                 const ativo = state.respostas[item.numero] === v ? 'ativo' : '';

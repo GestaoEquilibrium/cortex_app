@@ -791,11 +791,21 @@
                     </option>`
                 )).join('');
 
-            const STATUS_OPTIONS = [
+            // Inclui o status REAL no select. Sem isso, um teste 'corrigido' caía
+            // numa opção errada e o Salvar rebaixava o status (a correção "sumia").
+            const STATUS_BASE = [
                 { v: 'aguardando', l: 'Aguardando' },
                 { v: 'em_aplicacao', l: 'Em aplicação' },
                 { v: 'concluido_aplicacao', l: 'Concluído' }
             ];
+            const STATUS_EXTRA = {
+                em_correcao:     'Em correção',
+                corrigido:       'Corrigido',
+                integrado_laudo: 'Integrado ao laudo'
+            };
+            const STATUS_OPTIONS = STATUS_EXTRA[apl.status]
+                ? [...STATUS_BASE, { v: apl.status, l: STATUS_EXTRA[apl.status] }]
+                : STATUS_BASE;
             const optionsStatus = STATUS_OPTIONS.map(s =>
                 `<option value="${s.v}" ${s.v === apl.status ? 'selected' : ''}>${s.l}</option>`
             ).join('');
@@ -806,6 +816,7 @@
 
             document.getElementById('modal-titulo').textContent = `Editar ${inst?.sigla || 'aplicação'}`;
             document.getElementById('modal-body').innerHTML = `
+                <div id="modal-correcao-aviso"></div>
                 <div class="form-group">
                     <label>Status</label>
                     <select id="modal-status" class="form-input">${optionsStatus}</select>
@@ -833,6 +844,9 @@
             `;
 
             document.getElementById('modal-aplicacao').style.display = 'flex';
+
+            // Confere no banco se ESTE teste já tem correção/resultado salvo e avisa.
+            verificarCorrecaoSalva(aplicacaoId, inst);
         },
 
         fecharModal: function() {
@@ -851,6 +865,12 @@
             const observacoes = document.getElementById('modal-observacoes').value || null;
 
             const apl = state.aplicacoes.find(a => a.id === id);
+
+            // Estados que significam "tem resultado". Rebaixar a partir deles
+            // esconde o "Ver resultado" — só com confirmação explícita.
+            const COM_RESULTADO = ['corrigido', 'integrado_laudo'];
+            const CONCLUIDOS = ['concluido_aplicacao', 'em_correcao', 'corrigido', 'integrado_laudo'];
+
             const updates = {
                 status: novoStatus,
                 aplicador_id: aplicadorId,
@@ -858,20 +878,72 @@
                 data_aplicacao: dataAplicacao,
                 observacoes_aplicacao: observacoes
             };
-
-            // Se transicionou pra concluido, registra timestamp
-            if (novoStatus === 'concluido_aplicacao' && apl.status !== 'concluido_aplicacao') {
+            // Carimba data_conclusao ao entrar num estado concluído (se ainda não tiver)
+            if (CONCLUIDOS.includes(novoStatus) && !CONCLUIDOS.includes(apl.status) && !apl.data_conclusao) {
                 updates.data_conclusao = new Date().toISOString();
             }
-            // Se voltou de concluído pra outro, limpa data_conclusao
-            if (novoStatus !== 'concluido_aplicacao' && apl.status === 'concluido_aplicacao') {
+            // Só limpa data_conclusao ao voltar pra um estado realmente em aberto
+            if (!CONCLUIDOS.includes(novoStatus) && CONCLUIDOS.includes(apl.status)) {
                 updates.data_conclusao = null;
+            }
+
+            // Rebaixando um teste que tem correção salva? Confirma antes.
+            const rebaixando = novoStatus !== apl.status
+                && (COM_RESULTADO.includes(apl.status) || state.modalTemCorrecao)
+                && !COM_RESULTADO.includes(novoStatus);
+
+            if (rebaixando && window.CortexConfirm) {
+                window.CortexConfirm.mostrar({
+                    icone: '⚠️',
+                    titulo: 'Este teste tem correção salva',
+                    texto: `Mudar o status para "${novoStatus.replace('_', ' ')}" vai esconder o botão "Ver resultado" na bateria. A correção continua salva no banco, mas some da tela. Tem certeza?`,
+                    btnSim: 'Sim, mudar mesmo assim',
+                    btnNao: 'Cancelar',
+                    btnSimDanger: true,
+                    onSim: async () => {
+                        await atualizarAplicacao(id, updates);
+                        window.CortexBateria.fecharModal();
+                    }
+                });
+                return;
             }
 
             await atualizarAplicacao(id, updates);
             this.fecharModal();
         }
     };
+
+    // Confere no banco se a aplicação já tem correção/resultado salvo.
+    // Considera "tem correção" se: status já é corrigido/integrado_laudo, OU
+    // existe linha em `correcoes`. Cobre tanto os testes de motor próprio
+    // (status vira corrigido) quanto os que gravam em `correcoes`.
+    async function verificarCorrecaoSalva(aplicacaoId, inst) {
+        state.modalTemCorrecao = false;
+        const apl = state.aplicacoes.find(a => a.id === aplicacaoId);
+        const aviso = document.getElementById('modal-correcao-aviso');
+        let tem = apl && (apl.status === 'corrigido' || apl.status === 'integrado_laudo');
+        try {
+            const { data } = await window.cortexClient
+                .from('correcoes')
+                .select('status, corrigido_em')
+                .eq('aplicacao_id', aplicacaoId)
+                .maybeSingle();
+            if (data) tem = true;
+        } catch (e) { /* silencioso — não bloqueia o modal */ }
+
+        // o modal pode ter fechado enquanto consultava
+        if (!aviso || state.modalAplicacaoId !== aplicacaoId) return;
+        state.modalTemCorrecao = tem;
+
+        aviso.innerHTML = tem
+            ? `<div style="display:flex;gap:8px;align-items:flex-start;background:#dcfce7;border:1px solid #86efac;color:#166534;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;line-height:1.4;">
+                   <span style="font-size:15px;line-height:1;">✓</span>
+                   <span><b>Este teste já tem correção salva.</b> Não rebaixe o status (Aguardando/Em aplicação) sem necessidade — isso esconde o resultado da tela.</span>
+               </div>`
+            : `<div style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:12.5px;">
+                   Sem correção salva ainda para este teste.
+               </div>`;
+    }
 
     async function atualizarAplicacao(aplicacaoId, updates) {
         try {

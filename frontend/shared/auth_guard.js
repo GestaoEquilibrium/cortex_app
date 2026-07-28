@@ -142,8 +142,10 @@
             detail: { profissional, session }
         }));
 
-        // Sprint 81: monitor de inatividade (15 min de inatividade → logout)
-        iniciarMonitorInatividade(caminhoRaiz);
+        // Sprint 81: monitor de inatividade (15 min → logout) — DESATIVADO a pedido.
+        // Para religar, basta descomentar a linha abaixo.
+        // iniciarMonitorInatividade(caminhoRaiz);
+        void iniciarMonitorInatividade; // mantém a função referenciada (sem lint de "não usada")
 
     } catch (err) {
         console.error('Erro no auth guard:', err);

@@ -589,35 +589,7 @@
             </div>
         ` : '';
 
-        // Sprint 91: faixa de bateria concluída — mesma leitura de status usada
-        // em carregarBateriaInfo (concluido conta encerrados + corrigidos).
-        const bateriaFechada = bateriaInfo && bateriaInfo.total > 0
-            && bateriaInfo.concluido === bateriaInfo.total;
-
-        const bannerBateria = bateriaFechada ? `
-            <div style="
-                display:flex; align-items:center; gap:16px;
-                margin-bottom:18px; padding:16px 22px; border-radius:16px;
-                background:linear-gradient(135deg,#16A34A 0%,#22C55E 55%,#4ADE80 100%);
-                color:#fff; box-shadow:0 10px 28px rgba(22,163,74,0.30);">
-                <div style="font-size:30px; line-height:1; flex-shrink:0;">🎉</div>
-                <div style="flex:1; min-width:0; line-height:1.45;">
-                    <strong style="display:block; font-size:16px; font-weight:800;">Bateria concluída</strong>
-                    <span style="display:block; font-size:13.5px; opacity:0.95;">
-                        Os ${bateriaInfo.total} ${bateriaInfo.total === 1 ? 'instrumento foi encerrado' : 'instrumentos foram encerrados'}.
-                        Próximo passo: correções e laudo.
-                    </span>
-                </div>
-                <button class="btn btn-sm" onclick="trocarEtapa('bateria')" style="
-                    background:rgba(255,255,255,0.95); color:#15803D; font-weight:700;
-                    border:none; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.12);">
-                    Ver bateria →
-                </button>
-            </div>
-        ` : '';
-
-        document.getElementById('pasta-conteudo').innerHTML =
-            bannerReadOnly + bannerBateria + cabecalho + etapasHtml + conteudoEtapa;
+        document.getElementById('pasta-conteudo').innerHTML = bannerReadOnly + cabecalho + etapasHtml + conteudoEtapa;
 
         document.getElementById('foto-input-hidden').onchange = uploadFoto;
         document.getElementById('mae-foto-input-hidden').onchange = uploadFotoMae;
@@ -3172,7 +3144,5 @@
         return div.innerHTML;
     }
     </script>
-    <link rel="stylesheet" href="../shared/confirm_modal.css">
-    <script src="../shared/confirm_modal.js"></script>
 </body>
 </html>

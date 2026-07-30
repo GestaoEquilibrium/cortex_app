@@ -1,0 +1,285 @@
+/* ============================================================================
+   CORTEX_APP — Sprint 91 — notificacoes.css
+   Sino na sidebar + painel da central de notificações.
+   Carregado automaticamente pelo sidebar.js.
+   ========================================================================== */
+
+/* ── Sino na sidebar ─────────────────────────────────────────────────────── */
+
+.nav-item-sino {
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    position: relative;
+}
+
+.nav-item-sino .sino-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.sino-badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 17px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.55);
+    border: 1.5px solid #0c1f3f;
+    pointer-events: none;
+}
+
+.sino-badge[hidden] { display: none; }
+
+@keyframes cortexSinoBalanca {
+      0% { transform: rotate(0); }
+     15% { transform: rotate(13deg); }
+     30% { transform: rotate(-11deg); }
+     45% { transform: rotate(8deg); }
+     60% { transform: rotate(-6deg); }
+     75% { transform: rotate(3deg); }
+    100% { transform: rotate(0); }
+}
+
+.sino-tocando .nav-item-icon {
+    animation: cortexSinoBalanca 0.85s ease;
+    transform-origin: 50% 15%;
+}
+
+/* ── Painel ──────────────────────────────────────────────────────────────── */
+
+.notif-painel {
+    position: fixed;
+    z-index: 9500;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.22);
+}
+
+.notif-painel.aberto {
+    display: flex;
+    animation: cortexNotifEntra 0.18s ease;
+}
+
+@keyframes cortexNotifEntra {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.notif-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 18px;
+    background: linear-gradient(135deg, #141F3C 0%, #2F6FED 100%);
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.notif-cabecalho-titulo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.notif-cabecalho-ico { font-size: 17px; line-height: 1; }
+
+.notif-pill {
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.notif-btn-texto {
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 6px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    white-space: nowrap;
+}
+
+.notif-btn-texto:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+/* ── Faixa de push ───────────────────────────────────────────────────────── */
+
+.notif-faixa {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 16px;
+    font-size: 12.5px;
+    line-height: 1.4;
+    flex-shrink: 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.notif-faixa div { flex: 1; min-width: 0; }
+.notif-faixa strong { display: block; font-size: 13px; margin-bottom: 2px; }
+.notif-faixa span:not(.notif-faixa-ico) { display: block; opacity: 0.85; }
+.notif-faixa-ico { font-size: 20px; line-height: 1; flex-shrink: 0; }
+
+.notif-faixa-cta {
+    background: linear-gradient(135deg, #EFF6FF 0%, #E0E7FF 100%);
+    color: #1E3A8A;
+}
+
+.notif-faixa-info {
+    background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+    color: #5B21B6;
+}
+
+.notif-faixa-alerta {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    color: #92400E;
+}
+
+.notif-btn-cta {
+    background: linear-gradient(135deg, #2F6FED 0%, #1E40AF 100%);
+    color: #fff;
+    border: none;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 8px 15px;
+    border-radius: 9px;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(47, 111, 237, 0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.notif-btn-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(47, 111, 237, 0.45);
+}
+
+/* ── Lista ───────────────────────────────────────────────────────────────── */
+
+.notif-lista {
+    overflow-y: auto;
+    flex: 1;
+    padding: 6px;
+}
+
+.notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.notif-item:hover {
+    background: #f1f5f9;
+    transform: translateX(2px);
+}
+
+.notif-item.nao-lida { background: #f8fbff; }
+.notif-item.nao-lida:hover { background: #eef4ff; }
+
+.notif-item-ico {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.16);
+}
+
+.notif-item-corpo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.notif-item-titulo {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.notif-item-texto {
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.notif-item-tempo {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.notif-item-ponto {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 15px;
+}
+
+/* ── Vazio ───────────────────────────────────────────────────────────────── */
+
+.notif-vazio {
+    padding: 42px 26px;
+    text-align: center;
+    color: #64748b;
+}
+
+.notif-vazio-ico { font-size: 38px; margin-bottom: 10px; }
+.notif-vazio strong { display: block; font-size: 15px; color: #0f172a; margin-bottom: 5px; }
+.notif-vazio p { margin: 0; font-size: 12.5px; line-height: 1.5; }
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    .notif-painel { border-radius: 14px; }
+    .notif-item-ico { width: 34px; height: 34px; font-size: 16px; }
+}

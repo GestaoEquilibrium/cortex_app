@@ -124,15 +124,6 @@
     }
 
 
-    // Sprint 91 — status que contam como "aplicação encerrada" para efeito de
-    // bateria completa. Mesma lista usada na pasta do paciente (carregarBateriaInfo).
-    const STATUS_ENCERRADOS = ['concluido_aplicacao', 'em_correcao', 'corrigido', 'integrado_laudo'];
-
-    function bateriaCompleta(aplicacoes) {
-        if (!aplicacoes || aplicacoes.length === 0) return false;
-        return aplicacoes.every(a => STATUS_ENCERRADOS.includes(a.status));
-    }
-
     const state = {
         pacienteId: null,
         paciente: null,
@@ -413,22 +404,7 @@
             </div>
         `;
 
-        // Sprint 91 — faixa fixa quando a bateria está fechada. Diferente do
-        // modal (que só aparece na virada), esta continua visível ao reabrir.
-        const faixaCompleta = bateriaCompleta(state.aplicacoes) ? `
-            <div class="bateria-faixa-completa">
-                <div class="bateria-faixa-ico">🎉</div>
-                <div class="bateria-faixa-texto">
-                    <strong>Bateria concluída</strong>
-                    <span>Os ${stats.total} ${stats.total === 1 ? 'instrumento foi encerrado' : 'instrumentos foram encerrados'}. Próximo passo: correções e laudo.</span>
-                </div>
-                <a class="btn btn-sm bateria-faixa-btn" href="../pacientes/pasta.html?id=${encodeURIComponent(state.pacienteId)}">
-                    Abrir pasta →
-                </a>
-            </div>
-        ` : '';
-
-        container.innerHTML = cabecalho + faixaCompleta + statsCards + (lista || renderFiltroVazio()) + navegacao;
+        container.innerHTML = cabecalho + statsCards + (lista || renderFiltroVazio()) + navegacao;
     }
 
     function calcularStats() {
@@ -815,21 +791,11 @@
                     </option>`
                 )).join('');
 
-            // Inclui o status REAL no select. Sem isso, um teste 'corrigido' caía
-            // numa opção errada e o Salvar rebaixava o status (a correção "sumia").
-            const STATUS_BASE = [
+            const STATUS_OPTIONS = [
                 { v: 'aguardando', l: 'Aguardando' },
                 { v: 'em_aplicacao', l: 'Em aplicação' },
                 { v: 'concluido_aplicacao', l: 'Concluído' }
             ];
-            const STATUS_EXTRA = {
-                em_correcao:     'Em correção',
-                corrigido:       'Corrigido',
-                integrado_laudo: 'Integrado ao laudo'
-            };
-            const STATUS_OPTIONS = STATUS_EXTRA[apl.status]
-                ? [...STATUS_BASE, { v: apl.status, l: STATUS_EXTRA[apl.status] }]
-                : STATUS_BASE;
             const optionsStatus = STATUS_OPTIONS.map(s =>
                 `<option value="${s.v}" ${s.v === apl.status ? 'selected' : ''}>${s.l}</option>`
             ).join('');
@@ -840,7 +806,6 @@
 
             document.getElementById('modal-titulo').textContent = `Editar ${inst?.sigla || 'aplicação'}`;
             document.getElementById('modal-body').innerHTML = `
-                <div id="modal-correcao-aviso"></div>
                 <div class="form-group">
                     <label>Status</label>
                     <select id="modal-status" class="form-input">${optionsStatus}</select>
@@ -868,9 +833,6 @@
             `;
 
             document.getElementById('modal-aplicacao').style.display = 'flex';
-
-            // Confere no banco se ESTE teste já tem correção/resultado salvo e avisa.
-            verificarCorrecaoSalva(aplicacaoId, inst);
         },
 
         fecharModal: function() {
@@ -889,12 +851,6 @@
             const observacoes = document.getElementById('modal-observacoes').value || null;
 
             const apl = state.aplicacoes.find(a => a.id === id);
-
-            // Estados que significam "tem resultado". Rebaixar a partir deles
-            // esconde o "Ver resultado" — só com confirmação explícita.
-            const COM_RESULTADO = ['corrigido', 'integrado_laudo'];
-            const CONCLUIDOS = ['concluido_aplicacao', 'em_correcao', 'corrigido', 'integrado_laudo'];
-
             const updates = {
                 status: novoStatus,
                 aplicador_id: aplicadorId,
@@ -902,34 +858,14 @@
                 data_aplicacao: dataAplicacao,
                 observacoes_aplicacao: observacoes
             };
-            // Carimba data_conclusao ao entrar num estado concluído (se ainda não tiver)
-            if (CONCLUIDOS.includes(novoStatus) && !CONCLUIDOS.includes(apl.status) && !apl.data_conclusao) {
+
+            // Se transicionou pra concluido, registra timestamp
+            if (novoStatus === 'concluido_aplicacao' && apl.status !== 'concluido_aplicacao') {
                 updates.data_conclusao = new Date().toISOString();
             }
-            // Só limpa data_conclusao ao voltar pra um estado realmente em aberto
-            if (!CONCLUIDOS.includes(novoStatus) && CONCLUIDOS.includes(apl.status)) {
+            // Se voltou de concluído pra outro, limpa data_conclusao
+            if (novoStatus !== 'concluido_aplicacao' && apl.status === 'concluido_aplicacao') {
                 updates.data_conclusao = null;
-            }
-
-            // Rebaixando um teste que tem correção salva? Confirma antes.
-            const rebaixando = novoStatus !== apl.status
-                && (COM_RESULTADO.includes(apl.status) || state.modalTemCorrecao)
-                && !COM_RESULTADO.includes(novoStatus);
-
-            if (rebaixando && window.CortexConfirm) {
-                window.CortexConfirm.mostrar({
-                    icone: '⚠️',
-                    titulo: 'Este teste tem correção salva',
-                    texto: `Mudar o status para "${novoStatus.replace('_', ' ')}" vai esconder o botão "Ver resultado" na bateria. A correção continua salva no banco, mas some da tela. Tem certeza?`,
-                    btnSim: 'Sim, mudar mesmo assim',
-                    btnNao: 'Cancelar',
-                    btnSimDanger: true,
-                    onSim: async () => {
-                        await atualizarAplicacao(id, updates);
-                        window.CortexBateria.fecharModal();
-                    }
-                });
-                return;
             }
 
             await atualizarAplicacao(id, updates);
@@ -937,43 +873,7 @@
         }
     };
 
-    // Confere no banco se a aplicação já tem correção/resultado salvo.
-    // Considera "tem correção" se: status já é corrigido/integrado_laudo, OU
-    // existe linha em `correcoes`. Cobre tanto os testes de motor próprio
-    // (status vira corrigido) quanto os que gravam em `correcoes`.
-    async function verificarCorrecaoSalva(aplicacaoId, inst) {
-        state.modalTemCorrecao = false;
-        const apl = state.aplicacoes.find(a => a.id === aplicacaoId);
-        const aviso = document.getElementById('modal-correcao-aviso');
-        let tem = apl && (apl.status === 'corrigido' || apl.status === 'integrado_laudo');
-        try {
-            const { data } = await window.cortexClient
-                .from('correcoes')
-                .select('status, corrigido_em')
-                .eq('aplicacao_id', aplicacaoId)
-                .maybeSingle();
-            if (data) tem = true;
-        } catch (e) { /* silencioso — não bloqueia o modal */ }
-
-        // o modal pode ter fechado enquanto consultava
-        if (!aviso || state.modalAplicacaoId !== aplicacaoId) return;
-        state.modalTemCorrecao = tem;
-
-        aviso.innerHTML = tem
-            ? `<div style="display:flex;gap:8px;align-items:flex-start;background:#dcfce7;border:1px solid #86efac;color:#166534;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;line-height:1.4;">
-                   <span style="font-size:15px;line-height:1;">✓</span>
-                   <span><b>Este teste já tem correção salva.</b> Não rebaixe o status (Aguardando/Em aplicação) sem necessidade — isso esconde o resultado da tela.</span>
-               </div>`
-            : `<div style="background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:12.5px;">
-                   Sem correção salva ainda para este teste.
-               </div>`;
-    }
-
     async function atualizarAplicacao(aplicacaoId, updates) {
-        // Sprint 91: guarda o estado ANTES para detectar a virada de
-        // "faltava alguma coisa" → "bateria fechada".
-        const estavaCompleta = bateriaCompleta(state.aplicacoes);
-
         try {
             const { error } = await window.cortexClient
                 .from('aplicacoes_instrumento')
@@ -995,95 +895,11 @@
 
             agrupar();
             renderizar();
-
-            // Sprint 91 — se esta foi a peça que fechou a bateria, o aviso é
-            // a tela de conclusão, não um toast que passa despercebido.
-            if (!estavaCompleta && bateriaCompleta(state.aplicacoes)) {
-                mostrarBateriaConcluida();
-            } else {
-                window.CortexUI.toast('Aplicação atualizada', 'success');
-            }
+            window.CortexUI.toast('Aplicação atualizada', 'success');
         } catch (err) {
             console.error('Erro ao atualizar:', err);
             window.CortexUI.toast('Erro: ' + err.message, 'danger');
         }
-    }
-
-    // ============================================================================
-    // SPRINT 91 — AVISO DE BATERIA CONCLUÍDA
-    // ============================================================================
-
-    function mostrarBateriaConcluida() {
-        const total = state.aplicacoes.length;
-        const nome = state.paciente?.nome_completo || 'o paciente';
-
-        const antigo = document.getElementById('bateria-fim-overlay');
-        if (antigo) antigo.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'bateria-fim-overlay';
-        overlay.className = 'bateria-fim-overlay';
-        overlay.innerHTML = `
-            <div class="bateria-fim-box" role="dialog" aria-modal="true" aria-labelledby="bateria-fim-titulo">
-                <div class="bateria-fim-confete" aria-hidden="true">
-                    ${Array.from({ length: 14 }, (_, i) => `<span style="--i:${i}"></span>`).join('')}
-                </div>
-
-                <div class="bateria-fim-selo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                </div>
-
-                <h2 id="bateria-fim-titulo">Bateria concluída!</h2>
-                <p class="bateria-fim-sub">
-                    Todos os <strong>${total}</strong> ${total === 1 ? 'instrumento' : 'instrumentos'}
-                    de <strong>${escapeHtml(nome)}</strong> foram encerrados.
-                </p>
-
-                <div class="bateria-fim-passos">
-                    <div class="bateria-fim-passo">
-                        <span class="bateria-fim-passo-ico" style="background:linear-gradient(135deg,#2F6FED 0%,#1E40AF 100%);">1</span>
-                        <span>Confira as correções pendentes</span>
-                    </div>
-                    <div class="bateria-fim-passo">
-                        <span class="bateria-fim-passo-ico" style="background:linear-gradient(135deg,#7C4DFF 0%,#5B21B6 100%);">2</span>
-                        <span>Monte o laudo na pasta do paciente</span>
-                    </div>
-                    <div class="bateria-fim-passo">
-                        <span class="bateria-fim-passo-ico" style="background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);">3</span>
-                        <span>Agende a devolutiva</span>
-                    </div>
-                </div>
-
-                <div class="bateria-fim-aviso">
-                    🔔 A equipe já foi notificada automaticamente.
-                </div>
-
-                <div class="bateria-fim-acoes">
-                    <button class="btn btn-secondary" data-fim="fechar">Continuar aqui</button>
-                    <a class="btn btn-primary bateria-fim-btn-principal"
-                       href="../pacientes/pasta.html?id=${encodeURIComponent(state.pacienteId)}">
-                        Abrir pasta do paciente →
-                    </a>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-        requestAnimationFrame(() => overlay.classList.add('visivel'));
-
-        const fechar = () => {
-            overlay.classList.remove('visivel');
-            setTimeout(() => overlay.remove(), 220);
-            document.removeEventListener('keydown', onEsc);
-        };
-        const onEsc = (e) => { if (e.key === 'Escape') fechar(); };
-
-        overlay.querySelector('[data-fim="fechar"]').addEventListener('click', fechar);
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) fechar(); });
-        document.addEventListener('keydown', onEsc);
     }
 
     // ============================================================================

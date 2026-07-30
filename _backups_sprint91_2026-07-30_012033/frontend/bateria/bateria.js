@@ -124,15 +124,6 @@
     }
 
 
-    // Sprint 91 — status que contam como "aplicação encerrada" para efeito de
-    // bateria completa. Mesma lista usada na pasta do paciente (carregarBateriaInfo).
-    const STATUS_ENCERRADOS = ['concluido_aplicacao', 'em_correcao', 'corrigido', 'integrado_laudo'];
-
-    function bateriaCompleta(aplicacoes) {
-        if (!aplicacoes || aplicacoes.length === 0) return false;
-        return aplicacoes.every(a => STATUS_ENCERRADOS.includes(a.status));
-    }
-
     const state = {
         pacienteId: null,
         paciente: null,
@@ -413,22 +404,7 @@
             </div>
         `;
 
-        // Sprint 91 — faixa fixa quando a bateria está fechada. Diferente do
-        // modal (que só aparece na virada), esta continua visível ao reabrir.
-        const faixaCompleta = bateriaCompleta(state.aplicacoes) ? `
-            <div class="bateria-faixa-completa">
-                <div class="bateria-faixa-ico">🎉</div>
-                <div class="bateria-faixa-texto">
-                    <strong>Bateria concluída</strong>
-                    <span>Os ${stats.total} ${stats.total === 1 ? 'instrumento foi encerrado' : 'instrumentos foram encerrados'}. Próximo passo: correções e laudo.</span>
-                </div>
-                <a class="btn btn-sm bateria-faixa-btn" href="../pacientes/pasta.html?id=${encodeURIComponent(state.pacienteId)}">
-                    Abrir pasta →
-                </a>
-            </div>
-        ` : '';
-
-        container.innerHTML = cabecalho + faixaCompleta + statsCards + (lista || renderFiltroVazio()) + navegacao;
+        container.innerHTML = cabecalho + statsCards + (lista || renderFiltroVazio()) + navegacao;
     }
 
     function calcularStats() {
@@ -970,10 +946,6 @@
     }
 
     async function atualizarAplicacao(aplicacaoId, updates) {
-        // Sprint 91: guarda o estado ANTES para detectar a virada de
-        // "faltava alguma coisa" → "bateria fechada".
-        const estavaCompleta = bateriaCompleta(state.aplicacoes);
-
         try {
             const { error } = await window.cortexClient
                 .from('aplicacoes_instrumento')
@@ -995,95 +967,11 @@
 
             agrupar();
             renderizar();
-
-            // Sprint 91 — se esta foi a peça que fechou a bateria, o aviso é
-            // a tela de conclusão, não um toast que passa despercebido.
-            if (!estavaCompleta && bateriaCompleta(state.aplicacoes)) {
-                mostrarBateriaConcluida();
-            } else {
-                window.CortexUI.toast('Aplicação atualizada', 'success');
-            }
+            window.CortexUI.toast('Aplicação atualizada', 'success');
         } catch (err) {
             console.error('Erro ao atualizar:', err);
             window.CortexUI.toast('Erro: ' + err.message, 'danger');
         }
-    }
-
-    // ============================================================================
-    // SPRINT 91 — AVISO DE BATERIA CONCLUÍDA
-    // ============================================================================
-
-    function mostrarBateriaConcluida() {
-        const total = state.aplicacoes.length;
-        const nome = state.paciente?.nome_completo || 'o paciente';
-
-        const antigo = document.getElementById('bateria-fim-overlay');
-        if (antigo) antigo.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'bateria-fim-overlay';
-        overlay.className = 'bateria-fim-overlay';
-        overlay.innerHTML = `
-            <div class="bateria-fim-box" role="dialog" aria-modal="true" aria-labelledby="bateria-fim-titulo">
-                <div class="bateria-fim-confete" aria-hidden="true">
-                    ${Array.from({ length: 14 }, (_, i) => `<span style="--i:${i}"></span>`).join('')}
-                </div>
-
-                <div class="bateria-fim-selo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                </div>
-
-                <h2 id="bateria-fim-titulo">Bateria concluída!</h2>
-                <p class="bateria-fim-sub">
-                    Todos os <strong>${total}</strong> ${total === 1 ? 'instrumento' : 'instrumentos'}
-                    de <strong>${escapeHtml(nome)}</strong> foram encerrados.
-                </p>
-
-                <div class="bateria-fim-passos">
-                    <div class="bateria-fim-passo">
-                        <span class="bateria-fim-passo-ico" style="background:linear-gradient(135deg,#2F6FED 0%,#1E40AF 100%);">1</span>
-                        <span>Confira as correções pendentes</span>
-                    </div>
-                    <div class="bateria-fim-passo">
-                        <span class="bateria-fim-passo-ico" style="background:linear-gradient(135deg,#7C4DFF 0%,#5B21B6 100%);">2</span>
-                        <span>Monte o laudo na pasta do paciente</span>
-                    </div>
-                    <div class="bateria-fim-passo">
-                        <span class="bateria-fim-passo-ico" style="background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);">3</span>
-                        <span>Agende a devolutiva</span>
-                    </div>
-                </div>
-
-                <div class="bateria-fim-aviso">
-                    🔔 A equipe já foi notificada automaticamente.
-                </div>
-
-                <div class="bateria-fim-acoes">
-                    <button class="btn btn-secondary" data-fim="fechar">Continuar aqui</button>
-                    <a class="btn btn-primary bateria-fim-btn-principal"
-                       href="../pacientes/pasta.html?id=${encodeURIComponent(state.pacienteId)}">
-                        Abrir pasta do paciente →
-                    </a>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-        requestAnimationFrame(() => overlay.classList.add('visivel'));
-
-        const fechar = () => {
-            overlay.classList.remove('visivel');
-            setTimeout(() => overlay.remove(), 220);
-            document.removeEventListener('keydown', onEsc);
-        };
-        const onEsc = (e) => { if (e.key === 'Escape') fechar(); };
-
-        overlay.querySelector('[data-fim="fechar"]').addEventListener('click', fechar);
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) fechar(); });
-        document.addEventListener('keydown', onEsc);
     }
 
     // ============================================================================

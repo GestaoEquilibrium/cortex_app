@@ -88,55 +88,6 @@ window.CortexSidebar = (function() {
     const CHEVRON_LEFT_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
     const LOGOUT_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`;
 
-    // ── Sprint 91: carrega a central de notificações sem precisar incluir
-    // <script> em cada página. O sidebar.js já está em todas elas.
-    function caminhoShared() {
-        // Descobre o caminho absoluto de /frontend/shared/ a partir da URL atual.
-        const p = window.location.pathname;
-        const idx = p.indexOf('/frontend/');
-        const base = idx >= 0 ? p.substring(0, idx + '/frontend/'.length) : '/frontend/';
-        return base + 'shared/';
-    }
-
-    function carregarAsset(tag, attrs) {
-        return new Promise((resolve) => {
-            const el = document.createElement(tag);
-            Object.keys(attrs).forEach(k => el.setAttribute(k, attrs[k]));
-            el.onload = () => resolve(true);
-            el.onerror = () => resolve(false);
-            document.head.appendChild(el);
-        });
-    }
-
-    async function iniciarNotificacoes() {
-        try {
-            const base = caminhoShared();
-
-            if (!document.querySelector('link[data-cortex-notif-css]')) {
-                await carregarAsset('link', {
-                    rel: 'stylesheet',
-                    href: base + 'notificacoes.css?v=91',
-                    'data-cortex-notif-css': '1'
-                });
-            }
-
-            if (!window.CortexNotificacoes) {
-                const ok = await carregarAsset('script', {
-                    src: base + 'notificacoes.js?v=91',
-                    'data-cortex-notif-js': '1'
-                });
-                if (!ok) return;
-            }
-
-            if (window.CortexNotificacoes) {
-                await window.CortexNotificacoes.iniciar();
-            }
-        } catch (err) {
-            // Notificação nunca pode derrubar a navegação do sistema.
-            console.warn('[sidebar] notificações indisponíveis:', err.message || err);
-        }
-    }
-
     function pegarIniciais(nome) {
         if (!nome) return '?';
         const partes = nome.trim().split(/\s+/);
@@ -273,9 +224,6 @@ window.CortexSidebar = (function() {
         `;
 
         setupEventos();
-
-        // Sprint 91 — sino de notificações (não bloqueia o render da sidebar)
-        iniciarNotificacoes();
     }
 
     function setupEventos() {

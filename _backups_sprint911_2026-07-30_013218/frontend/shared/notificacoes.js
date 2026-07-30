@@ -316,34 +316,30 @@ window.CortexNotificacoes = (function () {
     // ────────────────────────────────────────────────────────────────────────
     // UI — sino
     // ────────────────────────────────────────────────────────────────────────
-    // Sprint 91.1 — o sino vive ao lado da marca CORTEX, não na navegação:
-    // notificação não é uma página e não deve disputar espaço com os menus.
     function montarSino() {
-        const brand = document.querySelector('#cortex-sidebar .sidebar-brand');
-        if (!brand || document.getElementById('cortex-sino')) return;
+        const nav = document.querySelector('#cortex-sidebar .sidebar-nav');
+        if (!nav || document.getElementById('cortex-sino')) return;
 
         const btn = document.createElement('button');
         btn.id = 'cortex-sino';
-        btn.className = 'sino-brand';
+        btn.className = 'nav-item nav-item-sino';
         btn.type = 'button';
         btn.title = 'Notificações';
-        btn.setAttribute('aria-label', 'Notificações');
         btn.innerHTML =
-            '<svg class="sino-brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<span class="sino-wrap">' +
+            '<svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
             SINO_SVG +
             '</svg>' +
-            '<span class="sino-badge" id="cortex-sino-badge" hidden>0</span>';
+            '<span class="sino-badge" id="cortex-sino-badge" hidden>0</span>' +
+            '</span>' +
+            '<span class="sidebar-text">Notificações</span>';
 
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation();
             alternarPainel();
         });
 
-        // Antes do botão de recolher, para ficar [marca] ..... [sino][chevron]
-        const toggle = brand.querySelector('#sidebar-toggle-btn');
-        if (toggle) brand.insertBefore(btn, toggle);
-        else brand.appendChild(btn);
+        nav.insertBefore(btn, nav.firstChild);
     }
 
     function atualizarBadge(pulsar) {

@@ -115,14 +115,14 @@ window.CortexSidebar = (function() {
             if (!document.querySelector('link[data-cortex-notif-css]')) {
                 await carregarAsset('link', {
                     rel: 'stylesheet',
-                    href: base + 'notificacoes.css?v=911',
+                    href: base + 'notificacoes.css?v=91',
                     'data-cortex-notif-css': '1'
                 });
             }
 
             if (!window.CortexNotificacoes) {
                 const ok = await carregarAsset('script', {
-                    src: base + 'notificacoes.js?v=911',
+                    src: base + 'notificacoes.js?v=91',
                     'data-cortex-notif-js': '1'
                 });
                 if (!ok) return;

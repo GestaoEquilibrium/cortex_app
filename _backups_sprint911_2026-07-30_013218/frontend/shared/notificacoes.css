@@ -4,62 +4,38 @@
    Carregado automaticamente pelo sidebar.js.
    ========================================================================== */
 
-/* ── Sino ao lado da marca CORTEX ────────────────────────────────────────── */
+/* ── Sino na sidebar ─────────────────────────────────────────────────────── */
 
-.sino-brand {
+.nav-item-sino {
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
     position: relative;
-    margin-left: auto;      /* empurra sino + chevron para a direita */
-    width: 30px;
-    height: 30px;
-    flex-shrink: 0;
+}
+
+.nav-item-sino .sino-wrap {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.85);
-    cursor: pointer;
-    padding: 0;
-    transition: background 0.15s, color 0.15s, transform 0.15s;
-}
-
-.sino-brand:hover {
-    background: rgba(255, 255, 255, 0.26);
-    color: #fff;
-    transform: translateY(-1px);
-}
-
-.sino-brand-icon {
-    width: 17px;
-    height: 17px;
-    display: block;
-}
-
-/* Colapsada: 68px de largura não comportam marca + sino lado a lado,
-   então a marca vira coluna e o sino desce para baixo do cérebro. */
-.sidebar.collapsed .sidebar-brand {
-    flex-direction: column;
-    gap: 8px;
-}
-
-.sidebar.collapsed .sino-brand {
-    margin-left: 0;
+    flex-shrink: 0;
 }
 
 .sino-badge {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    min-width: 16px;
-    height: 16px;
+    top: -6px;
+    right: -8px;
+    min-width: 17px;
+    height: 17px;
     padding: 0 4px;
-    border-radius: 8px;
+    border-radius: 9px;
     background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
     color: #fff;
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 800;
-    line-height: 16px;
+    line-height: 17px;
     text-align: center;
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.55);
     border: 1.5px solid #0c1f3f;
@@ -78,7 +54,7 @@
     100% { transform: rotate(0); }
 }
 
-.sino-tocando .sino-brand-icon {
+.sino-tocando .nav-item-icon {
     animation: cortexSinoBalanca 0.85s ease;
     transform-origin: 50% 15%;
 }

@@ -519,21 +519,55 @@
                 scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false
             });
 
+            // Quebra de página inteligente: em vez de fatiar a imagem em alturas
+            // fixas de A4 (que cortava gráfico/tabela no meio), cortamos SÓ nos
+            // limites entre seções — cada seção fica inteira numa página.
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            const pdfWidth = 210, pdfHeight = 297;
-            const imgWidth = pdfWidth;
-            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+            const MARGIN_TOP = 8, MARGIN_BOTTOM = 8;              // mm
+            const pxPerMm = canvas.width / 210;
+            const pageContentPx = (297 - MARGIN_TOP - MARGIN_BOTTOM) * pxPerMm;
 
-            if (imgHeight <= pdfHeight) {
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imgWidth, imgHeight);
+            // limites seguros de quebra = topo de cada seção e do rodapé
+            const laudoRect = laudo.getBoundingClientRect();
+            const ratio = canvas.height / laudoRect.height;
+            const boundaries = Array.from(laudo.querySelectorAll('.laudo-secao-titulo, .laudo-rodape'))
+                .map(el => (el.getBoundingClientRect().top - laudoRect.top) * ratio)
+                .filter(y => y > 1 && y < canvas.height - 1)
+                .sort((a, b) => a - b);
+            boundaries.push(canvas.height);
+
+            const addSlice = (startPx, endPx) => {
+                const sliceH = Math.max(1, Math.round(endPx - startPx));
+                const tmp = document.createElement('canvas');
+                tmp.width = canvas.width; tmp.height = sliceH;
+                const ctx = tmp.getContext('2d');
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, tmp.width, tmp.height);
+                ctx.drawImage(canvas, 0, startPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+                pdf.addImage(tmp.toDataURL('image/jpeg', 0.95), 'JPEG', 0, MARGIN_TOP, 210, sliceH / pxPerMm);
+            };
+
+            if (canvas.height <= pageContentPx) {
+                addSlice(0, canvas.height);
             } else {
-                let posY = 0, restante = imgHeight;
-                while (restante > 0) {
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, -posY, imgWidth, imgHeight);
-                    restante -= pdfHeight;
-                    posY += pdfHeight;
-                    if (restante > 0) pdf.addPage();
+                let start = 0;
+                while (start < canvas.height - 1) {
+                    const maxEnd = start + pageContentPx;
+                    let end;
+                    if (maxEnd >= canvas.height) {
+                        end = canvas.height;
+                    } else {
+                        // maior limite de seção que ainda cabe nesta página
+                        let corte = -1;
+                        for (const b of boundaries) {
+                            if (b > start + 1 && b <= maxEnd) corte = b;
+                        }
+                        // se uma seção sozinha for maior que a página, corte forçado (raro)
+                        end = corte > 0 ? corte : maxEnd;
+                    }
+                    addSlice(start, end);
+                    start = end;
+                    if (start < canvas.height - 1) pdf.addPage();
                 }
             }
 

@@ -1595,26 +1595,58 @@
     // Sprint 57: mensagem de WhatsApp avisando que a anamnese está disponível
     // no portal — NÃO envia link direto, manda o paciente entrar no portal e
     // responder por lá (login com CPF, mesmo fluxo do "Enviar acesso ao portal").
+    // ── Sprint portal_whats_fix ──────────────────────────────────────────
+    // Adulto recebe no PRÓPRIO telefone; menor de idade, no da mãe/pai/resp.
+    function pacienteMenorDeIdade() {
+        if (!paciente || !paciente.data_nascimento) return false;
+        // T12:00 evita o bug de fuso (meia-noite UTC vira véspera no BRT)
+        const nasc = new Date(String(paciente.data_nascimento).slice(0, 10) + 'T12:00:00');
+        if (isNaN(nasc)) return false;
+        const hoje = new Date();
+        let idade = hoje.getFullYear() - nasc.getFullYear();
+        const m = hoje.getMonth() - nasc.getMonth();
+        if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+        return idade < 18;
+    }
+
+    // Limpa, insere o 9º dígito em celular antigo (10 dígitos, resto 6-9)
+    // e garante o 55. Retorna '' se não der pra montar um número válido.
+    function normalizarTelefoneWhats(tel) {
+        let d = String(tel || '').replace(/\D/g, '');
+        if (!d) return '';
+        if (d.startsWith('55') && (d.length === 12 || d.length === 13)) return d;
+        if (d.length === 10 && /^[6-9]/.test(d.slice(2))) d = d.slice(0, 2) + '9' + d.slice(2);
+        if (d.length === 10 || d.length === 11) return '55' + d;
+        return d.length >= 12 ? d : '';
+    }
+
+    function telefonePortalWhats() {
+        const ordem = pacienteMenorDeIdade()
+            ? [paciente.mae_telefone, paciente.pai_telefone, paciente.responsavel_telefone, paciente.telefone]
+            : [paciente.telefone, paciente.responsavel_telefone, paciente.mae_telefone, paciente.pai_telefone];
+        for (const t of ordem) {
+            const n = normalizarTelefoneWhats(t);
+            if (n) return n;
+        }
+        return '';
+    }
+
     async function avisarPortalWhatsApp() {
         if (!paciente) {
             window.CortexUI.toast('Paciente não carregado.', 'danger');
             return;
         }
 
-        // Telefone preferido: mãe > pai > responsável > paciente
-        let tel = paciente.mae_telefone || paciente.pai_telefone
-               || paciente.responsavel_telefone || paciente.telefone;
-        let telLimpo = tel ? String(tel).replace(/\D/g, '') : '';
-        if (telLimpo.length === 10 || telLimpo.length === 11) {
-            telLimpo = '55' + telLimpo;
-        }
+        // Sprint portal_whats_fix: adulto → telefone próprio primeiro;
+        // menor → mãe/pai/responsável. Normaliza 9º dígito e o 55.
+        const telLimpo = telefonePortalWhats();
 
         const urlPortal = 'https://cortexneuro.com.br/portal/';
         const primeiroNome = (paciente.nome_completo || '').split(' ')[0];
 
         const msg = `Olá! Aqui é da Equilibrium Neuropsicologia.\n\n` +
                     `Disponibilizamos uma anamnese para ${primeiroNome} responder pelo nosso Portal do Paciente.\n\n` +
-                    `🔐 Acesse: ${urlPortal}\n\n` +
+                    `\u{1F510} Acesse: ${urlPortal}\n\n` +
                     `Entre com o CPF do paciente como login (se ainda não tem o acesso, peça pra clínica liberar).\n` +
                     `Após login, vá na aba *Anamnese* e clique em *Responder*.\n\n` +
                     `Qualquer dúvida, é só nos chamar.`;
@@ -2656,23 +2688,17 @@
             return;
         }
 
-        // Telefone preferido: mãe > pai > responsável > paciente
-        let tel = paciente.mae_telefone || paciente.pai_telefone
-               || paciente.responsavel_telefone || paciente.telefone;
-        let telLimpo = tel ? String(tel).replace(/\D/g, '') : '';
+        // Sprint portal_whats_fix: adulto → telefone próprio primeiro;
+        // menor → mãe/pai/responsável. Normaliza 9º dígito e o 55.
+        const telLimpo = telefonePortalWhats();
 
-        // Garante código do Brasil (55) na frente
-        if (telLimpo.length === 10 || telLimpo.length === 11) {
-            telLimpo = '55' + telLimpo;
-        }
-
-        const urlPortal = `https://cortexneuro.com.br/portal/?cpf=${cpfLimpo}`;
+        const urlPortal = 'https://cortexneuro.com.br/portal/';
         const primeiroNome = (paciente.nome_completo || '').split(' ')[0];
 
         const msg = `Olá! Aqui é da Equilibrium Neuropsicologia. ` +
                     `Liberamos o acesso de ${primeiroNome} ao nosso Portal do Paciente, ` +
                     `onde você pode responder questionários, acompanhar consultas e baixar laudos.\n\n` +
-                    `🔐 Acesse aqui: ${urlPortal}\n\n` +
+                    `\u{1F510} Acesse aqui: ${urlPortal}\n\n` +
                     `*Login:* CPF do paciente\n` +
                     `*Senha inicial:* o mesmo CPF (será solicitada a troca no primeiro acesso)\n\n` +
                     `Qualquer dúvida, é só nos chamar.`;

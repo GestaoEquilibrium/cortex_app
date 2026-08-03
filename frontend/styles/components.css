@@ -991,3 +991,175 @@
     border-bottom-left-radius: var(--radius-lg);
     border-bottom-right-radius: var(--radius-lg);
 }
+
+
+/* ============================================================================
+   MOBILE / PWA — Sprint pwa_mobile
+   Topbar fixa + sidebar em gaveta (drawer) + reduções de escala.
+   O topbar e o backdrop são injetados pelo sidebar.js; no desktop ficam ocultos.
+   ============================================================================ */
+
+.cortex-topbar { display: none; }
+.sidebar-backdrop { display: none; }
+
+@media (max-width: 768px) {
+
+    /* ── Topbar fixa (navy, com hambúrguer) ── */
+    .cortex-topbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: calc(54px + env(safe-area-inset-top, 0px));
+        padding: env(safe-area-inset-top, 0px) 12px 0 8px;
+        background: #0c1f3f;
+        color: #fff;
+        z-index: 60;
+        box-shadow: 0 2px 12px rgba(12, 31, 63, 0.25);
+    }
+
+    .topbar-menu-btn {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: #fff;
+        flex-shrink: 0;
+        transition: background var(--transition-fast);
+    }
+
+    .topbar-menu-btn:active {
+        background: rgba(255, 255, 255, 0.18);
+    }
+
+    .topbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 800;
+        font-size: 16px;
+        letter-spacing: 0.04em;
+        color: #fff;
+    }
+
+    .topbar-brand-icon {
+        width: 30px;
+        height: 30px;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        padding: 5px;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    /* ── Shell: main ocupa a tela toda, com folga pra topbar ── */
+    .app-shell { display: block; }
+
+    .app-main {
+        padding: calc(66px + env(safe-area-inset-top, 0px)) 14px 28px;
+    }
+
+    /* ── Sidebar vira gaveta lateral ── */
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        height: 100%;
+        height: 100dvh;
+        width: min(280px, 84vw);
+        transform: translateX(-105%);
+        transition: transform var(--transition-base);
+        z-index: 70;
+        box-shadow: 12px 0 40px rgba(12, 31, 63, 0.35);
+        padding-top: calc(16px + env(safe-area-inset-top, 0px));
+        overflow-y: auto;
+    }
+
+    .sidebar.mobile-open { transform: translateX(0); }
+
+    /* No mobile o modo "colapsado" do desktop é ignorado:
+       a gaveta abre sempre completa, com textos visíveis. */
+    .sidebar.collapsed { width: min(280px, 84vw); }
+    .sidebar.collapsed .sidebar-text,
+    .sidebar.collapsed .sidebar-badge { display: inline; }
+    .sidebar.collapsed .sidebar-user-info { display: block; }
+    .sidebar.collapsed .sidebar-brand { justify-content: flex-start; }
+    .sidebar.collapsed .nav-item { justify-content: flex-start; padding: 12px 10px; }
+    .sidebar.collapsed .sidebar-user { flex-direction: row; padding: 10px; gap: 10px; }
+
+    /* Recolher/expandir não faz sentido na gaveta */
+    .sidebar-toggle,
+    .sidebar.collapsed .sidebar-toggle { display: none; }
+
+    /* Itens com área de toque maior */
+    .nav-item { padding: 12px 10px; font-size: 14px; }
+    .nav-item-icon { width: 19px; height: 19px; }
+
+    /* ── Backdrop escurecido atrás da gaveta ── */
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(6, 24, 51, 0.55);
+        z-index: 65;
+        opacity: 0;
+        transition: opacity var(--transition-base);
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+    }
+
+    .sidebar-backdrop.show { display: block; opacity: 1; }
+
+    /* Trava o scroll do fundo com a gaveta aberta */
+    body.sidebar-aberta { overflow: hidden; }
+
+    /* ── Cabeçalho de página ── */
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .page-title h1 { font-size: 20px; }
+    .page-title p { font-size: 12.5px; }
+
+    .page-actions { width: 100%; flex-wrap: wrap; }
+    .page-actions .btn { flex: 1 1 auto; }
+
+    /* ── Formulários em coluna única ── */
+    .form-grid,
+    .form-grid-3 { grid-template-columns: 1fr; gap: 12px; }
+
+    .form-section { padding: 16px 14px; }
+
+    /* 16px evita o zoom automático do iOS ao focar campos */
+    .form-input,
+    .form-select,
+    .form-textarea { font-size: 16px; }
+
+    /* ── Botões um pouco menores ── */
+    .btn { padding: 9px 14px; font-size: 13px; }
+    .btn-lg { padding: 11px 18px; font-size: 14px; }
+
+    /* ── Toast ocupa a largura ── */
+    .cortex-toast {
+        left: 14px;
+        right: 14px;
+        bottom: 18px;
+        max-width: none;
+        text-align: center;
+    }
+
+    /* ── Login mais compacto ── */
+    .login-shell { padding: 30px 22px; }
+
+    /* Scrollbar fina */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+}
+
+@media (max-width: 480px) {
+    .app-main { padding-left: 12px; padding-right: 12px; }
+    .page-title h1 { font-size: 19px; }
+}

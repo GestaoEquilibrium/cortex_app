@@ -245,6 +245,29 @@ window.CortexSidebar = (function() {
             `;
         }).join('');
 
+        // ── Sprint pwa_mobile: topbar + backdrop (visíveis só no mobile via CSS) ──
+        if (!document.getElementById('cortex-topbar')) {
+            const topbar = document.createElement('header');
+            topbar.id = 'cortex-topbar';
+            topbar.className = 'cortex-topbar';
+            topbar.innerHTML = `
+                <button class="topbar-menu-btn" id="topbar-menu-btn" title="Menu" aria-label="Abrir menu">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="topbar-brand">
+                    ${BRAIN_SVG.replace('sidebar-brand-icon', 'topbar-brand-icon')}
+                    <span>CORTEX</span>
+                </div>
+            `;
+            document.body.insertBefore(topbar, document.body.firstChild);
+        }
+        if (!document.getElementById('sidebar-backdrop')) {
+            const backdrop = document.createElement('div');
+            backdrop.id = 'sidebar-backdrop';
+            backdrop.className = 'sidebar-backdrop';
+            document.body.appendChild(backdrop);
+        }
+
         container.innerHTML = `
             <aside class="sidebar ${colapsada ? 'collapsed' : ''}" id="cortex-sidebar">
                 <div class="sidebar-brand">
@@ -282,6 +305,44 @@ window.CortexSidebar = (function() {
         const toggleBtn = document.getElementById('sidebar-toggle-btn');
         const sidebar = document.getElementById('cortex-sidebar');
         const logoutBtn = document.getElementById('sidebar-logout-btn');
+
+        // ── Sprint pwa_mobile: gaveta (drawer) ──
+        const menuBtn = document.getElementById('topbar-menu-btn');
+        const backdrop = document.getElementById('sidebar-backdrop');
+
+        function abrirGaveta() {
+            if (!sidebar) return;
+            sidebar.classList.add('mobile-open');
+            if (backdrop) backdrop.classList.add('show');
+            document.body.classList.add('sidebar-aberta');
+        }
+
+        function fecharGaveta() {
+            if (!sidebar) return;
+            sidebar.classList.remove('mobile-open');
+            if (backdrop) backdrop.classList.remove('show');
+            document.body.classList.remove('sidebar-aberta');
+        }
+
+        if (menuBtn) {
+            menuBtn.addEventListener('click', () => {
+                if (sidebar && sidebar.classList.contains('mobile-open')) fecharGaveta();
+                else abrirGaveta();
+            });
+        }
+
+        if (backdrop) backdrop.addEventListener('click', fecharGaveta);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') fecharGaveta();
+        });
+
+        // Navegar fecha a gaveta (a página muda, mas evita flash em voltar/cache)
+        if (sidebar) {
+            sidebar.querySelectorAll('.nav-item').forEach(a => {
+                a.addEventListener('click', fecharGaveta);
+            });
+        }
 
         if (toggleBtn && sidebar) {
             toggleBtn.addEventListener('click', () => {

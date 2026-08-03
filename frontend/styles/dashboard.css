@@ -399,3 +399,33 @@
     border-color: #16a34a;
     color: #fff;
 }
+
+
+/* ============================================================================
+   MOBILE — Sprint pwa_mobile
+   ============================================================================ */
+
+@media (max-width: 1024px) {
+    .dash-cards { grid-template-columns: repeat(2, 1fr); }
+    .dash-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .dash-cards { gap: 10px; }
+
+    .dash-card {
+        padding: 14px 15px;
+        gap: 12px;
+    }
+
+    .dash-card-icone { font-size: 26px; }
+    .dash-card-num { font-size: 23px; }
+    .dash-card-label { font-size: 11px; }
+
+    .dash-grid { gap: 12px; }
+    .dash-bloco { padding: 14px 14px; }
+
+    .dash-pacientes-grid { grid-template-columns: 1fr; }
+
+    .dash-sessao-item { padding: 10px; }
+}

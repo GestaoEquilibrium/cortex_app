@@ -1,25 +1,57 @@
 {
     "name": "CORTEX — Equilibrium Med Center",
     "short_name": "CORTEX",
-    "description": "Sistema clínico de neuropsicologia",
+    "description": "Plataforma completa para avaliação neuropsicológica",
+    "id": "/frontend/",
+    "start_url": "/frontend/index.html",
+    "scope": "/frontend/",
+    "display": "standalone",
+    "lang": "pt-BR",
+    "dir": "ltr",
+    "categories": ["health", "medical", "productivity"],
+    "background_color": "#F1F5F9",
+    "theme_color": "#0c1f3f",
     "icons": [
         {
-            "src": "/favicon.svg",
-            "type": "image/svg+xml",
-            "sizes": "any"
+            "src": "/frontend/icon-192.png",
+            "type": "image/png",
+            "sizes": "192x192",
+            "purpose": "any"
         },
         {
-            "src": "/icon-192.png",
+            "src": "/frontend/icon-512.png",
             "type": "image/png",
-            "sizes": "192x192"
+            "sizes": "512x512",
+            "purpose": "any"
         },
         {
-            "src": "/icon-512.png",
+            "src": "/frontend/icon-192-maskable.png",
             "type": "image/png",
-            "sizes": "512x512"
+            "sizes": "192x192",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/frontend/icon-512-maskable.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "maskable"
         }
     ],
-    "theme_color": "#1a56db",
-    "background_color": "#ffffff",
-    "display": "standalone"
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "url": "/frontend/dashboard.html",
+            "icons": [{ "src": "/frontend/icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Pacientes",
+            "url": "/frontend/pacientes/lista.html",
+            "icons": [{ "src": "/frontend/icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Agenda",
+            "url": "/frontend/agenda/agenda.html",
+            "icons": [{ "src": "/frontend/icon-192.png", "sizes": "192x192" }]
+        }
+    ]
 }

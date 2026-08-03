@@ -926,3 +926,51 @@
     .laudo-historico-item { flex-direction: column; align-items: stretch; }
     .laudo-historico-acoes { justify-content: flex-start; }
 }
+
+
+/* ============================================================================
+   MOBILE — Sprint pwa_mobile
+   ============================================================================ */
+
+@media (max-width: 768px) {
+
+    /* ── Lista: filtros empilhados ── */
+    .lista-filtros { gap: 8px; margin-bottom: 14px; }
+    .lista-filtros-busca { min-width: 100%; }
+    .lista-filtros select { flex: 1 1 45%; }
+    .view-toggle { margin-left: auto; }
+
+    /* ── Cards de paciente em coluna única ── */
+    .pacientes-grid { grid-template-columns: 1fr !important; gap: 10px; }
+
+    /* ── Tabela: rolagem horizontal sem quebrar a página ── */
+    .pacientes-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .pacientes-table { min-width: 640px; }
+
+    /* ── Pasta do paciente ── */
+    .pasta-cabecalho {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 18px 16px;
+        gap: 14px;
+    }
+
+    .pasta-info { width: 100%; }
+    .pasta-nome { font-size: 20px; justify-content: center; }
+    .pasta-meta { justify-content: center; }
+    .pasta-actions { width: 100%; justify-content: center; }
+    .pasta-actions .btn { flex: 1 1 45%; }
+
+    /* Etapas: mantém rolagem horizontal, sem esticar */
+    .etapa { min-width: 92px; padding: 9px 10px; font-size: 12px; }
+
+    .etapa-content { padding: 16px 14px; }
+}
+
+@media (max-width: 420px) {
+    .pasta-actions .btn { flex: 1 1 100%; }
+}

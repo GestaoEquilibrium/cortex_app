@@ -1,8 +1,8 @@
-// Portal Equilibrium — Service Worker v3 (Sprint 37 — isolamento de sessão)
-// MUDANÇA v3: cache renomeado para forçar todos os browsers a baixarem
-// portal_login.js, portal.js, portal_trocar_senha.js com a nova storageKey.
+// Portal Equilibrium — Service Worker v4 (Sprint portal_v2 — redesign visual)
+// MUDANÇA v4: cache renomeado pra descartar portal.css/portal.html antigos
+// e forçar todos os browsers a baixarem o novo visual.
 
-const CACHE = 'portal-v3';
+const CACHE = 'portal-v4';
 const ASSETS = [
     './',
     './index.html',

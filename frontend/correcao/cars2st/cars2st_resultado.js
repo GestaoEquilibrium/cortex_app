@@ -41,9 +41,42 @@
 
     async function carregarTudo() {
         try {
-            const resp = await fetch('../cars2_norms.json?v=1', { cache: 'no-cache' });
+            const resp = await fetch('../cars2_norms.json?v=2', { cache: 'no-cache' });
             if (resp.ok) { CARS2_NORMS = await resp.json(); state.normSet = CARS2_NORMS?.instruments?.[SIGLA_ESPERADA] || null; }
         } catch (e) { console.warn('cars2_norms.json não carregado:', e); }
+
+        // ── Sprint cars2_tnorms ──────────────────────────────────────────
+        // O Escore-T saiu do JSON público e agora vem da tabela privada
+        // cars2_normas_tscore (RLS: leitura só autenticada). Cada linha da
+        // tabela espelha uma linha impressa do manual (T + faixas de bruto);
+        // aqui expandimos as faixas em passos de 0,5 pro by_raw que o
+        // lookupTscore já consome — nenhuma outra função muda.
+        try {
+            const { data: linhasT } = await window.cortexClient
+                .from('cars2_normas_tscore')
+                .select('tscore, bruto_all_min, bruto_all_max, bruto_2_12_min, bruto_2_12_max, bruto_13_min, bruto_13_max')
+                .eq('instrumento', SIGLA_ESPERADA)
+                .order('id', { ascending: true });   // determinístico: em raw duplicado, vence a linha de id maior
+            if (linhasT && linhasT.length && state.normSet) {
+                const byRaw = {};
+                const marcar = (min, max, grupo, t) => {
+                    if (min == null || max == null) return;
+                    // multiplica por 2 pra iterar em inteiros (sem erro de float)
+                    for (let b = Math.round(Number(min) * 2); b <= Math.round(Number(max) * 2); b++) {
+                        const chave = String(b / 2);
+                        if (!byRaw[chave]) byRaw[chave] = {};
+                        byRaw[chave][grupo] = t;
+                    }
+                };
+                for (const l of linhasT) {
+                    marcar(l.bruto_all_min,  l.bruto_all_max,  'all',     l.tscore);
+                    marcar(l.bruto_2_12_min, l.bruto_2_12_max, '2_12',    l.tscore);
+                    marcar(l.bruto_13_min,   l.bruto_13_max,   '13_mais', l.tscore);
+                }
+                if (!state.normSet.tscore) state.normSet.tscore = {};
+                state.normSet.tscore.by_raw = byRaw;
+            }
+        } catch (e) { console.warn('normas T CARS2 não carregadas:', e); }
 
         const { data: aplicacao, error: errA } = await window.cortexClient
             .from('aplicacoes_instrumento').select('*').eq('id', state.aplicacaoId).single();

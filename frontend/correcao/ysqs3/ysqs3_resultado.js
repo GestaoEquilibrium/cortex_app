@@ -401,16 +401,18 @@
                     <span class="laudo-secao-tag">7</span>
                     Esquemas Clinicamente Relevantes
                 </div>
-                <ul class="ysqs3-itens-criticos">
+                <div class="ysqs3-criticos-grid">
                     ${s.esquemasClinicos.map(e => `
-                        <li>
-                            <strong>${escapeHtml(e.nome)}</strong>
-                            — média <strong>${e.media.toFixed(2)}</strong>
-                            (${labelClassificacao(e.classificacao)})
-                            · ${DOMINIOS[e.dominio]}
-                        </li>
+                        <div class="ysqs3-critico-card" style="border-left-color:${corClassificacao(e.classificacao)};">
+                            <div class="ysqs3-critico-nome">${escapeHtml(e.nome)}</div>
+                            <div class="ysqs3-critico-meta">
+                                ${domBadge(e.dominio)}
+                                <span class="ysqs3-chip" style="background:${(CHIP_CLASSIF[e.classificacao] || CHIP_CLASSIF.ausente).bg};color:${(CHIP_CLASSIF[e.classificacao] || CHIP_CLASSIF.ausente).fg};">média ${e.media.toFixed(2)}</span>
+                                <span class="ysqs3-critico-classif" style="color:${corClassificacao(e.classificacao)};">${labelClassificacao(e.classificacao)}</span>
+                            </div>
+                        </div>
                     `).join('')}
-                </ul>
+                </div>
                 ` : ''}
 
             </div>
@@ -454,17 +456,48 @@
         `;
     }
 
+    // ── Sprint laudos_padrao: cores por domínio + chips de intensidade ──────
+    const DOM_COR = {
+        D1: { cor: '#2F6FED', grad: 'linear-gradient(135deg,#3b82f6,#1d4fd8)' },
+        D2: { cor: '#7C4DFF', grad: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' },
+        D3: { cor: '#F59E0B', grad: 'linear-gradient(135deg,#fbbf24,#d97706)' },
+        D4: { cor: '#22C55E', grad: 'linear-gradient(135deg,#34d399,#16a34a)' },
+        D5: { cor: '#EC4899', grad: 'linear-gradient(135deg,#f472b6,#db2777)' }
+    };
+    const CHIP_CLASSIF = {
+        ausente:       { bg: '#f1f5f9', fg: '#475569' },
+        leve:          { bg: '#e2e8f0', fg: '#334155' },
+        moderado:      { bg: '#fef3c7', fg: '#92400e' },
+        intenso:       { bg: '#ffedd5', fg: '#c2410c' },
+        muito_intenso: { bg: '#fee2e2', fg: '#991b1b' }
+    };
+
+    function domBadge(d) {
+        const c = (DOM_COR[d] || {}).cor || '#64748b';
+        return `<span class="ysqs3-dom-badge" style="background:${c};">${d}</span>`;
+    }
+
+    function chipMedia(media, classif) {
+        const c = CHIP_CLASSIF[classif] || CHIP_CLASSIF.ausente;
+        const pct = Math.max(0, Math.min(100, ((media - 1) / 5) * 100));
+        return `
+            <div class="ysqs3-media-celula">
+                <span class="ysqs3-chip" style="background:${c.bg};color:${c.fg};">${media.toFixed(2)}</span>
+                <span class="ysqs3-mini-barra"><span style="width:${pct.toFixed(0)}%;background:${corClassificacao(classif)};"></span></span>
+            </div>`;
+    }
+
     function renderTabelaEsquemas() {
         const linhas = state.scores.esquemasOrdenados.map(e => {
             const cor = corClassificacao(e.classificacao);
             return `
                 <tr ${e.acimaCorte ? 'class="linha-critica"' : ''}>
-                    <td class="td-num">${e.dominio}</td>
+                    <td class="td-num">${domBadge(e.dominio)}</td>
                     <td>${escapeHtml(e.nome)}</td>
                     <td class="td-resposta">${e.soma}</td>
-                    <td class="td-resposta" style="color:${cor};font-weight:700;">${e.media.toFixed(2)}</td>
-                    <td class="td-label" style="color:${cor};">${labelClassificacao(e.classificacao)}</td>
-                    <td class="td-resposta">${e.acimaCorte ? '✓' : '—'}</td>
+                    <td class="td-resposta">${chipMedia(e.media, e.classificacao)}</td>
+                    <td class="td-label"><span class="ysqs3-int-pill" style="background:${cor}1a;color:${cor};border:1px solid ${cor}55;">${labelClassificacao(e.classificacao)}</span></td>
+                    <td class="td-resposta">${e.acimaCorte ? '<span class="ysqs3-check-pill">✓ clínico</span>' : '<span style="color:#cbd5e1;">—</span>'}</td>
                 </tr>
             `;
         }).join('');
@@ -487,30 +520,25 @@
     }
 
     function renderTabelaDominios() {
-        const linhas = Object.values(state.scores.porDominio).map(d => `
-            <tr ${d.qtdAcimaCorte > 0 ? 'class="linha-critica"' : ''}>
-                <td class="td-num">${d.codigo}</td>
-                <td>${escapeHtml(d.nome)}</td>
-                <td class="td-resposta">${d.esquemas.length}</td>
-                <td class="td-resposta">${d.mediaDominio.toFixed(2)}</td>
-                <td class="td-resposta" style="font-weight:700;color:${d.qtdAcimaCorte > 0 ? '#dc2626' : '#16a34a'};">${d.qtdAcimaCorte}</td>
-            </tr>
-        `).join('');
-
-        return `
-            <table class="ysqs3-tabela-itens">
-                <thead>
-                    <tr>
-                        <th>Domínio</th>
-                        <th>Nome</th>
-                        <th>Esquemas</th>
-                        <th>Média</th>
-                        <th>Clínicos</th>
-                    </tr>
-                </thead>
-                <tbody>${linhas}</tbody>
-            </table>
-        `;
+        // Sprint laudos_padrao: cards coloridos por domínio (antes era tabela)
+        const cards = Object.values(state.scores.porDominio).map(d => {
+            const cfg = DOM_COR[d.codigo] || { grad: '#64748b', cor: '#64748b' };
+            const temClinico = d.qtdAcimaCorte > 0;
+            return `
+                <div class="ysqs3-dom-card">
+                    <div class="ysqs3-dom-card-topo" style="background:${cfg.grad};">
+                        <span class="ysqs3-dom-card-cod">${d.codigo}</span>
+                        <span class="ysqs3-dom-card-nome">${escapeHtml(d.nome)}</span>
+                    </div>
+                    <div class="ysqs3-dom-card-corpo">
+                        <div class="ysqs3-dom-card-media">${d.mediaDominio.toFixed(2)}<span>média</span></div>
+                        <div class="ysqs3-dom-card-meta">${d.esquemas.length} esquemas</div>
+                        <div class="ysqs3-dom-card-clin ${temClinico ? 'tem' : ''}">${temClinico ? d.qtdAcimaCorte + ' clínico' + (d.qtdAcimaCorte > 1 ? 's' : '') : 'nenhum clínico'}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        return `<div class="ysqs3-dominios-cards">${cards}</div>`;
     }
 
     // ============================================================================

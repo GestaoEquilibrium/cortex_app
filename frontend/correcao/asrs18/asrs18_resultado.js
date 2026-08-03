@@ -255,6 +255,8 @@
                     </div>
                 </div>
 
+                ${renderNiveis()}
+
                 <div class="laudo-secao-titulo">
                     <span class="laudo-secao-tag">3</span>
                     Pontuação por Parte
@@ -278,13 +280,13 @@
                     <span class="laudo-secao-tag">5</span>
                     Detalhamento — Parte A (Desatenção)
                 </div>
-                ${renderTabelaItens(s.itensParteA)}
+                ${renderTabelaItens(s.itensParteA, 'a')}
 
                 <div class="laudo-secao-titulo">
                     <span class="laudo-secao-tag">6</span>
                     Detalhamento — Parte B (Hiperatividade/Impulsividade)
                 </div>
-                ${renderTabelaItens(s.itensParteB)}
+                ${renderTabelaItens(s.itensParteB, 'b')}
 
                 <div class="laudo-secao-titulo">
                     <span class="laudo-secao-tag">7</span>
@@ -308,6 +310,47 @@
             </div>
         </div>
         `;
+    }
+
+    // ── Sprint laudos_padrao: veredito colorido + chips ─────────────────────
+    function renderNiveis() {
+        const s = state.scores;
+        const pos = s.positivoTotal;
+        return `
+            <div class="asrs18-nivel-bloco">
+                <div class="asrs18-niveis-grid">
+                    <div class="asrs18-nivel-card ${!pos ? 'ativo' : ''}" ${!pos ? 'style="border-color:#16a34a;"' : ''}>
+                        <div class="asrs18-nivel-dot" style="background:#16a34a;"></div>
+                        <div class="asrs18-nivel-nome">Não sugestivo</div>
+                        <div class="asrs18-nivel-faixa">0 – ${CORTE_TOTAL - 1} pontos</div>
+                        ${!pos ? `<div class="asrs18-nivel-voce" style="color:#16a34a;">● seu resultado: ${s.totalGeral}</div>` : ''}
+                    </div>
+                    <div class="asrs18-nivel-card ${pos ? 'ativo' : ''}" ${pos ? 'style="border-color:#dc2626;"' : ''}>
+                        <div class="asrs18-nivel-dot" style="background:#dc2626;"></div>
+                        <div class="asrs18-nivel-nome">Sugestivo de TDAH</div>
+                        <div class="asrs18-nivel-faixa">≥ ${CORTE_TOTAL} pontos</div>
+                        ${pos ? `<div class="asrs18-nivel-voce" style="color:#dc2626;">● seu resultado: ${s.totalGeral}</div>` : ''}
+                    </div>
+                </div>
+                <div class="asrs18-nivel-expl" style="border-left-color:${pos ? '#dc2626' : '#16a34a'};">
+                    Total geral <strong>${s.totalGeral}</strong> de 72 · Parte A (Desatenção) <strong>${s.totalParteA}</strong>/36 ·
+                    Parte B (Hiperatividade/Impulsividade) <strong>${s.totalParteB}</strong>/36 · corte da versão americana ≥ ${CORTE_TOTAL}.
+                </div>
+            </div>
+        `;
+    }
+
+    const CHIP_VALOR = [
+        { bg: '#e2e8f0', fg: '#475569' },
+        { bg: '#dbeafe', fg: '#1e40af' },
+        { bg: '#fef3c7', fg: '#92400e' },
+        { bg: '#ffedd5', fg: '#c2410c' },
+        { bg: '#fee2e2', fg: '#991b1b' }
+    ];
+
+    function chipValor(v) {
+        const c = CHIP_VALOR[v] || CHIP_VALOR[0];
+        return `<span class="asrs18-chip" style="background:${c.bg};color:${c.fg};">${v}</span>`;
     }
 
     function renderInterpretacao() {
@@ -355,18 +398,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Parte A — Desatenção</td>
+                    <tr class="linha-parte-a">
+                        <td><span class="asrs18-parte-badge badge-a">A</span> Desatenção</td>
                         <td class="td-resposta">9</td>
-                        <td class="td-resposta" style="font-weight:700;">${s.totalParteA}</td>
+                        <td class="td-resposta"><span class="asrs18-num-forte">${s.totalParteA}</span></td>
                         <td class="td-resposta">36</td>
                         <td class="td-resposta">—</td>
                         <td class="td-resposta" style="color:#64748b;">informativo</td>
                     </tr>
-                    <tr>
-                        <td>Parte B — Hiperatividade/Impulsividade</td>
+                    <tr class="linha-parte-b">
+                        <td><span class="asrs18-parte-badge badge-b">B</span> Hiperatividade/Impulsividade</td>
                         <td class="td-resposta">9</td>
-                        <td class="td-resposta" style="font-weight:700;">${s.totalParteB}</td>
+                        <td class="td-resposta"><span class="asrs18-num-forte">${s.totalParteB}</span></td>
                         <td class="td-resposta">36</td>
                         <td class="td-resposta">—</td>
                         <td class="td-resposta" style="color:#64748b;">informativo</td>
@@ -374,17 +417,17 @@
                     <tr ${s.positivoTotal ? 'class="linha-critica"' : ''}>
                         <td><strong>Total Geral</strong></td>
                         <td class="td-resposta">18</td>
-                        <td class="td-resposta" style="font-weight:700;">${s.totalGeral}</td>
+                        <td class="td-resposta"><span class="asrs18-num-forte">${s.totalGeral}</span></td>
                         <td class="td-resposta">72</td>
                         <td class="td-resposta">≥ ${CORTE_TOTAL}</td>
-                        <td class="td-resposta" style="font-weight:700;color:${s.positivoTotal ? '#dc2626' : '#16a34a'};">${s.positivoTotal ? 'POSITIVO' : 'Negativo'}</td>
+                        <td class="td-resposta"><span class="asrs18-res-pill ${s.positivoTotal ? 'pos' : 'neg'}">${s.positivoTotal ? 'POSITIVO' : 'Negativo'}</span></td>
                     </tr>
                 </tbody>
             </table>
         `;
     }
 
-    function renderTabelaItens(itens) {
+    function renderTabelaItens(itens, parte) {
         const labels = state.norma.answer_labels || [];
         const linhas = itens.map(it => {
             const labelResp = labels[it.valor] !== undefined ? labels[it.valor] : '—';
@@ -392,14 +435,14 @@
                 <tr>
                     <td class="td-num">${it.numero}</td>
                     <td>${escapeHtml(it.texto)}</td>
-                    <td class="td-resposta" style="font-weight:700;">${it.valor}</td>
-                    <td class="td-label">${escapeHtml(labelResp)}</td>
+                    <td class="td-resposta">${chipValor(it.valor)}</td>
+                    <td class="td-label"><span class="asrs18-freq-pill">${escapeHtml(labelResp)}</span></td>
                 </tr>
             `;
         }).join('');
 
         return `
-            <table class="asrs18-tabela-itens">
+            <table class="asrs18-tabela-itens ${parte === 'b' ? 'asrs18-tab-b' : 'asrs18-tab-a'}">
                 <thead>
                     <tr>
                         <th>Item</th>

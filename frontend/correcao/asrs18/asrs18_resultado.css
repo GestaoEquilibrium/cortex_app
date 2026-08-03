@@ -152,3 +152,133 @@
     .asrs18-tabela-itens th:nth-child(4),
     .asrs18-tabela-itens .td-label { display: none; }
 }
+
+/* ============================================================================
+   Sprint laudos_padrao — padrão visual Modelo 2 (BAI/BDI-II)
+   ============================================================================ */
+
+/* ─── Painel de veredito (faixas coloridas) ─── */
+.asrs18-nivel-bloco { margin-bottom: 8px; }
+
+.asrs18-niveis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.asrs18-nivel-card {
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    position: relative;
+}
+
+.asrs18-nivel-card.ativo {
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.10);
+    background: #fafcff;
+}
+
+.asrs18-nivel-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    position: absolute;
+    top: 16px; right: 14px;
+}
+
+.asrs18-nivel-nome { font-weight: 700; font-size: 14px; color: #0f172a; }
+.asrs18-nivel-faixa { font-size: 12px; color: #64748b; margin-top: 2px; }
+.asrs18-nivel-voce { font-size: 12.5px; font-weight: 700; margin-top: 8px; }
+
+.asrs18-nivel-expl {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0c1f3f;
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 12.5px;
+    color: #334155;
+    line-height: 1.6;
+}
+
+/* ─── Tabelas no padrão (cabeçalho navy, zebra, cantos arredondados) ─── */
+.asrs18-tabela-itens {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+
+.asrs18-tabela-itens thead { background: #0c1f3f; }
+.asrs18-tabela-itens th {
+    color: #fff;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    border-bottom: none;
+}
+
+.asrs18-tab-a thead { background: linear-gradient(120deg, #1d4fd8, #3b82f6); }
+.asrs18-tab-b thead { background: linear-gradient(120deg, #6d28d9, #8b5cf6); }
+
+.asrs18-tabela-itens tbody tr:nth-child(even) { background: #f8fafc; }
+.asrs18-tabela-itens tbody tr.linha-critica { background: #fef9ec; }
+.asrs18-tabela-itens tbody tr.linha-critica td { border-top: 1px solid #fbdf9a; }
+
+.linha-parte-a td:first-child { border-left: 4px solid #3b82f6; }
+.linha-parte-b td:first-child { border-left: 4px solid #8b5cf6; }
+
+/* ─── Chips e pills ─── */
+.asrs18-parte-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 11.5px;
+    margin-right: 7px;
+    vertical-align: middle;
+}
+.asrs18-parte-badge.badge-a { background: linear-gradient(135deg, #3b82f6, #1d4fd8); }
+.asrs18-parte-badge.badge-b { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+
+.asrs18-num-forte { font-weight: 800; font-size: 14px; color: #0f172a; }
+
+.asrs18-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.asrs18-freq-pill {
+    display: inline-block;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.asrs18-res-pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+}
+.asrs18-res-pill.pos { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.asrs18-res-pill.neg { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+
+@media (max-width: 640px) {
+    .asrs18-niveis-grid { grid-template-columns: 1fr; }
+}

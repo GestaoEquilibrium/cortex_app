@@ -79,12 +79,17 @@
         if (!cr) return { acertos: 0, erros: 0, omissoes: 0, ultima: -1, total: 0 };
         const ultima = marc.size ? Math.max(...marc) : -1;   // extensão = última marcação
         let acertos = 0, erros = 0, omissoes = 0;
+        // Regra do manual (sprint bpa2_acertos): ACERTOS = todos os alvos do
+        // crivo até a última marcação, sem tirar nada — inclusive os não
+        // assinalados (que seguem contados também como Omissões).
         for (const i of marc) {
-            if (cr.alvos.has(i)) acertos++;
-            else erros++;
+            if (!cr.alvos.has(i)) erros++;
         }
         for (const alvo of cr.alvos) {
-            if (alvo <= ultima && !marc.has(alvo)) omissoes++;
+            if (alvo <= ultima) {
+                acertos++;
+                if (!marc.has(alvo)) omissoes++;
+            }
         }
         return { acertos, erros, omissoes, ultima, total: cr.alvos.size };
     }
@@ -109,8 +114,9 @@
 
             <div class="bpa2-aviso">
                 🔒 O crivo (posições-alvo) é fixo e não pode ser alterado aqui. Marque apenas as
-                respostas do paciente — as células que ele assinalou. As omissões são contadas
-                só até a sua última marcação.
+                respostas do paciente — as células que ele assinalou. Contagem até a última
+                marcação: Acertos = todos os alvos do crivo nesse trecho (mesmo os não
+                assinalados) e Omissões = alvos não assinalados nesse trecho.
             </div>
 
             <div class="bpa2-tabs">

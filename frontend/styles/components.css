@@ -1163,3 +1163,62 @@
     .app-main { padding-left: 12px; padding-right: 12px; }
     .page-title h1 { font-size: 19px; }
 }
+
+
+/* ============================================================================
+   APP DESKTOP — Sprint app_titlebar (Window Controls Overlay)
+   Quando instalado como app no Chrome/Edge desktop, a barra nativa some e a
+   faixa .cortex-wco-bar assume: navy, arrastável, com a marca. Os controles
+   nativos (min/max/fechar) ficam sobrepostos no canto e herdam o theme_color
+   navy do manifest — visual contínuo. Ativado só por html.wco (titlebar.js).
+   ============================================================================ */
+
+.cortex-wco-bar { display: none; }
+
+html.wco .cortex-wco-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(titlebar-area-height, 33px);
+    background: #0c1f3f;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding-left: calc(env(titlebar-area-x, 0px) + 12px);
+    z-index: 500;
+    -webkit-app-region: drag;
+    app-region: drag;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+html.wco .cortex-wco-bar svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    opacity: 0.95;
+}
+
+/* Empurra todo o app pra baixo da faixa */
+html.wco body {
+    padding-top: env(titlebar-area-height, 33px);
+}
+
+/* Sidebar sticky respeita a faixa (senão fica 33px maior que a janela) */
+html.wco .sidebar {
+    top: env(titlebar-area-height, 33px);
+    height: calc(100vh - env(titlebar-area-height, 33px));
+}
+
+/* Se o overlay estiver ativo numa janela estreita (raro), a topbar mobile
+   também desce pra não ficar por baixo da faixa */
+@media (max-width: 768px) {
+    html.wco .cortex-topbar {
+        top: env(titlebar-area-height, 33px);
+    }
+}

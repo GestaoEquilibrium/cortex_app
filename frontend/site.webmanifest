@@ -5,6 +5,7 @@
     "id": "/frontend/",
     "start_url": "/frontend/index.html",
     "scope": "/frontend/",
+    "display_override": ["window-controls-overlay"],
     "display": "standalone",
     "lang": "pt-BR",
     "dir": "ltr",

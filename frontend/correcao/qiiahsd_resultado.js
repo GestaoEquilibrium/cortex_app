@@ -34,6 +34,15 @@
     const esc = (t) => { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; };
     const fmt = (n) => (n == null || isNaN(n)) ? '—' : (Math.round(n * 100) / 100).toString().replace('.', ',');
 
+    function calcularIdade(nascISO) {
+        if (!nascISO) return null;
+        const n = new Date(nascISO), h = new Date();
+        let a = h.getFullYear() - n.getFullYear();
+        const m = h.getMonth() - n.getMonth();
+        if (m < 0 || (m === 0 && h.getDate() < n.getDate())) a--;
+        return a >= 0 && a < 130 ? a : null;
+    }
+
     window.addEventListener('cortex:auth-ready', async () => {
         await CortexSidebar.render('pacientes');
         const p = new URLSearchParams(location.search);
@@ -63,13 +72,13 @@
         state.instrumento = inst;
 
         const { data: paciente } = await cli
-            .from('pacientes').select('id, nome_completo, data_nascimento, idade_humanizada, sexo')
-            .eq('id', aplicacao.paciente_id).single();
+            .from('pacientes').select('id, nome_completo, data_nascimento, sexo')
+            .eq('id', aplicacao.paciente_id).maybeSingle();
         state.paciente = paciente || {};
 
         const { data: norma } = await cli
             .from('instrumentos_normas').select('*')
-            .eq('instrumento_id', inst.id).eq('ativa', true).single();
+            .eq('instrumento_id', inst.id).eq('ativa', true).limit(1).maybeSingle();
         state.norma = norma;
 
         const { data: fatores } = await cli
@@ -101,7 +110,8 @@
         if (!apl) return;
 
         const { data: normaIrma } = await cli
-            .from('instrumentos_normas').select('id').eq('instrumento_id', instIrma.id).eq('ativa', true).single();
+            .from('instrumentos_normas').select('id').eq('instrumento_id', instIrma.id).eq('ativa', true).limit(1).maybeSingle();
+        if (!normaIrma) return;
         const { data: itensIrma } = await cli
             .from('instrumentos_itens').select('numero, fator_id').eq('norma_id', normaIrma.id);
         const { data: fatIrma } = await cli
@@ -156,6 +166,8 @@
         const ehAuto = !inst.sigla.endsWith('-2F');
         const rotuloEste = ehAuto ? 'Autorrelato' : '2ª fonte';
         const rotuloIrma = ehAuto ? '2ª fonte' : 'Autorrelato';
+        const idade = calcularIdade(p.data_nascimento);
+        const idadeStr = idade != null ? idade + ' anos' : '—';
 
         const cards = state.fatores.map(f => {
             const d = perfil[f.fator_codigo] || { media: null, n: 0, dist: [0,0,0,0,0] };
@@ -183,7 +195,7 @@
         <div class="resultado-acoes-topo"><button class="btn btn-primary" id="btn-pdf">📄 Gerar PDF</button></div>
 
         <div class="laudo">
-            <div class="laudo-header" style="background:linear-gradient(135deg,#6d28d9,#8b5cf6)">
+            <div class="laudo-header">
                 <div class="laudo-header-esq">
                     <div class="laudo-header-logo">E</div>
                     <div class="laudo-header-textos">
@@ -198,7 +210,7 @@
                 <div class="laudo-secao-titulo"><span class="laudo-secao-tag">1</span> Identificação</div>
                 <div class="laudo-identificacao">
                     <div class="laudo-identif-item"><span class="laudo-identif-label">Nome:</span><span class="laudo-identif-valor">${esc(p.nome_completo || '—')}</span></div>
-                    <div class="laudo-identif-item"><span class="laudo-identif-label">Idade:</span><span class="laudo-identif-valor">${esc(p.idade_humanizada || '—')}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Idade:</span><span class="laudo-identif-valor">${idadeStr}</span></div>
                     <div class="laudo-identif-item"><span class="laudo-identif-label">Fonte:</span><span class="laudo-identif-valor">${rotuloEste}</span></div>
                 </div>
 
@@ -238,6 +250,11 @@
         if (bl) bl.addEventListener('click', (e) => { e.preventDefault(); history.back(); });
         document.getElementById('btn-pdf').addEventListener('click', gerarPDF);
         desenharGrafico(perfil, irma, rotuloEste, rotuloIrma);
+
+        // Botões de copiar imagem (câmera no header + laudo inteiro), como nos demais laudos
+        if (window.CortexCopy && typeof window.CortexCopy.aplicar === 'function') {
+            try { window.CortexCopy.aplicar(); } catch (e) { /* silencioso */ }
+        }
     }
 
     function desenharGrafico(perfil, irma, rotuloEste, rotuloIrma) {

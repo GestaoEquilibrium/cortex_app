@@ -1,16 +1,21 @@
+/* QIIAHSD — folha de resultado · paleta padrão CORTEX (azul-marinho) */
 .q-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:8px 0 6px}
-@media(max-width:720px){.q-cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.q-cards{grid-template-columns:repeat(2,1fr)}}
 .q-card{background:#fff;border:1.5px solid var(--slate-200);border-radius:14px;padding:12px 14px}
-.q-card-area{font-size:.74rem;font-weight:600;color:var(--slate-500);min-height:2.2em}
-.q-card-media{font-size:1.7rem;font-weight:800;color:#6d28d9;line-height:1;margin-top:6px}
+.q-card-area{font-size:.74rem;font-weight:600;color:var(--slate-500);min-height:2.4em;line-height:1.25}
+.q-card-media{font-size:1.7rem;font-weight:800;color:var(--primary-blue);line-height:1;margin-top:6px}
 .q-card-media span{font-size:.8rem;color:var(--slate-400);font-weight:600}
-.q-card-n{font-size:.7rem;color:var(--slate-400);margin-top:4px}
-.q-grafico-wrap{height:260px;background:#fff;border:1px solid var(--slate-100);border-radius:12px;padding:10px;margin:6px 0 14px}
-.q-tabela{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:.86rem}
-.q-tabela th,.q-tabela td{padding:8px 10px;border-bottom:1px solid var(--slate-100);text-align:left}
-.q-tabela th{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-500)}
+.q-card-bar{height:7px;border-radius:6px;background:var(--slate-100);margin:8px 0 6px;overflow:hidden}
+.q-card-bar span{display:block;height:100%;border-radius:6px;background:var(--primary-blue)}
+.q-card-n{font-size:.7rem;color:var(--slate-400)}
+.q-grafico-wrap{height:300px;background:#fff;border:1px solid var(--slate-100);border-radius:12px;padding:12px;margin:6px 0 14px;position:relative}
+.q-tabela{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:.86rem}
+.q-tabela th,.q-tabela td{padding:9px 10px;border-bottom:1px solid var(--slate-100);text-align:left}
+.q-tabela thead th{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-500);background:var(--primary-blue-50)}
+.q-tabela tbody tr:hover{background:var(--primary-blue-50)}
 .q-tabela .ctr{text-align:center}
+.q-tabela .q-hi{background:var(--primary-blue-100);font-weight:700;color:var(--primary-blue)}
 .q-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px}
-.q-nota{background:#f5f3ff;border:1px solid #ddd6fe;color:#5b21b6;border-radius:12px;padding:12px 14px;font-size:.82rem;line-height:1.5}
+.q-nota{background:var(--primary-blue-50);border:1px solid var(--primary-blue-100);color:var(--primary-blue);border-radius:12px;padding:12px 14px;font-size:.82rem;line-height:1.5}
 .q-erro{text-align:center;color:var(--slate-500);padding:48px 20px}
 .q-erro-ic{font-size:2.2rem;margin-bottom:8px}

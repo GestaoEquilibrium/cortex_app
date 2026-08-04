@@ -28,7 +28,14 @@
         respostas: {},           // { numero: valor(1..5) }
         irma: null,              // { sigla, respostas, itensPorFator } da versão-irmã (se houver)
         chart: null,
+        chartDist: null,
+        aplicadorNome: null,
     };
+
+    function fmtData(iso) {
+        if (!iso) return '—';
+        try { const d = new Date(iso); return d.toLocaleDateString('pt-BR'); } catch { return '—'; }
+    }
 
     const c = () => window.cortexClient;
     const esc = (t) => { const d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; };
@@ -72,9 +79,17 @@
         state.instrumento = inst;
 
         const { data: paciente } = await cli
-            .from('pacientes').select('id, nome_completo, data_nascimento, sexo')
+            .from('pacientes').select('id, nome_completo, data_nascimento, sexo, cpf, escolaridade')
             .eq('id', aplicacao.paciente_id).maybeSingle();
         state.paciente = paciente || {};
+
+        // aplicador/profissional (nome), se houver vínculo na aplicação
+        state.aplicadorNome = aplicacao.aplicador_nome || aplicacao.criado_por_nome || null;
+        if (!state.aplicadorNome && aplicacao.aplicador_id) {
+            const { data: prof } = await cli
+                .from('profissionais').select('nome_completo').eq('id', aplicacao.aplicador_id).maybeSingle();
+            state.aplicadorNome = prof?.nome_completo || null;
+        }
 
         const { data: norma } = await cli
             .from('instrumentos_normas').select('*')
@@ -169,32 +184,47 @@
         const idade = calcularIdade(p.data_nascimento);
         const idadeStr = idade != null ? idade + ' anos' : '—';
 
+        const maxN = Math.max(1, ...state.fatores.map(f => (perfil[f.fator_codigo]?.n || 0)));
+
         const cards = state.fatores.map(f => {
             const d = perfil[f.fator_codigo] || { media: null, n: 0, dist: [0,0,0,0,0] };
+            const pct = d.media != null ? Math.round(((d.media - 1) / 4) * 100) : 0;
             return `
-            <div class="q-card" style="border-top:4px solid ${f.cor_hex || '#3b82f6'}">
+            <div class="q-card" style="border-top:4px solid ${f.cor_hex || 'var(--primary-blue)'}">
                 <div class="q-card-area">${esc(f.fator_label)}</div>
                 <div class="q-card-media">${fmt(d.media)}<span>/5</span></div>
-                <div class="q-card-n">${d.n} itens</div>
+                <div class="q-card-bar"><span style="width:${pct}%;background:${f.cor_hex || 'var(--primary-blue)'}"></span></div>
+                <div class="q-card-n">${d.n} itens respondidos</div>
             </div>`;
         }).join('');
 
         const linhas = state.fatores.map(f => {
-            const d = perfil[f.fator_codigo] || { media: null, n: 0 };
+            const d = perfil[f.fator_codigo] || { media: null, n: 0, soma: 0 };
             const mi = irma ? irma[f.fator_codigo] : undefined;
             return `<tr>
                 <td><span class="q-dot" style="background:${f.cor_hex}"></span>${esc(f.fator_label)}</td>
                 <td class="ctr">${d.n}</td>
+                <td class="ctr">${d.soma || '—'}</td>
                 <td class="ctr"><b>${fmt(d.media)}</b></td>
                 ${irma ? `<td class="ctr">${mi === undefined ? '—' : fmt(mi)}</td>` : ''}
             </tr>`;
+        }).join('');
+
+        // Distribuição Nunca→Sempre por área (contagem de respostas em cada nível)
+        const linhasDist = state.fatores.map(f => {
+            const d = perfil[f.fator_codigo] || { dist: [0,0,0,0,0] };
+            const cels = d.dist.map((c, idx) => {
+                const forte = idx >= 3 && c > 0;
+                return `<td class="ctr ${forte ? 'q-hi' : ''}">${c || '—'}</td>`;
+            }).join('');
+            return `<tr><td><span class="q-dot" style="background:${f.cor_hex}"></span>${esc(f.fator_label)}</td>${cels}</tr>`;
         }).join('');
 
         document.getElementById('laudo-conteudo').innerHTML = `
         <a href="#" id="back-link" class="page-back">‹ Voltar à Bateria</a>
         <div class="resultado-acoes-topo"><button class="btn btn-primary" id="btn-pdf">📄 Gerar PDF</button></div>
 
-        <div class="laudo">
+        <div class="laudo" data-copiavel data-copy-nome="QIIAHSD ${rotuloEste} - ${esc(p.nome_completo || '')}">
             <div class="laudo-header">
                 <div class="laudo-header-esq">
                     <div class="laudo-header-logo">E</div>
@@ -211,18 +241,31 @@
                 <div class="laudo-identificacao">
                     <div class="laudo-identif-item"><span class="laudo-identif-label">Nome:</span><span class="laudo-identif-valor">${esc(p.nome_completo || '—')}</span></div>
                     <div class="laudo-identif-item"><span class="laudo-identif-label">Idade:</span><span class="laudo-identif-valor">${idadeStr}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Sexo:</span><span class="laudo-identif-valor">${esc(p.sexo || '—')}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Nascimento:</span><span class="laudo-identif-valor">${fmtData(p.data_nascimento)}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">CPF:</span><span class="laudo-identif-valor">${esc(p.cpf || '—')}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Escolaridade:</span><span class="laudo-identif-valor">${esc(p.escolaridade || '—')}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Avaliação:</span><span class="laudo-identif-valor">${fmtData(state.aplicacao.data_aplicacao || state.aplicacao.data_conclusao)}</span></div>
+                    <div class="laudo-identif-item"><span class="laudo-identif-label">Aplicador:</span><span class="laudo-identif-valor">${esc(state.aplicadorNome || '—')}</span></div>
                     <div class="laudo-identif-item"><span class="laudo-identif-label">Fonte:</span><span class="laudo-identif-valor">${rotuloEste}</span></div>
                 </div>
 
                 <div class="laudo-secao-titulo"><span class="laudo-secao-tag">2</span> Perfil por Área (média das respostas)</div>
-                <div class="q-cards">${cards}</div>
+                <div class="q-cards" data-copiavel data-copy-nome="QIIAHSD perfil por area">${cards}</div>
 
                 <div class="laudo-secao-titulo"><span class="laudo-secao-tag">3</span> ${irma ? 'Comparativo entre fontes' : 'Médias por área'}</div>
-                <div class="q-grafico-wrap"><canvas id="q-chart"></canvas></div>
+                <div class="q-grafico-wrap" data-copiavel data-copy-nome="QIIAHSD grafico areas"><canvas id="q-chart"></canvas></div>
 
                 <table class="q-tabela">
-                    <thead><tr><th>Área</th><th class="ctr">Itens</th><th class="ctr">${rotuloEste} (média)</th>${irma ? `<th class="ctr">${rotuloIrma} (média)</th>` : ''}</tr></thead>
+                    <thead><tr><th>Área</th><th class="ctr">Itens</th><th class="ctr">Soma</th><th class="ctr">${rotuloEste} (média)</th>${irma ? `<th class="ctr">${rotuloIrma} (média)</th>` : ''}</tr></thead>
                     <tbody>${linhas}</tbody>
+                </table>
+
+                <div class="laudo-secao-titulo"><span class="laudo-secao-tag">4</span> Distribuição das respostas por área</div>
+                <div class="q-grafico-wrap" data-copiavel data-copy-nome="QIIAHSD distribuicao"><canvas id="q-chart-dist"></canvas></div>
+                <table class="q-tabela">
+                    <thead><tr><th>Área</th>${NIVEL_LABELS.map(l => `<th class="ctr">${l}</th>`).join('')}</tr></thead>
+                    <tbody>${linhasDist}</tbody>
                 </table>
 
                 <div class="q-nota">
@@ -262,7 +305,7 @@
         if (!ctx || !window.Chart) return;
         const labels = state.fatores.map(f => f.fator_label);
         const dadosEste = state.fatores.map(f => (perfil[f.fator_codigo]?.media ?? null));
-        const cores = state.fatores.map(f => f.cor_hex || '#8b5cf6');
+        const cores = state.fatores.map(f => f.cor_hex || '#0c1f3f');
         const datasets = [{ label: rotuloEste, data: dadosEste, backgroundColor: cores }];
         if (irma) {
             datasets.push({
@@ -278,6 +321,30 @@
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                 scales: { x: { min: 1, max: 5, ticks: { stepSize: 1 } } },
                 plugins: { legend: { display: !!irma } }
+            }
+        });
+
+        desenharDistribuicao(perfil);
+    }
+
+    // Gráfico de distribuição: barras empilhadas Nunca→Sempre por área
+    function desenharDistribuicao(perfil) {
+        const ctx = document.getElementById('q-chart-dist');
+        if (!ctx || !window.Chart) return;
+        const labels = state.fatores.map(f => f.fator_label);
+        const CORES_NIVEL = ['#d6dde9', '#adbbd2', '#6f80a3', '#1e3a6f', '#0c1f3f']; // tons do azul CORTEX
+        const datasets = NIVEL_LABELS.map((lbl, idx) => ({
+            label: lbl,
+            data: state.fatores.map(f => (perfil[f.fator_codigo]?.dist?.[idx] ?? 0)),
+            backgroundColor: CORES_NIVEL[idx],
+        }));
+        state.chartDist = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                scales: { x: { stacked: true, ticks: { stepSize: 1 } }, y: { stacked: true } },
+                plugins: { legend: { position: 'bottom' } }
             }
         });
     }

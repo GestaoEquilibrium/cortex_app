@@ -21,6 +21,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="CORTEX">
     <script defer src="../shared/titlebar.js"></script>
+<style>.form-input.input-erro{border-color:#dc2626 !important;box-shadow:0 0 0 2px rgba(220,38,38,.15)}</style>
 </head>
 <body>
     <div class="app-shell">
@@ -186,8 +187,9 @@
                     </p>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Nome da mãe</label>
+                            <label class="form-label">Nome da mãe <span class="required" id="mae-obrig" style="display:none;">*</span></label>
                             <input type="text" class="form-input" name="mae_nome" maxlength="200">
+                            <p class="form-help" id="mae-obrig-hint" style="display:none; color:#b45309; margin-top:4px;">Obrigatório para paciente menor de idade.</p>
                         </div>
 
                         <div class="form-group">
@@ -351,6 +353,29 @@
         }
 
         document.getElementById('form-paciente').addEventListener('submit', salvarPaciente);
+
+        // Mostra/esconde o "obrigatório" do nome da mãe conforme a idade
+        (function () {
+            const nascInput = document.querySelector('[name="data_nascimento"]');
+            const marca = document.getElementById('mae-obrig');
+            const hint  = document.getElementById('mae-obrig-hint');
+            if (!nascInput || !marca) return;
+            const atualizar = () => {
+                let menor = false;
+                if (nascInput.value) {
+                    const nasc = new Date(nascInput.value), hoje = new Date();
+                    let idade = hoje.getFullYear() - nasc.getFullYear();
+                    const m = hoje.getMonth() - nasc.getMonth();
+                    if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+                    menor = idade >= 0 && idade < 18;
+                }
+                marca.style.display = menor ? '' : 'none';
+                if (hint) hint.style.display = menor ? '' : 'none';
+            };
+            nascInput.addEventListener('change', atualizar);
+            nascInput.addEventListener('input', atualizar);
+            atualizar();
+        })();
     });
 
     async function prepararModoEdicao() {
@@ -468,6 +493,25 @@
             errorDiv.style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
+        }
+
+        // Menor de idade: dados da mãe são obrigatórios (adulto = opcional)
+        const nascStr = dados.data_nascimento || (formData.get('data_nascimento') || '').trim();
+        if (nascStr) {
+            const nasc = new Date(nascStr);
+            const hoje = new Date();
+            let idade = hoje.getFullYear() - nasc.getFullYear();
+            const m = hoje.getMonth() - nasc.getMonth();
+            if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+            const nomeMae = (formData.get('mae_nome') || '').trim();
+            if (idade >= 0 && idade < 18 && !nomeMae) {
+                errorDiv.textContent = 'Paciente menor de idade: o nome da mãe é obrigatório.';
+                errorDiv.style.display = 'block';
+                const campoMae = form.querySelector('[name="mae_nome"]');
+                if (campoMae) { campoMae.classList.add('input-erro'); campoMae.focus(); }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
         }
 
         // Em edição: detecta se o CPF foi alterado e pede confirmação

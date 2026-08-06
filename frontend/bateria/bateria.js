@@ -53,6 +53,11 @@
 
     // Overrides explícitos (vazio por enquanto — convenção atende todos)
     const URL_OVERRIDES_RESPONDER  = {};
+
+    // Dominio publico fixo para links enviados ao PACIENTE (instrumentos/anamnese).
+    // Nao usar a origem atual: no app desktop (Tauri) ela e tauri.localhost e numa
+    // hospedagem de teste e *.pages.dev -- nenhum dos dois abre no navegador do paciente.
+    const CORTEX_PUBLIC_BASE = 'https://cortexneuro.com.br';
     const URL_OVERRIDES_RESULTADO  = {
         // SCARED-A e SCARED-H compartilham a mesma página de resultado
         'SCARED-A': '../correcao/scared/scared_resultado.html',
@@ -110,7 +115,10 @@
         }
         const a = document.createElement('a');
         a.href = base;
-        return a.href + '?token=' + encodeURIComponent(token);
+        // O link e aberto pelo paciente FORA do app/desktop. Usa so o caminho
+        // resolvido (a.pathname) e forca o dominio publico fixo, em vez da origem
+        // atual (tauri.localhost no desktop / *.pages.dev em teste).
+        return CORTEX_PUBLIC_BASE + a.pathname + '?token=' + encodeURIComponent(token);
     }
 
     function montarUrlResultado(sigla, aplicacaoId) {

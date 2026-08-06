@@ -70,3 +70,5 @@ sample_outputs/
 # Arquivos de migração de dados reais (Firebase → Supabase, virá na Fase E)
 migration/firebase_dump/
 migration/data_real/
+_backups_*/
+_*_extrai/

@@ -203,3 +203,46 @@ window.CortexUI = (function() {
         STATUS_CLASSES
     };
 })();
+
+// ============================================================================
+// CORTEX Desktop (Tauri) - Salvar PDF com dialogo nativo "Salvar como".
+// So roda dentro do app desktop; na web mantem o download normal do navegador.
+// Motivo: jsPDF.save() no Tauri nao baixa nada (sem gerenciador de download).
+// ============================================================================
+(function () {
+    var T = window.__TAURI__;
+    if (!T || !T.dialog || !T.fs) return; // navegador/web: nao faz nada
+
+    function patch(proto) {
+        if (!proto || proto.__cortexSavePatched) return;
+        proto.__cortexSavePatched = true;
+        proto.save = function (filename) {
+            var nome = filename || 'documento.pdf';
+            var doc = this;
+            (async function () {
+                try {
+                    var caminho = await T.dialog.save({
+                        defaultPath: nome,
+                        filters: [{ name: 'PDF', extensions: ['pdf'] }]
+                    });
+                    if (!caminho) return; // usuario cancelou
+                    var ab = doc.output('arraybuffer');
+                    await T.fs.writeFile(caminho, new Uint8Array(ab));
+                } catch (e) {
+                    console.error('[pdf desktop] falha ao salvar:', e);
+                    try { alert('Nao foi possivel salvar o PDF: ' + (e && e.message ? e.message : e)); } catch (_) {}
+                }
+            })();
+            return doc;
+        };
+    }
+
+    function esperar(n) {
+        if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.prototype) {
+            patch(window.jspdf.jsPDF.prototype);
+        } else if (n > 0) {
+            setTimeout(function () { esperar(n - 1); }, 300);
+        }
+    }
+    esperar(40);
+})();

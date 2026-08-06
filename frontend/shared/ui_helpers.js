@@ -205,34 +205,29 @@ window.CortexUI = (function() {
 })();
 
 // ============================================================================
-// CORTEX Desktop (Tauri) - Salvar PDF com dialogo nativo "Salvar como".
-// So roda dentro do app desktop; na web mantem o download normal do navegador.
-// Motivo: jsPDF.save() no Tauri nao baixa nada (sem gerenciador de download).
+// CORTEX Desktop (Tauri) - Salvar PDF via comando Rust (salvar_pdf).
+// So roda no app desktop; na web mantem o download normal do navegador.
+// Depende so de invoke (sempre exposto), nao dos globais de plugin.
 // ============================================================================
 (function () {
     var T = window.__TAURI__;
-    if (!T || !T.dialog || !T.fs) return; // navegador/web: nao faz nada
+    if (!T) return; // navegador/web: nao faz nada
+    var invoke = (T.core && T.core.invoke) || T.invoke;
+    if (typeof invoke !== 'function') return;
 
     function patch(proto) {
         if (!proto || proto.__cortexSavePatched) return;
         proto.__cortexSavePatched = true;
         proto.save = function (filename) {
-            var nome = filename || 'documento.pdf';
             var doc = this;
-            (async function () {
-                try {
-                    var caminho = await T.dialog.save({
-                        defaultPath: nome,
-                        filters: [{ name: 'PDF', extensions: ['pdf'] }]
-                    });
-                    if (!caminho) return; // usuario cancelou
-                    var ab = doc.output('arraybuffer');
-                    await T.fs.writeFile(caminho, new Uint8Array(ab));
-                } catch (e) {
-                    console.error('[pdf desktop] falha ao salvar:', e);
-                    try { alert('Nao foi possivel salvar o PDF: ' + (e && e.message ? e.message : e)); } catch (_) {}
-                }
-            })();
+            var nome = filename || 'documento.pdf';
+            try {
+                var ab = doc.output('arraybuffer');
+                invoke('salvar_pdf', { nome: nome, dados: Array.from(new Uint8Array(ab)) })
+                    .catch(function (e) { console.error('[pdf desktop] invoke falhou:', e); });
+            } catch (e) {
+                console.error('[pdf desktop] erro ao gerar bytes:', e);
+            }
             return doc;
         };
     }

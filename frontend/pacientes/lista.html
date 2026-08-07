@@ -190,7 +190,11 @@
                 .single();
             if (error) throw error;
 
-            const base = window.location.origin + window.location.pathname.replace(/pacientes\/lista\.html$/, '');
+            // Base = raiz da pasta /frontend/ (robusto, não depende do nome da página atual)
+            const _p = window.location.pathname;
+            const _i = _p.indexOf('/frontend/');
+            const _raiz = _i >= 0 ? _p.substring(0, _i + '/frontend/'.length) : '/';
+            const base = window.location.origin + _raiz;
             const link = `${base}pre-cadastro/index.html?t=${data.token}`;
             const dataExp = new Date(data.expires_at).toLocaleDateString('pt-BR');
 

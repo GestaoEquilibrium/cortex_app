@@ -24,10 +24,14 @@
 
     // Calcula o caminho relativo até a raiz
     // (assume que estamos em alguma subpasta como /pacientes/)
+    // Base ABSOLUTA da pasta /frontend/ a partir da URL atual (robusto contra
+    // caminhos estranhos). Evita empilhar "frontend/" em loop no redirect.
+    // Mesma técnica de sidebar.js / notificacoes.js.
     const path = window.location.pathname;
-    const segmentos = path.split('/').filter(s => s && !s.endsWith('.html'));
-    const profundidade = segmentos.length - 1; // -1 porque o primeiro segmento é o domínio
-    const caminhoRaiz = profundidade > 0 ? '../'.repeat(profundidade) : './';
+    const idxFront = path.indexOf('/frontend/');
+    const caminhoRaiz = idxFront >= 0
+        ? path.substring(0, idxFront + '/frontend/'.length)  // ex.: '/frontend/'
+        : '/';
 
     // Helper: limpa a sessão e redireciona pro login. SEM chamar signOut
     // antes do redirect, o auth.js do index re-detecta a sessão residual

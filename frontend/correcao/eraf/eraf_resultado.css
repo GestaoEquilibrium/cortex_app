@@ -1,0 +1,27 @@
+/* ERA-F — folha de resultado · paleta CORTEX */
+.q-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 12px}
+@media(max-width:760px){.q-cards{grid-template-columns:repeat(2,1fr)}}
+.q-card{background:#fff;border:1.5px solid var(--slate-200);border-radius:14px;padding:12px 14px}
+.q-card-area{font-size:.74rem;font-weight:600;color:var(--slate-500);min-height:2.4em;line-height:1.25}
+.q-card-media{font-size:1.7rem;font-weight:800;color:var(--primary-blue);line-height:1;margin-top:6px}
+.q-card-n{font-size:.72rem;color:var(--slate-500);margin-top:6px}
+.eraf-geral{display:flex;align-items:center;gap:18px;border-radius:16px;padding:18px 22px;margin:8px 0 14px;border:2px solid}
+.eraf-geral.baixa{background:#ecfdf5;border-color:#a7f3d0}
+.eraf-geral.alta{background:#fef2f2;border-color:#fecaca}
+.eraf-geral-num{font-size:2.6rem;font-weight:800;line-height:1;color:var(--primary-blue)}
+.eraf-geral-num span{font-size:1.1rem;vertical-align:super;color:var(--slate-400);margin-right:2px}
+.eraf-geral.alta .eraf-geral-num{color:#dc2626}
+.eraf-geral-bruto{font-size:.86rem;color:var(--slate-600)}
+.eraf-geral-classif{margin-top:6px}
+.eraf-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+.eraf-badge.baixa{background:#d1fae5;color:#065f46}
+.eraf-badge.alta{background:#fee2e2;color:#991b1b}
+.q-grafico-wrap{height:260px;background:#fff;border:1px solid var(--slate-100);border-radius:12px;padding:12px;margin:6px 0 14px}
+.q-tabela{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:.86rem}
+.q-tabela th,.q-tabela td{padding:9px 10px;border-bottom:1px solid var(--slate-100);text-align:left}
+.q-tabela thead th{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-500);background:var(--primary-blue-50)}
+.q-tabela tbody tr:hover{background:var(--primary-blue-50)}
+.q-tabela .ctr{text-align:center}
+.q-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+.q-nota{background:var(--primary-blue-50);border:1px solid var(--primary-blue-100);color:var(--primary-blue);border-radius:12px;padding:12px 14px;font-size:.82rem;line-height:1.5}
+.q-erro{text-align:center;color:var(--slate-500);padding:48px 20px}.q-erro-ic{font-size:2.2rem;margin-bottom:8px}

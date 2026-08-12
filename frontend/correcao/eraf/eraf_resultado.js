@@ -140,9 +140,11 @@
 
         const cards = FATORES.map(f => {
             const d = r.fatores[f.cod];
-            return `<div class="q-card" style="border-top:4px solid ${f.cor}" data-copiavel data-copy-nome="ERA-F ${esc(f.cod)}">
+            const alta = d.pct >= CORTE;
+            return `<div class="q-card ${alta?'alta':'baixa'}" data-copiavel data-copy-nome="ERA-F ${esc(f.cod)}">
                 <div class="q-card-area">${esc(f.label)}</div>
                 <div class="q-card-media">P${d.pct}</div>
+                <div class="q-card-barra"><i style="width:${d.pct}%"></i><span class="corte"></span></div>
                 <div class="q-card-n">bruto ${d.bruto} · ${badge(d.classif)}</div>
             </div>`;
         }).join('');
@@ -194,6 +196,13 @@
                     <div class="eraf-geral-info">
                         <div class="eraf-geral-bruto">Escore bruto: <b>${r.geral.bruto}</b> / 170 · Média ${MEDIA.GERAL} (DP ${DP.GERAL})</div>
                         <div class="eraf-geral-classif">${badge(r.geral.classif)}</div>
+                    </div>
+                    <div class="eraf-medidor">
+                        <div class="eraf-medidor-track">
+                            <div class="eraf-medidor-fill" style="width:${r.geral.pct}%"></div>
+                            <div class="eraf-medidor-corte" style="left:${CORTE}%"></div>
+                        </div>
+                        <div class="eraf-medidor-legenda"><span>P1</span><span>corte P${CORTE}</span><span>P99</span></div>
                     </div>
                 </div>
 

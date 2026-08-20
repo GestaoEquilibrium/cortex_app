@@ -3142,16 +3142,22 @@
                 if (errEnc) throw errEnc;
             }
 
-            // 2. Cria novo vínculo
+            // 2. Cria (ou reativa) o vínculo — upsert evita duplicar quando o
+            //    mesmo aplicador é designado de novo no mesmo dia (constraint
+            //    UNIQUE paciente_id, aplicador_id, data_inicio).
+            const hoje = new Date().toISOString().split('T')[0];
             const { error: errIns } = await window.cortexClient
                 .from('vinculos_paciente_aplicador')
-                .insert({
+                .upsert({
                     paciente_id: pacienteId,
                     aplicador_id: novoAplicadorId,
+                    data_inicio: hoje,
                     atribuido_por: profAtualId,
                     ativo: true,
+                    data_fim: null,
+                    motivo_encerramento: null,
                     motivo_atribuicao: aplicadorAtivo ? 'Substituição via designação' : 'Designação inicial'
-                });
+                }, { onConflict: 'paciente_id,aplicador_id,data_inicio' });
             if (errIns) throw errIns;
 
             await CortexAudit.log('atualizacao', 'vinculos_paciente_aplicador', pacienteId, {

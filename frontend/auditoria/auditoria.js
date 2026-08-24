@@ -38,7 +38,7 @@
         await CortexSidebar.render('auditoria');
 
         // Guard: só admin_clínico
-        if (!window.CortexPerm || !window.CortexPerm.isAdminClinico || !window.CortexPerm.isAdminClinico()) {
+        if (!window.CortexPerfil || !window.CortexPerfil.isAdminClinico || !window.CortexPerfil.isAdminClinico()) {
             document.getElementById('aud-conteudo').innerHTML =
                 `<div class="aud-negado"><div class="aud-negado-ic">🔒</div>
                  <h2>Acesso restrito</h2>

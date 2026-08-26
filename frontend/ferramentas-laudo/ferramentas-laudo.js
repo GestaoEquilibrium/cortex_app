@@ -85,7 +85,7 @@
                 ${l.slice(0,5).map((v,i)=>cel(v,i)).join('')}</div>`;
         }).join('');
         return `
-        <div class="fl-tabela" data-copiavel data-copy-nome="Classificacao de QI" style="grid-template-columns:${cols};">
+        <div class="fl-tabela-laudo" data-copiavel data-copy-nome="Classificacao de QI" style="grid-template-columns:${cols};">
             <div class="fl-head" style="grid-template-columns:${cols};">${th}</div>
             ${body}
         </div>`;
@@ -108,7 +108,7 @@
                 ${linha.map((v,i)=>cel(v,i)).join('')}</div>`;
         }).join('');
         return `
-        <div class="fl-tabela" data-copiavel data-copy-nome="${esc(mont.titulo||'Tabela')}" style="grid-template-columns:${cols};">
+        <div class="fl-tabela-laudo" data-copiavel data-copy-nome="${esc(mont.titulo||'Tabela')}" style="grid-template-columns:${cols};">
             <div class="fl-head" style="grid-template-columns:${cols};">${th}</div>
             ${body}
         </div>`;

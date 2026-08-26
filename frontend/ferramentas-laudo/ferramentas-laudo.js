@@ -74,7 +74,7 @@
         const body = linhas.map(l => {
             const c = CORES[l[5]];
             const cel = (v,i) => `<div class="fl-td" style="color:${i>=2&&i<=3?c.fgForte:c.fg}; ${i>=2&&i<=3?'font-weight:500;':''}">${esc(v)}</div>`;
-            return `<div class="fl-row" style="background:${c.bg}; border-bottom:0.5px solid ${c.bd};">
+            return `<div class="fl-row" style="grid-template-columns:${cols}; background:${c.bg}; border-bottom:0.5px solid ${c.bd};">
                 ${l.slice(0,5).map((v,i)=>cel(v,i)).join('')}</div>`;
         }).join('');
         return `
@@ -97,7 +97,7 @@
                 const forte = (i === mont.colClassif);
                 return `<div class="fl-td" style="color:${forte?c.fgForte:c.fg}; ${forte?'font-weight:500;':''}">${esc(v||'')}</div>`;
             };
-            return `<div class="fl-row" style="background:${c.bg}; border-bottom:0.5px solid ${c.bd};">
+            return `<div class="fl-row" style="grid-template-columns:${cols}; background:${c.bg}; border-bottom:0.5px solid ${c.bd};">
                 ${linha.map((v,i)=>cel(v,i)).join('')}</div>`;
         }).join('');
         return `

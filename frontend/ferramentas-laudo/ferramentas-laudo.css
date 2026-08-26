@@ -7,7 +7,7 @@
 .fl-h2{font-size:1.05rem;font-weight:700;color:var(--primary-blue);margin:0 0 4px}
 .fl-nota{font-size:.78rem;color:var(--slate-400);margin:0 0 12px}
 /* tabela (padrão suave, cola bem) */
-.fl-tabela-laudo{display:block;border-radius:16px;border:0.5px solid var(--slate-200);background:#fff;max-width:820px}
+.fl-tabela-laudo{display:block;border-radius:16px;overflow:hidden;border:0.5px solid var(--slate-200);background:#fff;max-width:820px}
 .fl-head{display:grid;background:var(--slate-50,#f6f7f9);border-bottom:0.5px solid var(--slate-200)}
 .fl-th{padding:11px 13px;font-size:11px;font-weight:600;color:var(--slate-500);text-transform:uppercase;letter-spacing:.04em}
 .fl-row{display:grid}
@@ -37,8 +37,5 @@
 .fl-swatch.sel{border-color:var(--primary-blue-dark,#061833);box-shadow:0 0 0 1.5px #fff inset}
 .fl-negado{text-align:center;padding:80px 20px;color:var(--slate-500)}
 .fl-negado-ic{font-size:3rem;margin-bottom:12px}.fl-negado h2{color:var(--primary-blue);margin:0 0 8px}
-/* cantos arredondados sem overflow:hidden (pra não cortar o botão de copiar) */
-.fl-tabela-laudo .fl-head{border-radius:16px 16px 0 0}
-.fl-tabela-laudo .fl-row:last-child{border-radius:0 0 16px 16px;border-bottom:none !important}
-.fl-tabela-laudo .fl-row:last-child .fl-td:first-child{border-bottom-left-radius:16px}
-.fl-tabela-laudo .fl-row:last-child .fl-td:last-child{border-bottom-right-radius:16px}
+/* wrapper copiável (leva o botão de câmera; tabela por dentro mantém o formato) */
+.fl-tabela-copiavel{position:relative;display:inline-block;max-width:820px;width:100%}

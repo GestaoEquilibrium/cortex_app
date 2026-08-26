@@ -64,14 +64,6 @@ window.CortexSidebar = (function() {
             icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'
         },
         {
-            id: 'configuracoes',
-            accent: 'var(--accent-blue-2)',
-            label: 'Configurações',
-            href: '../configuracoes/configuracoes.html',
-            clinicoOnly: true,
-            icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
-        },
-        {
             id: 'auditoria',
             accent: 'var(--accent-green)',
             label: 'Auditoria',
@@ -86,6 +78,14 @@ window.CortexSidebar = (function() {
             href: '../ferramentas-laudo/ferramentas-laudo.html',
             adminOnly: true,
             icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>'
+        },
+        {
+            id: 'configuracoes',
+            accent: 'var(--accent-blue-2)',
+            label: 'Configurações',
+            href: '../configuracoes/configuracoes.html',
+            clinicoOnly: true,
+            icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
         }
     ];
 
@@ -116,7 +116,7 @@ window.CortexSidebar = (function() {
     // ── Sprint 91: carrega a central de notificações sem precisar incluir
     // <script> em cada página. O sidebar.js já está em todas elas.
     function caminhoShared() {
-        // Descobre o caminho absoluto de /frontend/shared/ a partir da URL atual.
+        // Caminho absoluto de /frontend/shared/ a partir da URL atual.
         const p = window.location.pathname;
         const idx = p.indexOf('/frontend/');
         const base = idx >= 0 ? p.substring(0, idx + '/frontend/'.length) : '/frontend/';
@@ -196,43 +196,39 @@ window.CortexSidebar = (function() {
         return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
     }
 
+    // ── FIX v2.0 ────────────────────────────────────────────────────────────
+    // Antes o link era montado contando "../" pela profundidade da URL. Isso
+    // quebra no Cloudflare Pages, que serve /pasta/index.html como /pasta/ —
+    // sem o nome do arquivo a conta dava um nivel a menos, o "../" era
+    // removido e o link virava /frontend/graficos/auditoria/... (404). O 404
+    // cai no index.html da raiz, que redirecionava de forma relativa, e a URL
+    // ia empilhando /frontend/frontend/frontend/ em loop.
+    //
+    // Agora o link e sempre ABSOLUTO, ancorado na pasta /frontend/ da URL
+    // atual — mesma tecnica ja usada pelo auth_guard.js. Funciona em qualquer
+    // profundidade, com ou sem index.html no fim, e no app Tauri.
+    function baseFrontend() {
+        const p = window.location.pathname;
+        const idx = p.indexOf('/frontend/');
+        return idx >= 0 ? p.substring(0, idx + '/frontend/'.length) : null;
+    }
+
     function getRelativePath(itemHref) {
-        // Os hrefs em NAV_ITEMS estão escritos como se a página atual fosse 1 nível abaixo de frontend/
-        // Ex: '../pacientes/lista.html' — funciona quando estou em frontend/agenda/agenda.html
-        //
-        // Mas o sistema tem páginas em vários níveis:
-        //   nível 0: frontend/dashboard.html        → precisa REMOVER 1× ../
-        //   nível 1: frontend/pacientes/lista.html  → MANTÉM como está (referência)
-        //   nível 2: frontend/correcao/wisciv/...   → precisa ADICIONAR 1× ../
-        //   nível 3+: idem, adicionar ../ proporcional
-        //
-        // Estratégia: descobre a profundidade da página atual em relação a frontend/
-        // e ajusta os ../ no href dinamicamente.
+        const base = baseFrontend();
 
-        const path = window.location.pathname;
-        const segmentos = path.split('/').filter(s => s);
+        if (base) {
+            // '../pacientes/lista.html' -> '/frontend/pacientes/lista.html'
+            return base + String(itemHref).replace(/^(?:\.\.\/)+/, '');
+        }
 
-        // Acha o índice da pasta 'frontend' no path. Se não tiver, assume raiz.
-        const idxFrontend = segmentos.indexOf('frontend');
-        const profundidade = idxFrontend >= 0
-            ? Math.max(0, segmentos.length - idxFrontend - 2)  // -1 pra contar de zero, -1 pra ignorar o arquivo
-            : 0;
-
-        // Os hrefs no NAV_ITEMS assumem profundidade 1 (vão de subpasta pra outra subpasta via ../)
-        // - profundidade 0: tira 1× '../'
-        // - profundidade 1: mantém igual (referência)
-        // - profundidade 2: adiciona 1× '../'
-        // - profundidade N: adiciona (N-1)× '../'
+        // Fallback (fora de /frontend/, ex.: abrindo o arquivo solto):
+        // mantem o comportamento relativo antigo.
+        const segmentos = window.location.pathname.split('/').filter(s => s);
+        const profundidade = Math.max(0, segmentos.length - 1);
         const diff = profundidade - 1;
 
         if (diff === 0) return itemHref;
-
-        if (diff < 0) {
-            // Está mais raso que a referência: remove ../ do começo
-            return itemHref.startsWith('../') ? itemHref.substring(3) : itemHref;
-        }
-
-        // Está mais fundo: adiciona ../ extras no começo
+        if (diff < 0) return itemHref.startsWith('../') ? itemHref.substring(3) : itemHref;
         return '../'.repeat(diff) + itemHref;
     }
 

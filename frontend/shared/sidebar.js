@@ -21,30 +21,35 @@ window.CortexSidebar = (function() {
     const NAV_ITEMS = [
         {
             id: 'dashboard',
+            accent: 'var(--accent-blue)',
             label: 'Dashboard',
             href: '../dashboard.html',
             icon: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'
         },
         {
             id: 'pacientes',
+            accent: 'var(--accent-purple)',
             label: 'Pacientes',
             href: '../pacientes/lista.html',
             icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'
         },
         {
             id: 'agenda',
+            accent: 'var(--accent-cyan)',
             label: 'Agenda',
             href: '../agenda/agenda.html',
             icon: '<rect x="3" y="4" width="18" height="18" rx="2.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'
         },
         {
             id: 'graficos',
+            accent: 'var(--accent-amber)',
             label: 'Gráficos',
             href: '../graficos/index.html',
             icon: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>'
         },
         {
             id: 'estoque',
+            accent: 'var(--accent-green)',
             label: 'Estoque',
             href: '../estoque/estoque.html',
             adminOnly: true,
@@ -52,6 +57,7 @@ window.CortexSidebar = (function() {
         },
         {
             id: 'relatorios',
+            accent: 'var(--accent-pink)',
             label: 'Relatórios',
             href: '../relatorios/relatorios.html',
             adminOnly: true,
@@ -59,6 +65,7 @@ window.CortexSidebar = (function() {
         },
         {
             id: 'configuracoes',
+            accent: 'var(--accent-blue-2)',
             label: 'Configurações',
             href: '../configuracoes/configuracoes.html',
             clinicoOnly: true,
@@ -66,6 +73,7 @@ window.CortexSidebar = (function() {
         },
         {
             id: 'auditoria',
+            accent: 'var(--accent-green)',
             label: 'Auditoria',
             href: '../auditoria/auditoria.html',
             clinicoOnly: true,
@@ -73,6 +81,7 @@ window.CortexSidebar = (function() {
         },
         {
             id: 'ferramentas-laudo',
+            accent: 'var(--accent-purple-2)',
             label: 'Ferramentas de Laudo',
             href: '../ferramentas-laudo/ferramentas-laudo.html',
             adminOnly: true,
@@ -100,6 +109,8 @@ window.CortexSidebar = (function() {
     </svg>`;
 
     const CHEVRON_LEFT_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>`;
+    const CLOSE_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    const MENU_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
     const LOGOUT_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`;
 
     // ── Sprint 91: carrega a central de notificações sem precisar incluir
@@ -121,6 +132,33 @@ window.CortexSidebar = (function() {
             document.head.appendChild(el);
         });
     }
+
+    // ── v2.0 "Aurora": carrega a camada visual e o sistema de janelas
+    // suspensas em TODAS as páginas, sem precisar editar cada HTML.
+    const V2 = '200';
+
+    function iniciarV2() {
+        const base = caminhoShared();
+        const baseStyles = base.replace(/shared\/$/, 'styles/');
+
+        if (!document.querySelector('link[data-cortex-v2-css]')) {
+            const l = document.createElement('link');
+            l.rel = 'stylesheet';
+            l.href = baseStyles + 'cortex-v2.css?v=' + V2;
+            l.setAttribute('data-cortex-v2-css', '1');
+            document.head.appendChild(l);
+        }
+
+        if (!window.CortexPop && !document.querySelector('script[data-cortex-pop-js]')) {
+            const sc = document.createElement('script');
+            sc.src = base + 'cortex_pop.js?v=' + V2;
+            sc.setAttribute('data-cortex-pop-js', '1');
+            document.head.appendChild(sc);
+        }
+    }
+
+    // Roda já no parse do arquivo — evita piscar o visual antigo.
+    try { iniciarV2(); } catch (e) { console.warn('[sidebar] v2 indisponível:', e); }
 
     async function iniciarNotificacoes() {
         try {
@@ -235,8 +273,15 @@ window.CortexSidebar = (function() {
             ? `<div class="sidebar-user-avatar sidebar-user-avatar-foto"><img src="${fotoSignedUrl}" alt="${escapeHtml(nomeExibido)}"/></div>`
             : `<div class="sidebar-user-avatar">${iniciais}</div>`;
 
-        // Recupera estado de colapso (preferência salva)
-        const colapsada = localStorage.getItem('cortex_sidebar_collapsed') === 'true';
+        // ── v2.0: estado da sidebar — 'expandida' | 'rail' | 'oculta' ──
+        // Retrocompat: se ainda existir a chave antiga, converte.
+        let estado = localStorage.getItem('cortex_sidebar_estado');
+        if (!estado) {
+            estado = localStorage.getItem('cortex_sidebar_collapsed') === 'true' ? 'rail' : 'expandida';
+            localStorage.setItem('cortex_sidebar_estado', estado);
+        }
+        const colapsada = (estado === 'rail');
+        const oculta = (estado === 'oculta');
 
         // Filtra itens com restrição de perfil (Sprint 74/78)
         const ehAdmin = (prof?.perfil === 'admin_clinico' || prof?.perfil === 'admin_gestor');
@@ -252,7 +297,7 @@ window.CortexSidebar = (function() {
                 ? `onclick="event.preventDefault(); ${item.disabledLabel ? `window.CortexUI && window.CortexUI.toast('${item.disabledLabel}', 'info');` : ''} return false;"`
                 : '';
             return `
-                <a href="${hrefFinal}" class="nav-item ${ativa}" ${onclick} title="${item.label}">
+                <a href="${hrefFinal}" class="nav-item ${ativa}" ${onclick} title="${item.label}" data-nav="${item.id}" style="--nav-accent: ${item.accent || 'var(--accent-blue)'}">
                     <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg>
                     <span class="sidebar-text">${item.label}</span>
                 </a>
@@ -275,6 +320,17 @@ window.CortexSidebar = (function() {
             `;
             document.body.insertBefore(topbar, document.body.firstChild);
         }
+        // ── v2.0: botão flutuante que reabre a sidebar quando está oculta ──
+        if (!document.getElementById('sidebar-fab')) {
+            const fab = document.createElement('button');
+            fab.id = 'sidebar-fab';
+            fab.className = 'sidebar-fab' + (oculta ? ' show' : '');
+            fab.title = 'Abrir menu';
+            fab.setAttribute('aria-label', 'Abrir menu');
+            fab.innerHTML = MENU_SVG;
+            document.body.appendChild(fab);
+        }
+
         if (!document.getElementById('sidebar-backdrop')) {
             const backdrop = document.createElement('div');
             backdrop.id = 'sidebar-backdrop';
@@ -283,13 +339,18 @@ window.CortexSidebar = (function() {
         }
 
         container.innerHTML = `
-            <aside class="sidebar ${colapsada ? 'collapsed' : ''}" id="cortex-sidebar">
+            <aside class="sidebar ${colapsada ? 'collapsed' : ''} ${oculta ? 'is-hidden' : ''}" id="cortex-sidebar">
                 <div class="sidebar-brand">
                     ${BRAIN_SVG}
                     <span class="sidebar-brand-text sidebar-text">CORTEX</span>
-                    <button class="sidebar-toggle" id="sidebar-toggle-btn" title="Recolher / expandir">
-                        ${CHEVRON_LEFT_SVG}
-                    </button>
+                    <div class="sidebar-actions">
+                        <button class="sidebar-toggle" id="sidebar-toggle-btn" title="Minimizar / expandir" aria-label="Minimizar menu">
+                            ${CHEVRON_LEFT_SVG}
+                        </button>
+                        <button class="sidebar-close" id="sidebar-close-btn" title="Fechar menu" aria-label="Fechar menu">
+                            ${CLOSE_SVG}
+                        </button>
+                    </div>
                 </div>
 
                 <nav class="sidebar-nav">
@@ -358,15 +419,52 @@ window.CortexSidebar = (function() {
             });
         }
 
+        // ── v2.0: três estados — expandida / rail / oculta ──
+        const closeBtn = document.getElementById('sidebar-close-btn');
+        const fab = document.getElementById('sidebar-fab');
+
+        function aplicarEstado(novo) {
+            if (!sidebar) return;
+            sidebar.classList.toggle('collapsed', novo === 'rail');
+            sidebar.classList.toggle('is-hidden', novo === 'oculta');
+            if (fab) fab.classList.toggle('show', novo === 'oculta');
+            localStorage.setItem('cortex_sidebar_estado', novo);
+            // mantém a chave antiga em dia (outras telas podem ler)
+            localStorage.setItem('cortex_sidebar_collapsed', novo === 'rail' ? 'true' : 'false');
+            window.dispatchEvent(new CustomEvent('cortex:sidebar-estado', { detail: { estado: novo } }));
+        }
+
+        function estadoAtual() {
+            if (!sidebar) return 'expandida';
+            if (sidebar.classList.contains('is-hidden')) return 'oculta';
+            if (sidebar.classList.contains('collapsed')) return 'rail';
+            return 'expandida';
+        }
+
         if (toggleBtn && sidebar) {
             toggleBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('collapsed');
-                localStorage.setItem(
-                    'cortex_sidebar_collapsed',
-                    sidebar.classList.contains('collapsed') ? 'true' : 'false'
-                );
+                aplicarEstado(estadoAtual() === 'rail' ? 'expandida' : 'rail');
             });
         }
+
+        if (closeBtn && sidebar) {
+            closeBtn.addEventListener('click', () => aplicarEstado('oculta'));
+        }
+
+        if (fab) {
+            fab.addEventListener('click', () => {
+                aplicarEstado('expandida');
+                if (window.innerWidth <= 900) abrirGaveta();
+            });
+        }
+
+        // Atalho: Ctrl/Cmd + B alterna o menu
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+                e.preventDefault();
+                aplicarEstado(estadoAtual() === 'oculta' ? 'expandida' : 'oculta');
+            }
+        });
 
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async () => {

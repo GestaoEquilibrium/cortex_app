@@ -1,6 +1,13 @@
 /* ============================================================================
-   CORTEX_APP — Base CSS (variáveis, reset, pattern de fundo)
-   ESTILO 1 · Gradiente Azul→Verde — refinamento visual
+   CORTEX_APP — Base CSS  ·  v2.0 "Aurora"
+   ----------------------------------------------------------------------------
+   Camada de tokens. TODAS as variáveis antigas continuam existindo (retrocompat
+   com as ~96 páginas). O que muda:
+     - paleta de acento vívida (azul, roxo, âmbar, verde, ciano, rosa)
+     - raios maiores (tudo mais arredondado)
+     - sombras em camadas + glows coloridos
+     - superfícies de vidro (glass) para popups/janelas suspensas
+     - transições com mola (spring) para micro-interações
    ============================================================================ */
 
 * {
@@ -11,10 +18,7 @@
 
 :root {
     /* ════════════════════════════════════════════════════════════════════════
-       PALETA ÚNICA — #0c1f3f (azul navy sólido)
-       Todo o sistema usa essa cor. Sem gradientes.
-       Verde foi removido conceitualmente (mas mantemos as vars apontando
-       pro azul pra não quebrar nada).
+       ESTRUTURA — navy CORTEX (texto, sidebar, títulos)
        ════════════════════════════════════════════════════════════════════════ */
     --primary-blue:        #0c1f3f;
     --primary-blue-dark:   #061833;
@@ -24,7 +28,7 @@
     --primary-blue-200:    #adbbd2;
     --primary-blue-300:    #6f80a3;
 
-    /* "Verde" agora aponta pro mesmo azul (pra retrocompat com vars antigas) */
+    /* Aliases antigos de "verde" apontando pro navy (não quebrar nada) */
     --primary-green:       #0c1f3f;
     --primary-green-dark:  #061833;
     --primary-green-light: #1e3a6f;
@@ -32,6 +36,29 @@
     --primary-green-100:   #d6dde9;
     --primary-green-200:   #adbbd2;
     --primary-green-300:   #6f80a3;
+
+    /* ════════════════════════════════════════════════════════════════════════
+       v2 — PALETA DE ACENTO (cores novas, em lugares novos)
+       ════════════════════════════════════════════════════════════════════════ */
+    --navy:          #141F3C;
+    --navy-deep:     #0A1428;
+    --accent-blue:   #2F6FED;
+    --accent-blue-2: #5B93FF;
+    --accent-purple: #7C4DFF;
+    --accent-purple-2: #A78BFA;
+    --accent-amber:  #F59E0B;
+    --accent-green:  #22C55E;
+    --accent-cyan:   #06B6D4;
+    --accent-pink:   #EC4899;
+    --accent-red:    #EF4444;
+
+    /* Superfícies tonais de cada acento (fundo suave de ícone/badge) */
+    --tint-blue:   #E8F0FE;
+    --tint-purple: #F0EAFF;
+    --tint-amber:  #FEF3C7;
+    --tint-green:  #DCFCE7;
+    --tint-cyan:   #CFFAFE;
+    --tint-pink:   #FCE7F3;
 
     /* Neutros (slate) */
     --slate-50: #F8FAFC;
@@ -46,7 +73,7 @@
     --slate-900: #0F172A;
 
     /* Aliases semânticos */
-    --color-bg: #F1F5F9;
+    --color-bg: #ECEEF3;
     --color-surface: #FFFFFF;
     --color-surface-alt: #FAFBFD;
     --color-text: var(--slate-900);
@@ -56,8 +83,8 @@
     --color-border-strong: var(--slate-300);
 
     /* Status semânticos */
-    --color-info-bg: #d6dde9;
-    --color-info-text: #0c1f3f;
+    --color-info-bg: var(--tint-blue);
+    --color-info-text: #1D4ED8;
     --color-success-bg: #D1FAE5;
     --color-success-text: #065F46;
     --color-warning-bg: #FEF3C7;
@@ -65,60 +92,93 @@
     --color-danger-bg: #FEE2E2;
     --color-danger-text: #991B1B;
 
-    /* Avatares por sexo (única exceção da paleta única — feminino é rosa) */
-    --avatar-masc-bg:   #d6dde9;
-    --avatar-masc-fg:   #0c1f3f;
+    /* Avatares por sexo */
+    --avatar-masc-bg:   var(--tint-blue);
+    --avatar-masc-fg:   #1D4ED8;
     --avatar-fem-bg:    #FCE7F3;
     --avatar-fem-fg:    #9D174D;
-    --avatar-outro-bg:  #d6dde9;
-    --avatar-outro-fg:  #0c1f3f;
+    --avatar-outro-bg:  var(--tint-purple);
+    --avatar-outro-fg:  #6D28D9;
 
     /* ════════════════════════════════════════════════════════════════════════
-       "Gradientes" — agora todos sólidos (#0c1f3f).
-       Mantemos as variáveis pra não quebrar usos antigos pelo CSS.
+       GRADIENTES — v2 traz gradiente de verdade de volta, sem quebrar os usos
+       antigos (todos os nomes continuam existindo).
        ════════════════════════════════════════════════════════════════════════ */
-    --gradient-primary:           #0c1f3f;
-    --gradient-primary-vertical:  #0c1f3f;
+    --gradient-primary:           linear-gradient(135deg, #1B3A7A 0%, #2F6FED 100%);
+    --gradient-primary-vertical:  linear-gradient(180deg, #141F3C 0%, #0c1f3f 100%);
     --gradient-primary-fem:       linear-gradient(135deg, #F472B6 0%, #9D174D 100%);
-    --gradient-soft:              #d6dde9;
-    --gradient-softer:            #eff2f7;
-    --gradient-hover:             #061833;
+    --gradient-soft:              linear-gradient(135deg, #E8F0FE 0%, #F0EAFF 100%);
+    --gradient-softer:            linear-gradient(135deg, #F5F8FF 0%, #FAF7FF 100%);
+    --gradient-hover:             linear-gradient(135deg, #142B5C 0%, #2559C8 100%);
 
-    /* Sombras */
-    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.06);
-    --shadow-md: 0 4px 12px rgba(12, 31, 63, 0.08);
-    --shadow-lg: 0 8px 24px rgba(12, 31, 63, 0.12);
-    --shadow-xl: 0 18px 38px rgba(15, 23, 42, 0.18);
-    --shadow-card-hover: 0 6px 16px rgba(12, 31, 63, 0.10);
+    /* v2 — gradientes de acento */
+    --grad-blue:    linear-gradient(135deg, #2F6FED 0%, #5B93FF 100%);
+    --grad-purple:  linear-gradient(135deg, #7C4DFF 0%, #A78BFA 100%);
+    --grad-amber:   linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+    --grad-green:   linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
+    --grad-cyan:    linear-gradient(135deg, #0891B2 0%, #06B6D4 100%);
+    --grad-pink:    linear-gradient(135deg, #DB2777 0%, #EC4899 100%);
+    --grad-aurora:  linear-gradient(135deg, #2F6FED 0%, #7C4DFF 55%, #EC4899 100%);
+    --grad-sidebar: linear-gradient(165deg, #1B2A54 0%, #0A1428 100%);
 
-    /* Sombras coloridas (glow) — agora todas baseadas em #0c1f3f */
-    --shadow-glow-blue:  0 8px 22px rgba(12, 31, 63, 0.25);
-    --shadow-glow-green: 0 8px 22px rgba(12, 31, 63, 0.25);
-    --shadow-glow-mixed: 0 8px 22px rgba(12, 31, 63, 0.25);
-    --shadow-ring-blue:  0 0 0 4px rgba(12, 31, 63, 0.15);
-    --shadow-ring-green: 0 0 0 4px rgba(12, 31, 63, 0.15);
+    /* ════════════════════════════════════════════════════════════════════════
+       SOMBRAS — em camadas (mais "flutuante")
+       ════════════════════════════════════════════════════════════════════════ */
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05), 0 2px 6px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 2px 4px rgba(20, 31, 60, 0.05), 0 8px 18px rgba(20, 31, 60, 0.08);
+    --shadow-lg: 0 4px 8px rgba(20, 31, 60, 0.06), 0 16px 32px rgba(20, 31, 60, 0.12);
+    --shadow-xl: 0 8px 16px rgba(15, 23, 42, 0.08), 0 30px 60px rgba(15, 23, 42, 0.20);
+    --shadow-float: 0 10px 20px rgba(20, 31, 60, 0.07), 0 30px 60px rgba(20, 31, 60, 0.14);
+    --shadow-card-hover: 0 6px 12px rgba(20, 31, 60, 0.07), 0 18px 36px rgba(20, 31, 60, 0.13);
+
+    /* Glows coloridos */
+    --shadow-glow-blue:   0 8px 24px rgba(47, 111, 237, 0.32);
+    --shadow-glow-purple: 0 8px 24px rgba(124, 77, 255, 0.32);
+    --shadow-glow-amber:  0 8px 24px rgba(245, 158, 11, 0.30);
+    --shadow-glow-green:  0 8px 24px rgba(34, 197, 94, 0.30);
+    --shadow-glow-mixed:  0 8px 26px rgba(124, 77, 255, 0.28);
+    --shadow-ring-blue:   0 0 0 4px rgba(47, 111, 237, 0.16);
+    --shadow-ring-green:  0 0 0 4px rgba(34, 197, 94, 0.16);
+    --shadow-ring-purple: 0 0 0 4px rgba(124, 77, 255, 0.16);
+
+    /* Vidro (popups, janelas suspensas, topbar) */
+    --glass-bg:     rgba(255, 255, 255, 0.82);
+    --glass-border: rgba(255, 255, 255, 0.65);
+    --glass-blur:   saturate(180%) blur(20px);
+    --scrim:        rgba(10, 20, 40, 0.48);
 
     /* Tipografia */
     --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-    /* Bordas e raios */
-    --radius-sm: 8px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
+    /* ════════════════════════════════════════════════════════════════════════
+       RAIOS — v2: tudo mais arredondado
+       ════════════════════════════════════════════════════════════════════════ */
+    --radius-sm:  10px;
+    --radius-md:  14px;
+    --radius-lg:  20px;
+    --radius-xl:  26px;
+    --radius-2xl: 32px;
     --radius-full: 9999px;
 
-    /* Sidebar */
-    --sidebar-width: 232px;
-    --sidebar-width-collapsed: 68px;
+    /* Sidebar — v2 ganha um 3º estado (oculta) */
+    --sidebar-width: 244px;
+    --sidebar-width-collapsed: 76px;
+    --sidebar-gap: 14px;
 
     /* Transições */
     --transition-fast: 0.15s ease;
     --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --transition-spring: 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* Camadas */
+    --z-sidebar: 50;
+    --z-topbar: 60;
+    --z-fab: 70;
+    --z-pop: 10500;
 }
 
 html, body {
@@ -127,9 +187,13 @@ html, body {
     color: var(--color-text);
     background-color: var(--color-bg);
 
-    /* Pattern de dots azul opaco */
-    background-image: radial-gradient(circle, rgba(12, 31, 63, 0.10) 1px, transparent 1px);
-    background-size: 22px 22px;
+    /* v2 — malha suave de auroras no fundo, mantendo os dots discretos */
+    background-image:
+        radial-gradient(900px 520px at 8% -10%,  rgba(47, 111, 237, 0.10), transparent 60%),
+        radial-gradient(760px 460px at 98% 4%,   rgba(124, 77, 255, 0.10), transparent 60%),
+        radial-gradient(680px 420px at 60% 108%, rgba(6, 182, 212, 0.08),  transparent 60%),
+        radial-gradient(circle, rgba(20, 31, 60, 0.055) 1px, transparent 1px);
+    background-size: auto, auto, auto, 24px 24px;
     background-attachment: fixed;
 
     -webkit-font-smoothing: antialiased;
@@ -139,13 +203,13 @@ html, body {
 }
 
 a {
-    color: var(--primary-blue);
+    color: var(--accent-blue);
     text-decoration: none;
     transition: color var(--transition-fast);
 }
 
 a:hover {
-    color: var(--primary-blue-dark);
+    color: #1D4ED8;
 }
 
 button {
@@ -173,11 +237,13 @@ input, select, textarea {
 ::-webkit-scrollbar-thumb {
     background: var(--slate-300);
     border-radius: 99px;
-    border: 2px solid var(--color-bg);
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--slate-400);
+    background: var(--accent-blue);
+    background-clip: padding-box;
 }
 
 /* Utility classes */
@@ -194,7 +260,7 @@ input, select, textarea {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   NOVO — Animações reutilizáveis do Estilo 1
+   ANIMAÇÕES REUTILIZÁVEIS
    ════════════════════════════════════════════════════════════════════════════ */
 
 @keyframes pulse-soft {
@@ -203,12 +269,12 @@ input, select, textarea {
 }
 
 @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(12, 31, 63, 0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(12, 31, 63, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(47, 111, 237, 0.45); }
+    50% { box-shadow: 0 0 0 10px rgba(47, 111, 237, 0); }
 }
 
 @keyframes slide-in-up {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -222,11 +288,44 @@ input, select, textarea {
     to { opacity: 1; }
 }
 
-/* Classe utilitária pra elementos animados */
+/* v2 */
+@keyframes pop-in {
+    0%   { opacity: 0; transform: translateY(14px) scale(0.94); }
+    100% { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes pop-out {
+    0%   { opacity: 1; transform: translateY(0)   scale(1); }
+    100% { opacity: 0; transform: translateY(8px) scale(0.96); }
+}
+
+@keyframes float-soft {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+}
+
+@keyframes aurora-shift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 .animate-in {
     animation: slide-in-up 0.3s ease-out;
 }
 
 .animate-pulse-glow {
     animation: pulse-glow 2s infinite;
+}
+
+.animate-float {
+    animation: float-soft 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

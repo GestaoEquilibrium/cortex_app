@@ -70,6 +70,13 @@ window.CortexSidebar = (function() {
             href: '../auditoria/auditoria.html',
             clinicoOnly: true,
             icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>'
+        },
+        {
+            id: 'ferramentas-laudo',
+            label: 'Ferramentas de Laudo',
+            href: '../ferramentas-laudo/ferramentas-laudo.html',
+            adminOnly: true,
+            icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>'
         }
     ];
 

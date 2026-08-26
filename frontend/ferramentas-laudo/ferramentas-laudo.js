@@ -58,6 +58,13 @@
     });
 
     // ── Tabela pronta: Classificação de QI ───────────────────────────────────
+    // Cores um pouco mais fortes e texto em negrito (só nesta tabela)
+    const CORES_QI = {
+        verde:   { bg:'rgba(29,158,117,0.18)',  bd:'rgba(29,158,117,0.30)',  fg:'#0F6E56', fgForte:'#04342C' },
+        azul:    { bg:'rgba(55,138,221,0.18)',   bd:'rgba(55,138,221,0.30)',  fg:'#185FA5', fgForte:'#042C53' },
+        ambar:   { bg:'rgba(239,159,39,0.20)',   bd:'rgba(239,159,39,0.32)',  fg:'#854F0B', fgForte:'#633806' },
+        vermelho:{ bg:'rgba(226,75,74,0.18)',    bd:'rgba(226,75,74,0.30)',   fg:'#A32D2D', fgForte:'#501313' },
+    };
     function tabelaQI() {
         const linhas = [
             ['2,2','>98','>130','Q.I Muito Superior','Desempenho excepcional','verde'],
@@ -72,8 +79,8 @@
         const cols = '0.7fr 0.9fr 0.9fr 1.3fr 1.5fr';
         const th = heads.map(h => `<div class="fl-th">${esc(h)}</div>`).join('');
         const body = linhas.map(l => {
-            const c = CORES[l[5]];
-            const cel = (v,i) => `<div class="fl-td" style="color:${i>=2&&i<=3?c.fgForte:c.fg}; ${i>=2&&i<=3?'font-weight:500;':''}">${esc(v)}</div>`;
+            const c = CORES_QI[l[5]];
+            const cel = (v,i) => `<div class="fl-td" style="color:${i>=2&&i<=3?c.fgForte:c.fg}; font-weight:700;">${esc(v)}</div>`;
             return `<div class="fl-row" style="grid-template-columns:${cols}; background:${c.bg}; border-bottom:0.5px solid ${c.bd};">
                 ${l.slice(0,5).map((v,i)=>cel(v,i)).join('')}</div>`;
         }).join('');

@@ -20,7 +20,7 @@
 //   em segundo plano. Trocar de versão (CACHE) invalida tudo.
 // ============================================================================
 
-const CACHE = 'cortex-assets-v2';
+const CACHE = 'cortex-assets-v3';
 
 const EXTENSOES = /\.(css|js|png|jpg|jpeg|svg|ico|webp|woff2?)$/i;
 
@@ -34,7 +34,6 @@ self.addEventListener('install', (event) => {
                 cache.add('/frontend/styles/base.css'),
                 cache.add('/frontend/styles/components.css'),
                 cache.add('/frontend/styles/cortex-v2.css'),
-                cache.add('/frontend/styles/mobile-v2.css'),
                 cache.add('/frontend/shared/sidebar.js'),
                 cache.add('/frontend/icon-192.png')
             ])

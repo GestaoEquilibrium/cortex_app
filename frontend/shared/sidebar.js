@@ -139,7 +139,7 @@ window.CortexSidebar = (function() {
 
     // ── v2.0 "Aurora": carrega a camada visual e o sistema de janelas
     // suspensas em TODAS as páginas, sem precisar editar cada HTML.
-    const V2 = '200';
+    const V2 = '210';
 
     function iniciarV2() {
         const base = caminhoShared();
@@ -153,13 +153,9 @@ window.CortexSidebar = (function() {
             document.head.appendChild(l);
         }
 
-        if (!document.querySelector('link[data-cortex-mobile-css]')) {
-            const m = document.createElement('link');
-            m.rel = 'stylesheet';
-            m.href = baseStyles + 'mobile-v2.css?v=' + V2;
-            m.setAttribute('data-cortex-mobile-css', '1');
-            document.head.appendChild(m);
-        }
+        // O antigo mobile-v2.css foi incorporado ao cortex-v2.css. Um arquivo
+        // a menos e uma falha a menos: se ele nao carregasse, o layout de
+        // desktop vazava para o celular.
 
         if (!window.CortexPop && !document.querySelector('script[data-cortex-pop-js]')) {
             const sc = document.createElement('script');

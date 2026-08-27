@@ -290,6 +290,81 @@ window.CortexPrevia = (function () {
     }
 
     // ════════════════════════════════════════════════════════════════════════
+    // 3 · PÁGINA EMBUTIDA — resultado de teste em janela suspensa
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // A página de resultado já existe e sabe se desenhar sozinha. Em vez de
+    // recriar o relatório aqui, abrimos a própria página num iframe com
+    // ?embed=1 — o sidebar.js reconhece esse parâmetro e não desenha menu,
+    // topbar nem barra inferior. A sessão é a mesma (sessionStorage é
+    // compartilhado entre iframes de mesma origem na mesma aba), então o
+    // auth_guard autentica normalmente.
+
+    function comEmbed(url) {
+        if (!url) return url;
+        if (/[?&]embed=1(&|$)/.test(url)) return url;
+        return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
+    }
+
+    function pagina(op) {
+        op = op || {};
+        if (!disponivel()) {
+            // Sem o CortexPop, navega do jeito antigo em vez de travar.
+            if (op.url) window.location.href = op.url;
+            return;
+        }
+        if (!op.url) return;
+
+        const src = comEmbed(op.url);
+
+        const janela = window.CortexPop.abrir({
+            titulo: op.titulo || 'Resultado',
+            subtitulo: op.subtitulo || '',
+            icone: op.icone || IC_DOC,
+            tone: op.tone || 'blue',
+            tamanho: op.tamanho || 'xl',
+            semPadding: true,
+            maximizavel: true,
+            html: `
+                <div class="cx-embed">
+                    <div class="cx-embed-carregando" data-embed-carregando>
+                        <div class="cx-embed-spinner"></div>
+                        <span>Carregando…</span>
+                    </div>
+                    <iframe class="cx-embed-frame" src="${esc(src)}" title="${esc(op.titulo || 'Resultado')}"></iframe>
+                </div>`,
+            acoesTopo: [{
+                titulo: 'Abrir em página inteira',
+                icone: IC_ABRIR,
+                onClick: () => { window.location.href = op.url; }
+            }],
+            rodape: op.rodape
+        });
+
+        const frame = janela.corpo.querySelector('.cx-embed-frame');
+        const load = janela.corpo.querySelector('[data-embed-carregando]');
+        if (frame) {
+            frame.addEventListener('load', () => { if (load) load.remove(); });
+            // Se o iframe travar, tira o spinner mesmo assim.
+            setTimeout(() => { if (load) load.remove(); }, 15000);
+        }
+
+        return janela;
+    }
+
+    /** Atalho semântico para as chamadas de "Ver resultado". */
+    function resultado(op) {
+        op = op || {};
+        return pagina({
+            url: op.url,
+            titulo: op.titulo || 'Resultado do teste',
+            subtitulo: op.subtitulo || '',
+            tone: 'purple',
+            tamanho: 'xl'
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
     // 3 · PRONTUÁRIO — prévia sem sair da lista
     // ════════════════════════════════════════════════════════════════════════
 
@@ -410,6 +485,202 @@ window.CortexPrevia = (function () {
         }
     }
 
+    // ════════════════════════════════════════════════════════════════════════
+    // 5 · HOVER — o card cresce e mostra o prontuario
+    // ════════════════════════════════════════════════════════════════════════
+    //
+    // Substitui o botao de olho: passar o mouse sobre o card (ou a linha da
+    // tabela) abre um painel flutuante ancorado nele, com o resumo do
+    // prontuario. So no desktop com mouse de verdade — em toque, hover nao
+    // existe e o card continua abrindo a pasta no clique.
+
+    const ATRASO_ABRIR = 380;   // evita abrir ao so atravessar a lista
+    const ATRASO_FECHAR = 180;  // deixa mover o mouse do card para o painel
+
+    let painel = null;
+    let idAtual = null;
+    let tOpen = null;
+    let tClose = null;
+    const cacheLaudo = new Map();
+
+    function temMouse() {
+        return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    }
+
+    function fecharPainel() {
+        clearTimeout(tOpen);
+        if (!painel) return;
+        const alvo = painel;
+        painel = null;
+        idAtual = null;
+        alvo.classList.remove('is-open');
+        setTimeout(() => alvo.remove(), 200);
+    }
+
+    function agendarFechar() {
+        clearTimeout(tClose);
+        tClose = setTimeout(fecharPainel, ATRASO_FECHAR);
+    }
+
+    function cancelarFechar() { clearTimeout(tClose); }
+
+    function posicionar(el, ancora) {
+        const r = ancora.getBoundingClientRect();
+        const largura = el.offsetWidth;
+        const altura = el.offsetHeight;
+        const folga = 12;
+
+        // Preferencia: a direita do card; se nao couber, a esquerda; senao centraliza.
+        let left = r.right + folga;
+        if (left + largura > window.innerWidth - folga) left = r.left - largura - folga;
+        if (left < folga) left = Math.max(folga, Math.min(r.left, window.innerWidth - largura - folga));
+
+        let top = r.top + (r.height / 2) - (altura / 2);
+        if (top < folga) top = folga;
+        if (top + altura > window.innerHeight - folga) top = window.innerHeight - altura - folga;
+
+        el.style.left = Math.round(left) + 'px';
+        el.style.top = Math.round(top) + 'px';
+    }
+
+    function montarPainel(linha, ancora) {
+        fecharPainel();
+
+        const statusLabel = (window.CortexUI && window.CortexUI.STATUS_LABELS &&
+                             window.CortexUI.STATUS_LABELS[linha.status]) || linha.status || '\u2014';
+        const statusClasse = (window.CortexUI && window.CortexUI.STATUS_CLASSES &&
+                              window.CortexUI.STATUS_CLASSES[linha.status]) || 'status-info';
+        const avatar = (window.CortexAvatar && window.CortexAvatar.render)
+            ? window.CortexAvatar.render(linha, { tamanho: 'md' })
+            : '';
+
+        const campos = [
+            ['Idade',     linha.idade_humanizada],
+            ['Conv\u00eanio',  linha.convenio_nome],
+            ['Aplicador', linha.aplicador_nome],
+            ['Telefone',  linha.telefone],
+            ['E-mail',    linha.email],
+            ['CPF',       linha.cpf],
+            ['Cidade',    linha.cidade]
+        ].map(([r, v]) => linhaInfo(r, v)).join('');
+
+        const el = document.createElement('div');
+        el.className = 'previa-hover';
+        el.innerHTML = `
+            <div class="previa-hover-topo">
+                ${avatar}
+                <div style="min-width:0">
+                    <div class="previa-hover-nome">${esc(linha.nome_completo || '\u2014')}</div>
+                    <span class="badge ${statusClasse}">${esc(statusLabel)}</span>
+                </div>
+            </div>
+            <div class="previa-hover-campos">${campos}</div>
+            <div class="previa-hover-laudo" data-slot-laudo></div>
+            <div class="previa-hover-rodape">
+                <span>Clique no card para abrir a pasta completa</span>
+            </div>`;
+
+        document.body.appendChild(el);
+        painel = el;
+        idAtual = String(linha.id);
+
+        posicionar(el, ancora);
+        requestAnimationFrame(() => el.classList.add('is-open'));
+
+        el.addEventListener('mouseenter', cancelarFechar);
+        el.addEventListener('mouseleave', agendarFechar);
+
+        carregarLaudoHover(linha.id, el);
+        return el;
+    }
+
+    async function carregarLaudoHover(pacienteId, el) {
+        const slot = el.querySelector('[data-slot-laudo]');
+        if (!slot || !window.cortexClient) return;
+
+        const chave = String(pacienteId);
+        let laudo = cacheLaudo.get(chave);
+
+        if (laudo === undefined) {
+            try {
+                const { data, error } = await window.cortexClient
+                    .from('laudos_paciente')
+                    .select('*')
+                    .eq('paciente_id', pacienteId)
+                    .order('versao', { ascending: false })
+                    .limit(1);
+                laudo = (!error && data && data.length) ? data[0] : null;
+                cacheLaudo.set(chave, laudo);
+            } catch (err) {
+                console.warn('[previa] laudo hover:', err);
+                return;
+            }
+        }
+
+        // O mouse pode ter saido enquanto a consulta rodava.
+        if (!laudo || painel !== el) return;
+
+        slot.innerHTML = `
+            <div class="previa-hover-laudo-item">
+                <div class="cx-pop-ico tone-green" style="width:30px;height:30px">${IC_DOC}</div>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:650">Laudo v${esc(laudo.versao)}</div>
+                    <div class="previa-hover-arquivo">${esc(laudo.arquivo_nome_original || '')}</div>
+                </div>
+                <button class="btn btn-secondary" data-ver-laudo
+                        style="padding:6px 11px;font-size:12px;flex-shrink:0">${IC_OLHO} Ver</button>
+            </div>`;
+
+        slot.querySelector('[data-ver-laudo]').addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            ev.preventDefault();
+            fecharPainel();
+            arquivo({
+                bucket: 'laudos',
+                path: laudo.arquivo_path,
+                nome: laudo.arquivo_nome_original || ('laudo-v' + laudo.versao + '.pdf'),
+                titulo: 'Laudo v' + laudo.versao,
+                subtitulo: laudo.arquivo_nome_original || ''
+            });
+        });
+
+        posicionar(el, el.__ancora || el);
+    }
+
+    /**
+     * Liga a previa por hover nos cards/linhas de um container.
+     * Recebe a lista ja carregada pela pagina — nao faz consulta de paciente.
+     */
+    function ativarHover(container, lista) {
+        if (!container || !temMouse()) return;
+
+        const porId = new Map((lista || []).map(x => [String(x.id), x]));
+
+        container.querySelectorAll('[data-paciente-id]').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cancelarFechar();
+                const id = el.dataset.pacienteId;
+                if (painel && idAtual === String(id)) return;
+
+                clearTimeout(tOpen);
+                tOpen = setTimeout(() => {
+                    const linha = porId.get(String(id));
+                    if (!linha) return;
+                    const p = montarPainel(linha, el);
+                    if (p) p.__ancora = el;
+                }, ATRASO_ABRIR);
+            });
+
+            el.addEventListener('mouseleave', () => {
+                clearTimeout(tOpen);
+                agendarFechar();
+            });
+        });
+
+        // Rolar ou sair da janela fecha na hora.
+        window.addEventListener('scroll', fecharPainel, { passive: true, once: false });
+    }
+
     // ── Boot ────────────────────────────────────────────────────────────────
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', observarBotao);
@@ -417,5 +688,5 @@ window.CortexPrevia = (function () {
         observarBotao();
     }
 
-    return { pdfDaPagina, arquivo, paciente, disponivel };
+    return { pdfDaPagina, arquivo, paciente, pagina, resultado, ativarHover, disponivel };
 })();

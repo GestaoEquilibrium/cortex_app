@@ -899,7 +899,7 @@
                 </div>
                 <div class="correcao-item-acoes">
                     ${url ? `
-                        <a class="btn btn-primary btn-sm" href="${url}">📊 Ver resultado</a>
+                        <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.verResultado('${url}', '${escapeHtml(sigla)}', '${escapeHtml(nome)}')">📊 Ver resultado</button>
                     ` : `
                         <span style="font-size: 12px; color: var(--color-text-muted); font-style: italic;">Sem página de resultado</span>
                     `}
@@ -1265,6 +1265,21 @@
             }
         }
     };
+
+    // Sprint previas2: o resultado abre em janela suspensa em vez de trocar
+    // de pagina. A propria pagina de resultado e carregada num iframe com
+    // ?embed=1, entao o relatorio e identico ao da pagina inteira.
+    function verResultadoEmJanela(url, sigla, nome) {
+        if (window.CortexPrevia && window.CortexPrevia.disponivel()) {
+            window.CortexPrevia.resultado({
+                url: url,
+                titulo: sigla || 'Resultado',
+                subtitulo: nome || ''
+            });
+            return;
+        }
+        window.location.href = url;
+    }
 
     function abrirModalLaudo(laudo, signedUrl) {
         // Sprint previas: usa a janela suspensa padrao do sistema (CortexPop),
@@ -2732,6 +2747,9 @@
     }
 
     window.CortexPasta = {
+        verResultado: function (url, sigla, nome) {
+            verResultadoEmJanela(url, sigla, nome);
+        },
         abrirModalAgendar: async function () {
             await sprint8AbrirModalAgendar();
         },

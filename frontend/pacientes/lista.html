@@ -329,17 +329,12 @@
             container.innerHTML = renderTabela(filtrados);
         }
 
-        // Sprint previas: o olho abre a previa do prontuario em janela suspensa.
-        // stopPropagation pra nao disparar a navegacao da linha/card.
-        container.querySelectorAll('[data-previa-id]').forEach(btn => {
-            btn.addEventListener('click', (ev) => {
-                ev.stopPropagation();
-                ev.preventDefault();
-                const id = btn.dataset.previaId;
-                const linha = filtrados.find(x => String(x.id) === String(id));
-                if (linha && window.CortexPrevia) window.CortexPrevia.paciente(linha);
-            });
-        });
+        // Sprint previas2: passar o mouse no card/linha abre a previa do
+        // prontuario ancorada nele. Sem botao: o hover e o gatilho.
+        // Em telas de toque nao faz nada — o clique segue abrindo a pasta.
+        if (window.CortexPrevia && window.CortexPrevia.ativarHover) {
+            window.CortexPrevia.ativarHover(container, filtrados);
+        }
 
         container.querySelectorAll('[data-paciente-id]').forEach(el => {
             el.addEventListener('click', () => {
@@ -450,7 +445,6 @@
                     </div>
                     <div class="paciente-card-footer">
                         <span class="badge ${statusClass}">${statusLabel}</span>
-                        <button class="btn-previa-paciente" data-previa-id="${p.id}" title="Ver prévia do prontuário" aria-label="Ver prévia do prontuário"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
                     </div>
                 </div>
             `;
@@ -477,7 +471,6 @@
                     <td>${escapeHtml(p.convenio_nome || '—')}</td>
                     <td>${escapeHtml(p.aplicador_nome || '—')}</td>
                     <td><span class="badge ${statusClass}">${statusLabel}</span></td>
-                    <td><button class="btn-previa-paciente" data-previa-id="${p.id}" title="Ver prévia do prontuário" aria-label="Ver prévia do prontuário"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
                 </tr>
             `;
         }).join('');
@@ -492,7 +485,6 @@
                             <th>Convênio</th>
                             <th>Aplicador</th>
                             <th>Status</th>
-                            <th style="width:52px"></th>
                         </tr>
                     </thead>
                     <tbody>${linhas}</tbody>

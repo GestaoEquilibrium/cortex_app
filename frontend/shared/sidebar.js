@@ -139,7 +139,7 @@ window.CortexSidebar = (function() {
 
     // ── v2.0 "Aurora": carrega a camada visual e o sistema de janelas
     // suspensas em TODAS as páginas, sem precisar editar cada HTML.
-    const V2 = '210';
+    const V2 = '220';
 
     function iniciarV2() {
         const base = caminhoShared();
@@ -183,6 +183,25 @@ window.CortexSidebar = (function() {
 
     // Roda já no parse do arquivo — evita piscar o visual antigo.
     try { iniciarV2(); } catch (e) { console.warn('[sidebar] v2 indisponível:', e); }
+
+    // ── Modo EMBUTIDO (Sprint previas2) ─────────────────────────────────────
+    // Quando a página é aberta dentro de uma janela suspensa, ela vem com
+    // ?embed=1. Aí não renderizamos sidebar, topbar, tabbar nem FAB: só o
+    // conteúdo. Assim a mesma página serve para navegação normal e para
+    // prévia, sem duplicar código nem editar as 37 páginas de resultado.
+    function ehEmbutido() {
+        try {
+            return new URLSearchParams(window.location.search).get('embed') === '1';
+        } catch (_) {
+            return false;
+        }
+    }
+
+    if (ehEmbutido()) {
+        const marcar = () => document.body.classList.add('cortex-embed');
+        if (document.body) marcar();
+        else document.addEventListener('DOMContentLoaded', marcar);
+    }
 
     async function iniciarNotificacoes() {
         try {
@@ -257,6 +276,14 @@ window.CortexSidebar = (function() {
     }
 
     async function render(itemAtivoId) {
+        // Modo embutido: a página está dentro de uma janela suspensa e não
+        // deve desenhar a própria navegação.
+        if (ehEmbutido()) {
+            document.body.classList.add('cortex-embed');
+            // O auth_guard já cuidou da sessão; só avisamos quem espera.
+            return;
+        }
+
         const container = document.getElementById('sidebar-container');
         if (!container) {
             console.error('CortexSidebar: elemento #sidebar-container não encontrado.');

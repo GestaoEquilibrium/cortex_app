@@ -486,116 +486,136 @@ window.CortexPrevia = (function () {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // 5 · HOVER — o card cresce e mostra o prontuario
+    // 5 · HOVER — o proprio card expande e vira uma previa da pasta
     // ════════════════════════════════════════════════════════════════════════
     //
-    // Substitui o botao de olho: passar o mouse sobre o card (ou a linha da
-    // tabela) abre um painel flutuante ancorado nele, com o resumo do
-    // prontuario. So no desktop com mouse de verdade — em toque, hover nao
-    // existe e o card continua abrindo a pasta no clique.
+    // Em vez de um painel solto flutuando ao lado (que cobria cards vizinhos e
+    // deixava duvida sobre a quem pertencia), o card cresce no lugar: ganha
+    // relevo e uma continuacao emendada logo abaixo, sem costura, como se
+    // fosse um so. A grade nao se mexe — a continuacao fica sobreposta.
+    //
+    // A foto vem de graca: a lista ja trocou as iniciais pela imagem assinada
+    // dentro do card, entao clonamos o avatar que ja esta ali em vez de pedir
+    // outra URL ao Storage.
+    //
+    // No hover tambem disparamos o pre-carregamento da pasta do paciente, pra
+    // que o clique caia numa pagina ja em cache.
 
-    const ATRASO_ABRIR = 380;   // evita abrir ao so atravessar a lista
-    const ATRASO_FECHAR = 180;  // deixa mover o mouse do card para o painel
+    const ATRASO_ABRIR = 320;
+    const ATRASO_FECHAR = 160;
+    const ALTURA_ESTIMADA = 300;   // pra decidir se abre pra baixo ou pra cima
 
-    let painel = null;
-    let idAtual = null;
+    let cardAberto = null;
     let tOpen = null;
     let tClose = null;
     const cacheLaudo = new Map();
+    const jaPrefetch = new Set();
 
     function temMouse() {
         return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     }
 
-    function fecharPainel() {
+    function fecharExpansao() {
         clearTimeout(tOpen);
-        if (!painel) return;
-        const alvo = painel;
-        painel = null;
-        idAtual = null;
-        alvo.classList.remove('is-open');
-        setTimeout(() => alvo.remove(), 200);
+        if (!cardAberto) return;
+        const card = cardAberto;
+        cardAberto = null;
+
+        const exp = card.querySelector('.card-expansao');
+        card.classList.remove('is-expandido');
+        if (exp) {
+            exp.classList.remove('is-open');
+            setTimeout(() => exp.remove(), 200);
+        }
     }
 
     function agendarFechar() {
         clearTimeout(tClose);
-        tClose = setTimeout(fecharPainel, ATRASO_FECHAR);
+        tClose = setTimeout(fecharExpansao, ATRASO_FECHAR);
     }
 
     function cancelarFechar() { clearTimeout(tClose); }
 
-    function posicionar(el, ancora) {
-        const r = ancora.getBoundingClientRect();
-        const largura = el.offsetWidth;
-        const altura = el.offsetHeight;
-        const folga = 12;
-
-        // Preferencia: a direita do card; se nao couber, a esquerda; senao centraliza.
-        let left = r.right + folga;
-        if (left + largura > window.innerWidth - folga) left = r.left - largura - folga;
-        if (left < folga) left = Math.max(folga, Math.min(r.left, window.innerWidth - largura - folga));
-
-        let top = r.top + (r.height / 2) - (altura / 2);
-        if (top < folga) top = folga;
-        if (top + altura > window.innerHeight - folga) top = window.innerHeight - altura - folga;
-
-        el.style.left = Math.round(left) + 'px';
-        el.style.top = Math.round(top) + 'px';
+    // Pre-carrega a pasta do paciente para o clique ser instantaneo.
+    function prefetchPasta(id) {
+        const chave = String(id);
+        if (jaPrefetch.has(chave)) return;
+        jaPrefetch.add(chave);
+        try {
+            const l = document.createElement('link');
+            l.rel = 'prefetch';
+            l.as = 'document';
+            l.href = 'pasta.html?id=' + encodeURIComponent(id);
+            document.head.appendChild(l);
+        } catch (_) { /* prefetch e otimizacao, nunca erro fatal */ }
     }
 
-    function montarPainel(linha, ancora) {
-        fecharPainel();
+    // Clona o avatar que a lista ja carregou (com a foto assinada, quando tem).
+    function avatarGrande(card, linha) {
+        const orig = card.querySelector('.avatar');
+        if (orig) {
+            const clone = orig.cloneNode(true);
+            clone.classList.remove('avatar-sm', 'avatar-md');
+            clone.classList.add('avatar-lg');
+            return clone.outerHTML;
+        }
+        if (window.CortexAvatar && window.CortexAvatar.render) {
+            return window.CortexAvatar.render(linha, { tamanho: 'lg' });
+        }
+        return '';
+    }
 
-        const statusLabel = (window.CortexUI && window.CortexUI.STATUS_LABELS &&
-                             window.CortexUI.STATUS_LABELS[linha.status]) || linha.status || '\u2014';
-        const statusClasse = (window.CortexUI && window.CortexUI.STATUS_CLASSES &&
-                              window.CortexUI.STATUS_CLASSES[linha.status]) || 'status-info';
-        const avatar = (window.CortexAvatar && window.CortexAvatar.render)
-            ? window.CortexAvatar.render(linha, { tamanho: 'md' })
-            : '';
+    function expandir(card, linha) {
+        fecharExpansao();
+        if (card.querySelector('.card-expansao')) return;
 
         const campos = [
-            ['Idade',     linha.idade_humanizada],
-            ['Conv\u00eanio',  linha.convenio_nome],
-            ['Aplicador', linha.aplicador_nome],
-            ['Telefone',  linha.telefone],
-            ['E-mail',    linha.email],
-            ['CPF',       linha.cpf],
-            ['Cidade',    linha.cidade]
+            ['Telefone', linha.telefone],
+            ['E-mail',   linha.email],
+            ['CPF',      linha.cpf],
+            ['Cidade',   linha.cidade],
+            ['Aplicador', linha.aplicador_nome]
         ].map(([r, v]) => linhaInfo(r, v)).join('');
 
-        const el = document.createElement('div');
-        el.className = 'previa-hover';
-        el.innerHTML = `
-            <div class="previa-hover-topo">
-                ${avatar}
-                <div style="min-width:0">
-                    <div class="previa-hover-nome">${esc(linha.nome_completo || '\u2014')}</div>
-                    <span class="badge ${statusClasse}">${esc(statusLabel)}</span>
+        const exp = document.createElement('div');
+        exp.className = 'card-expansao';
+
+        // Sem espaco embaixo? A continuacao sobe e emenda no topo do card.
+        const r = card.getBoundingClientRect();
+        const paraCima = (window.innerHeight - r.bottom) < ALTURA_ESTIMADA &&
+                         r.top > ALTURA_ESTIMADA;
+        if (paraCima) exp.classList.add('acima');
+
+        exp.innerHTML = `
+            <div class="card-expansao-topo">
+                ${avatarGrande(card, linha)}
+                <div class="card-expansao-id">
+                    <div class="card-expansao-nome">${esc(linha.nome_completo || '\u2014')}</div>
+                    <div class="card-expansao-idade">${esc(linha.idade_humanizada || '')}</div>
                 </div>
             </div>
-            <div class="previa-hover-campos">${campos}</div>
-            <div class="previa-hover-laudo" data-slot-laudo></div>
-            <div class="previa-hover-rodape">
-                <span>Clique no card para abrir a pasta completa</span>
-            </div>`;
+            <div class="card-expansao-campos">${campos ||
+                '<p class="card-expansao-vazio">Sem dados de contato cadastrados.</p>'}</div>
+            <div data-slot-laudo></div>
+            <div class="card-expansao-rodape">Clique para abrir a pasta completa</div>`;
 
-        document.body.appendChild(el);
-        painel = el;
-        idAtual = String(linha.id);
+        // Impede que o hover na expansao dispare o fechamento do card.
+        exp.addEventListener('mouseenter', cancelarFechar);
+        exp.addEventListener('mouseleave', agendarFechar);
 
-        posicionar(el, ancora);
-        requestAnimationFrame(() => el.classList.add('is-open'));
+        card.appendChild(exp);
+        card.classList.add('is-expandido');
+        if (paraCima) card.classList.add('is-expandido-acima');
+        else card.classList.remove('is-expandido-acima');
 
-        el.addEventListener('mouseenter', cancelarFechar);
-        el.addEventListener('mouseleave', agendarFechar);
+        cardAberto = card;
+        requestAnimationFrame(() => exp.classList.add('is-open'));
 
-        carregarLaudoHover(linha.id, el);
-        return el;
+        carregarLaudo(linha.id, card, exp);
     }
 
-    async function carregarLaudoHover(pacienteId, el) {
-        const slot = el.querySelector('[data-slot-laudo]');
+    async function carregarLaudo(pacienteId, card, exp) {
+        const slot = exp.querySelector('[data-slot-laudo]');
         if (!slot || !window.cortexClient) return;
 
         const chave = String(pacienteId);
@@ -612,20 +632,20 @@ window.CortexPrevia = (function () {
                 laudo = (!error && data && data.length) ? data[0] : null;
                 cacheLaudo.set(chave, laudo);
             } catch (err) {
-                console.warn('[previa] laudo hover:', err);
+                console.warn('[previa] laudo:', err);
                 return;
             }
         }
 
         // O mouse pode ter saido enquanto a consulta rodava.
-        if (!laudo || painel !== el) return;
+        if (!laudo || cardAberto !== card) return;
 
         slot.innerHTML = `
-            <div class="previa-hover-laudo-item">
+            <div class="card-expansao-laudo">
                 <div class="cx-pop-ico tone-green" style="width:30px;height:30px">${IC_DOC}</div>
                 <div style="flex:1;min-width:0">
                     <div style="font-size:13px;font-weight:650">Laudo v${esc(laudo.versao)}</div>
-                    <div class="previa-hover-arquivo">${esc(laudo.arquivo_nome_original || '')}</div>
+                    <div class="card-expansao-arquivo">${esc(laudo.arquivo_nome_original || '')}</div>
                 </div>
                 <button class="btn btn-secondary" data-ver-laudo
                         style="padding:6px 11px;font-size:12px;flex-shrink:0">${IC_OLHO} Ver</button>
@@ -634,7 +654,7 @@ window.CortexPrevia = (function () {
         slot.querySelector('[data-ver-laudo]').addEventListener('click', (ev) => {
             ev.stopPropagation();
             ev.preventDefault();
-            fecharPainel();
+            fecharExpansao();
             arquivo({
                 bucket: 'laudos',
                 path: laudo.arquivo_path,
@@ -643,31 +663,32 @@ window.CortexPrevia = (function () {
                 subtitulo: laudo.arquivo_nome_original || ''
             });
         });
-
-        posicionar(el, el.__ancora || el);
     }
 
     /**
-     * Liga a previa por hover nos cards/linhas de um container.
-     * Recebe a lista ja carregada pela pagina — nao faz consulta de paciente.
+     * Liga a expansao por hover nos cards/linhas de um container.
+     * Recebe a lista ja carregada pela pagina — nao consulta pacientes.
      */
     function ativarHover(container, lista) {
         if (!container || !temMouse()) return;
 
         const porId = new Map((lista || []).map(x => [String(x.id), x]));
 
-        container.querySelectorAll('[data-paciente-id]').forEach(el => {
+        // So os CARDS expandem. No modo Lista os elementos sao <tr>, e um
+        // <div> dentro de uma linha de tabela e expulso da tabela pelo
+        // navegador — viraria lixo flutuando na tela.
+        container.querySelectorAll('.paciente-card[data-paciente-id]').forEach(el => {
             el.addEventListener('mouseenter', () => {
                 cancelarFechar();
                 const id = el.dataset.pacienteId;
-                if (painel && idAtual === String(id)) return;
+                if (cardAberto === el) return;
+
+                prefetchPasta(id);
 
                 clearTimeout(tOpen);
                 tOpen = setTimeout(() => {
                     const linha = porId.get(String(id));
-                    if (!linha) return;
-                    const p = montarPainel(linha, el);
-                    if (p) p.__ancora = el;
+                    if (linha) expandir(el, linha);
                 }, ATRASO_ABRIR);
             });
 
@@ -677,8 +698,13 @@ window.CortexPrevia = (function () {
             });
         });
 
-        // Rolar ou sair da janela fecha na hora.
-        window.addEventListener('scroll', fecharPainel, { passive: true, once: false });
+        // No modo Lista nao ha expansao, mas o pre-carregamento da pasta
+        // continua valendo: passar o mouse ja deixa a pagina em cache.
+        container.querySelectorAll('tr[data-paciente-id]').forEach(el => {
+            el.addEventListener('mouseenter', () => prefetchPasta(el.dataset.pacienteId));
+        });
+
+        window.addEventListener('scroll', fecharExpansao, { passive: true });
     }
 
     // ── Boot ────────────────────────────────────────────────────────────────

@@ -148,7 +148,7 @@ window.CortexSidebar = (function() {
 
     // ── v2.0 "Aurora": carrega a camada visual e o sistema de janelas
     // suspensas em TODAS as páginas, sem precisar editar cada HTML.
-    const V2 = '240';
+    const V2 = '250';
 
     function iniciarV2() {
         const base = caminhoShared();

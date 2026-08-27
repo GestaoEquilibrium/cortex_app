@@ -89,8 +89,7 @@
     async function carregarInstrumentos() {
         const { data, error } = await c()
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, dominio_principal')
-            .eq('ativo', true)
+            .select('*')
             .order('sigla');
         if (error) throw error;
         state.instrumentos = data || [];
@@ -115,7 +114,7 @@
                     <select id="sel-instrumento">
                         <option value="">— escolha —</option>
                         ${state.instrumentos.map(i =>
-                            `<option value="${i.id}">${esc(i.sigla)} · ${esc(i.nome_completo)}</option>`
+                            `<option value="${i.id}">${esc(i.sigla)} · ${esc(i.nome_completo)}${i.ativo ? '' : '  (inativo)'}</option>`
                         ).join('')}
                     </select>
                 </div>
@@ -125,15 +124,25 @@
                         <option value="">— escolha o instrumento —</option>
                     </select>
                 </div>
-                <button class="ia-btn ia-btn-secundario" id="btn-nova-norma" disabled>+ Nova versão</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="ia-btn ia-btn-secundario" id="btn-nova-norma" disabled>+ Nova versão</button>
+                </div>
             </div>
 
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin:-8px 0 20px">
+                <button class="ia-btn ia-btn-secundario" id="btn-novo-instr">+ Cadastrar teste novo</button>
+                <button class="ia-btn ia-btn-secundario" id="btn-editar-instr" disabled>Editar dados do teste</button>
+            </div>
+
+            <div id="ia-ficha"></div>
             <div id="ia-corpo"></div>
         `;
 
         el('sel-instrumento').addEventListener('change', async (e) => {
             state.instrumentoId = e.target.value;
             state.normaId = '';
+            el('btn-editar-instr').disabled = !state.instrumentoId;
+            el('ia-ficha').innerHTML = '';
             await carregarNormas();
         });
 
@@ -141,6 +150,12 @@
             state.normaId = e.target.value;
             if (state.normaId) await carregarTudo();
             else el('ia-corpo').innerHTML = '';
+        });
+
+        el('btn-novo-instr').addEventListener('click', () => fichaInstrumento(null));
+        el('btn-editar-instr').addEventListener('click', () => {
+            const inst = state.instrumentos.find(i => i.id === state.instrumentoId);
+            if (inst) fichaInstrumento(inst);
         });
 
         el('btn-nova-norma').addEventListener('click', () => {
@@ -236,6 +251,263 @@
         }
 
         renderAbas();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // 0 · FICHA DO TESTE (instrumentos_catalogo)
+    // ════════════════════════════════════════════════════════════════════════
+    // Cadastra ou edita o teste no catalogo — o que faz ele aparecer no
+    // checklist do paciente e na bateria. E o passo anterior a tudo: sem
+    // ficha, nao ha onde pendurar norma, escalas nem itens.
+    //
+    // Valores validos vem dos CHECKs da tabela:
+    //   tipo_aplicacao   : presencial | online
+    //   tipo_respondente : paciente | responsavel | professor |
+    //                      paciente_ou_responsavel | responsavel_ou_professor
+    //   sexo_filtro      : NULL | M | F
+    // faixas_aplicaveis usa os tres valores que o checklist.js reconhece:
+    //   pre_escolar (ate 6a) | escolar (6-17a) | adulto (18+)
+
+    const FAIXAS = [
+        ['pre_escolar', 'Pré-escolar (até 6 anos)'],
+        ['escolar',     'Escolar (6 a 17 anos)'],
+        ['adulto',      'Adulto (18 anos ou mais)']
+    ];
+
+    const RESPONDENTES = [
+        ['paciente',                 'O próprio paciente'],
+        ['responsavel',              'Pai, mãe ou responsável'],
+        ['professor',                'Professor'],
+        ['paciente_ou_responsavel',  'Paciente ou responsável'],
+        ['responsavel_ou_professor', 'Responsável ou professor']
+    ];
+
+    function dominiosExistentes() {
+        return [...new Set(state.instrumentos.map(i => i.dominio_principal).filter(Boolean))].sort();
+    }
+
+    function fichaInstrumento(inst) {
+        const novo = !inst;
+        const i = inst || {};
+        const faixas = Array.isArray(i.faixas_aplicaveis) ? i.faixas_aplicaveis : [];
+        const doms = dominiosExistentes();
+
+        el('ia-ficha').innerHTML = `
+            <div class="ia-card" style="border-color:rgba(47,111,237,.35)">
+                <h2>${novo ? 'Cadastrar teste novo' : 'Dados do teste'}</h2>
+                <p class="ia-card-sub">
+                    É o que faz o teste aparecer no checklist do paciente e na bateria.
+                    Os filtros de idade, sexo e respondente decidem para quem ele aparece.
+                </p>
+
+                <div class="ia-grid">
+                    <div class="ia-campo">
+                        <label>Sigla *</label>
+                        <input id="f-sigla" value="${esc(i.sigla || '')}" placeholder="ex.: BDI-II">
+                        <span class="ia-campo-dica">Como aparece nas listas. Diferencia maiúscula de minúscula.</span>
+                    </div>
+                    <div class="ia-campo ia-full">
+                        <label>Nome completo *</label>
+                        <input id="f-nome" value="${esc(i.nome_completo || '')}">
+                    </div>
+                    <div class="ia-campo ia-full">
+                        <label>O que avalia *</label>
+                        <input id="f-avalia" value="${esc(i.o_que_avalia || '')}" placeholder="Uma linha, aparece embaixo do nome no checklist">
+                    </div>
+                    <div class="ia-campo ia-full">
+                        <label>Categoria *</label>
+                        <select id="f-dominio">
+                            ${doms.map(d => `<option value="${esc(d)}" ${i.dominio_principal === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}
+                            <option value="__nova__">— criar categoria nova —</option>
+                        </select>
+                        <input id="f-dominio-nova" style="display:none;margin-top:6px" placeholder="Nome da categoria nova">
+                        <span class="ia-campo-dica" id="f-dominio-dica"></span>
+                    </div>
+
+                    <div class="ia-campo ia-full">
+                        <label>Para quem aparece *</label>
+                        <div style="display:flex;gap:16px;flex-wrap:wrap;padding:6px 0">
+                            ${FAIXAS.map(([v, lbl]) => `
+                                <label style="display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--color-text)">
+                                    <input type="checkbox" class="f-faixa" value="${v}" ${faixas.includes(v) ? 'checked' : ''} style="width:auto">
+                                    ${esc(lbl)}
+                                </label>`).join('')}
+                        </div>
+                        <span class="ia-campo-dica">Marque pelo menos uma. É o filtro grosso; o fino são as idades abaixo.</span>
+                    </div>
+
+                    <div class="ia-campo">
+                        <label>Idade mínima (meses)</label>
+                        <input id="f-idmin" type="number" value="${i.faixa_etaria_min_meses ?? ''}">
+                        <span class="ia-campo-dica">6 anos = 72. Vazio = sem limite.</span>
+                    </div>
+                    <div class="ia-campo">
+                        <label>Idade máxima (meses)</label>
+                        <input id="f-idmax" type="number" value="${i.faixa_etaria_max_meses ?? ''}">
+                    </div>
+                    <div class="ia-campo">
+                        <label>Faixa escrita</label>
+                        <input id="f-idlabel" value="${esc(i.faixa_etaria_label || '')}" placeholder="ex.: 6 – 18 anos">
+                        <span class="ia-campo-dica">Só para exibição.</span>
+                    </div>
+
+                    <div class="ia-campo">
+                        <label>Quem responde *</label>
+                        <select id="f-respondente">
+                            ${RESPONDENTES.map(([v, lbl]) => `<option value="${v}" ${(i.tipo_respondente || 'paciente') === v ? 'selected' : ''}>${esc(lbl)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="ia-campo">
+                        <label>Só para um sexo?</label>
+                        <select id="f-sexo">
+                            <option value=""  ${!i.sexo_filtro ? 'selected' : ''}>Não, aparece para todos</option>
+                            <option value="M" ${i.sexo_filtro === 'M' ? 'selected' : ''}>Só masculino</option>
+                            <option value="F" ${i.sexo_filtro === 'F' ? 'selected' : ''}>Só feminino</option>
+                        </select>
+                        <span class="ia-campo-dica">Use só se houver versão separada por sexo.</span>
+                    </div>
+                    <div class="ia-campo">
+                        <label>Como é aplicado *</label>
+                        <select id="f-tipoapl">
+                            <option value="online"     ${(i.tipo_aplicacao || 'online') === 'online' ? 'selected' : ''}>Online (link ou portal)</option>
+                            <option value="presencial" ${i.tipo_aplicacao === 'presencial' ? 'selected' : ''}>Presencial</option>
+                        </select>
+                    </div>
+
+                    <div class="ia-campo">
+                        <label>Responde dentro do CORTEX?</label>
+                        <select id="f-online">
+                            <option value="false" ${!i.permite_aplicacao_online ? 'selected' : ''}>Não</option>
+                            <option value="true"  ${i.permite_aplicacao_online ? 'selected' : ''}>Sim</option>
+                        </select>
+                        <span class="ia-campo-dica">Sim exige os itens cadastrados.</span>
+                    </div>
+                    <div class="ia-campo">
+                        <label>CORTEX corrige?</label>
+                        <select id="f-correcao">
+                            <option value="false" ${!i.permite_correcao_sistema ? 'selected' : ''}>Não, corrijo fora</option>
+                            <option value="true"  ${i.permite_correcao_sistema ? 'selected' : ''}>Sim</option>
+                        </select>
+                        <span class="ia-campo-dica">Sim exige a tabela normativa.</span>
+                    </div>
+                    <div class="ia-campo">
+                        <label>Ativo</label>
+                        <select id="f-ativo">
+                            <option value="true"  ${i.ativo !== false ? 'selected' : ''}>Sim</option>
+                            <option value="false" ${i.ativo === false ? 'selected' : ''}>Não, esconder</option>
+                        </select>
+                    </div>
+
+                    <div class="ia-campo">
+                        <label>Autores</label>
+                        <input id="f-autores" value="${esc(i.autores || '')}">
+                    </div>
+                    <div class="ia-campo">
+                        <label>Editora</label>
+                        <input id="f-editora" value="${esc(i.editora || '')}">
+                    </div>
+                    <div class="ia-campo">
+                        <label>Versão / edição</label>
+                        <input id="f-versao" value="${esc(i.versao || '')}">
+                    </div>
+                    <div class="ia-campo ia-full">
+                        <label>Descrição longa</label>
+                        <input id="f-desclonga" value="${esc(i.descricao_longa || '')}">
+                    </div>
+                </div>
+
+                <div class="ia-acoes">
+                    <button class="ia-btn ia-btn-primario" id="btn-salvar-ficha">
+                        ${novo ? 'Cadastrar teste' : 'Salvar alterações'}
+                    </button>
+                    <button class="ia-btn ia-btn-secundario" id="btn-fechar-ficha">Cancelar</button>
+                </div>
+            </div>`;
+
+        const selDom = el('f-dominio');
+        const inpDom = el('f-dominio-nova');
+        const dicaDom = el('f-dominio-dica');
+
+        function atualizarDicaDominio() {
+            if (selDom.value === '__nova__') {
+                inpDom.style.display = 'block';
+                dicaDom.innerHTML = '<strong>Atenção:</strong> categoria nova precisa ser adicionada também ao checklist.js e ao bateria.js, senão aparece sem ícone e no fim da lista. Prefira uma das existentes se couber.';
+            } else {
+                inpDom.style.display = 'none';
+                dicaDom.textContent = 'Agrupa o teste no checklist e na bateria.';
+            }
+        }
+        selDom.addEventListener('change', atualizarDicaDominio);
+        atualizarDicaDominio();
+
+        el('btn-fechar-ficha').addEventListener('click', () => { el('ia-ficha').innerHTML = ''; });
+        el('btn-salvar-ficha').addEventListener('click', () => salvarFicha(i.id || null));
+
+        el('ia-ficha').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function salvarFicha(id) {
+        const faixas = [...document.querySelectorAll('.f-faixa:checked')].map(c => c.value);
+        let dominio = val('f-dominio');
+        if (dominio === '__nova__') dominio = val('f-dominio-nova');
+
+        if (!val('f-sigla'))   { toast('A sigla é obrigatória.', 'danger'); return; }
+        if (!val('f-nome'))    { toast('O nome completo é obrigatório.', 'danger'); return; }
+        if (!val('f-avalia'))  { toast('Preencha "O que avalia".', 'danger'); return; }
+        if (!dominio)          { toast('Escolha ou escreva uma categoria.', 'danger'); return; }
+        if (!faixas.length)    { toast('Marque pelo menos uma faixa em "Para quem aparece".', 'danger'); return; }
+
+        const idMin = num('f-idmin'), idMax = num('f-idmax');
+        if (idMin !== null && idMax !== null && idMin > idMax) {
+            toast('A idade mínima está maior que a máxima.', 'danger'); return;
+        }
+
+        const row = {
+            sigla: val('f-sigla'),
+            nome_completo: val('f-nome'),
+            o_que_avalia: val('f-avalia'),
+            dominio_principal: dominio,
+            faixas_aplicaveis: faixas,
+            faixa_etaria_min_meses: idMin,
+            faixa_etaria_max_meses: idMax,
+            faixa_etaria_label: val('f-idlabel') || null,
+            tipo_respondente: val('f-respondente'),
+            sexo_filtro: val('f-sexo') || null,
+            tipo_aplicacao: val('f-tipoapl'),
+            permite_aplicacao_online: val('f-online') === 'true',
+            permite_correcao_sistema: val('f-correcao') === 'true',
+            ativo: val('f-ativo') === 'true',
+            autores: val('f-autores') || null,
+            editora: val('f-editora') || null,
+            versao: val('f-versao') || null,
+            descricao_longa: val('f-desclonga') || null,
+            updated_at: new Date().toISOString()
+        };
+
+        try {
+            let novoId = id;
+            if (id) {
+                const { error } = await c().from('instrumentos_catalogo').update(row).eq('id', id);
+                if (error) throw error;
+                toast('Teste atualizado.', 'success');
+            } else {
+                const { data, error } = await c().from('instrumentos_catalogo').insert(row).select('id').single();
+                if (error) throw error;
+                novoId = data.id;
+                toast('Teste cadastrado. Agora crie a versão da norma.', 'success');
+            }
+
+            await carregarInstrumentos();
+            renderEstrutura();
+            el('sel-instrumento').value = novoId;
+            state.instrumentoId = novoId;
+            el('btn-editar-instr').disabled = false;
+            await carregarNormas();
+        } catch (err) {
+            console.error(err);
+            const dup = String(err.message || '').includes('duplicate');
+            toast(dup ? 'Já existe um teste com essa sigla.' : 'Erro ao salvar: ' + (err.message || err), 'danger');
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════

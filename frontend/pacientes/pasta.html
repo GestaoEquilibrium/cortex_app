@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pasta do paciente — CORTEX</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -224,10 +224,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
     <link rel="manifest" href="../site.webmanifest">
-    <meta name="theme-color" content="#141F3C">
+    <meta name="theme-color" content="#0c1f3f">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="CORTEX">
     <script defer src="../shared/titlebar.js"></script>
     <link rel="stylesheet" href="../shared/image_cropper.css">
@@ -1267,7 +1267,21 @@
     };
 
     function abrirModalLaudo(laudo, signedUrl) {
-        // Cria modal full-screen com iframe do PDF
+        // Sprint previas: usa a janela suspensa padrao do sistema (CortexPop),
+        // com maximizar, ESC, fundo borrado e botao de baixar no cabecalho.
+        // Se o modulo nao tiver carregado, cai no modal antigo.
+        if (window.CortexPrevia && window.CortexPrevia.disponivel()) {
+            window.CortexPrevia.arquivo({
+                bucket: 'laudos',
+                path: laudo.arquivo_path,
+                nome: laudo.arquivo_nome_original || `laudo-v${laudo.versao}.pdf`,
+                titulo: `Laudo v${laudo.versao}`,
+                subtitulo: `${laudo.arquivo_nome_original || ''} · ${formatarBytes(laudo.arquivo_tamanho_bytes)}`,
+                aoBaixar: () => window.CortexLaudo.baixar(laudo.id)
+            });
+            return;
+        }
+
         const modal = document.createElement('div');
         modal.className = 'laudo-modal';
         modal.innerHTML = `
@@ -1285,7 +1299,6 @@
         `;
         document.body.appendChild(modal);
 
-        // ESC fecha
         const escHandler = (e) => {
             if (e.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escHandler); }
         };

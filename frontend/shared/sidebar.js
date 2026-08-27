@@ -168,6 +168,14 @@ window.CortexSidebar = (function() {
             document.head.appendChild(sc);
         }
 
+        // Prévias em janela suspensa (PDF de resultado, laudos, prontuário).
+        if (!window.CortexPrevia && !document.querySelector('script[data-cortex-previa-js]')) {
+            const pv = document.createElement('script');
+            pv.src = base + 'cortex_previa.js?v=' + V2;
+            pv.setAttribute('data-cortex-previa-js', '1');
+            document.head.appendChild(pv);
+        }
+
         // PWA: metas, splash do iOS, modo app e service worker de estáticos.
         if (!window.CortexPWA && !document.querySelector('script[data-cortex-pwa-js]')) {
             const pw = document.createElement('script');

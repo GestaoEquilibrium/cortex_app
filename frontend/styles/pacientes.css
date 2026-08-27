@@ -974,3 +974,35 @@
 @media (max-width: 420px) {
     .pasta-actions .btn { flex: 1 1 100%; }
 }
+
+
+/* ============================================================================
+   PRÉVIA DO PRONTUÁRIO — Sprint previas
+   Botão de olho na tabela e no card; abre o CortexPrevia sem sair da lista.
+   ============================================================================ */
+
+.btn-previa-paciente {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-soft);
+    background: transparent;
+    border: 1px solid transparent;
+    flex-shrink: 0;
+    transition: color .15s ease, background .15s ease,
+                border-color .15s ease, transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+
+.btn-previa-paciente:hover {
+    color: var(--accent-purple, #7C4DFF);
+    background: var(--tint-purple, #F0EAFF);
+    border-color: rgba(124, 77, 255, 0.30);
+    transform: scale(1.08);
+}
+
+.btn-previa-paciente:active { transform: scale(0.94); }
+
+.pacientes-table td:last-child { text-align: right; }

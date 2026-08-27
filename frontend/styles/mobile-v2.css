@@ -1,0 +1,379 @@
+/* ============================================================================
+   CORTEX_APP — mobile-v2.css  ·  Sprint pwa_v2
+   ----------------------------------------------------------------------------
+   Camada de celular. Carregada depois de components.css e cortex-v2.css.
+   Depende de viewport-fit=cover no <meta viewport> — sem isso o iOS devolve
+   0 em todos os env(safe-area-inset-*) e o layout encosta no notch.
+   ============================================================================ */
+
+:root {
+    --safe-top:    env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left:   env(safe-area-inset-left, 0px);
+    --safe-right:  env(safe-area-inset-right, 0px);
+    --topbar-h:    56px;
+    --tabbar-h:    60px;
+}
+
+/* ── Comportamento de toque (vale em qualquer largura) ───────────────────── */
+.nav-item,
+.tabbar-item,
+.btn,
+.cx-pop-btn,
+.topbar-menu-btn,
+.sidebar-toggle,
+.sidebar-close,
+.sidebar-fab {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MODO APP (adicionado à tela inicial) — body.is-pwa
+   ══════════════════════════════════════════════════════════════════════════ */
+
+body.is-pwa {
+    /* Mata o "puxar pra atualizar" e o efeito de borracha do Safari,
+       que denunciam que aquilo é um site. */
+    overscroll-behavior-y: none;
+}
+
+/* No modo app o fundo fixo do desktop causa repaint feio ao rolar no iOS. */
+body.is-pwa {
+    background-attachment: scroll;
+}
+
+/* Some com qualquer convite de instalação quando já está instalado. */
+body.is-pwa .pwa-instalar-card,
+body.is-pwa #pwa-instalar-btn { display: none !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CELULAR
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+    /* ── Topbar de vidro navy, respeitando o notch ── */
+    .cortex-topbar {
+        display: flex;
+        height: calc(var(--topbar-h) + var(--safe-top));
+        padding: var(--safe-top) calc(12px + var(--safe-right)) 0 calc(8px + var(--safe-left));
+        background: linear-gradient(135deg, rgba(27, 42, 84, 0.92), rgba(10, 20, 40, 0.94)) !important;
+        -webkit-backdrop-filter: saturate(180%) blur(18px);
+        backdrop-filter: saturate(180%) blur(18px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+        box-shadow: 0 4px 20px rgba(10, 20, 40, 0.28);
+    }
+
+    .topbar-brand-icon {
+        background: linear-gradient(135deg, rgba(124, 77, 255, 0.9), rgba(47, 111, 237, 0.9));
+        border-radius: 9px;
+    }
+
+    /* ── Conteúdo: folga pro topbar em cima e pra tabbar embaixo ── */
+    .app-main {
+        padding-top: calc(var(--topbar-h) + var(--safe-top) + 14px);
+        padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 22px);
+        padding-left: calc(14px + var(--safe-left));
+        padding-right: calc(14px + var(--safe-right));
+    }
+
+    /* Sem tabbar (perfil com poucos itens), volta a folga normal */
+    body.sem-tabbar .app-main {
+        padding-bottom: calc(var(--safe-bottom) + 28px);
+    }
+
+    /* ── Gaveta lateral ── */
+    .sidebar {
+        width: min(300px, 86vw);
+        margin: 0;
+        border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+        padding-top: calc(16px + var(--safe-top));
+        padding-bottom: calc(16px + var(--safe-bottom));
+        padding-left: calc(12px + var(--safe-left));
+        height: 100dvh;
+        top: 0;
+        transform: translateX(-105%);
+    }
+
+    .sidebar.mobile-open { transform: translateX(0); }
+    .sidebar.is-hidden   { transform: translateX(-105%); }
+
+    /* Na gaveta o rail não faz sentido — abre sempre completa */
+    .sidebar.collapsed { width: min(300px, 86vw); padding-left: calc(12px + var(--safe-left)); }
+    .sidebar.collapsed .sidebar-text,
+    .sidebar.collapsed .sidebar-badge { display: inline; }
+    .sidebar.collapsed .sidebar-user-info { display: block; }
+    .sidebar.collapsed .sidebar-brand { justify-content: flex-start; padding: 6px 6px 14px; }
+    .sidebar.collapsed .nav-item { justify-content: flex-start; padding: 13px 12px; }
+    .sidebar.collapsed .nav-item::after { display: none; }
+    .sidebar.collapsed .sidebar-user { flex-direction: row; padding: 11px; gap: 10px; }
+    .sidebar.collapsed .sidebar-actions { position: static; margin: 0 0 0 auto; flex-direction: row; }
+
+    .sidebar-toggle,
+    .sidebar.collapsed .sidebar-toggle { display: none; }
+    .sidebar-close { display: flex; }
+    .sidebar-fab { display: none !important; }
+
+    .nav-item { padding: 13px 12px; font-size: 14.5px; }
+    .nav-item-icon { width: 20px; height: 20px; }
+
+    .sidebar-backdrop {
+        background: rgba(6, 24, 51, 0.55);
+        -webkit-backdrop-filter: blur(4px);
+        backdrop-filter: blur(4px);
+    }
+
+    /* ── Cabeçalho / formulários ── */
+    .page-header { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 16px; }
+    .page-title h1 { font-size: 21px; }
+    .page-actions { width: 100%; flex-wrap: wrap; }
+    .page-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+    .form-grid, .form-grid-3 { grid-template-columns: 1fr; gap: 12px; }
+    .form-section { padding: 16px 14px; }
+
+    /* 16px evita o zoom automático do iOS ao focar o campo */
+    .form-input, .form-select, .form-textarea,
+    input[type="text"], input[type="email"], input[type="password"],
+    input[type="number"], input[type="date"], input[type="tel"],
+    input[type="search"], select, textarea { font-size: 16px; }
+
+    /* Alvo de toque mínimo confortável */
+    .btn { padding: 11px 16px; font-size: 14px; min-height: 44px; }
+    .btn-icon { min-width: 44px; min-height: 44px; }
+
+    /* ── Cards e tabelas ── */
+    .card, .form-card, .dash-card, .stat-card, .panel { border-radius: var(--radius-lg); }
+    .card:hover, .dash-card:hover, .stat-card:hover { transform: none; }
+
+    .table-wrap, .tabela-wrap, .data-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── Janelas suspensas viram folha de baixo, respeitando o safe area ── */
+    .cx-pop-scrim { padding: 0; align-items: flex-end; }
+    .cx-pop {
+        max-width: 100% !important;
+        max-height: 90dvh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        padding-bottom: var(--safe-bottom);
+    }
+    .cx-pop-foot { padding-bottom: calc(14px + var(--safe-bottom)); }
+
+    /* Puxador visual, igual app nativo */
+    .cx-pop-head::before {
+        content: '';
+        position: absolute;
+        top: 7px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 38px;
+        height: 4px;
+        border-radius: 99px;
+        background: var(--slate-300);
+    }
+    .cx-pop-head { padding-top: 20px; position: relative; }
+
+    .cortex-toast {
+        left: calc(14px + var(--safe-left));
+        right: calc(14px + var(--safe-right));
+        bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 14px);
+        max-width: none;
+        text-align: center;
+    }
+
+    .login-shell { padding: 30px 22px; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+}
+
+@media (max-width: 480px) {
+    .page-title h1 { font-size: 19.5px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BARRA INFERIOR (tab bar) — injetada pelo sidebar.js
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.cortex-tabbar { display: none; }
+
+@media (max-width: 768px) {
+
+    .cortex-tabbar {
+        display: flex;
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 62;
+        height: calc(var(--tabbar-h) + var(--safe-bottom));
+        padding: 0 calc(4px + var(--safe-right)) var(--safe-bottom) calc(4px + var(--safe-left));
+        background: rgba(255, 255, 255, 0.86);
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+        backdrop-filter: saturate(180%) blur(20px);
+        border-top: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 -6px 24px rgba(20, 31, 60, 0.10);
+    }
+
+    body.sem-tabbar .cortex-tabbar { display: none; }
+
+    .tabbar-item {
+        --tab-accent: var(--accent-blue);
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: var(--slate-400);
+        text-decoration: none;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        padding: 6px 2px;
+        position: relative;
+        transition: color var(--transition-fast);
+    }
+
+    .tabbar-item svg {
+        width: 21px;
+        height: 21px;
+        transition: transform var(--transition-bounce);
+    }
+
+    .tabbar-label {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .tabbar-item:active svg { transform: scale(0.88); }
+
+    .tabbar-item.active {
+        color: var(--tab-accent);
+    }
+
+    .tabbar-item.active svg { transform: translateY(-1px) scale(1.08); }
+
+    /* Pílula de fundo no item ativo */
+    .tabbar-item.active::before {
+        content: '';
+        position: absolute;
+        top: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 42px;
+        height: 30px;
+        border-radius: 12px;
+        background: var(--tab-accent);
+        opacity: 0.12;
+    }
+
+    /* Traço superior indicando a aba atual */
+    .tabbar-item.active::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 26px;
+        height: 3px;
+        border-radius: 0 0 4px 4px;
+        background: var(--tab-accent);
+    }
+
+    .tabbar-badge {
+        position: absolute;
+        top: 3px;
+        right: calc(50% - 20px);
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 99px;
+        background: var(--accent-red);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #fff;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CONVITE DE INSTALAÇÃO (aparece só fora do modo app)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.pwa-instalar-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(47, 111, 237, 0.10), rgba(124, 77, 255, 0.10));
+    border: 1px solid rgba(47, 111, 237, 0.24);
+    animation: slide-in-up 0.35s ease-out;
+}
+
+.pwa-instalar-ico {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--grad-aurora);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-glow-purple);
+}
+
+.pwa-instalar-txt { flex: 1; min-width: 0; }
+.pwa-instalar-txt strong { display: block; font-size: 14px; }
+.pwa-instalar-txt span { font-size: 12.5px; color: var(--color-text-muted); }
+
+.pwa-instalar-fechar {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    color: var(--color-text-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pwa-instalar-fechar:active { background: var(--slate-200); }
+
+.pwa-passos { display: grid; gap: 12px; }
+
+.pwa-passo {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: var(--gradient-softer);
+}
+
+.pwa-passo-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 99px;
+    background: var(--grad-blue);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pwa-passo p { font-size: 13.5px; line-height: 1.55; margin: 0; }

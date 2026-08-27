@@ -3,15 +3,20 @@
     "short_name": "CORTEX",
     "description": "Plataforma completa para avaliação neuropsicológica",
     "id": "/frontend/",
-    "start_url": "/frontend/index.html",
+    "start_url": "/frontend/index.html?fonte=pwa",
     "scope": "/frontend/",
-    "display_override": ["window-controls-overlay"],
     "display": "standalone",
+    "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+    "orientation": "any",
     "lang": "pt-BR",
     "dir": "ltr",
     "categories": ["health", "medical", "productivity"],
-    "background_color": "#F1F5F9",
-    "theme_color": "#0c1f3f",
+    "background_color": "#141F3C",
+    "theme_color": "#141F3C",
+    "prefer_related_applications": false,
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    },
     "icons": [
         {
             "src": "/frontend/icon-192.png",
@@ -41,18 +46,27 @@
     "shortcuts": [
         {
             "name": "Dashboard",
+            "short_name": "Painel",
             "url": "/frontend/dashboard.html",
-            "icons": [{ "src": "/frontend/icon-192.png", "sizes": "192x192" }]
+            "icons": [{ "src": "/frontend/icon-192-maskable.png", "sizes": "192x192", "purpose": "maskable" }]
         },
         {
             "name": "Pacientes",
+            "short_name": "Pacientes",
             "url": "/frontend/pacientes/lista.html",
-            "icons": [{ "src": "/frontend/icon-192.png", "sizes": "192x192" }]
+            "icons": [{ "src": "/frontend/icon-192-maskable.png", "sizes": "192x192", "purpose": "maskable" }]
         },
         {
             "name": "Agenda",
+            "short_name": "Agenda",
             "url": "/frontend/agenda/agenda.html",
-            "icons": [{ "src": "/frontend/icon-192.png", "sizes": "192x192" }]
+            "icons": [{ "src": "/frontend/icon-192-maskable.png", "sizes": "192x192", "purpose": "maskable" }]
+        },
+        {
+            "name": "Novo paciente",
+            "short_name": "Novo",
+            "url": "/frontend/pacientes/novo.html",
+            "icons": [{ "src": "/frontend/icon-192-maskable.png", "sizes": "192x192", "purpose": "maskable" }]
         }
     ]
 }

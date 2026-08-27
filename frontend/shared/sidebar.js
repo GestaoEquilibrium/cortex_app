@@ -21,6 +21,7 @@ window.CortexSidebar = (function() {
     const NAV_ITEMS = [
         {
             id: 'dashboard',
+            labelCurto: 'Painel',
             accent: 'var(--accent-blue)',
             label: 'Dashboard',
             href: '../dashboard.html',
@@ -57,6 +58,7 @@ window.CortexSidebar = (function() {
         },
         {
             id: 'relatorios',
+            labelCurto: 'Relatórios',
             accent: 'var(--accent-pink)',
             label: 'Relatórios',
             href: '../relatorios/relatorios.html',
@@ -73,6 +75,7 @@ window.CortexSidebar = (function() {
         },
         {
             id: 'ferramentas-laudo',
+            labelCurto: 'Laudo',
             accent: 'var(--accent-purple-2)',
             label: 'Ferramentas de Laudo',
             href: '../ferramentas-laudo/ferramentas-laudo.html',
@@ -81,6 +84,7 @@ window.CortexSidebar = (function() {
         },
         {
             id: 'configuracoes',
+            labelCurto: 'Config.',
             accent: 'var(--accent-blue-2)',
             label: 'Configurações',
             href: '../configuracoes/configuracoes.html',
@@ -149,11 +153,27 @@ window.CortexSidebar = (function() {
             document.head.appendChild(l);
         }
 
+        if (!document.querySelector('link[data-cortex-mobile-css]')) {
+            const m = document.createElement('link');
+            m.rel = 'stylesheet';
+            m.href = baseStyles + 'mobile-v2.css?v=' + V2;
+            m.setAttribute('data-cortex-mobile-css', '1');
+            document.head.appendChild(m);
+        }
+
         if (!window.CortexPop && !document.querySelector('script[data-cortex-pop-js]')) {
             const sc = document.createElement('script');
             sc.src = base + 'cortex_pop.js?v=' + V2;
             sc.setAttribute('data-cortex-pop-js', '1');
             document.head.appendChild(sc);
+        }
+
+        // PWA: metas, splash do iOS, modo app e service worker de estáticos.
+        if (!window.CortexPWA && !document.querySelector('script[data-cortex-pwa-js]')) {
+            const pw = document.createElement('script');
+            pw.src = base + 'pwa.js?v=' + V2;
+            pw.setAttribute('data-cortex-pwa-js', '1');
+            document.head.appendChild(pw);
         }
     }
 
@@ -282,11 +302,13 @@ window.CortexSidebar = (function() {
         // Filtra itens com restrição de perfil (Sprint 74/78)
         const ehAdmin = (prof?.perfil === 'admin_clinico' || prof?.perfil === 'admin_gestor');
         const ehClinico = (prof?.perfil === 'admin_clinico');
-        const navHtml = NAV_ITEMS.filter(item => {
+        const itensVisiveis = NAV_ITEMS.filter(item => {
             if (item.adminOnly && !ehAdmin) return false;       // relatórios: clínico + gestor
             if (item.clinicoOnly && !ehClinico) return false;   // configurações: só clínico
             return true;
-        }).map(item => {
+        });
+
+        const navHtml = itensVisiveis.map(item => {
             const ativa = item.id === itemAtivoId ? 'active' : '';
             const hrefFinal = item.disabled ? item.href : getRelativePath(item.href);
             const onclick = item.disabled
@@ -316,6 +338,43 @@ window.CortexSidebar = (function() {
             `;
             document.body.insertBefore(topbar, document.body.firstChild);
         }
+        // ── Sprint pwa_v2: barra inferior de navegação (só no celular) ──
+        // Reaproveita a mesma lista já filtrada por perfil. Até 5 itens cabem
+        // na barra; acima disso mostramos 4 + "Mais", que abre a gaveta.
+        if (!document.getElementById('cortex-tabbar')) {
+            const cabe = itensVisiveis.length <= 5;
+            const principais = cabe ? itensVisiveis : itensVisiveis.slice(0, 4);
+
+            const MAIS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>';
+
+            const itensHtml = principais.map(item => {
+                const ativa = item.id === itemAtivoId ? 'active' : '';
+                const hrefFinal = item.disabled ? '#' : getRelativePath(item.href);
+                const rotulo = item.labelCurto || item.label;
+                return `
+                    <a href="${hrefFinal}" class="tabbar-item ${ativa}" data-nav="${item.id}"
+                       style="--tab-accent: ${item.accent || 'var(--accent-blue)'}"
+                       aria-label="${item.label}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg>
+                        <span class="tabbar-label">${rotulo}</span>
+                    </a>
+                `;
+            }).join('');
+
+            const maisHtml = cabe ? '' : `
+                <button class="tabbar-item" id="tabbar-mais" style="--tab-accent: var(--accent-purple)" aria-label="Mais opções">
+                    ${MAIS_SVG}
+                    <span class="tabbar-label">Mais</span>
+                </button>
+            `;
+
+            const tabbar = document.createElement('nav');
+            tabbar.id = 'cortex-tabbar';
+            tabbar.className = 'cortex-tabbar';
+            tabbar.innerHTML = itensHtml + maisHtml;
+            document.body.appendChild(tabbar);
+        }
+
         // ── v2.0: botão flutuante que reabre a sidebar quando está oculta ──
         if (!document.getElementById('sidebar-fab')) {
             const fab = document.createElement('button');
@@ -403,6 +462,10 @@ window.CortexSidebar = (function() {
         }
 
         if (backdrop) backdrop.addEventListener('click', fecharGaveta);
+
+        // Barra inferior: o botão "Mais" abre a mesma gaveta lateral.
+        const tabMais = document.getElementById('tabbar-mais');
+        if (tabMais) tabMais.addEventListener('click', abrirGaveta);
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') fecharGaveta();

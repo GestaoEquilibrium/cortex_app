@@ -243,6 +243,7 @@
             'TEA / Autismo',
             'TDAH / Comportamento',
             'Humor / Ansiedade / Depressão',
+            'Psicopatologia Geral / ASEBA',
             'Personalidade / Habilidades Sociais / Adaptativo',
             'Desenvolvimento Infantil',
             'Sensorial'
@@ -382,6 +383,7 @@
             'TEA / Autismo': '🧩',
             'TDAH / Comportamento': '⚡',
             'Humor / Ansiedade / Depressão': '💭',
+            'Psicopatologia Geral / ASEBA': '🩺',
             'Personalidade / Habilidades Sociais / Adaptativo': '🌈',
             'Desenvolvimento Infantil': '🌱',
             'Sensorial': '🎨'
@@ -543,6 +545,7 @@
         'TEA / Autismo': 'bullet-tea',
         'TDAH / Comportamento': 'bullet-tdah',
         'Humor / Ansiedade / Depressão': 'bullet-humor',
+        'Psicopatologia Geral / ASEBA': 'bullet-psicopatologia',
         'Personalidade / Habilidades Sociais / Adaptativo': 'bullet-personalidade',
         'Desenvolvimento Infantil': 'bullet-desenvolvimento',
         'Sensorial': 'bullet-sensorial'

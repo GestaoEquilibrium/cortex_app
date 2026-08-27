@@ -383,6 +383,7 @@
                        'TEA / Autismo',
                        'TDAH / Comportamento',
                        'Humor / Ansiedade / Depressão',
+                       'Psicopatologia Geral / ASEBA',
                        'Personalidade / Habilidades Sociais / Adaptativo',
                        'Desenvolvimento Infantil',
                        'Sensorial'];
@@ -565,9 +566,9 @@
                             </button>
                         ` : ''}
                         ${apl.status === 'corrigido' && temPaginaResultado(inst.sigla) ? `
-                            <button class="btn btn-primary btn-sm" onclick="window.CortexBateria.verResultado('${montarUrlResultado(inst.sigla, apl.id)}', '${inst.sigla}')" style="background: linear-gradient(135deg, #1e40af 0%, #059669 100%);">
+                            <a class="btn btn-primary btn-sm" href="${montarUrlResultado(inst.sigla, apl.id)}" style="background: linear-gradient(135deg, #1e40af 0%, #059669 100%);">
                                 📊 Ver resultado
-                            </button>
+                            </a>
                         ` : ''}
                         <button class="btn btn-ghost btn-sm" onclick="window.CortexBateria.abrirModal('${apl.id}')">
                             ✎ Editar
@@ -698,16 +699,6 @@
     }
 
     window.CortexBateria = {
-    // Sprint previas2: abre a pagina de resultado numa janela suspensa
-    // (iframe com ?embed=1) em vez de sair da bateria. "Aplicar / Corrigir"
-    // continua navegando: e entrada de dados, nao leitura.
-    verResultado: function (url, sigla) {
-        if (window.CortexPrevia && window.CortexPrevia.disponivel()) {
-            window.CortexPrevia.resultado({ url: url, titulo: sigla || 'Resultado' });
-            return;
-        }
-        window.location.href = url;
-    },
         filtrar: function(status) {
             state.filtroStatus = status;
             renderizar();

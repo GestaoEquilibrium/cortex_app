@@ -83,6 +83,15 @@ window.CortexSidebar = (function() {
             icon: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>'
         },
         {
+            id: 'instrumentos',
+            accent: 'var(--accent-cyan)',
+            labelCurto: 'Instr.',
+            label: 'Instrumentos',
+            href: '../instrumentos-admin/instrumentos-admin.html',
+            icon: '<path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0H5a2 2 0 0 1-2-2v-4m6 6h10a2 2 0 0 0 2-2v-4M3 9h18M3 15h18"/>',
+            adminOnly: true
+        },
+        {
             id: 'configuracoes',
             labelCurto: 'Config.',
             accent: 'var(--accent-blue-2)',
@@ -139,7 +148,7 @@ window.CortexSidebar = (function() {
 
     // ── v2.0 "Aurora": carrega a camada visual e o sistema de janelas
     // suspensas em TODAS as páginas, sem precisar editar cada HTML.
-    const V2 = '230';
+    const V2 = '240';
 
     function iniciarV2() {
         const base = caminhoShared();

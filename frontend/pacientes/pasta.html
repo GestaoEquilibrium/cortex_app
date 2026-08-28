@@ -258,6 +258,7 @@
     <!-- Sprint 17 — pra gerar PDF de anamnese remota -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="../solicitacao-escolar/solicitacao_escolar.js"></script>
     <script src="../config.js"></script>
     <script src="../shared/image_cropper.js"></script>
     <script src="../shared/supabase_client.js"></script>
@@ -1772,6 +1773,9 @@
                         </p>
                     </div>
                     <div class="relatorio-card-resumo-acoes">
+                        <button class="btn btn-secondary" onclick="window.CortexPasta.gerarSolicitacaoEscolar()">
+                            Gerar solicitação
+                        </button>
                         <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-secondary">
                             Adicionar
                         </a>
@@ -1800,6 +1804,9 @@
                     ${preview ? `<div class="resumo-preview">${escapeHtml(preview)}</div>` : `<p style="color: var(--color-text-muted); font-style: italic;">Documento ainda sem conteúdo.</p>`}
                 </div>
                 <div class="relatorio-card-resumo-acoes">
+                    <button class="btn btn-secondary" onclick="window.CortexPasta.gerarSolicitacaoEscolar()">
+                        Gerar solicitação
+                    </button>
                     <a href="../relatorio_escolar/relatorio_escolar.html?paciente=${pacienteId}" class="btn btn-primary">
                         Editar relatório
                     </a>
@@ -2747,6 +2754,24 @@
     }
 
     window.CortexPasta = {
+        // Gera a solicitação de relatório escolar já preenchida.
+        // Reaproveita a logo que a capa de prontuário (sprint 16) já carrega
+        // em base64, para o PDF não depender de rede.
+        gerarSolicitacaoEscolar: function () {
+            if (!window.CortexSolicitacaoEscolar) {
+                window.CortexUI.toast('Módulo de solicitação não carregou. Recarregue a página.', 'danger');
+                return;
+            }
+            if (!paciente) {
+                window.CortexUI.toast('Paciente não carregado.', 'danger');
+                return;
+            }
+            window.CortexSolicitacaoEscolar.abrir({
+                paciente: paciente,
+                profissional: aplicadorAtivo?.aplicador || window.cortexProfissional || {},
+                logo: SPRINT16_LOGO_PRINCIPAL
+            });
+        },
         verResultado: function (url, sigla, nome) {
             verResultadoEmJanela(url, sigla, nome);
         },

@@ -1147,22 +1147,24 @@
             const perc  = c.percentil ?? null;
 
             return `
-            <div class="wais-tab-indice">
-                <div class="wais-tab-indice-nome">${escapeHtml(nome)}</div>
-                <table>
-                    <thead><tr>
-                        <th>${escapeHtml(sigla)}</th>
-                        <th class="ctr">Q.I</th>
-                        <th class="ctr">PERCENTIL</th>
-                        <th>CLASSIFICAÇÃO</th>
-                    </tr></thead>
-                    <tbody><tr>
-                        <td class="wais-ind-sigla">${escapeHtml(sigla)}</td>
-                        <td class="ctr" style="font-weight:800;font-size:15px;color:${col};">${c.composto}</td>
-                        <td class="ctr">${perc != null ? 'P' + perc : '—'}</td>
-                        <td>${clBadge(cl)}</td>
-                    </tr></tbody>
-                </table>
+            <div class="wais-indice-bloco">
+                <div class="wais-indice-legenda">${escapeHtml(nome)}</div>
+                <div class="wais-tab-indice">
+                    <table>
+                        <thead><tr>
+                            <th>${escapeHtml(sigla)}</th>
+                            <th class="ctr">Q.I</th>
+                            <th class="ctr">PERCENTIL</th>
+                            <th>CLASSIFICAÇÃO</th>
+                        </tr></thead>
+                        <tbody><tr>
+                            <td class="wais-ind-sigla">${escapeHtml(sigla)}</td>
+                            <td class="ctr" style="font-weight:700;color:${col};">${c.composto}</td>
+                            <td class="ctr">${perc != null ? 'P' + perc : '—'}</td>
+                            <td>${escapeHtml(cl)}</td>
+                        </tr></tbody>
+                    </table>
+                </div>
             </div>`;
         }).join('');
 
@@ -1171,9 +1173,10 @@
         return `
             <div class="wais-indices-nota">
                 Uma tabela por índice, no formato que vai para o laudo escrito.
-                Passe o mouse em cada uma e use o botão para copiar como imagem.
+                Passe o mouse sobre a tabela e use o botão para copiar como imagem —
+                o título acima dela não entra na cópia.
             </div>
-            <div class="wais-indices-grade">${blocos}</div>`;
+            <div class="wais-indices-lista">${blocos}</div>`;
     }
 
     // ────────────────────────────────────────────────────────────────────────

@@ -312,3 +312,68 @@
     .est-head-acoes { width: 100%; }
     .est-head-acoes .btn { flex: 1; justify-content: center; }
 }
+
+/* ── Alternador cards / lista ─────────────────────────────────────────────── */
+
+.est-modos {
+    display: flex; gap: 2px; padding: 3px;
+    background: var(--slate-100, #F1F5F9);
+    border-radius: var(--radius-sm, 10px); flex-shrink: 0;
+}
+
+.est-modo {
+    display: flex; align-items: center; gap: 6px; padding: 7px 13px;
+    border-radius: 8px; font-size: 12.5px; font-weight: 650;
+    color: var(--color-text-muted); background: transparent;
+    transition: all .18s ease; white-space: nowrap;
+}
+.est-modo svg { width: 15px; height: 15px; }
+.est-modo:hover { color: var(--color-text); }
+.est-modo.ativo {
+    background: #fff; color: var(--accent-blue, #2F6FED);
+    box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 2px 6px rgba(15,23,42,.06);
+}
+
+/* ── Modo lista ───────────────────────────────────────────────────────────── */
+
+.est-tabela-lista td { vertical-align: middle; }
+
+.est-tabela-lista tbody tr {
+    border-left: 3px solid var(--c, transparent);
+}
+
+.est-tabela-lista tbody tr.removido { opacity: .55; }
+
+.est-nome-l {
+    font-size: 12.5px; color: var(--color-text-muted); line-height: 1.35;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.est-sug-l {
+    font-size: 11.5px; color: var(--color-text-muted);
+    margin-top: 4px; padding-left: 2px; line-height: 1.45;
+}
+.est-sug-l b { color: var(--color-text); }
+
+.est-saldo-l { font-size: 17px; font-weight: 750; letter-spacing: -.02em; }
+.est-tabela-lista tr.st-ok   .est-saldo-l { color: #15803D; }
+.est-tabela-lista tr.st-low  .est-saldo-l { color: #B45309; }
+.est-tabela-lista tr.st-zero .est-saldo-l { color: #B91C1C; }
+
+.est-acoes-l { display: flex; gap: 5px; justify-content: flex-end; flex-wrap: wrap; }
+
+.est-mini-l {
+    padding: 6px 10px; border-radius: 8px; font-size: 11.5px; font-weight: 650;
+    color: var(--color-text-muted); background: var(--slate-50, #F8FAFC);
+    border: 1px solid var(--color-border, #E2E8F0); transition: all .15s ease; white-space: nowrap;
+}
+.est-mini-l:hover { background: #fff; color: var(--color-text); border-color: var(--color-border-strong, #CBD5E1); }
+.est-mini-l.m-in:hover  { background: #DCFCE7; color: #15803D; border-color: rgba(34,197,94,.4); }
+.est-mini-l.m-out:hover { background: #FEF3C7; color: #92400E; border-color: rgba(245,158,11,.4); }
+.est-mini-l.m-del:hover { background: #FEE2E2; color: #DC2626; border-color: rgba(239,68,68,.4); }
+
+@media (max-width: 900px) {
+    /* Numa tela estreita a tabela vira rolagem lateral em vez de espremer. */
+    .est-tabela-lista { min-width: 780px; }
+    .est-tabela-wrap  { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

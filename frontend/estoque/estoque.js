@@ -59,8 +59,15 @@
         filtro: 'todos',            // todos | comprar | zerado | ok
         busca: '',
         categoria: 'todas',
-        mostrarRemovidos: false
+        mostrarRemovidos: false,
+        modo: 'cards'               // cards | lista — preferência fica salva
     };
+
+    // Lê a preferência salva antes do primeiro render.
+    try {
+        const m = localStorage.getItem('cortex_estoque_modo');
+        if (m === 'cards' || m === 'lista') state.modo = m;
+    } catch (_) { /* localStorage bloqueado: segue no padrão */ }
 
     const c = () => window.cortexClient;
     const toast = (m, t) => { if (window.CortexUI?.toast) window.CortexUI.toast(m, t); };
@@ -239,15 +246,32 @@
                 <label class="est-toggle">
                     <input type="checkbox" id="est-rem" ${state.mostrarRemovidos ? 'checked' : ''}> Mostrar removidos
                 </label>
+                <div class="est-modos">
+                    <button class="est-modo ${state.modo === 'cards' ? 'ativo' : ''}" data-modo="cards" title="Ver em cards" aria-label="Ver em cards">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                        Cards
+                    </button>
+                    <button class="est-modo ${state.modo === 'lista' ? 'ativo' : ''}" data-modo="lista" title="Ver em lista" aria-label="Ver em lista">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3.5" y1="6" x2="3.51" y2="6"/><line x1="3.5" y1="12" x2="3.51" y2="12"/><line x1="3.5" y1="18" x2="3.51" y2="18"/></svg>
+                        Lista
+                    </button>
+                </div>
             </div>
 
-            <div class="est-grid" id="est-grid"></div>`;
+            <div id="est-grid"></div>`;
 
         el('est-painel').querySelectorAll('.est-stat').forEach(b =>
             b.addEventListener('click', () => { state.filtro = b.dataset.f; painelUso(); }));
         el('est-busca').addEventListener('input', e => { state.busca = e.target.value; renderGrid(); });
         el('est-cat').addEventListener('change', e => { state.categoria = e.target.value; renderGrid(); });
         el('est-rem').addEventListener('change', e => { state.mostrarRemovidos = e.target.checked; renderGrid(); });
+
+        el('est-painel').querySelectorAll('.est-modo').forEach(b =>
+            b.addEventListener('click', () => {
+                state.modo = b.dataset.modo;
+                try { localStorage.setItem('cortex_estoque_modo', state.modo); } catch (_) {}
+                painelUso();
+            }));
 
         renderGrid();
     }
@@ -287,21 +311,13 @@
             return;
         }
 
-        let html = '';
-        let catAtual = null;
-        for (const it of lista) {
-            if (it.categoria !== catAtual) {
-                catAtual = it.categoria;
-                html += `<div class="est-cat">
-                    <span class="est-cat-dot" style="background:${cor(catAtual)}"></span>${esc(catAtual)}</div>`;
-            }
-            html += cardHTML(it);
-        }
-        grid.innerHTML = html;
+        grid.className = state.modo === 'lista' ? '' : 'est-grid';
+        grid.innerHTML = state.modo === 'lista' ? montarLista(lista) : montarCards(lista);
 
         grid.querySelectorAll('[data-act]').forEach(btn => {
             btn.addEventListener('click', () => {
-                const it = state.itens.find(x => x.estoque_id === btn.closest('.est-card').dataset.id);
+                const alvo = btn.closest('[data-id]');
+                const it = alvo && state.itens.find(x => x.estoque_id === alvo.dataset.id);
                 if (!it) return;
                 const a = btn.dataset.act;
                 if (a === 'entrada')  modalEntrada(it);
@@ -311,6 +327,86 @@
                 if (a === 'restaurar') salvarItem(it, { ativo: true }, `${it.sigla} restaurado`);
             });
         });
+    }
+
+    /** Agrupa por categoria, chamando o renderizador de linha escolhido. */
+    function agrupar(lista, abreGrupo, linha, fechaGrupo) {
+        let html = '';
+        let catAtual = null;
+        lista.forEach((it, i) => {
+            if (it.categoria !== catAtual) {
+                if (catAtual !== null) html += fechaGrupo();
+                catAtual = it.categoria;
+                html += abreGrupo(catAtual);
+            }
+            html += linha(it);
+            if (i === lista.length - 1) html += fechaGrupo();
+        });
+        return html;
+    }
+
+    function montarCards(lista) {
+        return agrupar(lista,
+            (cat) => `<div class="est-cat"><span class="est-cat-dot" style="background:${cor(cat)}"></span>${esc(cat)}</div>`,
+            cardHTML,
+            () => '');
+    }
+
+    /**
+     * Modo lista: uma linha por teste. Mostra os mesmos dados do card em
+     * formato de tabela, para comparar saldos de muitos itens de uma vez —
+     * é o modo útil quando você está fechando a compra do mês.
+     */
+    function montarLista(lista) {
+        return agrupar(lista,
+            (cat) => `
+                <div class="est-cat"><span class="est-cat-dot" style="background:${cor(cat)}"></span>${esc(cat)}</div>
+                <div class="est-tabela-wrap" style="margin-bottom:6px">
+                    <table class="est-tabela est-tabela-lista">
+                        <thead><tr>
+                            <th>Teste</th>
+                            <th style="width:82px;text-align:right">Saldo</th>
+                            <th style="width:78px;text-align:right">Entradas</th>
+                            <th style="width:78px;text-align:right">Saídas</th>
+                            <th style="width:74px;text-align:right">Mínimo</th>
+                            <th style="width:96px">Situação</th>
+                            <th style="width:186px"></th>
+                        </tr></thead>
+                        <tbody>`,
+            linhaHTML,
+            () => `</tbody></table></div>`);
+    }
+
+    function linhaHTML(it) {
+        const st = statusDe(it);
+        const s = saldo(it);
+        const badge = st === 'zero' ? 'Zerado' : st === 'low' ? 'Repor' : 'Em dia';
+        const sug = it.ativo && precisaComprar(it) ? sugestao(it) : 0;
+
+        const acoes = it.ativo ? `
+            <button class="est-mini-l m-in" data-act="entrada" title="Registrar entrada">+ Entrada</button>
+            <button class="est-mini-l m-out" data-act="saida" title="Registrar saída">− Saída</button>
+            <button class="est-mini-l" data-act="editar" title="Mínimo e observação">Editar</button>
+            <button class="est-mini-l m-del" data-act="remover" title="Remover do estoque">Remover</button>`
+            : `<button class="est-mini-l" data-act="restaurar">Restaurar</button>`;
+
+        return `
+        <tr class="st-${st} ${it.ativo ? '' : 'removido'}" data-id="${it.estoque_id}" style="--c:${cor(it.categoria)}">
+            <td>
+                <div style="display:flex;align-items:center;gap:9px;min-width:0">
+                    <span class="est-sigla">${esc(it.sigla)}</span>
+                    <span class="est-nome-l">${esc(it.nome)}</span>
+                </div>
+                ${sug > 0 ? `<div class="est-sug-l">Sugerido comprar: <b>${sug}</b></div>` : ''}
+                ${it.obs ? `<div class="est-sug-l">${esc(it.obs)}</div>` : ''}
+            </td>
+            <td style="text-align:right"><span class="est-saldo-l">${s}</span></td>
+            <td style="text-align:right;color:var(--color-text-muted)">${it.entradas}</td>
+            <td style="text-align:right;color:var(--color-text-muted)">${it.saidas}</td>
+            <td style="text-align:right;color:var(--color-text-muted)">${it.minimo || '—'}</td>
+            <td><span class="est-badge">${badge}</span></td>
+            <td><div class="est-acoes-l">${acoes}</div></td>
+        </tr>`;
     }
 
     function cardHTML(it) {

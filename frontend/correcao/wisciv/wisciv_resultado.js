@@ -832,6 +832,8 @@
                 </div>
                 ${renderICChart()}
                 ${renderTabelaIndices()}
+
+                ${renderTabelasPorIndice()}
                 ${renderAlertaQIT(classifQIT)}
 
                 <!-- ─── 6. SUBTESTES — DETALHAMENTO ─── -->
@@ -1118,6 +1120,64 @@
             </tr></thead>
             <tbody>${linhas}</tbody>
         </table></div>`;
+    }
+
+
+    // ────────────────────────────────────────────────────────────────────────
+    // TABELAS INDIVIDUAIS POR ÍNDICE (para colar no laudo)
+    // ────────────────────────────────────────────────────────────────────────
+    // A tabela consolidada acima serve para leitura do caso inteiro. No laudo
+    // escrito, porém, cada índice ganha sua própria seção com o parágrafo
+    // interpretativo logo abaixo — e colar a tabela inteira ali repetiria seis
+    // linhas irrelevantes para aquele trecho.
+    //
+    // Aqui sai uma tabela por índice, no formato enxuto que vai para o
+    // documento: sigla, QI, percentil e classificação. Cada uma ganha o botão
+    // de copiar sozinha, porque o copy_to_clipboard.js varre por
+    // [class*="-tab-"] — daí o nome da classe.
+
+    function renderTabelasPorIndice() {
+        const r = state.resultado;
+        const compostos = r.compostos || {};
+
+        const blocos = ['ICV', 'IOP', 'IMO', 'IVP', 'QI_TOTAL'].map(key => {
+            const c = compostos[key];
+            if (!c?.composto) return '';
+
+            const sigla = ESCALAS_SIGLA[key] || key;
+            const nome  = ESCALAS_LABEL[key] || key;
+            const cl    = classByComposite(c.composto);
+            const col   = icColor(c.composto);
+            const perc  = c.percentil ?? null;
+
+            return `
+            <div class="wisc-tab-indice">
+                <div class="wisc-tab-indice-nome">${escapeHtml(nome)}</div>
+                <table>
+                    <thead><tr>
+                        <th>${escapeHtml(sigla)}</th>
+                        <th class="ctr">Q.I</th>
+                        <th class="ctr">PERCENTIL</th>
+                        <th>CLASSIFICAÇÃO</th>
+                    </tr></thead>
+                    <tbody><tr>
+                        <td class="wisc-ind-sigla">${escapeHtml(sigla)}</td>
+                        <td class="ctr" style="font-weight:800;font-size:15px;color:${col};">${c.composto}</td>
+                        <td class="ctr">${perc != null ? 'P' + perc : '—'}</td>
+                        <td>${clBadge(cl)}</td>
+                    </tr></tbody>
+                </table>
+            </div>`;
+        }).join('');
+
+        if (!blocos.trim()) return '';
+
+        return `
+            <div class="wisc-indices-nota">
+                Uma tabela por índice, no formato que vai para o laudo escrito.
+                Passe o mouse em cada uma e use o botão para copiar como imagem.
+            </div>
+            <div class="wisc-indices-grade">${blocos}</div>`;
     }
 
     // ────────────────────────────────────────────────────────────────────────

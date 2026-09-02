@@ -377,3 +377,19 @@
     .est-tabela-lista { min-width: 780px; }
     .est-tabela-wrap  { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
+
+/* ── Seletor de teste + variante ──────────────────────────────────────────── */
+
+.est-pick-item.sel {
+    background: #EFF6FF;
+    box-shadow: inset 3px 0 0 var(--accent-blue, #2F6FED);
+}
+
+.est-pick-ja {
+    display: block; font-size: 11px; color: #B45309;
+    margin-top: 2px; line-height: 1.4;
+}
+
+/* A variante entra na pílula da sigla; em nomes longos ela quebra em vez
+   de espremer o card. */
+.est-sigla { white-space: normal; line-height: 1.3; }

@@ -121,6 +121,11 @@
                         estoque_id: e.id,
                         instrumento_id: e.instrumento_id,
                         sigla: i.sigla,
+                        variante: e.variante || '',
+                        // Rótulo é o que aparece na tela. Um instrumento pode ter
+                        // mais de uma licença (BETA-III: Códigos e Raciocínio
+                        // Matricial), com saldo próprio para cada uma.
+                        rotulo: e.variante ? `${i.sigla} · ${e.variante}` : i.sigla,
                         nome: i.nome_completo,
                         categoria: (i.dominio_principal || 'Sem categoria').trim(),
                         entradas: e.comprado || 0,
@@ -131,11 +136,13 @@
                     };
                 });
 
-            const porInstr = new Map(state.itens.map(i => [i.instrumento_id, i]));
+            // Casa por estoque_id: com duas linhas do mesmo instrumento, casar
+            // por instrumento_id colocaria o lançamento na variante errada.
+            const porEstoque = new Map(state.itens.map(i => [i.estoque_id, i]));
             const movEnt = (ent.data || []).map(m => ({ ...m, tipo: 'entrada', data: m.data_compra }));
             const movSai = (sai.data || []).map(m => ({ ...m, tipo: 'saida',   data: m.data_saida }));
             state.movimentos = [...movEnt, ...movSai]
-                .map(m => ({ ...m, item: porInstr.get(m.instrumento_id) || null }))
+                .map(m => ({ ...m, item: porEstoque.get(m.estoque_id) || null }))
                 .sort((a, b) => String(b.data).localeCompare(String(a.data)));
 
             render();
@@ -281,7 +288,7 @@
         return state.itens.filter(it => {
             if (!state.mostrarRemovidos && !it.ativo) return false;
             if (state.categoria !== 'todas' && it.categoria !== state.categoria) return false;
-            if (q && !`${it.sigla} ${it.nome}`.toLowerCase().includes(q)) return false;
+            if (q && !`${it.rotulo} ${it.nome}`.toLowerCase().includes(q)) return false;
             if (!it.ativo) return state.filtro === 'todos';
             if (state.filtro === 'comprar' && !precisaComprar(it)) return false;
             if (state.filtro === 'zerado' && saldo(it) > 0) return false;
@@ -303,7 +310,7 @@
         }
 
         const lista = filtrados().sort((a, b) =>
-            a.categoria.localeCompare(b.categoria) || a.sigla.localeCompare(b.sigla));
+            a.categoria.localeCompare(b.categoria) || a.rotulo.localeCompare(b.rotulo));
 
         if (!lista.length) {
             grid.innerHTML = `<div class="est-vazio"><div class="est-vazio-ico">🔍</div>
@@ -324,7 +331,7 @@
                 if (a === 'saida')    modalSaida(it);
                 if (a === 'editar')   modalEditar(it);
                 if (a === 'remover')  removerItem(it);
-                if (a === 'restaurar') salvarItem(it, { ativo: true }, `${it.sigla} restaurado`);
+                if (a === 'restaurar') salvarItem(it, { ativo: true }, `${it.rotulo} restaurado`);
             });
         });
     }
@@ -394,7 +401,7 @@
         <tr class="st-${st} ${it.ativo ? '' : 'removido'}" data-id="${it.estoque_id}" style="--c:${cor(it.categoria)}">
             <td>
                 <div style="display:flex;align-items:center;gap:9px;min-width:0">
-                    <span class="est-sigla">${esc(it.sigla)}</span>
+                    <span class="est-sigla">${esc(it.rotulo)}</span>
                     <span class="est-nome-l">${esc(it.nome)}</span>
                 </div>
                 ${sug > 0 ? `<div class="est-sug-l">Sugerido comprar: <b>${sug}</b></div>` : ''}
@@ -437,7 +444,7 @@
         <div class="est-card st-${st} ${it.ativo ? '' : 'removido'}" data-id="${it.estoque_id}" style="--c:${cr}">
             <div class="est-card-body">
                 <div class="est-card-head">
-                    <span class="est-sigla">${esc(it.sigla)}</span>
+                    <span class="est-sigla">${esc(it.rotulo)}</span>
                     <span class="est-nome">${esc(it.nome)}</span>
                 </div>
                 <div class="est-saldo-row">
@@ -498,7 +505,7 @@
                     <tbody>
                         ${comprar.map(it => `
                             <tr>
-                                <td><strong>${esc(it.sigla)}</strong><br><span style="font-size:12px;color:var(--color-text-muted)">${esc(it.nome)}</span></td>
+                                <td><strong>${esc(it.rotulo)}</strong><br><span style="font-size:12px;color:var(--color-text-muted)">${esc(it.nome)}</span></td>
                                 <td><span class="est-tag" style="background:${cor(it.categoria)}1f;color:${cor(it.categoria)}">${esc(it.categoria)}</span></td>
                                 <td><strong style="color:${saldo(it) <= 0 ? '#B91C1C' : '#B45309'}">${saldo(it)}</strong></td>
                                 <td>${it.minimo || '—'}</td>
@@ -522,7 +529,7 @@
                             <tr>
                                 <td>${fmtData(m.data)}</td>
                                 <td><span class="est-tag ${m.tipo}">${m.tipo === 'entrada' ? 'Entrada' : 'Saída'}</span></td>
-                                <td>${m.item ? `<strong>${esc(m.item.sigla)}</strong>` : '<span style="color:var(--color-text-soft)">—</span>'}</td>
+                                <td>${m.item ? `<strong>${esc(m.item.rotulo)}</strong>` : '<span style="color:var(--color-text-soft)">—</span>'}</td>
                                 <td><strong>${m.tipo === 'entrada' ? '+' : '−'}${m.quantidade}</strong></td>
                                 <td style="font-size:12.5px;color:var(--color-text-muted)">
                                     ${m.tipo === 'entrada'
@@ -586,7 +593,7 @@
             <div class="est-modal">
                 <div class="est-modal-top" style="background:${cor(it.categoria)}"></div>
                 <div class="est-modal-body">
-                    <div class="est-modal-sigla">Entrada · ${esc(it.sigla)}</div>
+                    <div class="est-modal-sigla">Entrada · ${esc(it.rotulo)}</div>
                     <div class="est-modal-nome">${esc(it.nome)}</div>
                     <div class="est-field"><label>Quantidade</label>${stepper('e-qtd', 1)}</div>
                     <div class="est-grid2">
@@ -613,7 +620,7 @@
             const valor = ov.querySelector('#e-valor').value;
             try {
                 const { error } = await c().from('estoque_compras').insert({
-                    instrumento_id: it.instrumento_id,
+                    estoque_id: it.estoque_id,
                     quantidade: qtd,
                     valor_unitario: valor === '' ? null : Number(valor),
                     fornecedor: ov.querySelector('#e-forn').value.trim() || null,
@@ -624,7 +631,7 @@
                 });
                 if (error) throw error;
                 ov.remove();
-                toast(`+${qtd} ${it.sigla} registrado`, 'success');
+                toast(`+${qtd} ${it.rotulo} registrado`, 'success');
                 await carregar();
             } catch (err) {
                 console.error(err);
@@ -639,7 +646,7 @@
             <div class="est-modal">
                 <div class="est-modal-top" style="background:${cor(it.categoria)}"></div>
                 <div class="est-modal-body">
-                    <div class="est-modal-sigla">Saída · ${esc(it.sigla)}</div>
+                    <div class="est-modal-sigla">Saída · ${esc(it.rotulo)}</div>
                     <div class="est-modal-nome">${esc(it.nome)}</div>
                     <div class="est-field"><label>Quantidade</label>${stepper('s-qtd', 1)}</div>
                     <div class="est-grid2">
@@ -665,7 +672,7 @@
             if (qtd <= 0) { toast('Informe uma quantidade maior que zero.', 'danger'); return; }
             try {
                 const { error } = await c().from('estoque_saidas').insert({
-                    instrumento_id: it.instrumento_id,
+                    estoque_id: it.estoque_id,
                     quantidade: qtd,
                     motivo: ov.querySelector('#s-motivo').value,
                     data_saida: ov.querySelector('#s-data').value || hojeISO(),
@@ -674,7 +681,7 @@
                 });
                 if (error) throw error;
                 ov.remove();
-                toast(`−${qtd} ${it.sigla} registrado`, 'success');
+                toast(`−${qtd} ${it.rotulo} registrado`, 'success');
                 await carregar();
             } catch (err) {
                 console.error(err);
@@ -688,8 +695,12 @@
             <div class="est-modal">
                 <div class="est-modal-top" style="background:${cor(it.categoria)}"></div>
                 <div class="est-modal-body">
-                    <div class="est-modal-sigla">${esc(it.sigla)}</div>
+                    <div class="est-modal-sigla">${esc(it.rotulo)}</div>
                     <div class="est-modal-nome">${esc(it.nome)}</div>
+                    <div class="est-field"><label>Variante</label>
+                        <input id="ed-var" value="${esc(it.variante)}" placeholder="Vazio = licença única">
+                    </div>
+                    <div class="est-hint">Use quando o teste tem licenças separadas por parte (Códigos, Raciocínio Matricial…).</div>
                     <div class="est-field"><label>Estoque mínimo</label>
                         <input type="number" id="ed-min" min="0" value="${it.minimo}">
                     </div>
@@ -706,63 +717,107 @@
         ov.querySelector('[data-x="sim"]').addEventListener('click', async () => {
             const minimo = Math.max(0, parseInt(ov.querySelector('#ed-min').value, 10) || 0);
             const obs = ov.querySelector('#ed-obs').value.trim();
+            const variante = ov.querySelector('#ed-var').value.trim();
+
+            const conflito = state.itens.some(x =>
+                x.estoque_id !== it.estoque_id &&
+                x.instrumento_id === it.instrumento_id &&
+                (x.variante || '') === variante);
+            if (conflito) {
+                toast('Já existe outra linha deste teste com essa variante.', 'danger');
+                return;
+            }
+
             ov.remove();
-            await salvarItem(it, { estoque_minimo: minimo, observacao: obs || null }, `${it.sigla} atualizado`);
+            await salvarItem(it, {
+                estoque_minimo: minimo,
+                observacao: obs || null,
+                variante: variante || null
+            }, 'Atualizado');
         });
     }
 
     // ── Adicionar testes ao estoque ─────────────────────────────────────────
 
     function abrirSeletorTestes() {
-        const jaTem = new Set(state.itens.map(i => i.instrumento_id));
-        const disponiveis = state.catalogo.filter(i => !jaTem.has(i.id));
-
-        if (!disponiveis.length) {
-            toast('Todos os testes ativos do catálogo já estão no estoque.', 'info');
-            return;
-        }
+        // Antes o seletor escondia tudo que já estava no estoque. Isso impedia
+        // exatamente o caso do BETA-III: adicionar o mesmo instrumento de novo,
+        // com outra variante. Agora tudo aparece, com aviso do que já existe.
+        const existentes = new Map();
+        state.itens.forEach(i => {
+            if (!existentes.has(i.instrumento_id)) existentes.set(i.instrumento_id, []);
+            existentes.get(i.instrumento_id).push(i.variante || '(sem variante)');
+        });
 
         const ov = abrirModal(`
             <div class="est-modal">
                 <div class="est-modal-top" style="background:var(--grad-aurora, linear-gradient(90deg,#2F6FED,#7C4DFF))"></div>
                 <div class="est-modal-body">
-                    <div class="est-modal-sigla">Adicionar testes ao estoque</div>
-                    <div class="est-modal-nome">Escolha quais você quer controlar. Só os marcados passam a aparecer na aba “Em uso”.</div>
+                    <div class="est-modal-sigla">Adicionar ao estoque</div>
+                    <div class="est-modal-nome">
+                        Escolha o teste. Se ele tiver licenças separadas — como o BETA-III, com
+                        Códigos e Raciocínio Matricial —, adicione uma vez para cada, informando
+                        a variante. Cada uma passa a ter saldo próprio.
+                    </div>
+
                     <div class="est-field">
-                        <input id="pick-busca" placeholder="Buscar entre ${disponiveis.length} testes…">
+                        <label>Teste</label>
+                        <input id="pick-busca" placeholder="Buscar entre ${state.catalogo.length} testes…">
                     </div>
                     <div class="est-pick" id="pick-lista"></div>
-                    <div class="est-hint" id="pick-conta" style="margin-top:10px">Nenhum selecionado.</div>
+
+                    <div class="est-field" style="margin-top:15px">
+                        <label>Variante <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+                        <input id="pick-variante" placeholder="Ex.: Códigos, Raciocínio Matricial, Folha de resposta">
+                    </div>
+                    <div class="est-hint" id="pick-aviso">Deixe vazio se o teste tem uma licença só.</div>
+
                     <div class="est-modal-acoes">
                         <button class="btn btn-secondary" data-x="nao">Cancelar</button>
-                        <button class="btn btn-primary" data-x="sim">Adicionar selecionados</button>
+                        <button class="btn btn-primary" data-x="sim">Adicionar</button>
                     </div>
                 </div>
             </div>`, true);
 
-        const sel = new Set();
+        let escolhido = null;
 
         function pintar() {
             const q = ov.querySelector('#pick-busca').value.trim().toLowerCase();
-            const lista = disponiveis
+            const lista = state.catalogo
                 .filter(i => !q || `${i.sigla} ${i.nome_completo}`.toLowerCase().includes(q))
-                .sort((a, b) => (a.dominio_principal || '').localeCompare(b.dominio_principal || '') || a.sigla.localeCompare(b.sigla));
+                .sort((a, b) => (a.dominio_principal || '').localeCompare(b.dominio_principal || '')
+                             || a.sigla.localeCompare(b.sigla));
 
-            ov.querySelector('#pick-lista').innerHTML = lista.length ? lista.map(i => `
-                <label class="est-pick-item">
-                    <input type="checkbox" value="${i.id}" ${sel.has(i.id) ? 'checked' : ''}>
+            ov.querySelector('#pick-lista').innerHTML = lista.length ? lista.map(i => {
+                const ja = existentes.get(i.id);
+                return `
+                <label class="est-pick-item ${escolhido === i.id ? 'sel' : ''}" data-pick="${i.id}">
+                    <input type="radio" name="pick" value="${i.id}" ${escolhido === i.id ? 'checked' : ''}>
                     <span class="est-pick-sigla" style="background:${cor((i.dominio_principal || '').trim())}">${esc(i.sigla)}</span>
-                    <span class="est-pick-nome">${esc(i.nome_completo)}</span>
-                </label>`).join('')
-                : `<div style="padding:20px;text-align:center;color:var(--color-text-muted);font-size:13px">Nada encontrado.</div>`;
+                    <span style="min-width:0;flex:1">
+                        <span class="est-pick-nome">${esc(i.nome_completo)}</span>
+                        ${ja ? `<span class="est-pick-ja">já no estoque: ${esc(ja.join(', '))}</span>` : ''}
+                    </span>
+                </label>`;
+            }).join('')
+              : `<div style="padding:20px;text-align:center;color:var(--color-text-muted);font-size:13px">Nada encontrado.</div>`;
 
-            ov.querySelectorAll('#pick-lista input').forEach(chk => {
-                chk.addEventListener('change', () => {
-                    if (chk.checked) sel.add(chk.value); else sel.delete(chk.value);
-                    ov.querySelector('#pick-conta').textContent =
-                        sel.size ? `${sel.size} teste(s) selecionado(s).` : 'Nenhum selecionado.';
+            ov.querySelectorAll('[data-pick]').forEach(lab => {
+                lab.addEventListener('click', () => {
+                    escolhido = lab.dataset.pick;
+                    ov.querySelectorAll('.est-pick-item').forEach(x => x.classList.remove('sel'));
+                    lab.classList.add('sel');
+                    atualizarAviso();
                 });
             });
+        }
+
+        function atualizarAviso() {
+            const av = ov.querySelector('#pick-aviso');
+            const ja = escolhido ? existentes.get(escolhido) : null;
+            av.innerHTML = ja
+                ? `Este teste já está no estoque como <b>${esc(ja.join(', '))}</b>. Informe uma variante diferente para criar uma segunda licença.`
+                : 'Deixe vazio se o teste tem uma licença só.';
         }
 
         ov.querySelector('#pick-busca').addEventListener('input', pintar);
@@ -770,13 +825,24 @@
 
         ov.querySelector('[data-x="nao"]').addEventListener('click', () => ov.remove());
         ov.querySelector('[data-x="sim"]').addEventListener('click', async () => {
-            if (!sel.size) { toast('Selecione pelo menos um teste.', 'info'); return; }
+            if (!escolhido) { toast('Escolha um teste.', 'info'); return; }
+            const variante = ov.querySelector('#pick-variante').value.trim();
+
+            const jaIgual = state.itens.some(i =>
+                i.instrumento_id === escolhido && (i.variante || '') === variante);
+            if (jaIgual) {
+                toast(variante
+                    ? `A variante "${variante}" já existe para este teste.`
+                    : 'Este teste já está no estoque. Informe uma variante para criar outra licença.', 'danger');
+                return;
+            }
+
             try {
                 const { error } = await c().from('estoque_licencas')
-                    .insert([...sel].map(id => ({ instrumento_id: id })));
+                    .insert({ instrumento_id: escolhido, variante: variante || null });
                 if (error) throw error;
                 ov.remove();
-                toast(`${sel.size} teste(s) adicionado(s) ao estoque.`, 'success');
+                toast('Adicionado ao estoque.', 'success');
                 await carregar();
             } catch (err) {
                 console.error(err);
@@ -792,6 +858,10 @@
             const { error } = await c().from('estoque_licencas').update(patch).eq('id', it.estoque_id);
             if (error) throw error;
             if ('estoque_minimo' in patch) it.minimo = patch.estoque_minimo;
+            if ('variante' in patch) {
+                it.variante = patch.variante || '';
+                it.rotulo = it.variante ? `${it.sigla} · ${it.variante}` : it.sigla;
+            }
             if ('observacao' in patch) it.obs = patch.observacao || '';
             if ('ativo' in patch) it.ativo = patch.ativo;
             if (msg) toast(msg, 'success');
@@ -805,10 +875,10 @@
     function removerItem(it) {
         window.CortexConfirm.mostrar({
             icone: '🗑️',
-            titulo: `Remover ${it.sigla} do estoque?`,
+            titulo: `Remover ${it.rotulo} do estoque?`,
             texto: 'Ele sai da lista, mas as movimentações ficam registradas. Dá para restaurar em "Mostrar removidos".',
             btnSim: 'Sim, remover', btnNao: 'Cancelar', btnSimDanger: true,
-            onSim: async () => { await salvarItem(it, { ativo: false }, `${it.sigla} removido`); }
+            onSim: async () => { await salvarItem(it, { ativo: false }, `${it.rotulo} removido`); }
         });
     }
 
@@ -837,13 +907,13 @@
 
     async function copiarLista() {
         const comprar = state.itens.filter(it => it.ativo && precisaComprar(it))
-            .sort((a, b) => a.sigla.localeCompare(b.sigla));
+            .sort((a, b) => a.rotulo.localeCompare(b.rotulo));
         if (!comprar.length) { toast('Nada abaixo do mínimo. Estoque em dia.', 'success'); return; }
 
         let txt = `Lista de compras — testes (${new Date().toLocaleDateString('pt-BR')})\n\n`;
         comprar.forEach(it => {
             const sug = sugestao(it);
-            txt += `• ${it.sigla} — ${it.nome}\n  saldo: ${saldo(it)} | mínimo: ${it.minimo}${sug > 0 ? ` | comprar: ${sug}` : ''}\n`;
+            txt += `• ${it.rotulo} — ${it.nome}\n  saldo: ${saldo(it)} | mínimo: ${it.minimo}${sug > 0 ? ` | comprar: ${sug}` : ''}\n`;
         });
         txt += `\nTotal de itens: ${comprar.length}`;
 

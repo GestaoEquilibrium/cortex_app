@@ -1183,37 +1183,28 @@
 @media print { .qit-alerta { break-inside: avoid; } }
 
 /* ── Tabelas individuais por índice (para colar no laudo) ─────────────────── */
-/* Uma por linha, largura toda: é o formato que vai para o documento escrito.
-   O título fica FORA de .wais-tab-indice de propósito — o copy_to_clipboard
-   captura só o elemento com a classe, então a imagem colada sai limpa. */
+/* Compactas de propósito: entram dentro de um documento em Word, não numa
+   tela. O nome do índice ocupa a primeira coluna do cabeçalho, e a
+   classificação herda a mesma cor dos badges do resto do laudo. */
 
 .wais-indices-nota {
     font-size: 12px;
     color: #64748b;
     line-height: 1.55;
-    margin: 2px 0 16px;
+    margin: 2px 0 14px;
 }
 
 .wais-indices-lista {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-}
-
-.wais-indice-legenda {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    color: #2e74b5;
-    margin-bottom: 7px;
+    gap: 13px;
 }
 
 .wais-tab-indice {
     position: relative;
     background: #ffffff;
-    border: 1px solid #d7e0ea;
-    border-radius: 14px;
+    border: 1px solid #dbe3ec;
+    border-radius: 9px;
     overflow: hidden;
 }
 
@@ -1225,22 +1216,30 @@
 
 .wais-tab-indice thead th {
     text-align: left;
-    font-size: 11px;
+    font-size: 9.5px;
     font-weight: 700;
-    letter-spacing: .08em;
+    letter-spacing: .07em;
     text-transform: uppercase;
     color: #64748b;
-    padding: 14px 24px;
+    padding: 7px 14px;
     background: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e8edf3;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+/* A primeira coluna leva o nome por extenso e precisa de mais espaço */
+.wais-tab-indice thead th:first-child,
+.wais-tab-indice tbody td:first-child { width: 42%; }
+
 .wais-tab-indice tbody td {
-    padding: 18px 24px;
-    font-size: 16px;
+    padding: 9px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
     color: #1e293b;
-    background: #eaf2fd;
+    background: #eef4fd;
+    line-height: 1.3;
 }
 
 .wais-tab-indice thead th.ctr,
@@ -1249,9 +1248,19 @@
 .wais-tab-indice .wais-ind-sigla,
 .wais-tab-indice tbody td.ctr { color: #2e74b5; }
 
-.wais-tab-indice tbody td:last-child { color: #1e293b; font-weight: 600; }
+/* Classificação com a cor da faixa — mesma escala dos badges do laudo,
+   aplicada como texto para não virar pílula dentro do documento. */
+.wais-tab-indice .wais-ind-cl { font-weight: 700; }
+.wais-tab-indice .wais-ind-cl.cl-vs  { color: #14532d; }
+.wais-tab-indice .wais-ind-cl.cl-s   { color: #166534; }
+.wais-tab-indice .wais-ind-cl.cl-ms  { color: #1e40af; }
+.wais-tab-indice .wais-ind-cl.cl-m   { color: #475569; }
+.wais-tab-indice .wais-ind-cl.cl-mi  { color: #92400e; }
+.wais-tab-indice .wais-ind-cl.cl-l   { color: #9a3412; }
+.wais-tab-indice .wais-ind-cl.cl-eb  { color: #991b1b; }
+.wais-tab-indice .wais-ind-cl.cl-inf { color: #7f1d1d; }
 
 @media (max-width: 700px) {
-    .wais-tab-indice thead th { padding: 11px 14px; font-size: 10px; }
-    .wais-tab-indice tbody td { padding: 13px 14px; font-size: 14px; }
+    .wais-tab-indice thead th { padding: 6px 10px; font-size: 9px; }
+    .wais-tab-indice tbody td { padding: 8px 10px; font-size: 11.5px; }
 }

@@ -339,6 +339,9 @@
                 <div class="wizard-etapa-header">
                     <div class="wizard-etapa-icone">${sec.ic}</div>
                     <h2 class="wizard-etapa-titulo">${escapeHtml(sec.tt)}</h2>
+                    ${sec.eixo ? `<div class="anamnese-eixo" title="Visível apenas para a equipe">
+                        <span class="anamnese-eixo-tag">uso interno</span>${escapeHtml(sec.eixo)}
+                    </div>` : ''}
                 </div>
                 <div class="${gridClass}">
                     ${campos}

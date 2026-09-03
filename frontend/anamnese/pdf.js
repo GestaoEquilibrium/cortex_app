@@ -230,6 +230,19 @@
             // padrão do jsPDF não renderiza emojis e mostra caixas tipo "Ø=ÜË".
             // O emoji continua aparecendo na UI (anamnese.js).
             doc.text(sec.tt, MG + 2, y + 4.5);
+
+            // Eixo clínico de uso interno: só no PDF da equipe.
+            // O PDF que vai para a família é gerado pelo fluxo público.
+            if (sec.eixo) {
+                y += 7;
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(7.5);
+                doc.setTextColor(130, 150, 173);
+                doc.text('uso interno · ' + sec.eixo, MG + 2, y + 2);
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+            }
             y += 9;
 
             (sec.g2 || sec.g3 || []).forEach((f) => {

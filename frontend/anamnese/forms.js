@@ -694,7 +694,490 @@ window.CortexAnamneseForms = (function() {
     // -----------------------------------------------------------------------
     // Mapa de faixas (chaves do enum faixa_etaria_anamnese)
     // -----------------------------------------------------------------------
-    const F = {
+    // =======================================================================
+    // FORMULÁRIOS ATIVOS (2026) — fonte: ANAMNESE_1..4.docx
+    // -----------------------------------------------------------------------
+    // Quatro modelos, com cortes próprios. A seção "1. Identificação" dos
+    // docx não entra: esses dados vêm do cadastro do paciente e são
+    // renderizados read-only no topo (decisão da Sprint 55, mantida).
+    //
+    // Cada seção carrega um campo `eixo` — o "eixo clínico (uso interno)" dos
+    // documentos. Ele aparece para o profissional (anamnese.js e PDF) e NUNCA
+    // no link público: dizer a quem responde que a seção rastreia sinais de
+    // autismo enviesa a resposta.
+    // =======================================================================
+
+    const F_PRE_ESCOLAR = {
+        icon: '🧸', tt: 'Pré-Escolar', rg: '2 – 6 anos',
+        sects: [
+            secBoasVindas(),
+            {
+                ic: '🎯',
+                tt: "Por que você procurou a avaliação",
+                eixo: "demanda e queixa",
+                col: 'queixa_historico',
+                g2: [
+                    { id:'por_que_voce_procu2_1', lb:"Conte, com suas palavras, o que mais te preocupa e motivou a buscar a avaliação.", tp:'ta', full:1 },
+                    { id:'por_que_voce_procu2_2', lb:"Desde quando você percebe isso? Acontece mais em casa, na escola, ou nos dois?", tp:'ta', full:1 },
+                    { id:'por_que_voce_procu2_3', lb:"Alguém indicou a avaliação (médico, escola, outro profissional)?", tp:'ta', full:1 },
+                    { id:'por_que_voce_procu2_4', lb:"O que você espera descobrir ou resolver com a avaliação?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🤰',
+                tt: "Gravidez e nascimento",
+                eixo: "fatores de risco no desenvolvimento",
+                col: 'desenvolvimento',
+                g2: [
+                    { id:'gravidez_e_nascime3_1', lb:"Como foi a gravidez? Houve algum problema (pressão alta, infecção, uso de remédios)?", tp:'ta', full:1 },
+                    { id:'gravidez_e_nascime3_2', lb:"O parto foi normal ou cesárea? O bebê nasceu no tempo certo?", tp:'ta', full:1 },
+                    { id:'gravidez_e_nascime3_3', lb:"Precisou de UTI, oxigênio, ou ficou muito amarelinho (icterícia) ao nascer?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '👣',
+                tt: "Quando começou a fazer as coisas",
+                eixo: "neurodesenvolvimento — marcos",
+                col: 'desenvolvimento',
+                g2: [
+                    { id:'quando_comecou_a_f4_1', lb:"Com que idade, mais ou menos, sentou sozinho e começou a andar?", tp:'ta', full:1 },
+                    { id:'quando_comecou_a_f4_2', lb:"Quando falou as primeiras palavras e as primeiras frasezinhas?", tp:'ta', full:1 },
+                    { id:'quando_comecou_a_f4_3', lb:"Ele entende quando você pede algo simples (\"pega a bola\")?", tp:'ta', full:1 },
+                    { id:'quando_comecou_a_f4_4', lb:"Já largou a fralda? Com que idade, se já largou?", tp:'ta', full:1 },
+                    { id:'quando_comecou_a_f4_5', lb:"Em algum momento ele deixou de fazer algo que já sabia (parou de falar, de olhar nos olhos)?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💬',
+                tt: "Como se comunica e convive",
+                eixo: "neurodesenvolvimento — sinais do espectro (TEA)",
+                col: 'social_emocional',
+                g2: [
+                    { id:'como_se_comunica_e5_1', lb:"Ele olha nos seus olhos quando conversam e atende quando o chamam pelo nome?", tp:'ta', full:1 },
+                    { id:'como_se_comunica_e5_2', lb:"Aponta para te mostrar coisas que achou interessantes, olhando pra ver se você viu junto?", tp:'ta', full:1 },
+                    { id:'como_se_comunica_e5_3', lb:"Tem interesse por outras crianças? Brinca de faz de conta (comidinha, super-herói)?", tp:'ta', full:1 },
+                    { id:'como_se_comunica_e5_4', lb:"Usa gestos como dar tchau e mandar beijo? Costuma repetir falas iguais (de desenhos)?", tp:'ta', full:1 },
+                    { id:'como_se_comunica_e5_5', lb:"Tem interesses muito fixos, faz movimentos repetidos, ou fica muito bravo quando muda a rotina?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '⚡',
+                tt: "Agitação, atenção e comportamento",
+                eixo: "comportamento e atenção (cautela para TDAH na idade)",
+                col: 'social_emocional',
+                g2: [
+                    { id:'agitacao_atencao_e6_1', lb:"Ele é muito agitado? Consegue esperar a vez?", tp:'ta', full:1 },
+                    { id:'agitacao_atencao_e6_2', lb:"Consegue se concentrar em uma brincadeira por algum tempo?", tp:'ta', full:1 },
+                    { id:'agitacao_atencao_e6_3', lb:"Tem birras muito fortes, se machuca ou machuca os outros quando fica bravo?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🌈',
+                tt: "Sentidos, alimentação e sono",
+                eixo: "processamento sensorial",
+                col: 'social_emocional',
+                g2: [
+                    { id:'sentidos_alimentac7_1', lb:"Ele se incomoda demais — ou parece nem notar — barulhos, luzes, texturas ou o toque? (tampa o ouvido, não gosta de certas roupas ou etiquetas)", tp:'ta', full:1 },
+                    { id:'sentidos_alimentac7_2', lb:"Come de tudo ou é muito seletivo com comida?", tp:'ta', full:1 },
+                    { id:'sentidos_alimentac7_3', lb:"Como é o sono dele (pega no sono fácil, acorda à noite)?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💗',
+                tt: "Emoções e humor",
+                eixo: "regulação emocional",
+                col: 'social_emocional',
+                g2: [
+                    { id:'emocoes_e_humor8_1', lb:"Como ele costuma estar de humor no dia a dia? Fica muito ansioso, com medos ou triste?", tp:'ta', full:1 },
+                    { id:'emocoes_e_humor8_2', lb:"Como ele reage quando algo não sai do jeito que ele queria?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🏫',
+                tt: "Escola ou creche",
+                eixo: "adaptação e funcionamento",
+                col: 'historico_escolar',
+                g2: [
+                    { id:'escola_ou_creche9_1', lb:"Frequenta escola ou creche? Como foi a adaptação e a convivência com as outras crianças?", tp:'ta', full:1 },
+                    { id:'escola_ou_creche9_2', lb:"Precisa de alguma ajuda especial? O que os professores costumam comentar?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🩺',
+                tt: "Saúde",
+                eixo: "histórico médico e intervenções",
+                col: 'saude_medicacoes',
+                g2: [
+                    { id:'saude10_1', lb:"Tem algum diagnóstico, usa algum remédio, ou já fez exames (ouvido, visão, neurológico)?", tp:'ta', full:1 },
+                    { id:'saude10_2', lb:"Faz alguma terapia (fono, terapia ocupacional, psicologia)? Está ajudando?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🧬',
+                tt: "Família",
+                eixo: "antecedentes familiares",
+                col: 'contexto_familiar',
+                g2: [
+                    { id:'familia11_1', lb:"Na família há casos de autismo, TDAH, dificuldade de aprendizagem, atraso no desenvolvimento, ou questões emocionais/psiquiátricas (depressão, ansiedade, outros)?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🏠',
+                tt: "Vida em casa",
+                eixo: "contexto familiar",
+                col: 'contexto_familiar',
+                g2: [
+                    { id:'vida_em_casa12_1', lb:"Com quem a criança mora e quem cuida dela no dia a dia?", tp:'ta', full:1 },
+                    { id:'vida_em_casa12_2', lb:"Aconteceu algo importante recentemente (mudança, separação, perda, chegada de irmão)?", tp:'ta', full:1 }
+                ]
+            }
+        ]
+    };
+
+    const F_ESCOLAR_ADOLESCENTE = {
+        icon: '🎒', tt: 'Escolar e Adolescente', rg: '6 – 16 anos',
+        sects: [
+            secBoasVindas(),
+            {
+                ic: '🎯',
+                tt: "Por que você procurou a avaliação",
+                eixo: "demanda e queixa",
+                col: 'queixa_historico',
+                g2: [
+                    { id:'por_que_voce_procu2_1', lb:"Conte, com suas palavras, o que mais te preocupa e motivou a avaliação.", tp:'ta', full:1 },
+                    { id:'por_que_voce_procu2_2', lb:"Acontece mais em casa, na escola, ou nos dois? Desde quando?", tp:'ta', full:1 },
+                    { id:'por_que_voce_procu2_3', lb:"Alguém indicou (médico, escola)? O que você espera descobrir ou resolver?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🤰',
+                tt: "Gravidez, nascimento e primeiros anos",
+                eixo: "risco no desenvolvimento",
+                col: 'desenvolvimento',
+                g2: [
+                    { id:'gravidez_nasciment3_1', lb:"Houve algum problema na gravidez ou no parto?", tp:'ta', full:1 },
+                    { id:'gravidez_nasciment3_2', lb:"O desenvolvimento (andar, falar) foi dentro do esperado? Percebeu algum sinal cedo?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🏫',
+                tt: "Escola e aprendizagem",
+                eixo: "neurodesenvolvimento — aprendizagem",
+                col: 'historico_escolar',
+                g2: [
+                    { id:'escola_e_aprendiza4_1', lb:"Como foi para aprender a ler e escrever — com facilidade ou dificuldade?", tp:'ta', full:1 },
+                    { id:'escola_e_aprendiza4_2', lb:"Em quê tem mais dificuldade hoje: leitura, escrita ou matemática?", tp:'ta', full:1 },
+                    { id:'escola_e_aprendiza4_3', lb:"Já repetiu de ano, faz reforço, ou a escola costuma reclamar de algo?", tp:'ta', full:1 },
+                    { id:'escola_e_aprendiza4_4', lb:"Como é a relação com professores e colegas?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '⚡',
+                tt: "Atenção, agitação e organização",
+                eixo: "neurodesenvolvimento — TDAH e funções executivas",
+                col: 'social_emocional',
+                g2: [
+                    { id:'atencao_agitacao_e5_1', lb:"Se distrai com facilidade, \"viaja\", ou esquece as coisas?", tp:'ta', full:1 },
+                    { id:'atencao_agitacao_e5_2', lb:"É agitado ou impulsivo (age sem pensar, interrompe)?", tp:'ta', full:1 },
+                    { id:'atencao_agitacao_e5_3', lb:"Tem dificuldade de se organizar, planejar e terminar o que começa?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💬',
+                tt: "Convivência e comunicação",
+                eixo: "neurodesenvolvimento — TEA",
+                col: 'social_emocional',
+                g2: [
+                    { id:'convivencia_e_comu6_1', lb:"Faz e mantém amizades com facilidade? As trocas são recíprocas?", tp:'ta', full:1 },
+                    { id:'convivencia_e_comu6_2', lb:"Tem interesses muito intensos, gosta muito de rotina e se incomoda com mudanças?", tp:'ta', full:1 },
+                    { id:'convivencia_e_comu6_3', lb:"Entende brincadeiras, ironias e o sentido figurado, ou leva tudo ao pé da letra?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💗',
+                tt: "Emoções, humor e ansiedade",
+                eixo: "transtorno de humor e ansiedade",
+                col: 'social_emocional',
+                g2: [
+                    { id:'emocoes_humor_e_an7_1', lb:"Como está o humor? Passa por fases de tristeza, irritação ou desânimo?", tp:'ta', full:1 },
+                    { id:'emocoes_humor_e_an7_2', lb:"Fica muito ansioso, tem medos, preocupações excessivas ou crises?", tp:'ta', full:1 },
+                    { id:'emocoes_humor_e_an7_3', lb:"Como está a autoestima e como lida com a frustração?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🧩',
+                tt: "Comportamento",
+                eixo: "comportamento e conduta",
+                col: 'social_emocional',
+                g2: [
+                    { id:'comportamento8_1', lb:"Costuma desafiar regras, ter explosões, ou se opor bastante?", tp:'ta', full:1 },
+                    { id:'comportamento8_2', lb:"Já houve comportamentos que te preocuparam de forma mais séria?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🌈',
+                tt: "Sentidos e sono",
+                eixo: "sensorial e sono",
+                col: 'social_emocional',
+                g2: [
+                    { id:'sentidos_e_sono9_1', lb:"Se incomoda muito com sons, luzes, texturas ou toque?", tp:'ta', full:1 },
+                    { id:'sentidos_e_sono9_2', lb:"Como é a alimentação e o sono?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🩺',
+                tt: "Saúde",
+                eixo: "histórico médico e intervenções",
+                col: 'saude_medicacoes',
+                g2: [
+                    { id:'saude10_1', lb:"Tem diagnóstico, usa remédio ou já fez exames?", tp:'ta', full:1 },
+                    { id:'saude10_2', lb:"Faz alguma terapia atualmente? Está ajudando?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🧬',
+                tt: "Família",
+                eixo: "antecedentes familiares",
+                col: 'contexto_familiar',
+                g2: [
+                    { id:'familia11_1', lb:"Na família há casos de autismo, TDAH, dislexia, depressão, ansiedade, bipolaridade ou outras questões psiquiátricas?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🏠',
+                tt: "Rotina e convívio",
+                eixo: "contexto familiar e social",
+                col: 'contexto_familiar',
+                g2: [
+                    { id:'rotina_e_convivio12_1', lb:"Como é a rotina, o uso de telas e as atividades fora da escola?", tp:'ta', full:1 },
+                    { id:'rotina_e_convivio12_2', lb:"Aconteceu algo marcante na família recentemente (mudança, separação, perda)?", tp:'ta', full:1 }
+                ]
+            }
+        ]
+    };
+
+    const F_ADULTO = {
+        icon: '🧑', tt: 'Adulto', rg: '17 – 59 anos',
+        sects: [
+            secBoasVindas(),
+            {
+                ic: '🎯',
+                tt: "Por que você procurou a avaliação",
+                eixo: "demanda e queixa",
+                col: 'queixa_historico',
+                g2: [
+                    { id:'por_que_voce_procu2_1', lb:"Conte, com suas palavras, o que mais te preocupa e motivou a buscar a avaliação.", tp:'ta', full:1 },
+                    { id:'por_que_voce_procu2_2', lb:"Desde quando você sente isso? Como afeta seu dia a dia (trabalho, estudos, relações)?", tp:'ta', full:1 },
+                    { id:'por_que_voce_procu2_3', lb:"Alguém indicou a avaliação? O que você espera descobrir ou resolver?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '👣',
+                tt: "Um pouco da sua história",
+                eixo: "desenvolvimento e história pregressa",
+                col: 'desenvolvimento',
+                g2: [
+                    { id:'um_pouco_da_sua_hi3_1', lb:"Você sabe se teve alguma dificuldade quando criança (para falar, andar, na escola)?", tp:'ta', full:1 },
+                    { id:'um_pouco_da_sua_hi3_2', lb:"Como foi sua infância e sua vida escolar, de modo geral?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💼',
+                tt: "Estudos e trabalho",
+                eixo: "funcional",
+                col: 'historico_escolar',
+                g2: [
+                    { id:'estudos_e_trabalho4_1', lb:"Até que nível você estudou? Teve facilidade ou dificuldade nos estudos?", tp:'ta', full:1 },
+                    { id:'estudos_e_trabalho4_2', lb:"Como está sua vida profissional hoje? Tem dificuldades no trabalho? Quais?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '⚡',
+                tt: "Atenção, organização e memória no dia a dia",
+                eixo: "neurodesenvolvimento/neurocognitivo — TDAH",
+                col: 'social_emocional',
+                g2: [
+                    { id:'atencao_organizaca5_1', lb:"Você se distrai com facilidade, esquece coisas ou perde objetos?", tp:'ta', full:1 },
+                    { id:'atencao_organizaca5_2', lb:"Costuma adiar tarefas (procrastinar), deixar coisas pela metade ou ter dificuldade com prazos?", tp:'ta', full:1 },
+                    { id:'atencao_organizaca5_3', lb:"Age por impulso às vezes? Sente a cabeça \"acelerada\" ou com dificuldade de \"desligar\"?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💬',
+                tt: "Convivência, comunicação e sentidos",
+                eixo: "neurodesenvolvimento — TEA",
+                col: 'social_emocional',
+                g2: [
+                    { id:'convivencia_comuni6_1', lb:"Como é sua convivência com outras pessoas? Fazer e manter amizades é fácil ou custa?", tp:'ta', full:1 },
+                    { id:'convivencia_comuni6_2', lb:"Você tem interesses muito intensos, gosta de rotina e se incomoda com mudanças?", tp:'ta', full:1 },
+                    { id:'convivencia_comuni6_3', lb:"Certos sons, luzes, texturas ou cheiros te incomodam muito?", tp:'ta', full:1 },
+                    { id:'convivencia_comuni6_4', lb:"Você sente que faz esforço para \"se encaixar\" ou disfarçar dificuldades em situações sociais?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💗',
+                tt: "Humor e emoções",
+                eixo: "transtorno de humor e ansiedade",
+                col: 'social_emocional',
+                g2: [
+                    { id:'humor_e_emocoes7_1', lb:"Como tem estado seu humor? Passa por fases de tristeza e desânimo, ou por fases muito aceleradas?", tp:'ta', full:1 },
+                    { id:'humor_e_emocoes7_2', lb:"Sente ansiedade, preocupação excessiva ou crises? Em quais situações?", tp:'ta', full:1 },
+                    { id:'humor_e_emocoes7_3', lb:"Como estão seu sono e sua energia?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🪞',
+                tt: "Seu jeito de ser e de se relacionar",
+                eixo: "personalidade",
+                col: 'social_emocional',
+                g2: [
+                    { id:'seu_jeito_de_ser_e8_1', lb:"Como você descreveria o seu jeito de ser?", tp:'ta', full:1 },
+                    { id:'seu_jeito_de_ser_e8_2', lb:"Nas relações (amorosas, amizades, trabalho), percebe padrões que se repetem e te incomodam?", tp:'ta', full:1 },
+                    { id:'seu_jeito_de_ser_e8_3', lb:"Como costuma lidar com conflitos e frustrações?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🩺',
+                tt: "Saúde e uso de substâncias",
+                eixo: "histórico médico",
+                col: 'saude_medicacoes',
+                g2: [
+                    { id:'saude_e_uso_de_sub9_1', lb:"Tem alguma condição de saúde e usa algum remédio? Quais?", tp:'ta', full:1 },
+                    { id:'saude_e_uso_de_sub9_2', lb:"Faz uso de álcool ou outras substâncias? Com que frequência?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🩺',
+                tt: "Saúde mental (histórico)",
+                eixo: "histórico psiquiátrico",
+                col: 'saude_medicacoes',
+                g2: [
+                    { id:'saude_mental_histo10_1', lb:"Já teve algum diagnóstico psicológico ou psiquiátrico? Já fez terapia, usou medicação ou foi internado?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🧬',
+                tt: "Família",
+                eixo: "antecedentes familiares",
+                col: 'contexto_familiar',
+                g2: [
+                    { id:'familia11_1', lb:"Na sua família há casos de autismo, TDAH, depressão, ansiedade, bipolaridade ou outras questões psiquiátricas?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🏠',
+                tt: "Sua vida hoje",
+                eixo: "contexto atual",
+                col: 'contexto_familiar',
+                g2: [
+                    { id:'sua_vida_hoje12_1', lb:"Com quem você mora e como é a sua rede de apoio?", tp:'ta', full:1 },
+                    { id:'sua_vida_hoje12_2', lb:"Aconteceu algo marcante recentemente que ajude a entender o seu momento atual?", tp:'ta', full:1 }
+                ]
+            }
+        ]
+    };
+
+    const F_IDOSO = {
+        icon: '🌿', tt: 'Idoso', rg: '60 – 90 anos',
+        sects: [
+            secBoasVindas(),
+            {
+                ic: '🎯',
+                tt: "Por que procurou a avaliação",
+                eixo: "demanda e queixa",
+                col: 'queixa_historico',
+                g2: [
+                    { id:'por_que_procurou_a2_1', lb:"Conte, com suas palavras, o que mais preocupa (memória, esquecimentos, raciocínio, outros).", tp:'ta', full:1 },
+                    { id:'por_que_procurou_a2_2', lb:"Quem percebeu primeiro as mudanças — a própria pessoa ou a família?", tp:'ta', full:1 },
+                    { id:'por_que_procurou_a2_3', lb:"Começou de repente ou aos poucos? Vem piorando, está estável, ou varia muito de um dia para o outro?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🧠',
+                tt: "Como está a memória e o raciocínio",
+                eixo: "neurocognitivo — rastreio de demência",
+                col: 'social_emocional',
+                g2: [
+                    { id:'como_esta_a_memori3_1', lb:"Dê exemplos do dia a dia: esquece compromissos, repete perguntas, se perde em lugares, tem dificuldade com dinheiro?", tp:'ta', full:1 },
+                    { id:'como_esta_a_memori3_2', lb:"Isso já atrapalha as atividades do dia a dia? Desde quando?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🧺',
+                tt: "Dia a dia e autonomia",
+                eixo: "funcionalidade (AVD/AIVD)",
+                col: 'social_emocional',
+                g2: [
+                    { id:'dia_a_dia_e_autono4_1', lb:"Cuida sozinho da higiene, alimentação e de se vestir?", tp:'ta', full:1 },
+                    { id:'dia_a_dia_e_autono4_2', lb:"E das tarefas mais complexas: remédios, dinheiro, transporte, telefone, compras?", tp:'ta', full:1 },
+                    { id:'dia_a_dia_e_autono4_3', lb:"Precisa de ajuda ou supervisão para algo? Para quê?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💗',
+                tt: "Humor e comportamento",
+                eixo: "transtorno de humor (diferencial com pseudodemência)",
+                col: 'social_emocional',
+                g2: [
+                    { id:'humor_e_comportame5_1', lb:"Anda triste, desanimado, sem vontade das coisas, ou mais isolado?", tp:'ta', full:1 },
+                    { id:'humor_e_comportame5_2', lb:"Houve mudança no jeito de ser, no comportamento, ou episódios de ver/ouvir coisas que não estão lá?", tp:'ta', full:1 },
+                    { id:'humor_e_comportame5_3', lb:"Como está o sono?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🩺',
+                tt: "Saúde e remédios",
+                eixo: "histórico médico e neurológico",
+                col: 'saude_medicacoes',
+                g2: [
+                    { id:'saude_e_remedios6_1', lb:"Tem pressão alta, diabetes, colesterol, já teve AVC (derrame) ou batidas na cabeça, quedas?", tp:'ta', full:1 },
+                    { id:'saude_e_remedios6_2', lb:"Quais remédios usa hoje? Faz uso de bebida alcoólica?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '💼',
+                tt: "Estudos e trabalho ao longo da vida",
+                eixo: "escolaridade (modula a interpretação)",
+                col: 'historico_escolar',
+                g2: [
+                    { id:'estudos_e_trabalho7_1', lb:"Até que série/nível estudou? Qual foi a principal ocupação na vida?", tp:'ta', full:1 },
+                    { id:'estudos_e_trabalho7_2', lb:"Hoje mantém atividades como leitura, jogos, convívio social?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🧬',
+                tt: "Família",
+                eixo: "antecedentes familiares",
+                col: 'contexto_familiar',
+                g2: [
+                    { id:'familia8_1', lb:"Na família há casos de demência (Alzheimer, outros) ou de questões psiquiátricas?", tp:'ta', full:1 }
+                ]
+            },
+            {
+                ic: '🏠',
+                tt: "Com quem vive e apoio",
+                eixo: "contexto e suporte",
+                col: 'contexto_familiar',
+                g2: [
+                    { id:'com_quem_vive_e_ap9_1', lb:"Com quem mora? Há um cuidador? Como é a rede de apoio da família?", tp:'ta', full:1 }
+                ]
+            }
+        ]
+    };
+
+    // Formulários oferecidos para anamnese NOVA.
+    const F_ATIVOS = {
+        'pre_escolar':         F_PRE_ESCOLAR,
+        'escolar_adolescente': F_ESCOLAR_ADOLESCENTE,
+        'adulto':              F_ADULTO,
+        'idoso':               F_IDOSO
+    };
+
+    // LEGADO — 313 anamneses já respondidas usam estas chaves (285 concluídas).
+    // Elas não aparecem no seletor, mas precisam continuar existindo: sem o
+    // formulário original, abrir esses prontuários daria erro, e as respostas
+    // ficariam sob perguntas que não foram as feitas à família.
+    const F_LEGADO = {
         'primeira_infancia': F_PRIMEIRA_INFANCIA,
         'segunda_infancia':  F_SEGUNDA_INFANCIA,
         'adolescencia':      F_ADOLESCENCIA,
@@ -702,20 +1185,27 @@ window.CortexAnamneseForms = (function() {
         'cinquenta_mais':    F_CINQUENTA_MAIS
     };
 
+    const F = { ...F_ATIVOS, ...F_LEGADO };
+
     function detectarFaixa(idadeAnos) {
-        if (idadeAnos === null || idadeAnos === undefined) return 'jovens_adultos';
-        if (idadeAnos < 6)  return 'primeira_infancia';
-        if (idadeAnos < 12) return 'segunda_infancia';
-        if (idadeAnos < 18) return 'adolescencia';
-        if (idadeAnos < 50) return 'jovens_adultos';
-        return 'cinquenta_mais';
+        if (idadeAnos === null || idadeAnos === undefined) return 'adulto';
+        if (idadeAnos < 6)  return 'pre_escolar';
+        if (idadeAnos < 17) return 'escolar_adolescente';
+        if (idadeAnos < 60) return 'adulto';
+        return 'idoso';
     }
 
+    // Só os ativos: o legado existe para abrir o que já foi respondido,
+    // nunca para criar anamnese nova.
     function listarFaixas() {
-        return Object.entries(F).map(([key, fx]) => ({
+        return Object.entries(F_ATIVOS).map(([key, fx]) => ({
             key: key,
             label: `${fx.icon} ${fx.tt} (${fx.rg})`
         }));
+    }
+
+    function ehLegado(faixa) {
+        return Object.prototype.hasOwnProperty.call(F_LEGADO, faixa);
     }
 
     function colunasJsonb() {
@@ -735,6 +1225,7 @@ window.CortexAnamneseForms = (function() {
         getForm: (faixa) => F[faixa] || null,
         detectarFaixa,
         listarFaixas,
+        ehLegado,
         colunasJsonb,
         FORMS: F
     };

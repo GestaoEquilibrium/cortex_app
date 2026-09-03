@@ -673,3 +673,34 @@
         flex-wrap: wrap;
     }
 }
+
+/* ── Eixo clínico (uso interno) ────────────────────────────────────────────
+   Aparece só aqui e no PDF da equipe. O link público (publica.js) renderiza
+   a seção sem este bloco de propósito: antecipar à família que a seção
+   rastreia sinais de autismo enviesaria a resposta. */
+
+.anamnese-eixo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    font-size: 11.5px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.anamnese-eixo-tag {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #ffffff;
+    background: #94a3b8;
+    padding: 2px 7px;
+    border-radius: 999px;
+    flex-shrink: 0;
+}

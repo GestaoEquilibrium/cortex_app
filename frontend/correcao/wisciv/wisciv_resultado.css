@@ -1289,3 +1289,122 @@
     .wisc-tab-indice thead th { padding: 6px 10px; font-size: 9px; }
     .wisc-tab-indice tbody td { padding: 8px 10px; font-size: 11.5px; }
 }
+
+/* ── ICG / ICC ────────────────────────────────────────────────────────────── */
+
+.wisc-tab-icg {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 9px;
+    overflow: hidden;
+    margin-bottom: 9px;
+}
+
+.wisc-tab-icg table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.wisc-tab-icg thead th {
+    text-align: left;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #ffffff;
+    padding: 8px 14px;
+    background: #12325a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wisc-tab-icg thead th:first-child,
+.wisc-tab-icg tbody td:first-child { width: 32%; }
+
+.wisc-tab-icg tbody td {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    background: #eef4fd;
+    line-height: 1.3;
+}
+
+.wisc-tab-icg thead th.ctr,
+.wisc-tab-icg tbody td.ctr { text-align: left; }
+
+.wisc-tab-icg .wisc-icg-sigla { color: #2e74b5; font-weight: 700; }
+
+.wisc-tab-icg .wisc-icg-cl { font-weight: 700; }
+.wisc-tab-icg .wisc-icg-cl.cl-vs  { color: #14532d; }
+.wisc-tab-icg .wisc-icg-cl.cl-s   { color: #166534; }
+.wisc-tab-icg .wisc-icg-cl.cl-ms  { color: #1e40af; }
+.wisc-tab-icg .wisc-icg-cl.cl-m   { color: #475569; }
+.wisc-tab-icg .wisc-icg-cl.cl-mi  { color: #92400e; }
+.wisc-tab-icg .wisc-icg-cl.cl-l   { color: #9a3412; }
+.wisc-tab-icg .wisc-icg-cl.cl-eb  { color: #991b1b; }
+.wisc-tab-icg .wisc-icg-cl.cl-inf { color: #7f1d1d; }
+
+/* Composição da soma: memória de cálculo, para conferência */
+.wisc-icg-comp {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 11.5px;
+    color: #64748b;
+    padding: 0 2px;
+    margin-bottom: 8px;
+}
+.wisc-icg-comp b { color: #2e74b5; font-weight: 700; }
+.wisc-icg-comp i { font-style: normal; color: #94a3b8; }
+
+.wisc-icg-fonte {
+    font-size: 10.5px;
+    line-height: 1.55;
+    color: #94a3b8;
+    padding: 0 2px;
+    margin-bottom: 16px;
+}
+
+/* Ressalva quando a discrepância invalida a leitura do ICG */
+.wisc-icg-alerta {
+    display: block;
+    padding: 11px 14px;
+    margin-bottom: 10px;
+    border-radius: 9px;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    font-size: 12px;
+    line-height: 1.6;
+}
+.wisc-icg-alerta strong { color: #78350f; }
+
+/* Aviso de que o QIT não é interpretável e a leitura vai para o ICG */
+.wisc-icg-nota-uso {
+    display: block;
+    padding: 11px 14px;
+    margin-bottom: 10px;
+    border-radius: 9px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.wisc-icg-aviso {
+    display: block;
+    padding: 11px 14px;
+    margin-bottom: 16px;
+    border-radius: 9px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.6;
+}
+.wisc-icg-aviso strong { color: #475569; }

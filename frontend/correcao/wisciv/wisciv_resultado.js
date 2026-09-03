@@ -833,6 +833,8 @@
                 ${renderICChart()}
                 ${renderTabelaIndices()}
 
+                ${renderICG()}
+
                 ${renderTabelasPorIndice()}
                 ${renderAlertaQIT(classifQIT)}
 
@@ -1135,6 +1137,139 @@
     // documento: sigla, QI, percentil e classificação. Cada uma ganha o botão
     // de copiar sozinha, porque o copy_to_clipboard.js varre por
     // [class*="-tab-"] — daí o nome da classe.
+
+
+    // ────────────────────────────────────────────────────────────────────────
+    // ICG — ÍNDICE DE CAPACIDADE GERAL E ICC
+    // ────────────────────────────────────────────────────────────────────────
+    // Conversão fechada por tabela oficial (window.CortexICG), não estimativa.
+    // Some os 6 ponderados core e leia composto, percentil e IC 95%.
+    //
+    // O ICG existe para os casos em que o QIT não pode ser interpretado: quando
+    // a amplitude entre os índices chega a 23 pontos, o escore global deixa de
+    // representar o desempenho e a leitura se ancora aqui.
+
+    function renderICG() {
+        if (!window.CortexICG) return '';
+
+        const r = state.resultado;
+        const ponds = r.ponderados || {};
+        const icg = window.CortexICG.calcularICG('WISC', ponds);
+        if (!icg) return '';
+
+        const compostos = {};
+        ['ICV', 'IOP', 'IMO', 'IVP'].forEach(k => {
+            const c = r.compostos?.[k]?.composto;
+            if (c != null) compostos[ESCALAS_SIGLA[k] || k] = c;
+        });
+        const interp = window.CortexICG.avaliarInterpretabilidade(compostos, 'IRP');
+
+        // Sem os 6 core não há ICG. Dizer o que falta é mais útil que sumir.
+        if (icg.incompleto) {
+            const nomes = icg.faltando
+                .map(c => (SUBTESTES.find(s => s.codigo === c)?.nome) || c)
+                .join(', ');
+            return `
+                <div class="wisc-icg-aviso">
+                    <strong>ICG não calculado.</strong>
+                    Faltam ponderados dos subtestes core: ${escapeHtml(nomes)}.
+                    Subtestes suplementares não substituem os core neste cálculo.
+                </div>`;
+        }
+        if (icg.foraDaTabela) {
+            return `<div class="wisc-icg-aviso"><strong>ICG não calculado.</strong>
+                    Soma EP ${icg.somaEP} fora do intervalo da tabela oficial.</div>`;
+        }
+
+        const col = icColor(icg.composto);
+        const cl  = icg.classificacao;
+
+        const alerta = (interp && interp.icgValido === false)
+            ? `<div class="wisc-icg-alerta">
+                   <strong>Leia com ressalva.</strong>
+                   A diferença entre ${escapeHtml(icg.rotuloVerbal)} e ${escapeHtml(icg.rotuloPerceptual)}
+                   é de ${interp.difVerbalPerceptual} pontos (limiar ${interp.limiar}).
+                   Acima desse limiar o ICG deixa de representar bem a capacidade geral —
+                   descreva o desempenho por índices, subtestes ou clusters.
+               </div>`
+            : (interp && interp.qitInterpretavel === false
+                ? `<div class="wisc-icg-nota-uso">
+                       A amplitude entre os índices é de ${interp.amplitude} pontos
+                       (limiar ${interp.limiar}), então o QIT não é interpretável como
+                       escore global — ancore a leitura no ICG.
+                   </div>`
+                : '');
+
+        return `
+            ${alerta}
+            <div class="wisc-tab-icg">
+                <table>
+                    <thead><tr>
+                        <th>Índice de Capacidade Geral</th>
+                        <th class="ctr">SOMA EP</th>
+                        <th class="ctr">ICG</th>
+                        <th class="ctr">PERCENTIL</th>
+                        <th class="ctr">IC 95%</th>
+                        <th>CLASSIFICAÇÃO</th>
+                    </tr></thead>
+                    <tbody><tr>
+                        <td class="wisc-icg-sigla">ICG</td>
+                        <td class="ctr">${icg.somaEP}</td>
+                        <td class="ctr" style="color:${col};font-weight:700;">${icg.composto}</td>
+                        <td class="ctr">P${escapeHtml(icg.percentil)}</td>
+                        <td class="ctr">${icg.ic95[0]}–${icg.ic95[1]}</td>
+                        <td class="wisc-icg-cl ${clBadgeClass(cl)}">${escapeHtml(cl)}</td>
+                    </tr></tbody>
+                </table>
+            </div>
+            <div class="wisc-icg-comp">
+                <span><b>${escapeHtml(icg.rotuloVerbal)}</b> ${icg.somaVerbal}
+                      <i>(${icg.codigosVerbal.join(' + ')})</i></span>
+                <span><b>${escapeHtml(icg.rotuloPerceptual)}</b> ${icg.somaPerceptual}
+                      <i>(${icg.codigosPerceptual.join(' + ')})</i></span>
+                <span><b>Soma EP</b> ${icg.somaEP}</span>
+            </div>
+            <div class="wisc-icg-fonte">${escapeHtml(window.CortexICG.NOTA_NORMA)}</div>
+            ${renderICC()}`;
+    }
+
+    // ICC — Índice de Competência Cognitiva (só WISC-IV): memória operacional
+    // e velocidade de processamento, o contraponto do ICG.
+    function renderICC() {
+        if (!window.CortexICG) return '';
+        const icc = window.CortexICG.calcularICC(state.resultado.ponderados || {});
+        if (!icc || icc.incompleto || icc.foraDaTabela) return '';
+
+        const col = icColor(icc.composto);
+        const cl  = icc.classificacao;
+
+        return `
+            <div class="wisc-tab-icg" style="margin-top:14px">
+                <table>
+                    <thead><tr>
+                        <th>Índice de Competência Cognitiva</th>
+                        <th class="ctr">SOMA EP</th>
+                        <th class="ctr">ICC</th>
+                        <th class="ctr">PERCENTIL</th>
+                        <th class="ctr">IC 95%</th>
+                        <th>CLASSIFICAÇÃO</th>
+                    </tr></thead>
+                    <tbody><tr>
+                        <td class="wisc-icg-sigla">ICC</td>
+                        <td class="ctr">${icc.somaEP}</td>
+                        <td class="ctr" style="color:${col};font-weight:700;">${icc.composto}</td>
+                        <td class="ctr">P${escapeHtml(icc.percentil)}</td>
+                        <td class="ctr">${icc.ic95[0]}–${icc.ic95[1]}</td>
+                        <td class="wisc-icg-cl ${clBadgeClass(cl)}">${escapeHtml(cl)}</td>
+                    </tr></tbody>
+                </table>
+            </div>
+            <div class="wisc-icg-comp">
+                <span><b>IMO</b> ${icc.somaMemoria} <i>(${icc.codigosMemoria.join(' + ')})</i></span>
+                <span><b>IVP</b> ${icc.somaVelocidade} <i>(${icc.codigosVelocidade.join(' + ')})</i></span>
+                <span><b>Soma EP</b> ${icc.somaEP}</span>
+            </div>`;
+    }
 
     function renderTabelasPorIndice() {
         const r = state.resultado;

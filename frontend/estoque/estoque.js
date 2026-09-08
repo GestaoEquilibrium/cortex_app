@@ -81,6 +81,25 @@
     const fmtMoeda = (v) => (v === null || v === undefined || v === '')
         ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+    // ── Auditoria ───────────────────────────────────────────────────────────
+    // Toda alteração de estoque é registrada em auditoria_acessos. Como o
+    // consumo deixou de ser automático e passou a ser lançamento humano, o
+    // rastro de quem mexeu no quê é o que sustenta a confiança no saldo.
+    //
+    // 'acao' usa só os valores que a tela de auditoria reconhece:
+    // criacao | edicao | delecao.
+
+    function auditar(acao, tabela, registroId, detalhes) {
+        try {
+            if (window.CortexAudit) {
+                window.CortexAudit.log(acao, tabela, registroId || null, { detalhes: detalhes || {} });
+            }
+        } catch (err) {
+            // Auditoria nunca pode derrubar a operação que a originou.
+            console.warn('[estoque] auditoria:', err);
+        }
+    }
+
     // ── Boot ────────────────────────────────────────────────────────────────
 
     window.addEventListener('cortex:auth-ready', async () => {
@@ -630,6 +649,19 @@
                     registrado_por: window.cortexProfissional?.id || null
                 });
                 if (error) throw error;
+
+                auditar('criacao', 'estoque_compras', it.estoque_id, {
+                    operacao: 'entrada',
+                    instrumento: it.rotulo,
+                    quantidade: qtd,
+                    saldo_antes: saldo(it),
+                    saldo_depois: saldo(it) + qtd,
+                    valor_unitario: valor === '' ? null : Number(valor),
+                    fornecedor: ov.querySelector('#e-forn').value.trim() || null,
+                    nota_fiscal: ov.querySelector('#e-nf').value.trim() || null,
+                    data_compra: ov.querySelector('#e-data').value || hojeISO()
+                });
+
                 ov.remove();
                 toast(`+${qtd} ${it.rotulo} registrado`, 'success');
                 await carregar();
@@ -680,6 +712,18 @@
                     registrado_por: window.cortexProfissional?.id || null
                 });
                 if (error) throw error;
+
+                auditar('criacao', 'estoque_saidas', it.estoque_id, {
+                    operacao: 'saida',
+                    instrumento: it.rotulo,
+                    quantidade: qtd,
+                    saldo_antes: saldo(it),
+                    saldo_depois: saldo(it) - qtd,
+                    motivo: ov.querySelector('#s-motivo').value,
+                    data_saida: ov.querySelector('#s-data').value || hojeISO(),
+                    observacao: ov.querySelector('#s-obs').value.trim() || null
+                });
+
                 ov.remove();
                 toast(`−${qtd} ${it.rotulo} registrado`, 'success');
                 await carregar();
@@ -841,6 +885,14 @@
                 const { error } = await c().from('estoque_licencas')
                     .insert({ instrumento_id: escolhido, variante: variante || null });
                 if (error) throw error;
+
+                const inst = state.catalogo.find(x => x.id === escolhido);
+                auditar('criacao', 'estoque_licencas', escolhido, {
+                    operacao: 'adicionar_ao_estoque',
+                    instrumento: inst ? inst.sigla : escolhido,
+                    variante: variante || null
+                });
+
                 ov.remove();
                 toast('Adicionado ao estoque.', 'success');
                 await carregar();
@@ -855,8 +907,34 @@
 
     async function salvarItem(it, patch, msg) {
         try {
+            // Estado anterior, para o log mostrar o que mudou de fato.
+            const antes = {
+                estoque_minimo: it.minimo,
+                observacao: it.obs || null,
+                variante: it.variante || null,
+                ativo: it.ativo
+            };
+
             const { error } = await c().from('estoque_licencas').update(patch).eq('id', it.estoque_id);
             if (error) throw error;
+
+            const mudou = {};
+            Object.keys(patch).forEach(k => {
+                const de = antes[k] === undefined ? null : antes[k];
+                const para = patch[k];
+                if (String(de ?? '') !== String(para ?? '')) mudou[k] = { de, para };
+            });
+
+            if (Object.keys(mudou).length) {
+                const operacao = ('ativo' in mudou)
+                    ? (patch.ativo ? 'restaurar_no_estoque' : 'remover_do_estoque')
+                    : 'editar_configuracao';
+                auditar('edicao', 'estoque_licencas', it.estoque_id, {
+                    operacao: operacao,
+                    instrumento: it.rotulo,
+                    alteracoes: mudou
+                });
+            }
             if ('estoque_minimo' in patch) it.minimo = patch.estoque_minimo;
             if ('variante' in patch) {
                 it.variante = patch.variante || '';
@@ -884,6 +962,7 @@
 
     function excluirMovimento(id, tipo) {
         const tabela = tipo === 'entrada' ? 'estoque_compras' : 'estoque_saidas';
+        const mov = state.movimentos.find(m => m.id === id);
         window.CortexConfirm.mostrar({
             icone: '🗑️',
             titulo: 'Excluir este lançamento?',
@@ -893,6 +972,21 @@
                 try {
                     const { error } = await c().from(tabela).delete().eq('id', id);
                     if (error) throw error;
+
+                    // Guarda o que foi apagado: sem isso o extrato só mostraria
+                    // um buraco, sem dizer o que existia ali.
+                    auditar('delecao', tabela, mov?.estoque_id || null, {
+                        operacao: 'excluir_lancamento',
+                        tipo: tipo,
+                        instrumento: mov?.item?.rotulo || null,
+                        quantidade: mov?.quantidade ?? null,
+                        data: mov?.data ?? null,
+                        fornecedor: mov?.fornecedor ?? null,
+                        nota_fiscal: mov?.nota_fiscal ?? null,
+                        motivo: mov?.motivo ?? null,
+                        observacao: mov?.observacao ?? null
+                    });
+
                     toast('Lançamento excluído.', 'success');
                     await carregar();
                 } catch (err) {

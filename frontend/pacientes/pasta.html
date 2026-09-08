@@ -539,6 +539,7 @@
                         <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.enviarPortalWhatsApp()">📱 Enviar acesso ao portal</button>
+                        ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.resetarSenhaPortal()" title="Volta a senha do portal para o CPF">🔑 Resetar senha do portal</button>` : ''}
                         ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalDesignar()">👤 Designar aplicador</button>` : ''}
                         ` : ''}
                     </div>
@@ -2712,6 +2713,127 @@
     // ========================================================================
     // ENVIAR ACESSO AO PORTAL POR WHATSAPP
     // ========================================================================
+    // ── Reset de senha do portal ────────────────────────────────────────────
+    // Usa a RPC admin_resetar_senha_portal, que já existia no banco e nunca
+    // tinha ganhado botão. Ela é SECURITY DEFINER e exige profissional ativo
+    // autenticado — por isso não roda pelo SQL Editor, só pelo sistema.
+    //
+    // O que ela faz: senha volta a ser o CPF, portal_senha_trocada vira false
+    // (o que força a troca no próximo login) e as tentativas de login travadas
+    // são limpas. A senha nunca fica adivinhável de forma permanente porque o
+    // primeiro acesso obriga a trocar.
+    //
+    // As colunas de portal são lidas direto de `pacientes`: a pasta carrega o
+    // paciente de vw_pacientes_lista, e a ordem de colunas dessa view é
+    // congelada — não vale a pena mexer nela por causa de três campos.
+    async function resetarSenhaPortal() {
+        try {
+            const { data: est, error: errEst } = await window.cortexClient
+                .from('pacientes')
+                .select('portal_user_id, portal_senha_trocada, portal_ultimo_acesso, cpf')
+                .eq('id', pacienteId)
+                .single();
+
+            if (errEst) throw errEst;
+
+            const cpfLimpo = String(est.cpf || '').replace(/\D/g, '');
+            if (cpfLimpo.length !== 11) {
+                window.CortexUI.toast('Paciente sem CPF válido no cadastro.', 'danger');
+                return;
+            }
+
+            const temAcesso = !!est.portal_user_id;
+            const cpfMasc = cpfLimpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+
+            const texto = temAcesso
+                ? `A senha do portal volta a ser o CPF (<strong>${escapeHtml(cpfMasc)}</strong>). ` +
+                  `No próximo acesso o sistema vai exigir que ${escapeHtml((paciente.nome_completo || '').split(' ')[0])} escolha uma senha nova.`
+                : `Este paciente ainda não tem acesso ao portal. O acesso será criado agora, ` +
+                  `com login e senha iguais ao CPF (<strong>${escapeHtml(cpfMasc)}</strong>).`;
+
+            window.CortexConfirm.mostrar({
+                icone: '🔑',
+                titulo: temAcesso ? 'Resetar senha do portal?' : 'Criar acesso ao portal?',
+                texto: texto,
+                btnSim: temAcesso ? 'Sim, resetar' : 'Sim, criar',
+                btnNao: 'Cancelar',
+                onSim: async () => {
+                    try {
+                        const fn = temAcesso ? 'admin_resetar_senha_portal' : 'admin_criar_acesso_portal';
+                        const { error } = await window.cortexClient.rpc(fn, { p_paciente_id: pacienteId });
+                        if (error) throw error;
+
+                        if (window.CortexAudit) {
+                            window.CortexAudit.log('edicao', 'pacientes', pacienteId, {
+                                pacienteId: pacienteId,
+                                detalhes: {
+                                    operacao: temAcesso ? 'resetar_senha_portal' : 'criar_acesso_portal',
+                                    paciente: paciente.nome_completo,
+                                    senha_definida: 'cpf',
+                                    troca_obrigatoria_no_proximo_acesso: true
+                                }
+                            });
+                        }
+
+                        window.CortexUI.toast(
+                            temAcesso ? 'Senha resetada para o CPF.' : 'Acesso criado. Senha inicial é o CPF.',
+                            'success');
+
+                        mostrarSenhaResetada(cpfMasc, temAcesso);
+                    } catch (err) {
+                        console.error('[portal] reset:', err);
+                        window.CortexUI.toast('Erro ao resetar: ' + (err.message || ''), 'danger');
+                    }
+                }
+            });
+        } catch (err) {
+            console.error('[portal] estado:', err);
+            window.CortexUI.toast('Erro ao consultar o acesso: ' + (err.message || ''), 'danger');
+        }
+    }
+
+    // Confirmação com as credenciais na tela, para você repassar na hora.
+    function mostrarSenhaResetada(cpfMasc, eraReset) {
+        const nome = (paciente.nome_completo || '').split(' ')[0];
+        const html = `
+            <div style="text-align:center">
+                <div style="font-size:38px;margin-bottom:10px">🔑</div>
+                <p style="font-size:14px;line-height:1.6;color:var(--color-text-muted);margin-bottom:16px">
+                    ${eraReset ? 'Senha resetada' : 'Acesso criado'} para <strong>${escapeHtml(nome)}</strong>.
+                </p>
+                <div style="background:var(--gradient-softer,#f7f9ff);border:1px solid var(--color-border,#e2e8f0);
+                            border-radius:12px;padding:16px;text-align:left;margin-bottom:14px">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+                                color:var(--color-text-muted);margin-bottom:3px">Login</div>
+                    <div style="font-size:16px;font-weight:700;margin-bottom:12px">${escapeHtml(cpfMasc)}</div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+                                color:var(--color-text-muted);margin-bottom:3px">Senha</div>
+                    <div style="font-size:16px;font-weight:700">${escapeHtml(cpfMasc)}</div>
+                </div>
+                <p style="font-size:12.5px;line-height:1.6;color:var(--color-text-soft,#94a3b8)">
+                    No primeiro acesso o portal vai pedir uma senha nova. Enquanto isso não acontecer,
+                    o CPF abre a conta — evite deixar assim por muito tempo.
+                </p>
+            </div>`;
+
+        if (window.CortexPop && window.CortexPop.disponivel !== false) {
+            window.CortexPop.abrir({
+                titulo: eraReset ? 'Senha resetada' : 'Acesso criado',
+                subtitulo: 'Repasse ao paciente ou responsável',
+                tone: 'green',
+                tamanho: 'sm',
+                html: html,
+                rodape: [
+                    { label: 'Fechar', classe: 'btn-secondary' },
+                    { label: '📱 Enviar por WhatsApp', classe: 'btn-primary',
+                      onClick: () => { abrirWhatsAppPortal(); return false; } }
+                ]
+            });
+        } else {
+            window.CortexUI.toast('Login e senha: ' + cpfMasc, 'success');
+        }
+    }
+
     async function abrirWhatsAppPortal() {
         if (!paciente || !paciente.cpf) {
             window.CortexUI.toast('Paciente sem CPF cadastrado.', 'danger');
@@ -2755,6 +2877,9 @@
     }
 
     window.CortexPasta = {
+        resetarSenhaPortal: async function () {
+            await resetarSenhaPortal();
+        },
         // Gera a solicitação de relatório escolar já preenchida.
         // Reaproveita a logo que a capa de prontuário (sprint 16) já carrega
         // em base64, para o PDF não depender de rede.

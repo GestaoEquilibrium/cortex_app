@@ -294,3 +294,54 @@ body {
     color: #0c1f3f !important;
     margin-top: 16px !important;
 }
+
+/* ── Indicador de rascunho ────────────────────────────────────────────────
+   Fica logo acima dos botões de navegação. A mãe precisa VER que o
+   progresso está guardado — a reclamação não era só de perder texto,
+   era de não ter certeza de que não ia perder. */
+
+.rascunho-status {
+    min-height: 20px;
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 4px 0 10px;
+    text-align: right;
+    transition: color .2s ease;
+}
+
+.rascunho-status.salvo    { color: #15803d; }
+.rascunho-status.salvando { color: #64748b; }
+.rascunho-status.pendente { color: #94a3b8; }
+.rascunho-status.erro     { color: #b45309; }
+
+.rasc-spin {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border: 2px solid #cbd5e1;
+    border-top-color: #64748b;
+    border-radius: 50%;
+    animation: rasc-girar .7s linear infinite;
+    vertical-align: -1px;
+    margin-right: 4px;
+}
+
+@keyframes rasc-girar { to { transform: rotate(360deg); } }
+
+/* Aviso de retomada na tela de boas-vindas */
+.publica-retomada {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 13px 16px;
+    margin: 16px 0;
+    border-radius: 12px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.publica-retomada strong { display: block; margin-bottom: 2px; }

@@ -311,7 +311,7 @@
                 </div>
                 <div class="anamnese-identif-grid">
                     ${item('Nome completo', p.nome_completo)}
-                    ${item('Data de nascimento', p.data_nascimento)}
+                    ${item('Data de nascimento', window.CortexUI.formatarDataBR(p.data_nascimento))}
                     ${item('Idade', idade)}
                     ${item('Sexo', p.sexo)}
                     ${item('Nome dos pais', pais)}

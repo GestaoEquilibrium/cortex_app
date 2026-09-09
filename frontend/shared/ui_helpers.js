@@ -67,6 +67,20 @@ window.CortexUI = (function() {
     /**
      * Formata data ISO para BR: 2026-04-27 -> 27/04/2026
      */
+    /**
+     * Converte 'YYYY-MM-DD' (ou ISO completo) em Date no fuso LOCAL.
+     * Use sempre isto em vez de new Date(string) para datas puras.
+     */
+    function dataLocal(valor) {
+        if (!valor) return null;
+        const m = String(valor).substring(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) {
+            const d = new Date(valor);
+            return isNaN(d) ? null : d;
+        }
+        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    }
+
     function formatarDataBR(dataIso) {
         if (!dataIso) return '';
         const [ano, mes, dia] = dataIso.substring(0, 10).split('-');
@@ -80,7 +94,11 @@ window.CortexUI = (function() {
     function calcularIdadeHumanizada(dataNasc) {
         if (!dataNasc) return '';
 
-        const nasc = new Date(dataNasc);
+        // new Date('YYYY-MM-DD') é lido como meia-noite UTC; em Brasília (-3)
+        // isso vira 21h do dia ANTERIOR, e a idade sai um dia menor perto do
+        // aniversário. Construindo com os componentes, a data é local.
+        const nasc = dataLocal(dataNasc);
+        if (!nasc) return '';
         const hoje = new Date();
 
         let anos = hoje.getFullYear() - nasc.getFullYear();
@@ -195,6 +213,7 @@ window.CortexUI = (function() {
         formatarCEP,
         aplicarMascaraCEP,
         formatarDataBR,
+        dataLocal,
         calcularIdadeHumanizada,
         validarCPF,
         toast,

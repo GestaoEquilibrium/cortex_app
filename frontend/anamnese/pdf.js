@@ -55,6 +55,16 @@
     // -------------------------------------------------------------------
     // Formatador de valor por tipo
     // -------------------------------------------------------------------
+    // Formata data pura (YYYY-MM-DD) sem conversão de fuso.
+    // new Date('2009-02-11') é meia-noite UTC = 10/02 às 21h em Brasília.
+    function fmtDataPura(valor) {
+        if (!valor) return '';
+        const m = String(valor).substring(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+        const d = new Date(String(valor).substring(0, 10) + 'T12:00:00');
+        return isNaN(d) ? String(valor) : d.toLocaleDateString('pt-BR');
+    }
+
     function formatarValor(f, valor, detalhe, other) {
         if (valor === null || valor === undefined || valor === '') {
             if (f.tp === 'cks' && (!valor || valor.length === 0)) return '— (não respondido)';
@@ -63,8 +73,9 @@
 
         switch (f.tp) {
             case 'date':
-                try { return new Date(valor).toLocaleDateString('pt-BR'); }
-                catch (e) { return String(valor); }
+                // Sem new Date(): 'YYYY-MM-DD' vira meia-noite UTC e o PDF
+                // saía com um dia a menos em Brasília.
+                return fmtDataPura(valor);
 
             case 'num':
                 return String(valor);
@@ -164,7 +175,7 @@
 
         // Bloco azul claro com identificação
         const pac = anam._paciente || {};
-        const dn = pac.data_nascimento ? new Date(pac.data_nascimento).toLocaleDateString('pt-BR') : '—';
+        const dn = pac.data_nascimento ? fmtDataPura(pac.data_nascimento) : '—';
         const idade = pac.idade_anos !== null && pac.idade_anos !== undefined ? pac.idade_anos + ' anos' : '';
 
         // Sprint 55: bloco mais alto pra acomodar dados do médico solicitante

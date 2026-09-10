@@ -259,6 +259,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../solicitacao-escolar/solicitacao_escolar_modelos.js"></script>
+    <link rel="stylesheet" href="../evolucao/evolucao.css">
+    <script src="../evolucao/evolucao.js"></script>
     <script src="../solicitacao-escolar/solicitacao_escolar.js"></script>
     <script src="../config.js"></script>
     <script src="../shared/image_cropper.js"></script>
@@ -286,6 +288,7 @@
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
+        { id: 'evolucao', label: 'Evolução' },
         { id: 'anamnese', label: 'Anamnese' },
         { id: 'hipoteses', label: 'Hipóteses' },
         { id: 'checklist', label: 'Checklist' },
@@ -536,6 +539,7 @@
                         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mae-foto-input-hidden').click()">
                             ${paciente.mae_foto_url ? 'Alterar foto da mãe' : 'Adicionar foto da mãe'}
                         </button>
+                        <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.lancarEvolucao()">📝 Lançar evolução</button>
                         <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.enviarPortalWhatsApp()">📱 Enviar acesso ao portal</button>
@@ -640,6 +644,15 @@
 
     function renderizarEtapa(etapaId) {
         if (etapaId === 'visao_geral') return renderVisaoGeral();
+        if (etapaId === 'evolucao') {
+            if (!window.CortexEvolucao) {
+                return `<div class="etapa-content"><div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">⚠️</div>
+                    <h3>Módulo não carregou</h3>
+                    <p>Recarregue a página.</p></div></div>`;
+            }
+            return window.CortexEvolucao.render(pacienteId);
+        }
         if (etapaId === 'anamnese') return renderAnamneseComRelatorio();
         if (etapaId === 'hipoteses') return renderHipoteses();
         if (etapaId === 'checklist') return renderChecklist();
@@ -2877,6 +2890,59 @@
     }
 
     window.CortexPasta = {
+        // Botão do topo: pergunta o tipo e abre a janela de lançamento.
+        // A aba Evolução mostra o histórico; aqui é só o atalho para lançar.
+        lancarEvolucao: function () {
+            if (!window.CortexEvolucao || !window.CortexPop) {
+                window.CortexUI.toast('Módulo de evolução não carregou. Recarregue a página.', 'danger');
+                return;
+            }
+            // Garante que o módulo conhece o paciente mesmo se a aba
+            // Evolução ainda não tiver sido aberta nesta visita.
+            window.CortexEvolucao.carregar(pacienteId);
+
+            window.CortexPop.abrir({
+                titulo: 'Lançar evolução',
+                subtitulo: 'Que tipo de registro você vai fazer?',
+                tone: 'purple',
+                tamanho: 'sm',
+                html: `
+                    <div style="display:grid;gap:10px">
+                        <button class="btn btn-secondary" id="evo-op-sessao"
+                                style="justify-content:flex-start;text-align:left;height:auto;padding:14px 16px">
+                            <span style="display:block">
+                                <strong style="display:block;font-size:14px">🗓 Evolução de sessão</strong>
+                                <span style="font-size:12.5px;color:var(--color-text-muted);font-weight:400">
+                                    Atendimento realizado, com data e hora
+                                </span>
+                            </span>
+                        </button>
+                        <button class="btn btn-secondary" id="evo-op-simples"
+                                style="justify-content:flex-start;text-align:left;height:auto;padding:14px 16px">
+                            <span style="display:block">
+                                <strong style="display:block;font-size:14px">📝 Evolução simples</strong>
+                                <span style="font-size:12.5px;color:var(--color-text-muted);font-weight:400">
+                                    Contato, encaminhamento ou outro fato relevante
+                                </span>
+                            </span>
+                        </button>
+                    </div>`,
+                aoFechar: null
+            });
+
+            setTimeout(() => {
+                const bs = document.getElementById('evo-op-sessao');
+                const bp = document.getElementById('evo-op-simples');
+                if (bs) bs.addEventListener('click', () => {
+                    window.CortexPop.fecharTopo();
+                    setTimeout(() => window.CortexEvolucao.abrirLancamento('sessao'), 280);
+                });
+                if (bp) bp.addEventListener('click', () => {
+                    window.CortexPop.fecharTopo();
+                    setTimeout(() => window.CortexEvolucao.abrirLancamento('simples'), 280);
+                });
+            }, 60);
+        },
         resetarSenhaPortal: async function () {
             await resetarSenhaPortal();
         },

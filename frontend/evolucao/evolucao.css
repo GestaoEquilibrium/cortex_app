@@ -1,0 +1,224 @@
+/* ============================================================================
+   CORTEX_APP — evolucao.css
+   Linha do tempo do prontuário: evoluções escritas (cards) misturadas com
+   registros automáticos do sistema (linhas discretas). A distinção visual é
+   o ponto — registro clínico assinado não pode se confundir com log.
+   ============================================================================ */
+
+.evo-topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.evo-titulo { font-size: 19px; font-weight: 750; letter-spacing: -.02em; }
+.evo-sub    { font-size: 13px; color: var(--color-text-muted); margin-top: 2px; }
+.evo-topo-acoes { display: flex; gap: 9px; flex-wrap: wrap; }
+
+.evo-carregando {
+    display: flex; align-items: center; justify-content: center; gap: 11px;
+    padding: 50px 20px; color: var(--color-text-muted); font-size: 13.5px;
+}
+
+.evo-spin {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2.5px solid var(--slate-200, #e2e8f0);
+    border-top-color: var(--accent-blue, #2F6FED);
+    animation: evo-girar .8s linear infinite;
+}
+@keyframes evo-girar { to { transform: rotate(360deg); } }
+
+.evo-vazio {
+    text-align: center; padding: 46px 22px;
+    color: var(--color-text-muted); font-size: 13.5px; line-height: 1.6;
+    background: var(--slate-50, #f8fafc);
+    border: 1px dashed var(--color-border-strong, #cbd5e1);
+    border-radius: var(--radius-lg, 20px);
+}
+.evo-vazio-ic { font-size: 34px; margin-bottom: 10px; }
+.evo-vazio strong { display: block; color: var(--color-text); font-size: 15px; margin-bottom: 5px; }
+
+/* ── Aviso de pendência de supervisão ─────────────────────────────────────── */
+
+.evo-aviso-sup {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 13px 16px; margin-bottom: 18px;
+    border-radius: var(--radius-md, 14px);
+    background: #fffbeb; border: 1px solid #fcd34d;
+    color: #92400e; font-size: 13px; line-height: 1.55;
+}
+.evo-aviso-sup span { font-size: 17px; line-height: 1.3; }
+
+/* ── Linha do tempo ───────────────────────────────────────────────────────── */
+
+.evo-timeline { position: relative; padding-left: 20px; }
+
+.evo-timeline::before {
+    content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px;
+    width: 2px; background: var(--slate-200, #e2e8f0); border-radius: 2px;
+}
+
+.evo-dia {
+    position: relative;
+    font-size: 11.5px; font-weight: 750; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--color-text-muted);
+    margin: 22px 0 11px;
+}
+.evo-dia:first-child { margin-top: 0; }
+.evo-dia::before {
+    content: ''; position: absolute; left: -19px; top: 3px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--slate-300, #cbd5e1);
+}
+
+/* ── Card de evolução escrita ─────────────────────────────────────────────── */
+
+.evo-card {
+    --c: var(--accent-purple, #7C4DFF);
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-left: 3px solid var(--c);
+    border-radius: var(--radius-md, 14px);
+    padding: 15px 17px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(20,31,60,.05), 0 4px 12px rgba(20,31,60,.05);
+}
+
+.evo-card.tipo-sessao  { --c: var(--accent-blue, #2F6FED); }
+.evo-card.tipo-simples { --c: var(--accent-purple, #7C4DFF); }
+.evo-card.esta-retificada { background: #fbfcfe; }
+
+.evo-card::before {
+    content: ''; position: absolute; left: -22px; top: 19px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--c); border: 2px solid #fff;
+    box-shadow: 0 0 0 2px var(--c);
+}
+
+.evo-card-head {
+    display: flex; align-items: center; gap: 9px;
+    flex-wrap: wrap; margin-bottom: 9px;
+}
+
+.evo-tag {
+    font-size: 11px; font-weight: 700; padding: 3px 9px;
+    border-radius: 99px; background: var(--slate-100, #f1f5f9);
+    color: var(--color-text-muted); flex-shrink: 0;
+}
+
+.evo-card-titulo { font-size: 14.5px; font-weight: 700; letter-spacing: -.01em; }
+
+.evo-selo {
+    font-size: 10.5px; font-weight: 700; padding: 3px 9px;
+    border-radius: 99px; text-transform: uppercase; letter-spacing: .04em;
+}
+.evo-selo.aguardando { background: #fef3c7; color: #92400e; }
+.evo-selo.validada   { background: #dcfce7; color: #15803d; }
+.evo-selo.retificada { background: #fee2e2; color: #991b1b; }
+
+.evo-retifica-nota {
+    font-size: 11.5px; color: var(--color-text-muted);
+    font-style: italic; margin-bottom: 8px;
+}
+
+.evo-card-corpo {
+    font-size: 13.5px; line-height: 1.65; color: var(--color-text);
+    white-space: pre-wrap; word-break: break-word;
+}
+
+.evo-parecer {
+    margin-top: 11px; padding: 10px 13px;
+    border-radius: var(--radius-sm, 10px);
+    background: #f0fdf4; border: 1px solid #bbf7d0;
+    font-size: 12.5px; line-height: 1.6; color: #14532d;
+}
+
+.evo-card-pe {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid var(--slate-100, #f1f5f9);
+    font-size: 11.5px; color: var(--color-text-muted);
+}
+
+.evo-autor { font-weight: 650; color: var(--color-text); }
+.evo-lancado { font-style: italic; color: var(--color-text-soft, #94a3b8); }
+.evo-acoes-card { margin-left: auto; display: flex; gap: 6px; }
+
+.evo-mini {
+    padding: 5px 11px; border-radius: 8px; font-size: 11.5px; font-weight: 650;
+    color: var(--color-text-muted); background: var(--slate-50, #f8fafc);
+    border: 1px solid var(--color-border, #e2e8f0); transition: all .15s ease;
+}
+.evo-mini:hover { background: #fff; color: var(--accent-blue, #2F6FED); border-color: var(--accent-blue, #2F6FED); }
+
+/* ── Registro automático do sistema ───────────────────────────────────────── */
+/* Deliberadamente discreto: é log, não documento assinado. */
+
+.evo-sistema {
+    position: relative;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 7px 2px 7px 0; margin-bottom: 2px;
+    font-size: 12.5px; color: var(--color-text-muted);
+}
+
+.evo-sistema::before {
+    content: ''; position: absolute; left: -19px; top: 13px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--slate-300, #cbd5e1); border: 2px solid #fff;
+}
+
+.evo-sistema-txt { flex: 1; min-width: 0; line-height: 1.5; }
+.evo-sistema-txt strong { color: var(--color-text); font-weight: 650; }
+.evo-sistema-hora { font-size: 11.5px; color: var(--color-text-soft, #94a3b8); flex-shrink: 0; }
+
+/* ── Janela de lançamento ─────────────────────────────────────────────────── */
+
+.evo-campo { margin-bottom: 15px; }
+
+.evo-campo label {
+    display: block; font-size: 11.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--color-text-muted); margin-bottom: 6px;
+}
+
+.evo-campo input,
+.evo-campo select,
+.evo-campo textarea {
+    width: 100%; padding: 10px 12px;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: var(--radius-sm, 10px);
+    font-size: 14px; background: #fff; font-family: inherit;
+}
+
+.evo-campo textarea { resize: vertical; line-height: 1.6; }
+
+.evo-dica {
+    display: block; font-size: 11.5px; line-height: 1.5;
+    color: var(--color-text-soft, #94a3b8); margin-top: 5px;
+}
+
+.evo-aviso-imut {
+    padding: 11px 14px; border-radius: var(--radius-sm, 10px);
+    background: var(--slate-50, #f8fafc);
+    border: 1px solid var(--color-border, #e2e8f0);
+    font-size: 12px; line-height: 1.6; color: var(--color-text-muted);
+}
+.evo-aviso-imut strong { color: var(--color-text); }
+
+.evo-aviso-ret {
+    padding: 11px 14px; margin-bottom: 15px;
+    border-radius: var(--radius-sm, 10px);
+    background: #fef2f2; border: 1px solid #fecaca;
+    font-size: 12.5px; line-height: 1.6; color: #991b1b;
+}
+
+@media (max-width: 700px) {
+    .evo-topo-acoes { width: 100%; }
+    .evo-topo-acoes .btn { flex: 1; justify-content: center; }
+    .evo-card-pe { font-size: 11px; }
+    .evo-acoes-card { margin-left: 0; width: 100%; margin-top: 6px; }
+}

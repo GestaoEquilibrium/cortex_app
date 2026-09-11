@@ -24,6 +24,9 @@
 
     const state = {
         pagina: 0, total: 0,
+        temProxima: false,       // vem de buscar 1 registro além da página
+        ultimaQtd: 0,            // quantos vieram, para o rodapé
+        totalAproximado: true,   // count:'planned' é estimativa
         profissionais: {},   // id -> nome
         pacientes: {},       // id -> nome (cache sob demanda)
         filtros: { profissional:'', acao:'', tabela:'', busca:'', de:'', ate:'' },
@@ -84,19 +87,32 @@
         const cont = document.getElementById('aud-tabela-wrap');
         cont.innerHTML = `<div class="aud-loading"><div class="spinner"></div><p>Carregando registros...</p></div>`;
 
+        // count:'exact' obriga o Postgres a varrer a tabela inteira a cada
+        // abertura, ignorando os índices — era isso que estourava o
+        // statement timeout com 53 mil registros. 'planned' usa a
+        // estimativa do planejador, que custa praticamente nada.
+        //
+        // Pedimos UM registro a mais que a página para saber se existe
+        // próxima. A contagem vira aproximada, mas a navegação fica exata.
         let q = c().from('auditoria_acessos')
-            .select('id, profissional_id, acao, tabela, registro_id, paciente_id, detalhes, ip_origem, timestamp', { count:'exact' })
+            .select('id, profissional_id, acao, tabela, registro_id, paciente_id, detalhes, ip_origem, timestamp', { count:'planned' })
             .order('timestamp', { ascending:false })
-            .range(state.pagina*POR_PAGINA, state.pagina*POR_PAGINA + POR_PAGINA - 1);
+            .range(state.pagina*POR_PAGINA, state.pagina*POR_PAGINA + POR_PAGINA);
         q = aplicarFiltros(q);
 
         const { data, count, error } = await q;
         if (error) { cont.innerHTML = `<div class="aud-erro">Erro: ${esc(error.message)}</div>`; return; }
-        state.total = count || 0;
 
-        await resolverPacientes((data||[]).map(r => r.paciente_id));
-        (data||[]).forEach(r => state.tabelasVistas.add(r.tabela));
-        renderTabela(data||[]);
+        const linhas = data || [];
+        state.temProxima = linhas.length > POR_PAGINA;
+        const daPagina = linhas.slice(0, POR_PAGINA);
+        state.total = count || 0;
+        state.totalAproximado = true;
+
+        await resolverPacientes(daPagina.map(r => r.paciente_id));
+        daPagina.forEach(r => state.tabelasVistas.add(r.tabela));
+        state.ultimaQtd = daPagina.length;
+        renderTabela(daPagina);
         renderPaginacao();
         atualizarSelectTabelas();
     }
@@ -143,20 +159,23 @@
     }
 
     function renderPaginacao() {
-        const paginas = Math.max(1, Math.ceil(state.total / POR_PAGINA));
         const atual = state.pagina + 1;
-        const ini = state.total ? state.pagina*POR_PAGINA + 1 : 0;
-        const fim = Math.min(state.total, (state.pagina+1)*POR_PAGINA);
+        const ini = state.pagina*POR_PAGINA + 1;
+        const fim = state.pagina*POR_PAGINA + (state.ultimaQtd || 0);
+        // O total é estimativa do planejador; o "cerca de" evita prometer
+        // precisão que a contagem aproximada não tem.
+        const totalTxt = state.total
+            ? `cerca de ${state.total.toLocaleString('pt-BR')}` : '—';
         document.getElementById('aud-paginacao').innerHTML = `
-            <span class="aud-pag-info">${ini}–${fim} de ${state.total.toLocaleString('pt-BR')}</span>
+            <span class="aud-pag-info">${ini}–${fim} de ${totalTxt}</span>
             <div class="aud-pag-btns">
                 <button id="aud-prev" ${state.pagina<=0?'disabled':''}>‹ Anterior</button>
-                <span class="aud-pag-atual">Página ${atual} de ${paginas.toLocaleString('pt-BR')}</span>
-                <button id="aud-next" ${atual>=paginas?'disabled':''}>Próxima ›</button>
+                <span class="aud-pag-atual">Página ${atual}</span>
+                <button id="aud-next" ${state.temProxima?'':'disabled'}>Próxima ›</button>
             </div>`;
         const prev = document.getElementById('aud-prev'), next = document.getElementById('aud-next');
         if (prev) prev.addEventListener('click', () => { if(state.pagina>0){ state.pagina--; carregar(); } });
-        if (next) next.addEventListener('click', () => { if(atual<paginas){ state.pagina++; carregar(); } });
+        if (next) next.addEventListener('click', () => { if(state.temProxima){ state.pagina++; carregar(); } });
         const rodape = document.getElementById('aud-paginacao2');
         if (rodape) rodape.innerHTML = document.getElementById('aud-paginacao').innerHTML;
     }

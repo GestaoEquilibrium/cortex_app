@@ -43,6 +43,13 @@
             if (tab) tab.style.display = '';
         }
 
+        // Perfis e permissões: só admin clínico. O gestor administra a
+        // clínica, mas quem define quem acessa o quê é a direção clínica.
+        if (perfil === 'admin_clinico') {
+            const tabP = document.getElementById('tab-permissoes');
+            if (tabP) tabP.style.display = '';
+        }
+
         // Bind das abas
         document.querySelectorAll('.cfg-tab').forEach(btn => {
             btn.addEventListener('click', () => trocarAba(btn.dataset.tab));
@@ -80,6 +87,18 @@
                 await carregarProfissionais();
                 cont.innerHTML = renderProfissionais();
                 bindProfissionais();
+            } else if (aba === 'permissoes') {
+                if (state.profissional?.perfil !== 'admin_clinico') {
+                    cont.innerHTML = `<div class="cfg-erro">Acesso restrito ao Admin Clínico.</div>`;
+                    return;
+                }
+                if (!window.CortexPermissoesAdmin) {
+                    cont.innerHTML = `<div class="cfg-erro">Módulo de permissões não carregou. Recarregue a página.</div>`;
+                    return;
+                }
+                await window.CortexPermissoesAdmin.carregar();
+                cont.innerHTML = window.CortexPermissoesAdmin.render();
+                window.CortexPermissoesAdmin.bind();
             }
         } catch (err) {
             console.error('[cfg] erro:', err);

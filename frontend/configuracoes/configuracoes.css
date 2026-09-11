@@ -539,3 +539,130 @@
     filter: grayscale(0.6);
     opacity: 0.7;
 }
+
+/* ============================================================================
+   PERFIS E PERMISSÕES
+   ============================================================================ */
+
+.perm-wrap {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* ── Lista de perfis ─────────────────────────────────────────────────────── */
+
+.perm-lateral { display: flex; flex-direction: column; gap: 9px; }
+
+.perm-lateral-tit {
+    font-size: 11px; font-weight: 750; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--color-text-muted); margin-bottom: 2px;
+}
+
+.perm-perfil {
+    display: block; width: 100%; text-align: left;
+    padding: 13px 15px; border-radius: 14px;
+    background: #fff; border: 1px solid var(--color-border, #e2e8f0);
+    transition: all .18s ease;
+}
+
+.perm-perfil:hover:not(.travado) {
+    border-color: var(--accent-blue, #2F6FED);
+    transform: translateY(-1px);
+}
+
+.perm-perfil.ativo {
+    border-color: var(--accent-blue, #2F6FED);
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(47,111,237,.14);
+}
+
+.perm-perfil.travado { opacity: .7; cursor: default; }
+
+.perm-perfil-nome { display: block; font-size: 14px; font-weight: 700; }
+.perm-perfil-desc { display: block; font-size: 11.5px; color: var(--color-text-muted); margin-top: 2px; line-height: 1.4; }
+
+.perm-selo {
+    display: inline-block; margin-top: 7px;
+    font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 99px; background: #dcfce7; color: #15803d;
+}
+
+/* ── Painel ──────────────────────────────────────────────────────────────── */
+
+.perm-painel {
+    background: #fff; border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 18px; padding: 20px;
+}
+
+.perm-painel-topo {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.perm-painel-topo h3 { font-size: 16.5px; font-weight: 750; letter-spacing: -.015em; }
+.perm-painel-topo p  { font-size: 13px; color: var(--color-text-muted); margin-top: 2px; }
+
+/* Regra fixa: o que NÃO é configurável aqui */
+.perm-regra-fixa {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 12px 15px; margin-bottom: 18px; border-radius: 12px;
+    background: #f8fafc; border: 1px solid var(--color-border, #e2e8f0);
+    font-size: 12.5px; line-height: 1.6; color: var(--color-text-muted);
+}
+.perm-regra-fixa span { font-size: 15px; line-height: 1.3; }
+.perm-regra-fixa strong { color: var(--color-text); }
+
+/* ── Linhas ──────────────────────────────────────────────────────────────── */
+
+.perm-lista { display: flex; flex-direction: column; }
+
+.perm-linha {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 10px 12px; border-radius: 10px;
+    transition: background .15s ease;
+}
+.perm-linha:hover { background: var(--slate-50, #f8fafc); }
+
+.perm-linha.filho {
+    padding-left: 34px;
+    position: relative;
+}
+.perm-linha.filho::before {
+    content: ''; position: absolute; left: 18px; top: 0; bottom: 0;
+    width: 1px; background: var(--color-border, #e2e8f0);
+}
+
+.perm-nome {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 13.5px; min-width: 0;
+}
+.perm-linha.filho .perm-nome { font-size: 13px; color: var(--color-text-muted); }
+.perm-ic { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+
+/* ── Botões de nível ─────────────────────────────────────────────────────── */
+
+.perm-opcoes {
+    display: flex; gap: 2px; padding: 3px;
+    background: var(--slate-100, #f1f5f9); border-radius: 10px; flex-shrink: 0;
+}
+
+.perm-op {
+    padding: 6px 13px; border-radius: 8px;
+    font-size: 12px; font-weight: 650; color: var(--color-text-muted);
+    background: transparent; transition: all .15s ease; white-space: nowrap;
+}
+.perm-op:hover { color: var(--color-text); }
+
+.perm-op.sel { background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+.perm-op.sel.oculto { color: #b91c1c; }
+.perm-op.sel.ver    { color: #1d4ed8; }
+.perm-op.sel.editar { color: #15803d; }
+.perm-op.sel.herdar { color: var(--color-text-muted); }
+
+@media (max-width: 900px) {
+    .perm-wrap { grid-template-columns: 1fr; }
+    .perm-linha { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .perm-opcoes { width: 100%; }
+    .perm-op { flex: 1; text-align: center; }
+}

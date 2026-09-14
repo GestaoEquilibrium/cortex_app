@@ -187,6 +187,27 @@
         display: none !important;
     }
 
+    /* A sidebar fica dentro de .app-shell e some com o no-print. Mas a
+       topbar, a barra inferior, o botão flutuante e o backdrop são criados
+       pelo sidebar.js com document.body.appendChild() — ficam FORA do
+       app-shell e escapavam da regra acima. Era isso que imprimia o
+       cabeçalho do CORTEX e o "Painel · Pacientes · Agenda" no PDF. */
+    #cortex-topbar,
+    .cortex-topbar,
+    #cortex-tabbar,
+    .cortex-tabbar,
+    #sidebar-fab,
+    .sidebar-fab,
+    #sidebar-backdrop,
+    .sidebar-backdrop,
+    #cortex-sidebar,
+    .sidebar,
+    .cortex-toast,
+    .cx-pop-scrim,
+    .modal-overlay {
+        display: none !important;
+    }
+
     .print-only {
         display: block !important;
     }
@@ -200,7 +221,43 @@
     html, body {
         width: 100%;
         height: auto;
+        /* Sem isto, o espaço reservado para topbar/tabbar vira uma página
+           em branco no fim do PDF. */
+        overflow: visible !important;
     }
+
+    /* ── Quebra de página ────────────────────────────────────────────────
+       A linha do instrumento não pode partir no meio: no PDF anterior o
+       SRBCSS ficava metade numa página e metade na outra, com o cabeçalho
+       passando por cima. */
+
+    .print-tabela tbody tr,
+    .print-tabela tbody tr.linha-teste,
+    .print-tabela tbody tr.linha-categoria {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Cabeçalho de categoria sozinho no rodapé fica órfão: leva a primeira
+       linha junto para a página seguinte. */
+    .print-tabela tbody tr.linha-categoria {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+
+    /* Repete o cabeçalho da tabela em toda página */
+    .print-tabela thead { display: table-header-group; }
+    .print-tabela tfoot { display: table-footer-group; }
+
+    /* O container não pode cortar conteúdo entre páginas */
+    .print-tabela-container {
+        overflow: visible !important;
+        page-break-inside: auto;
+    }
+
+    /* Evita a página extra em branco no fim */
+    .print-doc > *:last-child { page-break-after: avoid !important; }
+    .print-doc { page-break-after: avoid !important; }
 }
 
 @media screen {

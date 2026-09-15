@@ -88,7 +88,7 @@
                                 <span id="prc-foto-label-texto">Escolher foto</span>
                             </label>
                             <button type="button" class="btn btn-ghost btn-sm" id="prc-foto-remover" style="display:none;">Remover</button>
-                            <input type="file" id="prc-foto-input" accept="image/*" capture="user" style="display:none;">
+                            <input type="file" id="prc-foto-input" accept="image/*" style="display:none;">
                             <p class="form-help" style="margin-top:6px;">Opcional. Máximo 3 MB.</p>
                         </div>
                     </div>
@@ -265,7 +265,7 @@
                                 </label>
                                 <button type="button" class="btn btn-ghost btn-sm" id="prc-mae-foto-remover" style="display:none;">Remover</button>
                             </div>
-                            <input type="file" id="prc-mae-foto-input" accept="image/*" capture="user" style="display:none;">
+                            <input type="file" id="prc-mae-foto-input" accept="image/*" style="display:none;">
                             <p class="form-help" id="prc-mae-foto-ajuda" style="margin-top:6px;">Opcional. Obrigatória se o paciente for menor de 18 anos.</p>
                         </div>
                     </div>
@@ -431,6 +431,11 @@
     }
 
     // Setup genérico — usado pra foto do paciente e foto da mãe (Sprint 72)
+    // O atributo capture="user" foi removido dos dois inputs de foto.
+    // Ele força a câmera frontal e ELIMINA a opção de escolher da galeria no
+    // celular — o pai não conseguia usar uma foto que já tinha do filho.
+    // Sem ele, o navegador oferece câmera e galeria, e a pessoa decide.
+    // O recorte com zoom e arraste continua igual, pelo CortexCropper.
     function setupFotoCampo(opts) {
         const { inputId, previewId, btnRemoverId, labelTextoId, stateKey } = opts;
         const input = document.getElementById(inputId);

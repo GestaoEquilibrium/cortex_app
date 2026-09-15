@@ -259,6 +259,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../solicitacao-escolar/solicitacao_escolar_modelos.js"></script>
+    <link rel="stylesheet" href="../documentos/documentos.css">
+    <script src="../documentos/documentos.js"></script>
     <link rel="stylesheet" href="../evolucao/evolucao.css">
     <script src="../evolucao/evolucao.js"></script>
     <script src="../solicitacao-escolar/solicitacao_escolar.js"></script>
@@ -295,6 +297,7 @@
         { id: 'bateria', label: 'Bateria' },
         { id: 'correcao', label: 'Correção' },
         { id: 'laudo', label: 'Laudo' },
+        { id: 'documentos', label: 'Documentos' },
         { id: 'devolutiva', label: 'Devolutiva' }
     ];
 
@@ -644,6 +647,14 @@
 
     function renderizarEtapa(etapaId) {
         if (etapaId === 'visao_geral') return renderVisaoGeral();
+        if (etapaId === 'documentos') {
+            if (!window.CortexDocumentos) {
+                return `<div class="etapa-content"><div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">⚠️</div>
+                    <h3>Módulo não carregou</h3><p>Recarregue a página.</p></div></div>`;
+            }
+            return window.CortexDocumentos.render(pacienteId);
+        }
         if (etapaId === 'evolucao') {
             if (!window.CortexEvolucao) {
                 return `<div class="etapa-content"><div class="etapa-placeholder">

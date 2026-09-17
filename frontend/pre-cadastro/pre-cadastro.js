@@ -74,6 +74,15 @@
                 Preencha seus dados abaixo. Tudo é confidencial.</p>
             </div>
 
+            <div class="prc-intro">
+                <h1>Pré-cadastro</h1>
+                <p>
+                    Leva poucos minutos. Preencha com calma — os campos marcados com
+                    <span style="color:#EC4899;font-weight:700">*</span> são os obrigatórios.
+                    Se tiver dúvida em algum, deixe em branco e comente no atendimento.
+                </p>
+            </div>
+
             <form id="prc-form" class="prc-form">
 
                 <!-- Foto -->

@@ -76,7 +76,8 @@ function validarCpf(cpf: string): boolean {
 // Campos do cadastro de paciente que aceitamos no submit (whitelist)
 const CAMPOS_PERMITIDOS = [
     "nome_completo", "nome_social", "sexo", "data_nascimento", "cpf", "rg",
-    "escolaridade", "escolaridade_serie", "profissao", "estado_civil",
+    "escolaridade", "escolaridade_serie", "escola_nome", "escola_telefone",
+    "profissao", "estado_civil",
     "convenio_id", "numero_convenio",
     "telefone", "email", "endereco", "cidade", "cep",
     "mae_nome", "mae_telefone", "mae_cpf",
@@ -86,6 +87,23 @@ const CAMPOS_PERMITIDOS = [
     "medico_clinica", "medico_telefone",
     "observacoes",
 ];
+
+/**
+ * Menor de 18 na data de hoje.
+ * Monta a data com os componentes em vez de new Date(string): esta última
+ * é lida como meia-noite UTC e, em fuso negativo, cai no dia anterior.
+ */
+function ehMenorDeIdade(dataNasc: string): boolean {
+    if (!dataNasc) return false;
+    const m = String(dataNasc).substring(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return false;
+    const nasc = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    const hoje = new Date();
+    let idade = hoje.getFullYear() - nasc.getFullYear();
+    const dm = hoje.getMonth() - nasc.getMonth();
+    if (dm < 0 || (dm === 0 && hoje.getDate() < nasc.getDate())) idade--;
+    return idade < 18;
+}
 
 function sanitizarDados(dados: Record<string, unknown>): Record<string, unknown> {
     const out: Record<string, unknown> = {};
@@ -182,9 +200,21 @@ serve(async (req) => {
         ["cidade", "Cidade"],
         ["cep", "CEP"],
         ["mae_nome", "Nome da mãe"],
-        ["mae_telefone", "Telefone da mãe"],
-        ["medico_referencia", "Médico de referência"],
     ];
+
+    // Espelha a regra do frontend. A validação aqui é a que vale: o
+    // formulário pode ser contornado, esta função não.
+    //
+    // Menor de 18 → dados da mãe completos e escola. Adulto não precisa
+    // informar CPF nem telefone da mãe, e não tem escola para informar.
+    if (ehMenorDeIdade(dados["data_nascimento"] as string)) {
+        obrigatorios.push(
+            ["mae_telefone", "Telefone da mãe"],
+            ["mae_cpf", "CPF da mãe/responsável"],
+            ["escola_nome", "Nome da escola"],
+            ["escola_telefone", "Telefone da escola"],
+        );
+    }
     const faltando = obrigatorios.filter(([c]) => !dados[c]).map(([, l]) => l);
     if (faltando.length > 0) {
         return erroResponse(

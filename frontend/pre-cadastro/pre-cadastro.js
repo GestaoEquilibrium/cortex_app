@@ -78,7 +78,7 @@
 
                 <!-- Foto -->
                 <div class="form-section">
-                    <h2 class="form-section-title">Foto</h2>
+                    <h2 class="form-section-title">Foto <span class="required">*</span></h2>
                     <div class="prc-foto-wrap">
                         <div class="prc-foto-preview" id="prc-foto-preview">
                             <span class="prc-foto-placeholder">📷</span>
@@ -165,6 +165,14 @@
                             <label class="form-label">Ano/série cursando</label>
                             <input type="text" class="form-input" name="escolaridade_serie" maxlength="80" placeholder="Ex: 7º ano, 2º período">
                         </div>
+                        <div class="form-group prc-escola" style="display:none;">
+                            <label class="form-label">Nome da escola <span class="required prc-escola-req">*</span></label>
+                            <input type="text" class="form-input" name="escola_nome" maxlength="200" placeholder="Nome da instituição">
+                        </div>
+                        <div class="form-group prc-escola" style="display:none;">
+                            <label class="form-label">Telefone da escola <span class="required prc-escola-req">*</span></label>
+                            <input type="text" class="form-input" name="escola_telefone" id="prc-escola-tel" placeholder="(34) 3333-4444" maxlength="20">
+                        </div>
 
                         <div class="form-group">
                             <label class="form-label">Profissão <span class="required">*</span></label>
@@ -243,12 +251,12 @@
                             <input type="text" class="form-input" name="mae_nome" required maxlength="200">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Telefone da mãe <span class="required">*</span></label>
-                            <input type="text" class="form-input" name="mae_telefone" id="prc-mae-tel" required placeholder="(34) 99999-8888" maxlength="20">
+                            <label class="form-label">Telefone da mãe <span class="required prc-mae-req">*</span></label>
+                            <input type="text" class="form-input" name="mae_telefone" id="prc-mae-tel" placeholder="(34) 99999-8888" maxlength="20">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">CPF da mãe/responsável <span class="required">*</span></label>
-                            <input type="text" class="form-input" name="mae_cpf" id="prc-mae-cpf" required placeholder="000.000.000-00" maxlength="14">
+                            <label class="form-label">CPF da mãe/responsável <span class="required prc-mae-req">*</span></label>
+                            <input type="text" class="form-input" name="mae_cpf" id="prc-mae-cpf" placeholder="000.000.000-00" maxlength="14">
                         </div>
                     </div>
 
@@ -311,28 +319,30 @@
                 </div>
 
                 <!-- Médico solicitante -->
+                <!-- Antes eram cinco campos ("Encaminhado por", "Médico de
+                     referência", CRM, clínica e telefone) e o de referência era
+                     obrigatório — confuso para quem chegou por conta própria.
+                     Agora são três, nenhum obrigatório. As colunas
+                     encaminhado_por e medico_clinica continuam no banco; só
+                     deixaram de ser pedidas aqui. -->
                 <div class="form-section">
                     <h2 class="form-section-title">Médico solicitante</h2>
+                    <p class="form-help" style="margin-bottom:12px;">
+                        Se algum médico encaminhou você para a avaliação, informe abaixo.
+                        Se veio por conta própria ou por indicação da escola, pode deixar em branco.
+                    </p>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Encaminhado por</label>
-                            <input type="text" class="form-input" name="encaminhado_por" maxlength="200" placeholder="Médico, escola, busca espontânea...">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Médico de referência <span class="required">*</span></label>
-                            <input type="text" class="form-input" name="medico_referencia" required maxlength="200">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">CRM do médico</label>
-                            <input type="text" class="form-input" name="medico_crm" maxlength="20">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Clínica do médico</label>
-                            <input type="text" class="form-input" name="medico_clinica" maxlength="200">
+                            <label class="form-label">Nome do médico</label>
+                            <input type="text" class="form-input" name="medico_referencia" maxlength="200">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Telefone do médico</label>
                             <input type="text" class="form-input" name="medico_telefone" id="prc-med-tel" placeholder="(34) 99999-8888" maxlength="20">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CRM</label>
+                            <input type="text" class="form-input" name="medico_crm" maxlength="20">
                         </div>
                     </div>
                 </div>
@@ -391,7 +401,7 @@
         // Não temos ui_helpers aqui (público) — aplicamos máscaras simples inline
         mascararCpf(document.getElementById('prc-cpf'));
         mascararCpf(document.getElementById('prc-mae-cpf'));
-        ['prc-tel','prc-mae-tel','prc-pai-tel','prc-resp-tel','prc-med-tel'].forEach(id => {
+        ['prc-tel','prc-mae-tel','prc-pai-tel','prc-resp-tel','prc-med-tel','prc-escola-tel'].forEach(id => {
             const el = document.getElementById(id);
             if (el) mascararTel(el);
         });
@@ -489,7 +499,44 @@
         });
         // Reage à mudança de data de nascimento pra mostrar/esconder o asterisco
         const dn = document.querySelector('[name="data_nascimento"]');
-        if (dn) dn.addEventListener('change', atualizarObrigatoriedadeMaeFoto);
+        if (dn) {
+            dn.addEventListener('change', aplicarRegrasDeIdade);
+            dn.addEventListener('input', aplicarRegrasDeIdade);
+        }
+        aplicarRegrasDeIdade();
+    }
+
+    /**
+     * Aplica tudo que depende de o paciente ser menor de idade:
+     *   · escola (nome e telefone) aparece e vira obrigatória
+     *   · CPF e telefone da mãe viram obrigatórios
+     *   · foto da mãe vira obrigatória
+     *
+     * "Até 17 anos, 11 meses e 30 dias" é o mesmo que menor de 18 — o dia
+     * seguinte já é o aniversário. Por isso reaproveita ehMenorDeIdade(),
+     * que já existia para a foto da mãe: um critério só, num lugar só.
+     */
+    function aplicarRegrasDeIdade() {
+        const menor = ehMenorDeIdade();
+
+        document.querySelectorAll('.prc-escola').forEach(el => {
+            el.style.display = menor ? '' : 'none';
+        });
+        document.querySelectorAll('.prc-escola-req, .prc-mae-req').forEach(el => {
+            el.style.display = menor ? '' : 'none';
+        });
+
+        // Se deixou de ser menor, limpa a escola para não enviar dado
+        // de um formulário que o usuário nem viu mais.
+        if (!menor) {
+            const form = document.getElementById('prc-form');
+            if (form) {
+                ['escola_nome', 'escola_telefone'].forEach(n => {
+                    if (form.elements[n]) form.elements[n].value = '';
+                });
+            }
+        }
+
         atualizarObrigatoriedadeMaeFoto();
     }
 
@@ -574,11 +621,19 @@
             ['endereco', 'Endereço'],
             ['cidade', 'Cidade'],
             ['cep', 'CEP'],
-            ['mae_nome', 'Nome da mãe'],
-            ['mae_telefone', 'Telefone da mãe'],
-            ['mae_cpf', 'CPF da mãe/responsável'],
-            ['medico_referencia', 'Médico de referência']
+            ['mae_nome', 'Nome da mãe']
         ];
+
+        // Só para menor de idade: dados da mãe completos e escola.
+        // Um adulto não precisa informar CPF nem telefone da mãe.
+        if (ehMenorDeIdade()) {
+            obrigatorios.push(
+                ['mae_telefone',     'Telefone da mãe'],
+                ['mae_cpf',          'CPF da mãe/responsável'],
+                ['escola_nome',      'Nome da escola'],
+                ['escola_telefone',  'Telefone da escola']
+            );
+        }
 
         const faltando = obrigatorios.filter(([campo]) => !dados[campo]).map(([, label]) => label);
         if (faltando.length > 0) {
@@ -596,6 +651,13 @@
                     ? `O campo "${faltando[0]}" é obrigatório.`
                     : `Preencha os campos obrigatórios: ${faltando.join(', ')}.`
             );
+        }
+
+        // Foto do paciente: obrigatória sempre.
+        if (!state.foto_base64) {
+            const el = document.getElementById('prc-foto-preview');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return mostrarErroForm('A foto do paciente é obrigatória.');
         }
 
         // Sprint 72: se paciente menor de 18, foto da mãe é obrigatória

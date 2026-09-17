@@ -376,7 +376,7 @@ html, body { height: 100%; }
 /* No celular o botão ficava no fim de um formulário longo. Fixo embaixo,
    ele está sempre à mão e mostra quanto falta. */
 
-.prc-acoes {
+.prc-actions {
     position: fixed;
     left: 0; right: 0; bottom: 0;
     z-index: 40;
@@ -388,7 +388,9 @@ html, body { height: 100%; }
     box-shadow: 0 -6px 24px rgba(12,31,63,.08);
 }
 
-.prc-acoes-inner { max-width: 720px; margin: 0 auto; }
+/* O botão continua dentro do <form>; só o container é fixado.
+   Mover o botão para fora quebrava o envio. */
+.prc-actions > .btn { max-width: 720px; margin: 0 auto; display: flex; }
 
 /* ── Mensagens ───────────────────────────────────────────────────────────── */
 

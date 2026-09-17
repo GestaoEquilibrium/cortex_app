@@ -98,7 +98,7 @@
                             </label>
                             <button type="button" class="btn btn-ghost btn-sm" id="prc-foto-remover" style="display:none;">Remover</button>
                             <input type="file" id="prc-foto-input" accept="image/*" style="display:none;">
-                            <p class="form-help" style="margin-top:6px;">Opcional. Máximo 3 MB.</p>
+                            <p class="form-help" style="margin-top:6px;">Obrigatória. Pode tirar na hora ou escolher da galeria.</p>
                         </div>
                     </div>
                 </div>

@@ -29,7 +29,6 @@
         if (!form) return false;
 
         montarProgresso();
-        moverAcoesParaRodape(form);
         marcarSelos(form);
         ligarCampos(form);
         atualizar(form);
@@ -152,24 +151,13 @@
         if (temValor) el.classList.remove('prc-erro');
     }
 
-    // ── Barra de envio fixa ─────────────────────────────────────────────────
-
-    function moverAcoesParaRodape(form) {
-        const btn = document.getElementById('prc-submit');
-        if (!btn || document.querySelector('.prc-acoes')) return;
-
-        const caixa = btn.closest('div');
-        const barra = document.createElement('div');
-        barra.className = 'prc-acoes';
-        const inner = document.createElement('div');
-        inner.className = 'prc-acoes-inner';
-        barra.appendChild(inner);
-        inner.appendChild(btn);
-        document.body.appendChild(barra);
-
-        // O container original pode ter ficado vazio
-        if (caixa && !caixa.children.length) caixa.remove();
-    }
+    // A barra de envio NÃO é montada aqui.
+    //
+    // A primeira versão movia o botão para uma barra criada com
+    // document.body.appendChild(). Isso o tirava de dentro do <form>, e um
+    // <button type="submit"> fora do formulário não envia nada: ficava
+    // clicável e inerte. O container .prc-actions já existe dentro do form,
+    // então quem o fixa no rodapé é o CSS — o botão nunca sai do lugar.
 
     // ── Erro de envio: leva até o campo ─────────────────────────────────────
 

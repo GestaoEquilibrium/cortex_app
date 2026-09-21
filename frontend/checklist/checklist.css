@@ -802,3 +802,9 @@
     background: var(--slate-50, #f8fafc);
     cursor: default;
 }
+
+/* Instrumento inativado que continua visível porque já estava marcado */
+.checklist-item-inativo-tag {
+    background: #FEE2E2 !important;
+    color: #991B1B !important;
+}

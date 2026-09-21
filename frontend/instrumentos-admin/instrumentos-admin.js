@@ -132,6 +132,7 @@
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin:-8px 0 20px">
                 <button class="ia-btn ia-btn-secundario" id="btn-novo-instr">+ Cadastrar teste novo</button>
                 <button class="ia-btn ia-btn-secundario" id="btn-editar-instr" disabled>Editar dados do teste</button>
+                <button class="ia-btn ia-btn-secundario" id="btn-ativo-instr" disabled>Inativar teste</button>
             </div>
 
             <div id="ia-ficha"></div>
@@ -142,6 +143,7 @@
             state.instrumentoId = e.target.value;
             state.normaId = '';
             el('btn-editar-instr').disabled = !state.instrumentoId;
+            atualizarBotaoAtivo();
             el('ia-ficha').innerHTML = '';
             await carregarNormas();
         });
@@ -153,6 +155,7 @@
         });
 
         el('btn-novo-instr').addEventListener('click', () => fichaInstrumento(null));
+        el('btn-ativo-instr').addEventListener('click', alternarAtivo);
         el('btn-editar-instr').addEventListener('click', () => {
             const inst = state.instrumentos.find(i => i.id === state.instrumentoId);
             if (inst) fichaInstrumento(inst);
@@ -251,6 +254,61 @@
         }
 
         renderAbas();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // INATIVAR / REATIVAR
+    // ════════════════════════════════════════════════════════════════════════
+    // Inativar esconde o teste do checklist para quem ainda não o escolheu.
+    // Não apaga nada: quem já aplicou continua vendo o resultado na pasta, e
+    // quem já o tinha marcado no checklist continua com ele (com aviso).
+    // Reativar devolve tudo como estava.
+
+    function atualizarBotaoAtivo() {
+        const btn = el('btn-ativo-instr');
+        if (!btn) return;
+        const inst = state.instrumentos.find(i => i.id === state.instrumentoId);
+        btn.disabled = !inst;
+        if (!inst) { btn.textContent = 'Inativar teste'; btn.classList.remove('ia-btn-reativar'); return; }
+        const ativo = inst.ativo !== false;
+        btn.textContent = ativo ? 'Inativar teste' : 'Reativar teste';
+        btn.classList.toggle('ia-btn-reativar', !ativo);
+    }
+
+    async function alternarAtivo() {
+        const inst = state.instrumentos.find(i => i.id === state.instrumentoId);
+        if (!inst) return;
+        const ativar = inst.ativo === false;
+
+        const msg = ativar
+            ? `Reativar ${inst.sigla}?\n\nEle volta a aparecer no checklist dos pacientes da faixa etária dele.`
+            : `Inativar ${inst.sigla}?\n\nEle deixa de aparecer no checklist. Nada é apagado: quem já aplicou continua vendo o resultado, e quem já o tinha marcado continua com ele.\n\nDá para reativar depois.`;
+        if (!confirm(msg)) return;
+
+        try {
+            const { error } = await c()
+                .from('instrumentos_catalogo')
+                .update({ ativo: ativar, updated_at: new Date().toISOString() })
+                .eq('id', inst.id);
+            if (error) throw error;
+
+            if (window.CortexAudit) {
+                window.CortexAudit.log('edicao', 'instrumentos_catalogo', inst.id, {
+                    detalhes: { operacao: ativar ? 'reativar_instrumento' : 'inativar_instrumento',
+                                instrumento: inst.sigla }
+                });
+            }
+
+            inst.ativo = ativar;
+            // Atualiza o rótulo "(inativo)" na lista de instrumentos
+            const opt = el('sel-instrumento')?.querySelector(`option[value="${inst.id}"]`);
+            if (opt) opt.textContent = `${inst.sigla} · ${inst.nome_completo}${ativar ? '' : '  (inativo)'}`;
+            atualizarBotaoAtivo();
+            toast(ativar ? `${inst.sigla} reativado.` : `${inst.sigla} inativado. Não aparece mais no checklist.`, 'success');
+        } catch (err) {
+            console.error('[instrumentos] ativo:', err);
+            toast('Erro ao alterar: ' + (err.message || err), 'danger');
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -502,6 +560,7 @@
             el('sel-instrumento').value = novoId;
             state.instrumentoId = novoId;
             el('btn-editar-instr').disabled = false;
+            atualizarBotaoAtivo();
             await carregarNormas();
         } catch (err) {
             console.error(err);

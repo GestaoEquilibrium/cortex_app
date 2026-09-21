@@ -437,3 +437,10 @@
     .ia-selecao { grid-template-columns: 1fr; }
     .ia-abas { overflow-x: auto; flex-wrap: nowrap; }
 }
+
+/* Botão de reativar: destaca que o teste está escondido */
+.ia-btn.ia-btn-reativar {
+    border-color: #22C55E;
+    color: #15803D;
+    background: #F0FDF4;
+}

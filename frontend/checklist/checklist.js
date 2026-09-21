@@ -89,7 +89,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, descricao_longa, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online')
+            .select('id, sigla, nome_completo, o_que_avalia, descricao_longa, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online, ativo')
             .order('dominio_principal')
             .order('sigla');
 
@@ -155,6 +155,15 @@
         const meses = idadePacienteMeses();
 
         state.catalogoFiltrado = state.catalogo.filter(i => {
+            // Instrumento inativo não aparece para ninguém — nem no "ver todos"
+            // do admin, que é justamente o que inativar quer evitar.
+            // Exceção: se este paciente já o tinha marcado, ele continua
+            // visível (com aviso). Sumir com ele faria a marcação se perder
+            // no próximo salvamento do checklist.
+            const jaMarcado = state.instrumentosSelecionados.includes(i.id);
+            i._inativo = i.ativo === false;
+            if (i._inativo && !jaMarcado) return false;
+
             // Sexo SEMPRE filtra (mesmo no modo "ver todos")
             const sexoOk = (i.sexo_filtro === null || i.sexo_filtro === undefined) || (i.sexo_filtro === sexoChar);
             if (!sexoOk) return false;
@@ -360,6 +369,7 @@
                         <strong>${escapeHtml(inst.sigla)}</strong>
                         ${inst.faixa_etaria_label ? `<span class="checklist-item-idade">${escapeHtml(inst.faixa_etaria_label)}</span>` : ''}
                         ${inst._foraDaFaixa ? `<span class="checklist-item-fora-tag" title="Este teste está fora da faixa etária do paciente">fora da faixa</span>` : ''}
+                        ${inst._inativo ? `<span class="checklist-item-fora-tag checklist-item-inativo-tag" title="Este teste foi inativado no catálogo. Continua aqui porque já estava marcado para este paciente.">inativo</span>` : ''}
                     </div>
                     <div class="checklist-item-descricao">${escapeHtml(inst.o_que_avalia)}</div>
                 </div>

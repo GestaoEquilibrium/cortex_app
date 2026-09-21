@@ -404,3 +404,10 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# O pré-cadastro é preenchido pela família sem login, então a função não pode
+# exigir JWT. Sem esta regra, todo deploy pelo CLI religa a verificação e o
+# formulário passa a receber 401. A proteção real é o token do link, que a
+# própria função valida (existe, não usado, não expirado).
+[functions.pre-cadastro-submit]
+verify_jwt = false

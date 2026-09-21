@@ -97,7 +97,7 @@
         try {
             localStorage.setItem(chaveLocal(), JSON.stringify({
                 dados: state.dados,
-                secaoIdx: state.secaoIdx,
+                secaoIdx: Math.max(0, state.secaoIdx),
                 em: new Date().toISOString()
             }));
         } catch (e) {
@@ -147,7 +147,7 @@
                 p_historico_escolar:    state.dados.historico_escolar || {},
                 p_saude_medicacoes:     state.dados.saude_medicacoes || {},
                 p_outros_profissionais: state.dados.outros_profissionais || {},
-                p_etapa:                state.secaoIdx
+                p_etapa:                Math.max(0, state.secaoIdx)
             });
             if (error) throw error;
             if (data && data.erro) throw new Error(data.erro);
@@ -211,7 +211,11 @@
         // Retomada. O servidor é a base; o rascunho do aparelho entra por
         // cima quando é mais novo — cobre o caso de ter digitado e fechado
         // a aba antes de virar a etapa, que nunca chegou a subir.
-        let etapaRetomada = Number(data.etapa_atual) || 0;
+        // A tela de boas-vindas é a etapa -1. Um rascunho salvo nela (o celular
+        // vai para segundo plano antes do Começar) gravava -1, e -1 não é
+        // falso em JS: o "|| 0" não protegia. O botão então mandava para -1,
+        // que é a própria tela de boas-vindas — o clique "não fazia nada".
+        let etapaRetomada = Math.max(0, Number(data.etapa_atual) || 0);
         const local = lerLocal();
         if (local && local.dados) {
             const localEm = local.em ? new Date(local.em) : null;
@@ -221,7 +225,7 @@
                 cols.forEach(c => {
                     state.dados[c] = Object.assign({}, state.dados[c], local.dados[c] || {});
                 });
-                if (typeof local.secaoIdx === 'number') etapaRetomada = local.secaoIdx;
+                if (typeof local.secaoIdx === 'number') etapaRetomada = Math.max(0, local.secaoIdx);
             }
         }
         state.etapaRetomada = etapaRetomada;
@@ -263,7 +267,7 @@
             root.innerHTML = renderBoasVindas();
             document.getElementById('btn-comecar').addEventListener('click', () => {
                 // Retoma onde parou, se já havia progresso salvo.
-                state.secaoIdx = Math.min(state.etapaRetomada || 0,
+                state.secaoIdx = Math.min(Math.max(0, state.etapaRetomada || 0),
                                           Math.max(0, state.sects.length - 1));
                 renderizar();
                 window.scrollTo(0, 0);

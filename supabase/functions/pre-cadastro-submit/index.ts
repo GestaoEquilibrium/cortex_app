@@ -243,11 +243,16 @@ serve(async (req) => {
     dados.cpf = cpf;  // salva limpo
 
     // 3) Verifica CPF duplicado
-    const { data: dupli, error: errDup } = await supabase
+    // O CPF é gravado às vezes limpo (pré-cadastro) e às vezes formatado
+    // (cadastro manual no CORTEX). Comparar só o limpo deixava passar quem
+    // a recepção já tinha cadastrado — foi assim que pacientes duplicaram.
+    const cpfFmt = `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
+    const { data: dupliLista, error: errDup } = await supabase
         .from("pacientes")
         .select("id")
-        .eq("cpf", cpf)
-        .maybeSingle();
+        .in("cpf", [cpf, cpfFmt])
+        .limit(1);
+    const dupli = dupliLista && dupliLista.length ? dupliLista[0] : null;
     if (errDup) {
         return erroResponse("erro_interno", `Erro checando duplicidade: ${errDup.message}`, 500);
     }
@@ -263,12 +268,24 @@ serve(async (req) => {
     const emailSint = `${cpf}@cortex.local`;
 
     // Se já existe (por algum motivo), tenta reaproveitar; senão cria.
+    // listUsers() é paginado e devolve só os primeiros 50 usuários. Com
+    // centenas de pacientes, o usuário existente não aparecia, a função
+    // tentava criar outro e o Supabase recusava ("already registered").
+    // A busca agora é exata, pela RPC auth_user_id_por_email.
     let portalUserId: string | null = null;
+    let usuarioCriadoAgora = false;
     {
-        const { data: existing } = await supabase.auth.admin.listUsers();
-        const ja = existing?.users?.find((u: { email?: string }) => u.email === emailSint);
-        if (ja) {
-            portalUserId = ja.id;
+        const { data: idExistente, error: errBusca } = await supabase
+            .rpc("auth_user_id_por_email", { p_email: emailSint });
+        if (errBusca) {
+            return erroResponse("erro_interno", `Erro verificando acesso: ${errBusca.message}`, 500);
+        }
+        if (idExistente) {
+            // Usuário órfão (sem paciente — a duplicata já foi descartada
+            // acima). Reaproveita e volta a senha para o CPF, para o
+            // paciente conseguir entrar no portal como qualquer outro.
+            portalUserId = idExistente as string;
+            await supabase.auth.admin.updateUserById(portalUserId, { password: cpf }).catch(() => {});
         }
     }
 
@@ -291,6 +308,7 @@ serve(async (req) => {
             );
         }
         portalUserId = novoUser.user.id;
+        usuarioCriadoAgora = true;
     }
 
     // 5) Cria o paciente
@@ -309,8 +327,10 @@ serve(async (req) => {
         .single();
 
     if (errPac || !novoPac?.id) {
-        // Rollback do auth user pra não deixar lixo
-        if (portalUserId) {
+        // Rollback do auth user pra não deixar lixo — mas SÓ se foi criado
+        // nesta requisição. Um usuário reaproveitado já existia antes e
+        // apagá-lo derrubaria um acesso que não é nosso.
+        if (portalUserId && usuarioCriadoAgora) {
             await supabase.auth.admin.deleteUser(portalUserId).catch(() => {});
         }
         return erroResponse(

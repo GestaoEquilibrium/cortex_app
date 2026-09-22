@@ -541,6 +541,7 @@
                         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
                             ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
                         </button>
+                        ${paciente.foto_url ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.baixarFoto()" title="Baixar a foto do paciente">⬇ Baixar foto</button>` : ''}
                         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mae-foto-input-hidden').click()">
                             ${paciente.mae_foto_url ? 'Alterar foto da mãe' : 'Adicionar foto da mãe'}
                         </button>
@@ -3064,6 +3065,37 @@
     }
 
     window.CortexPasta = {
+        // Baixa a foto no tamanho em que está guardada (512 px, recortada).
+        // Mesmo padrão do download do laudo: link assinado de 60 s com o
+        // nome do arquivo já definido.
+        baixarFoto: async function () {
+            if (!paciente?.foto_url) {
+                window.CortexUI.toast('Este paciente não tem foto.', 'info');
+                return;
+            }
+            try {
+                const ext = (String(paciente.foto_url).match(/\.(jpe?g|png|webp)$/i) || [, 'jpg'])[1].toLowerCase();
+                const nome = String(paciente.nome_completo || 'paciente')
+                    .replace(/[\\/:*?"<>|]/g, '').trim();
+
+                const { data, error } = await window.cortexClient
+                    .storage.from('pacientes-fotos')
+                    .createSignedUrl(paciente.foto_url, 60, { download: `Foto - ${nome}.${ext}` });
+                if (error || !data?.signedUrl) throw error || new Error('Link não gerado');
+
+                if (window.CortexAudit) {
+                    window.CortexAudit.log('leitura', 'pacientes', pacienteId, {
+                        pacienteId,
+                        detalhes: { operacao: 'baixar_foto' }
+                    });
+                }
+
+                window.location.href = data.signedUrl;
+            } catch (err) {
+                console.error('[foto] baixar:', err);
+                window.CortexUI.toast('Não consegui baixar a foto: ' + (err.message || ''), 'danger');
+            }
+        },
         apagarAnamnese: async function (id, situacao) {
             await apagarAnamnese(id, situacao);
         },

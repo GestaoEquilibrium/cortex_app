@@ -50,6 +50,13 @@
             if (tabP) tabP.style.display = '';
         }
 
+        // Acesso externo: admin clínico e gestor. Quem opera o dia a dia
+        // com as clínicas parceiras é a administração, não só a direção.
+        if (state.ehAdmin) {
+            const tabE = document.getElementById('tab-externos');
+            if (tabE) tabE.style.display = '';
+        }
+
         // Bind das abas
         document.querySelectorAll('.cfg-tab').forEach(btn => {
             btn.addEventListener('click', () => trocarAba(btn.dataset.tab));
@@ -87,6 +94,18 @@
                 await carregarProfissionais();
                 cont.innerHTML = renderProfissionais();
                 bindProfissionais();
+            } else if (aba === 'externos') {
+                if (!state.ehAdmin) {
+                    cont.innerHTML = `<div class="cfg-erro">Acesso restrito à administração.</div>`;
+                    return;
+                }
+                if (!window.CortexExternosAdmin) {
+                    cont.innerHTML = `<div class="cfg-erro">Módulo de acesso externo não carregou. Recarregue a página.</div>`;
+                    return;
+                }
+                await window.CortexExternosAdmin.carregar();
+                cont.innerHTML = window.CortexExternosAdmin.render();
+                window.CortexExternosAdmin.bind();
             } else if (aba === 'permissoes') {
                 if (state.profissional?.perfil !== 'admin_clinico') {
                     cont.innerHTML = `<div class="cfg-erro">Acesso restrito ao Admin Clínico.</div>`;

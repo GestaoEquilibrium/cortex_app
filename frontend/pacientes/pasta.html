@@ -259,6 +259,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../solicitacao-escolar/solicitacao_escolar_modelos.js"></script>
+    <link rel="stylesheet" href="../shared/externos.css">
     <link rel="stylesheet" href="../shared/assinatura.css">
     <script src="../shared/assinatura.js"></script>
     <link rel="stylesheet" href="../documentos/documentos.css">
@@ -549,6 +550,7 @@
                         <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.enviarPortalWhatsApp()">📱 Enviar acesso ao portal</button>
+                        ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.acessoExterno()" title="Liberar este paciente para uma clínica parceira">🤝 Acesso externo</button>` : ''}
                         ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.resetarSenhaPortal()" title="Volta a senha do portal para o CPF">🔑 Resetar senha do portal</button>` : ''}
                         ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalDesignar()">👤 Designar aplicador</button>` : ''}
                         ` : ''}
@@ -2901,6 +2903,176 @@
         }
     }
 
+    // ── Acesso externo ──────────────────────────────────────────────────────
+    // Libera ESTE paciente para um profissional de uma clínica parceira,
+    // com escopo e prazo. O cadastro das clínicas e dos profissionais fica
+    // em Configurações → Acesso externo; aqui é só a liberação, que é
+    // decidida com o paciente na frente.
+
+    const EXT_ESCOPOS = [
+        ['resultados', 'Resultados dos testes'],
+        ['evolucoes',  'Evoluções'],
+        ['laudos',     'Laudos']
+    ];
+
+    async function acessoExterno() {
+        try {
+            const [prof, ace] = await Promise.all([
+                window.cortexClient.from('usuarios_externos')
+                    .select('id, nome_completo, conselho, registro, clinica:clinica_externa_id(nome)')
+                    .eq('ativo', true).order('nome_completo'),
+                window.cortexClient.from('acessos_externos')
+                    .select('*, externo:usuario_externo_id(nome_completo, conselho, registro)')
+                    .eq('paciente_id', pacienteId).eq('ativo', true)
+                    .order('concedido_em', { ascending: false })
+            ]);
+            if (prof.error) throw prof.error;
+
+            const profissionais = prof.data || [];
+            const acessos = ace.data || [];
+            const jaTem = new Set(acessos.map(a => a.usuario_externo_id));
+            const disponiveis = profissionais.filter(x => !jaTem.has(x.id));
+
+            const dias = (iso) => Math.ceil((new Date(iso) - new Date()) / 86400000);
+
+            const listaAtual = acessos.length ? `
+                <div class="ext-atual">
+                    <div class="ext-atual-tit">Quem já tem acesso</div>
+                    ${acessos.map(a => {
+                        const d = dias(a.expira_em);
+                        return `<div class="ext-atual-item">
+                            <div>
+                                <strong>${escapeHtml(a.externo?.nome_completo || '—')}</strong>
+                                <span class="ext-sub">${escapeHtml([a.externo?.conselho, a.externo?.registro].filter(Boolean).join(' '))}</span>
+                                <div class="ext-sub">${(a.escopo || []).map(e =>
+                                    escapeHtml((EXT_ESCOPOS.find(x => x[0] === e) || [, e])[1])).join(' · ')}</div>
+                            </div>
+                            <div style="text-align:right">
+                                <div class="ext-sub">${d > 0 ? `${d} dia(s)` : 'vencido'}</div>
+                                <button class="ext-mini perigo" data-ext-revogar="${a.id}">Revogar</button>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>` : '';
+
+            const formNovo = disponiveis.length ? `
+                <div class="ext-campo">
+                    <label>Profissional</label>
+                    <select id="ext-prof">
+                        ${disponiveis.map(x => `<option value="${x.id}">${escapeHtml(x.nome_completo)}${x.clinica?.nome ? ' — ' + escapeHtml(x.clinica.nome) : ''}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="ext-campo">
+                    <label>O que ele poderá ver</label>
+                    <div class="ext-escopos">
+                        ${EXT_ESCOPOS.map(([v, l]) => `
+                            <label class="ext-check">
+                                <input type="checkbox" class="ext-escopo" value="${v}" checked> ${escapeHtml(l)}
+                            </label>`).join('')}
+                    </div>
+                </div>
+                <div class="ext-campo">
+                    <label>Prazo</label>
+                    <select id="ext-prazo">
+                        <option value="90" selected>90 dias</option>
+                        <option value="30">30 dias</option>
+                        <option value="180">180 dias</option>
+                        <option value="365">1 ano</option>
+                    </select>
+                </div>`
+                : `<div class="ext-vazio">${profissionais.length
+                        ? 'Todos os profissionais cadastrados já têm acesso a este paciente.'
+                        : 'Nenhum profissional externo cadastrado. Cadastre em Configurações → Acesso externo.'}</div>`;
+
+            const janela = window.CortexPop.abrir({
+                titulo: 'Acesso externo',
+                subtitulo: paciente.nome_completo,
+                tone: 'blue',
+                tamanho: 'md',
+                persistente: true,
+                html: `
+                    <div class="ext-aviso">
+                        O profissional verá apenas este paciente e apenas o que for marcado,
+                        pelo prazo escolhido. Ele não terá acesso ao CORTEX, e o que escrever
+                        fica separado do prontuário de vocês.
+                    </div>
+                    ${listaAtual}
+                    ${formNovo}`,
+                rodape: disponiveis.length
+                    ? [{ label: 'Fechar', classe: 'btn-secondary' },
+                       { label: 'Liberar acesso', classe: 'btn-primary', fechar: false,
+                         onClick: (j) => concederAcessoExterno(j) }]
+                    : [{ label: 'Fechar', classe: 'btn-secondary' }]
+            });
+
+            janela.corpo.querySelectorAll('[data-ext-revogar]').forEach(b =>
+                b.addEventListener('click', async () => {
+                    if (!confirm('Revogar este acesso? O profissional deixa de ver o paciente imediatamente.')) return;
+                    try {
+                        const { error } = await window.cortexClient.from('acessos_externos').update({
+                            ativo: false,
+                            revogado_em: new Date().toISOString(),
+                            revogado_por: window.cortexProfissional?.id || null
+                        }).eq('id', b.dataset.extRevogar);
+                        if (error) throw error;
+                        if (window.CortexAudit) {
+                            window.CortexAudit.log('edicao', 'acessos_externos', b.dataset.extRevogar, {
+                                pacienteId, detalhes: { operacao: 'revogar_acesso_externo' }
+                            });
+                        }
+                        window.CortexUI.toast('Acesso revogado.', 'success');
+                        janela.fecharJanela();
+                        acessoExterno();
+                    } catch (err) {
+                        window.CortexUI.toast('Erro ao revogar: ' + (err.message || ''), 'danger');
+                    }
+                }));
+        } catch (err) {
+            console.error('[externo] abrir:', err);
+            window.CortexUI.toast('Erro ao abrir: ' + (err.message || ''), 'danger');
+        }
+    }
+
+    async function concederAcessoExterno(janela) {
+        const corpo = janela.corpo;
+        const escopo = [...corpo.querySelectorAll('.ext-escopo:checked')].map(x => x.value);
+        if (!escopo.length) {
+            window.CortexUI.toast('Marque pelo menos um item que ele poderá ver.', 'danger');
+            return false;
+        }
+        const dias = parseInt(corpo.querySelector('#ext-prazo').value, 10) || 90;
+        const expira = new Date();
+        expira.setDate(expira.getDate() + dias);
+
+        try {
+            const { data, error } = await window.cortexClient.from('acessos_externos').insert({
+                usuario_externo_id: corpo.querySelector('#ext-prof').value,
+                paciente_id: pacienteId,
+                escopo: escopo,
+                concedido_por: window.cortexProfissional?.id,
+                expira_em: expira.toISOString()
+            }).select('id').single();
+            if (error) throw error;
+
+            if (window.CortexAudit) {
+                window.CortexAudit.log('criacao', 'acessos_externos', data.id, {
+                    pacienteId,
+                    detalhes: { operacao: 'conceder_acesso_externo',
+                                paciente: paciente.nome_completo,
+                                escopo: escopo, dias: dias }
+                });
+            }
+
+            janela.fecharJanela();
+            window.CortexUI.toast(`Acesso liberado por ${dias} dias.`, 'success');
+            return true;
+        } catch (err) {
+            console.error('[externo] conceder:', err);
+            window.CortexUI.toast('Erro ao liberar: ' + (err.message || ''), 'danger');
+            return false;
+        }
+    }
+
     // ── Reset de senha do portal ────────────────────────────────────────────
     // Usa a RPC admin_resetar_senha_portal, que já existia no banco e nunca
     // tinha ganhado botão. Ela é SECURITY DEFINER e exige profissional ativo
@@ -3065,6 +3237,7 @@
     }
 
     window.CortexPasta = {
+        acessoExterno: async function () { await acessoExterno(); },
         // Baixa a foto no tamanho em que está guardada (512 px, recortada).
         // Mesmo padrão do download do laudo: link assinado de 60 s com o
         // nome do arquivo já definido.

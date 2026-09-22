@@ -217,3 +217,5 @@
 @media (max-width: 700px) {
     .ass-palco { max-height: 56vh; padding: 8px; }
 }
+
+.doc-assinado-op { font-weight: 500; color: #047857; }

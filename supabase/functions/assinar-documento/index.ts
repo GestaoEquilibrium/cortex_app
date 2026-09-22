@@ -16,16 +16,17 @@
 // o arquivo inteiro, e alterar um único byte depois invalida.
 //
 // SEGURANÇA
-//   · O certificado tem o valor legal da assinatura de próprio punho do
-//     titular. Só assina quem estiver na lista CERT_A1_ASSINANTES (ids de
-//     auth.users separados por vírgula). Lista vazia = ninguém assina.
+//   · Assinam admin clínico e admin gestor, pelo certificado do titular —
+//     mesma regra do CORTEX aba (direção e suporte).
+//   · O selo e a assinatura sempre levam o nome do TITULAR do certificado.
+//     Quem de fato clicou fica na auditoria, gravado separado do titular.
 //   · Verify JWT desligado no config, como no CORTEX aba: a função valida o
 //     token sozinha, contra o servidor de autenticação.
 //   · Assina sempre o ORIGINAL guardado no bucket, nunca um arquivo enviado
 //     pelo navegador — o que se assina é o que está no prontuário.
 //   · Cada assinatura é registrada na auditoria pelo servidor.
 //
-// Secrets: CERT_A1_B64 (o .pfx em base64), CERT_A1_SENHA, CERT_A1_ASSINANTES
+// Secrets: CERT_A1_B64 (o .pfx em base64), CERT_A1_SENHA
 // ============================================================================
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -123,17 +124,13 @@ serve(async (req) => {
         const { data: { user } } = await admin.auth.getUser(token);
         if (!user) return json({ ok: false, erro: "Sessão inválida. Entre de novo no sistema." }, 401);
 
-        // Só quem está na lista assina. O certificado é pessoal: ter acesso
-        // ao sistema não autoriza ninguém a assinar em nome do titular.
-        const permitidos = (Deno.env.get("CERT_A1_ASSINANTES") || "")
-            .split(",").map((s) => s.trim()).filter(Boolean);
-        if (!permitidos.includes(user.id)) {
-            return json({ ok: false, erro: "Você não está autorizado a assinar com este certificado." }, 403);
-        }
-
         const { data: prof } = await admin.from("profissionais")
-            .select("id, nome_completo").eq("auth_user_id", user.id).eq("ativo", true).maybeSingle();
+            .select("id, nome_completo, perfil").eq("auth_user_id", user.id).eq("ativo", true).maybeSingle();
         if (!prof) return json({ ok: false, erro: "Profissional não encontrado ou inativo." }, 403);
+
+        if (!["admin_clinico", "admin_gestor"].includes(prof.perfil)) {
+            return json({ ok: false, erro: "Apenas administradores podem assinar com o certificado digital." }, 403);
+        }
 
         // ── 2) O que assinar e onde ────────────────────────────────────────
         const { documento_id, pagina, x, y } = await req.json();
@@ -200,7 +197,11 @@ serve(async (req) => {
                 operacao: "assinar_documento",
                 titulo: docRow.titulo,
                 certificado: "ICP-Brasil A1",
-                assinante: resultado.nome,
+                // O PDF mostra só o titular. Quem clicou fica aqui.
+                titular_certificado: resultado.nome,
+                operador: prof.nome_completo,
+                operador_id: prof.id,
+                operador_perfil: prof.perfil,
                 posicao: pos,
             },
         });

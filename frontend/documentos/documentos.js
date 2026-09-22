@@ -71,12 +71,13 @@ window.CortexDocumentos = (function () {
         try {
             const { data, error } = await c()
                 .from('documentos_paciente')
-                .select('*, autor:created_by(nome_completo)')
+                .select('*, autor:created_by(nome_completo), operador:assinado_por(nome_completo)')
                 .eq('paciente_id', pacienteId)
                 .eq('ativo', true)
                 .order('created_at', { ascending: false });
             if (error) throw error;
             ctx.itens = data || [];
+
         } catch (err) {
             console.error('[documentos] carregar:', err);
             ctx.erro = err.message || String(err);
@@ -146,6 +147,9 @@ window.CortexDocumentos = (function () {
                     ${d.arquivo_assinado_path ? `
                     <div class="doc-assinado">
                         🔒 Assinado digitalmente · ${esc(d.assinante_nome || '')} · ${dataHora(d.assinado_em)}
+                        ${d.operador?.nome_completo &&
+                          d.operador.nome_completo.toUpperCase() !== String(d.assinante_nome || '').toUpperCase()
+                            ? `<span class="doc-assinado-op">· operado por ${esc(d.operador.nome_completo)}</span>` : ''}
                     </div>` : ''}
                     ${d.observacao ? `<div class="doc-card-obs">${esc(d.observacao)}</div>` : ''}
                     <div class="doc-card-meta">
@@ -344,15 +348,15 @@ window.CortexDocumentos = (function () {
     // assinar-documento desenha o selo exatamente ali e assina com o
     // certificado A1 guardado nos secrets.
     //
-    // Quem de fato pode assinar é decidido no servidor (CERT_A1_ASSINANTES).
-    // Aqui o botão só aparece para admin clínico, para não oferecer a quem
-    // receberia recusa.
+    // Assinam admin clínico e admin gestor, pelo certificado do titular.
+    // O botão só aparece para esses perfis, e o servidor confere de novo.
 
     const PDFJS_VER = '3.11.174';
     const SELO_W = 240, SELO_H = 52;       // mesmas medidas da Edge Function
 
     function podeAssinar() {
-        return window.cortexProfissional?.perfil === 'admin_clinico';
+        const p = window.cortexProfissional?.perfil;
+        return p === 'admin_clinico' || p === 'admin_gestor';
     }
 
     async function carregarPdfJs() {

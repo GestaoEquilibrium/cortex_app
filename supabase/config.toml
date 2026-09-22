@@ -411,3 +411,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # própria função valida (existe, não usado, não expirado).
 [functions.pre-cadastro-submit]
 verify_jwt = false
+
+# Valida o token sozinha, como no CORTEX aba.
+[functions.assinar-documento]
+verify_jwt = false

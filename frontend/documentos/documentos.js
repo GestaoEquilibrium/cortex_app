@@ -143,6 +143,10 @@ window.CortexDocumentos = (function () {
                 <div class="doc-card-corpo">
                     <div class="doc-card-titulo">${esc(d.titulo)}</div>
                     <div class="doc-card-cat">${esc(cat.nome)}</div>
+                    ${d.arquivo_assinado_path ? `
+                    <div class="doc-assinado">
+                        🔒 Assinado digitalmente · ${esc(d.assinante_nome || '')} · ${dataHora(d.assinado_em)}
+                    </div>` : ''}
                     ${d.observacao ? `<div class="doc-card-obs">${esc(d.observacao)}</div>` : ''}
                     <div class="doc-card-meta">
                         <span>${esc(d.autor?.nome_completo || '—')}</span>
@@ -151,6 +155,8 @@ window.CortexDocumentos = (function () {
                     </div>
                 </div>
                 <div class="doc-card-acoes">
+                    ${!d.arquivo_assinado_path && podeAssinar()
+                        ? `<button class="doc-mini doc-mini-assinar" data-assinar="${d.id}" title="Assinar com certificado ICP-Brasil">✍️ Assinar</button>` : ''}
                     <button class="doc-mini" data-ver="${d.id}" title="Ver">👁</button>
                     <button class="doc-mini" data-baixar="${d.id}" title="Baixar">⬇</button>
                     ${ehAdmin() ? `<button class="doc-mini perigo" data-apagar="${d.id}" title="Apagar">🗑</button>` : ''}
@@ -171,6 +177,8 @@ window.CortexDocumentos = (function () {
             b.addEventListener('click', () => abrir(b.dataset.baixar, true)));
         document.querySelectorAll('[data-apagar]').forEach(b =>
             b.addEventListener('click', () => apagar(b.dataset.apagar)));
+        document.querySelectorAll('[data-assinar]').forEach(b =>
+            b.addEventListener('click', () => abrirAssinatura(b.dataset.assinar)));
     }
 
     // ── Upload ──────────────────────────────────────────────────────────────
@@ -285,10 +293,16 @@ window.CortexDocumentos = (function () {
         const d = ctx.itens.find(x => x.id === id);
         if (!d) return;
 
+        // Assinado: é a versão assinada que vale e que sai para fora.
+        const caminho = d.arquivo_assinado_path || d.arquivo_path;
+        const nomeArq = d.arquivo_assinado_path
+            ? (d.titulo || 'documento').replace(/[\\/:*?"<>|]/g, '') + ' (assinado).pdf'
+            : (d.arquivo_nome_original || (d.titulo + '.pdf'));
+
         try {
             const { data, error } = await c().storage
                 .from(BUCKET)
-                .createSignedUrl(d.arquivo_path, 600);
+                .createSignedUrl(caminho, 600);
             if (error || !data?.signedUrl) throw error || new Error('URL não gerada');
 
             if (window.CortexAudit) {
@@ -302,7 +316,7 @@ window.CortexDocumentos = (function () {
             if (baixar) {
                 const a = document.createElement('a');
                 a.href = data.signedUrl;
-                a.download = d.arquivo_nome_original || (d.titulo + '.pdf');
+                a.download = nomeArq;
                 a.rel = 'noopener';
                 document.body.appendChild(a); a.click(); a.remove();
                 return;
@@ -311,8 +325,8 @@ window.CortexDocumentos = (function () {
             if (window.CortexPrevia) {
                 window.CortexPrevia.arquivo({
                     bucket: BUCKET,
-                    path: d.arquivo_path,
-                    nome: d.arquivo_nome_original || (d.titulo + '.pdf'),
+                    path: caminho,
+                    nome: nomeArq,
                     titulo: d.titulo,
                     subtitulo: (CATEGORIAS[d.categoria] || CATEGORIAS.outro).nome
                 });
@@ -322,6 +336,203 @@ window.CortexDocumentos = (function () {
         } catch (err) {
             console.error('[documentos] abrir:', err);
             toast('Erro ao abrir: ' + (err.message || ''), 'danger');
+        }
+    }
+
+    // ── Assinatura digital ──────────────────────────────────────────────────
+    // O profissional escolhe na tela onde o selo fica; a Edge Function
+    // assinar-documento desenha o selo exatamente ali e assina com o
+    // certificado A1 guardado nos secrets.
+    //
+    // Quem de fato pode assinar é decidido no servidor (CERT_A1_ASSINANTES).
+    // Aqui o botão só aparece para admin clínico, para não oferecer a quem
+    // receberia recusa.
+
+    const PDFJS_VER = '3.11.174';
+    const SELO_W = 240, SELO_H = 52;       // mesmas medidas da Edge Function
+
+    function podeAssinar() {
+        return window.cortexProfissional?.perfil === 'admin_clinico';
+    }
+
+    async function carregarPdfJs() {
+        if (window.pdfjsLib) return window.pdfjsLib;
+        await new Promise((res, rej) => {
+            const sc = document.createElement('script');
+            sc.src = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VER}/pdf.min.js`;
+            sc.onload = res;
+            sc.onerror = () => rej(new Error('Não foi possível carregar o visualizador de PDF.'));
+            document.head.appendChild(sc);
+        });
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+            `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VER}/pdf.worker.min.js`;
+        return window.pdfjsLib;
+    }
+
+    async function abrirAssinatura(id) {
+        const d = ctx.itens.find(x => x.id === id);
+        if (!d) return;
+
+        let pdf;
+        try {
+            const pdfjs = await carregarPdfJs();
+            const { data, error } = await c().storage.from(BUCKET).createSignedUrl(d.arquivo_path, 600);
+            if (error || !data?.signedUrl) throw error || new Error('URL não gerada');
+            const bytes = await (await fetch(data.signedUrl)).arrayBuffer();
+            pdf = await pdfjs.getDocument({ data: bytes }).promise;
+        } catch (err) {
+            console.error('[documentos] abrir para assinar:', err);
+            toast('Não consegui abrir o PDF: ' + (err.message || ''), 'danger');
+            return;
+        }
+
+        const st = { pagina: 0, total: pdf.numPages, pos: null, ptW: 0, ptH: 0 };
+
+        const janela = window.CortexPop.abrir({
+            titulo: 'Assinar documento',
+            subtitulo: d.titulo,
+            tone: 'blue',
+            tamanho: 'xl',
+            persistente: true,
+            html: `
+                <div class="ass-topo">
+                    <div class="ass-instrucao">
+                        Toque ou clique no lugar da página onde a assinatura deve ficar.
+                    </div>
+                    <div class="ass-nav">
+                        <button class="doc-mini" id="ass-ant" title="Página anterior">‹</button>
+                        <span id="ass-pag">1 / ${st.total}</span>
+                        <button class="doc-mini" id="ass-prox" title="Próxima página">›</button>
+                    </div>
+                </div>
+                <div class="ass-palco" id="ass-palco">
+                    <div class="ass-folha" id="ass-folha">
+                        <canvas id="ass-canvas"></canvas>
+                        <div class="ass-selo" id="ass-selo" style="display:none">
+                            <strong>Documento assinado digitalmente</strong>
+                            <span>assinatura ICP-Brasil</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ass-aviso">
+                    A assinatura digital tem o mesmo valor legal da assinatura de próprio punho
+                    do titular do certificado. Depois de assinado, o documento não pode ser alterado.
+                </div>`,
+            rodape: [
+                { label: 'Cancelar', classe: 'btn-secondary' },
+                { label: 'Assinar aqui', classe: 'btn-primary', fechar: false,
+                  onClick: (j) => confirmarAssinatura(d, st, j) }
+            ]
+        });
+
+        const corpo = janela.corpo;
+        const canvas = corpo.querySelector('#ass-canvas');
+        const folha  = corpo.querySelector('#ass-folha');
+        const selo   = corpo.querySelector('#ass-selo');
+        const lblPag = corpo.querySelector('#ass-pag');
+
+        function btnAssinar() {
+            return janela.el?.querySelector('.cx-pop-foot .btn-primary') ||
+                   document.querySelector('.cx-pop:last-of-type .btn-primary');
+        }
+        function atualizarBotao() {
+            const b = btnAssinar();
+            if (b) b.disabled = !st.pos;
+        }
+
+        async function desenhar() {
+            const page = await pdf.getPage(st.pagina + 1);
+            const base = page.getViewport({ scale: 1 });
+            st.ptW = base.width; st.ptH = base.height;
+
+            // Cabe na largura da janela, sem passar de ~720px de largura útil
+            const largura = Math.min(corpo.querySelector('#ass-palco').clientWidth - 24, 720);
+            const escala = largura / base.width;
+            const vp = page.getViewport({ scale: escala * (window.devicePixelRatio || 1) });
+
+            canvas.width = vp.width;
+            canvas.height = vp.height;
+            canvas.style.width = (base.width * escala) + 'px';
+            canvas.style.height = (base.height * escala) + 'px';
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+
+            lblPag.textContent = `${st.pagina + 1} / ${st.total}`;
+            // Trocar de página desfaz a escolha: a posição vale por página.
+            st.pos = null;
+            selo.style.display = 'none';
+            atualizarBotao();
+        }
+
+        // Clique marca o CENTRO do selo, em fração da página — o mesmo
+        // sistema que a Edge Function usa, então não depende do zoom.
+        function posicionar(clientX, clientY) {
+            const r = canvas.getBoundingClientRect();
+            let fx = (clientX - r.left) / r.width;
+            let fy = (clientY - r.top) / r.height;
+            if (fx < 0 || fx > 1 || fy < 0 || fy > 1) return;
+
+            const wFrac = SELO_W / st.ptW, hFrac = SELO_H / st.ptH;
+            fx = Math.max(wFrac / 2, Math.min(1 - wFrac / 2, fx));
+            fy = Math.max(hFrac / 2, Math.min(1 - hFrac / 2, fy));
+            st.pos = { pagina: st.pagina, x: fx, y: fy };
+
+            selo.style.display = 'flex';
+            selo.style.width  = (wFrac * r.width) + 'px';
+            selo.style.height = (hFrac * r.height) + 'px';
+            selo.style.left   = ((fx - wFrac / 2) * r.width) + 'px';
+            selo.style.top    = ((fy - hFrac / 2) * r.height) + 'px';
+            atualizarBotao();
+        }
+
+        folha.addEventListener('click', (e) => posicionar(e.clientX, e.clientY));
+        corpo.querySelector('#ass-ant').addEventListener('click', () => {
+            if (st.pagina > 0) { st.pagina--; desenhar(); }
+        });
+        corpo.querySelector('#ass-prox').addEventListener('click', () => {
+            if (st.pagina < st.total - 1) { st.pagina++; desenhar(); }
+        });
+
+        // Abre na última página: é onde a assinatura costuma ficar.
+        st.pagina = st.total - 1;
+        setTimeout(desenhar, 60);
+        setTimeout(atualizarBotao, 80);
+    }
+
+    async function confirmarAssinatura(d, st, janela) {
+        if (!st.pos) {
+            toast('Escolha na página onde a assinatura vai ficar.', 'info');
+            return false;
+        }
+        if (!confirm(`Assinar "${d.titulo}" com o certificado digital?\n\nO documento assinado não poderá ser alterado.`)) {
+            return false;
+        }
+
+        const btn = janela.el?.querySelector('.cx-pop-foot .btn-primary');
+        const txt = btn ? btn.textContent : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Assinando…'; }
+
+        try {
+            const { data, error } = await c().functions.invoke('assinar-documento', {
+                body: { documento_id: d.id, pagina: st.pos.pagina, x: st.pos.x, y: st.pos.y }
+            });
+
+            // Erro HTTP: a mensagem útil vem no corpo da resposta
+            if (error) {
+                let msg = error.message || 'Erro ao assinar.';
+                try { const b = await error.context?.json(); if (b?.erro) msg = b.erro; } catch (_) {}
+                throw new Error(msg);
+            }
+            if (!data?.ok) throw new Error(data?.erro || 'Erro ao assinar.');
+
+            janela.fecharJanela();
+            toast('Documento assinado.', 'success');
+            await carregar(ctx.pacienteId);
+            return true;
+        } catch (err) {
+            console.error('[documentos] assinar:', err);
+            toast(err.message || 'Erro ao assinar.', 'danger');
+            if (btn) { btn.disabled = false; btn.textContent = txt; }
+            return false;
         }
     }
 
@@ -354,7 +565,8 @@ window.CortexDocumentos = (function () {
                     // Arquivo depois do registro: se a remoção falhar, sobra
                     // arquivo órfão — ruim, mas melhor que registro apontando
                     // para arquivo inexistente.
-                    await c().storage.from(BUCKET).remove([d.arquivo_path]).catch(
+                    await c().storage.from(BUCKET)
+                        .remove([d.arquivo_path, d.arquivo_assinado_path].filter(Boolean)).catch(
                         e => console.warn('[documentos] arquivo não removido:', e));
 
                     toast('Documento apagado.', 'success');

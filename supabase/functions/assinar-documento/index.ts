@@ -1,9 +1,9 @@
 // ============================================================================
 // CORTEX neuro — Edge Function: assinar-documento
 // ----------------------------------------------------------------------------
-// Assina, com o certificado A1 ICP-Brasil guardado nos secrets, um PDF já
-// anexado na aba Documentos do prontuário. O selo visível vai exatamente onde
-// o profissional escolheu na tela.
+// Assina, com o certificado A1 ICP-Brasil guardado nos secrets, um PDF do
+// prontuário — da aba Documentos ou da aba Laudo. O selo visível vai
+// exatamente onde o profissional escolheu na tela.
 //
 // Base: a função assinar-pdf do CORTEX aba, com UMA diferença deliberada.
 // Lá o PDF nasce no navegador (html2pdf), e o plainAddPlaceholder dá conta.
@@ -38,7 +38,17 @@ import { P12Signer } from "npm:@signpdf/signer-p12@3.2.4";
 import forge from "npm:node-forge@1.3.1";
 import { Buffer } from "node:buffer";
 
-const BUCKET = "documentos-paciente";
+// Dois tipos de arquivo, com o mesmo núcleo de assinatura.
+//
+// Atenção ao `ativo`, que significa coisas diferentes nas duas tabelas:
+//   documentos_paciente → ativo = false quer dizer APAGADO (não assina)
+//   laudos_paciente     → ativo = false quer dizer VERSÃO ANTIGA (assina)
+// Reaproveitar a mesma checagem recusaria assinar versões históricas do
+// laudo achando que tinham sido apagadas.
+const TIPOS = {
+    documento: { tabela: "documentos_paciente", bucket: "documentos-paciente", ativoEhExistencia: true,  rotulo: "documento" },
+    laudo:     { tabela: "laudos_paciente",     bucket: "laudos",              ativoEhExistencia: false, rotulo: "laudo" },
+} as const;
 
 const cors = {
     "Access-Control-Allow-Origin": "*",
@@ -133,26 +143,33 @@ serve(async (req) => {
         }
 
         // ── 2) O que assinar e onde ────────────────────────────────────────
-        const { documento_id, pagina, x, y } = await req.json();
-        if (!documento_id) return json({ ok: false, erro: "Documento não informado." }, 400);
+        const body = await req.json();
+        const tipo = (body.tipo || "documento") as keyof typeof TIPOS;
+        const cfg = TIPOS[tipo];
+        if (!cfg) return json({ ok: false, erro: "Tipo de arquivo inválido." }, 400);
+        const registroId = body.id || body.documento_id;
+        if (!registroId) return json({ ok: false, erro: "Arquivo não informado." }, 400);
+        const { pagina, x, y } = body;
         const pos = { pagina: Number(pagina), x: Number(x), y: Number(y) };
         if (![pos.pagina, pos.x, pos.y].every(Number.isFinite) || pos.x < 0 || pos.x > 1 || pos.y < 0 || pos.y > 1) {
             return json({ ok: false, erro: "Posição da assinatura inválida." }, 400);
         }
 
-        const { data: docRow, error: eDoc } = await admin.from("documentos_paciente")
-            .select("id, paciente_id, titulo, arquivo_path, arquivo_assinado_path, ativo")
-            .eq("id", documento_id).maybeSingle();
-        if (eDoc || !docRow || docRow.ativo === false) return json({ ok: false, erro: "Documento não encontrado." }, 404);
-        if (docRow.arquivo_assinado_path) {
-            return json({ ok: false, erro: "Este documento já está assinado." }, 409);
+        const { data: docRow, error: eDoc } = await admin.from(cfg.tabela)
+            .select("*").eq("id", registroId).maybeSingle();
+        if (eDoc || !docRow || (cfg.ativoEhExistencia && docRow.ativo === false)) {
+            return json({ ok: false, erro: `O ${cfg.rotulo} não foi encontrado.` }, 404);
         }
+        if (docRow.arquivo_assinado_path) {
+            return json({ ok: false, erro: `Este ${cfg.rotulo} já está assinado.` }, 409);
+        }
+        const tituloArq = docRow.titulo || (docRow.versao ? `Laudo v${docRow.versao}` : cfg.rotulo);
 
         const certB64 = Deno.env.get("CERT_A1_B64"), senha = Deno.env.get("CERT_A1_SENHA");
         if (!certB64 || !senha) return json({ ok: false, erro: "Certificado não configurado nos secrets." }, 500);
 
         // ── 3) Baixa o ORIGINAL do prontuário e assina ─────────────────────
-        const { data: arq, error: eDown } = await admin.storage.from(BUCKET).download(docRow.arquivo_path);
+        const { data: arq, error: eDown } = await admin.storage.from(cfg.bucket).download(docRow.arquivo_path);
         if (eDown || !arq) return json({ ok: false, erro: "Não consegui abrir o arquivo original." }, 500);
 
         let resultado;
@@ -169,12 +186,12 @@ serve(async (req) => {
 
         // ── 4) Guarda a versão assinada ao lado do original ────────────────
         const caminho = `${docRow.paciente_id}/assinados/${docRow.id}_${Date.now()}.pdf`;
-        const { error: eUp } = await admin.storage.from(BUCKET)
+        const { error: eUp } = await admin.storage.from(cfg.bucket)
             .upload(caminho, resultado.pdf, { contentType: "application/pdf", upsert: false });
         if (eUp) return json({ ok: false, erro: "Assinei, mas não consegui guardar: " + eUp.message }, 500);
 
         const assinadoEm = new Date().toISOString();
-        const { error: eUpd } = await admin.from("documentos_paciente").update({
+        const { error: eUpd } = await admin.from(cfg.tabela).update({
             arquivo_assinado_path: caminho,
             assinado_em: assinadoEm,
             assinado_por: prof.id,
@@ -182,7 +199,7 @@ serve(async (req) => {
             assinatura_posicao: pos,
         }).eq("id", docRow.id);
         if (eUpd) {
-            await admin.storage.from(BUCKET).remove([caminho]).catch(() => {});
+            await admin.storage.from(cfg.bucket).remove([caminho]).catch(() => {});
             return json({ ok: false, erro: "Não consegui registrar a assinatura: " + eUpd.message }, 500);
         }
 
@@ -190,12 +207,12 @@ serve(async (req) => {
         await admin.from("auditoria_acessos").insert({
             profissional_id: prof.id,
             acao: "edicao",
-            tabela: "documentos_paciente",
+            tabela: cfg.tabela,
             registro_id: docRow.id,
             paciente_id: docRow.paciente_id,
             detalhes: {
-                operacao: "assinar_documento",
-                titulo: docRow.titulo,
+                operacao: tipo === "laudo" ? "assinar_laudo" : "assinar_documento",
+                titulo: tituloArq,
                 certificado: "ICP-Brasil A1",
                 // O PDF mostra só o titular. Quem clicou fica aqui.
                 titular_certificado: resultado.nome,

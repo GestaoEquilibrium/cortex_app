@@ -259,6 +259,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../solicitacao-escolar/solicitacao_escolar_modelos.js"></script>
+    <link rel="stylesheet" href="../shared/assinatura.css">
+    <script src="../shared/assinatura.js"></script>
     <link rel="stylesheet" href="../documentos/documentos.css">
     <script src="../documentos/documentos.js"></script>
     <link rel="stylesheet" href="../evolucao/evolucao.css">
@@ -1002,7 +1004,7 @@
         try {
             const { data, error } = await window.cortexClient
                 .from('laudos_paciente')
-                .select('*')
+                .select('*, operador:assinado_por(nome_completo)')
                 .eq('paciente_id', pacienteId)
                 .order('versao', { ascending: false });
 
@@ -1072,6 +1074,18 @@
         `;
     }
 
+    // Mostra o titular e, quando outra pessoa operou, quem foi.
+    function seloAssinaturaLaudo(laudo) {
+        if (!laudo.arquivo_assinado_path) return '';
+        const op = laudo.operador?.nome_completo;
+        const outro = op && op.toUpperCase() !== String(laudo.assinante_nome || '').toUpperCase();
+        return `<div class="doc-assinado" style="margin-top:8px">
+                    🔒 Assinado digitalmente · ${escapeHtml(laudo.assinante_nome || '')}
+                    · ${formatarDataHora(laudo.assinado_em)}
+                    ${outro ? `<span class="doc-assinado-op">· operado por ${escapeHtml(op)}</span>` : ''}
+                </div>`;
+    }
+
     function renderLaudoVersaoAtual(laudo) {
         return `
             <div class="laudo-versao-atual">
@@ -1084,8 +1098,11 @@
                             · ${formatarBytes(laudo.arquivo_tamanho_bytes)}
                             · Enviado em ${formatarDataHora(laudo.created_at)}
                         </div>
+                        ${seloAssinaturaLaudo(laudo)}
                     </div>
                     <div class="laudo-versao-atual-acoes">
+                        ${!laudo.arquivo_assinado_path && window.CortexAssinatura && window.CortexAssinatura.podeAssinar()
+                            ? `<button class="btn btn-primary btn-sm" onclick="window.CortexLaudo.assinar('${laudo.id}')">✍️ Assinar</button>` : ''}
                         <button class="btn btn-primary btn-sm" onclick="window.CortexLaudo.visualizar('${laudo.id}')">
                             👁 Visualizar
                         </button>
@@ -1113,6 +1130,7 @@
                             ${formatarBytes(laudo.arquivo_tamanho_bytes)}
                             · Enviado em ${formatarDataHora(laudo.created_at)}
                         </div>
+                        ${seloAssinaturaLaudo(laudo)}
                     </div>
                 </div>
                 <div class="laudo-historico-acoes">
@@ -1210,15 +1228,31 @@
 
     // API global pros botões inline (visualizar/baixar/definir/remover)
     window.CortexLaudo = {
+        // Mesma janela e mesma Edge Function da aba Documentos
+        // (shared/assinatura.js e assinar-documento).
+        assinar: function(laudoId) {
+            const laudo = (laudosCache || []).find(l => l.id === laudoId);
+            if (!laudo || !window.CortexAssinatura) return;
+            window.CortexAssinatura.abrir({
+                tipo: 'laudo',
+                id: laudo.id,
+                bucket: 'laudos',
+                path: laudo.arquivo_path,
+                titulo: `Laudo v${laudo.versao}`,
+                onAssinado: () => carregarERenderLaudo()
+            });
+        },
+
         visualizar: async function(laudoId) {
             try {
                 const laudo = (laudosCache || []).find(l => l.id === laudoId);
                 if (!laudo) throw new Error('Laudo não encontrado');
 
+                // Assinado: é a versão assinada que vale e que sai para fora.
                 const { data, error } = await window.cortexClient
                     .storage
                     .from('laudos')
-                    .createSignedUrl(laudo.arquivo_path, 600);  // 10 min
+                    .createSignedUrl(laudo.arquivo_assinado_path || laudo.arquivo_path, 600);  // 10 min
                 if (error || !data) throw error || new Error('URL não gerada');
 
                 // Abre modal com iframe do PDF
@@ -1237,7 +1271,11 @@
                 const { data, error } = await window.cortexClient
                     .storage
                     .from('laudos')
-                    .createSignedUrl(laudo.arquivo_path, 60, { download: laudo.arquivo_nome_original || 'laudo.pdf' });
+                    .createSignedUrl(laudo.arquivo_assinado_path || laudo.arquivo_path, 60, {
+                        download: laudo.arquivo_assinado_path
+                            ? `Laudo v${laudo.versao} (assinado).pdf`
+                            : (laudo.arquivo_nome_original || 'laudo.pdf')
+                    });
                 if (error || !data) throw error || new Error('URL não gerada');
 
                 window.location.href = data.signedUrl;
@@ -1268,10 +1306,14 @@
         remover: async function(laudoId) {
             const laudo = (laudosCache || []).find(l => l.id === laudoId);
             if (!laudo) return;
-            if (!confirm(`Remover permanentemente a versão v${laudo.versao}? Esta ação não pode ser desfeita.`)) return;
+            const aviso = laudo.arquivo_assinado_path
+                ? `A versão v${laudo.versao} está ASSINADA DIGITALMENTE.\n\nRemover apaga o original e o arquivo assinado, permanentemente. Esta ação não pode ser desfeita.\n\nContinuar?`
+                : `Remover permanentemente a versão v${laudo.versao}? Esta ação não pode ser desfeita.`;
+            if (!confirm(aviso)) return;
             try {
-                // 1. Remove do Storage
-                await window.cortexClient.storage.from('laudos').remove([laudo.arquivo_path]);
+                // 1. Remove do Storage (original e, se houver, o assinado)
+                await window.cortexClient.storage.from('laudos')
+                    .remove([laudo.arquivo_path, laudo.arquivo_assinado_path].filter(Boolean));
                 // 2. Remove da tabela
                 const { error } = await window.cortexClient
                     .from('laudos_paciente')

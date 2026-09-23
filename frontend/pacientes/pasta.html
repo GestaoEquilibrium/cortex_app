@@ -497,11 +497,24 @@
 
         const cabecalho = `
             <div class="pasta-cabecalho">
-                <div ${podeEditar ? `onclick="document.getElementById('foto-input-hidden').click()" style="cursor: pointer;" title="Clique para alterar foto"` : 'style="cursor: default;"'}>
-                    ${avatar}
+                <div class="pasta-foto-wrap">
+                    <div ${podeEditar ? `onclick="document.getElementById('foto-input-hidden').click()" style="cursor: pointer;" title="Clique para alterar a foto"` : 'style="cursor: default;"'}>
+                        ${avatar}
+                    </div>
+                    ${podeEditar ? `
+                    <div class="pasta-foto-acoes">
+                        <button class="pasta-foto-btn" onclick="document.getElementById('foto-input-hidden').click()"
+                                title="${paciente.foto_url ? 'Alterar a foto' : 'Adicionar foto'}">📷</button>
+                        ${paciente.foto_url ? `<button class="pasta-foto-btn" onclick="window.CortexPasta.baixarFoto()" title="Baixar a foto">⬇</button>` : ''}
+                        <button class="pasta-foto-btn" onclick="document.getElementById('mae-foto-input-hidden').click()"
+                                title="${paciente.mae_foto_url ? 'Alterar a foto da mãe' : 'Adicionar foto da mãe'}">${paciente.mae_foto_url ? '👩' : '👩‍🦰'}</button>
+                    </div>` : ''}
                 </div>
                 <div class="pasta-info">
-                    <div class="pasta-nome">${escapeHtml(paciente.nome_completo)}${paciente.nome_social ? ` <span style="font-size: 14px; color: var(--color-text-muted); font-weight: 400;">(${escapeHtml(paciente.nome_social)})</span>` : ''}</div>
+                    <div class="pasta-nome">
+                        ${escapeHtml(paciente.nome_completo)}${paciente.nome_social ? ` <span style="font-size: 14px; color: var(--color-text-muted); font-weight: 400;">(${escapeHtml(paciente.nome_social)})</span>` : ''}
+                        ${podeEditar ? `<a class="pasta-editar-btn" href="novo.html?id=${pacienteId}" title="Editar dados do paciente" aria-label="Editar dados">✏️</a>` : ''}
+                    </div>
                     <div class="pasta-meta">
                         <div class="pasta-meta-item">
                             <span class="pasta-meta-label">Idade:</span>
@@ -536,22 +549,11 @@
                     <div class="pasta-actions">
                         <span class="badge ${statusClass}">${statusLabel}</span>
                         ${podeEditar ? `
-                        <a class="btn btn-secondary btn-sm" href="novo.html?id=${pacienteId}">
-                            ✏️ Editar dados
-                        </a>
-                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('foto-input-hidden').click()">
-                            ${paciente.foto_url ? 'Alterar foto' : 'Adicionar foto'}
-                        </button>
-                        ${paciente.foto_url ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.baixarFoto()" title="Baixar a foto do paciente">⬇ Baixar foto</button>` : ''}
-                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('mae-foto-input-hidden').click()">
-                            ${paciente.mae_foto_url ? 'Alterar foto da mãe' : 'Adicionar foto da mãe'}
-                        </button>
                         <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.lancarEvolucao()">📝 Lançar evolução</button>
                         <button class="btn btn-primary btn-sm" onclick="window.CortexPasta.abrirModalAgendar()">+ Agendar sessão</button>
+                        <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirPortal()">📱 Portal</button>
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
-                        <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.enviarPortalWhatsApp()">📱 Enviar acesso ao portal</button>
                         ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.acessoExterno()" title="Liberar este paciente para uma clínica parceira">🤝 Acesso externo</button>` : ''}
-                        ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.resetarSenhaPortal()" title="Volta a senha do portal para o CPF">🔑 Resetar senha do portal</button>` : ''}
                         ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalDesignar()">👤 Designar aplicador</button>` : ''}
                         ` : ''}
                     </div>
@@ -2903,6 +2905,54 @@
         }
     }
 
+    // ── Portal do paciente ──────────────────────────────────────────────────
+    // Reúne as ações do portal num lugar só. Antes eram dois botões soltos
+    // no cabeçalho, entre outros nove — a barra virou uma parede de botões.
+
+    function abrirPortal() {
+        const nome = (paciente.nome_completo || '').split(' ')[0];
+        const opcoes = [
+            { id: 'enviar', ic: '📱', titulo: 'Enviar acesso por WhatsApp',
+              desc: 'Manda o link do portal com login e instruções.', admin: false },
+            { id: 'resetar', ic: '🔑', titulo: 'Resetar senha',
+              desc: 'A senha volta a ser o CPF e o paciente escolhe uma nova ao entrar.', admin: true }
+        ].filter(o => !o.admin || ehAdmin);
+
+        const janela = window.CortexPop.abrir({
+            titulo: 'Portal do paciente',
+            subtitulo: paciente.nome_completo,
+            tone: 'blue',
+            tamanho: 'sm',
+            html: `
+                <p style="font-size:13.5px;line-height:1.6;color:var(--color-text-muted);margin:0 0 14px">
+                    O que você quer fazer com o acesso ${nome ? 'd' + (paciente.sexo === 'Feminino' ? 'a ' : 'o ') + escapeHtml(nome) : 'do paciente'}?
+                </p>
+                <div style="display:grid;gap:10px">
+                    ${opcoes.map(o => `
+                        <button class="btn btn-secondary" id="portal-${o.id}"
+                                style="justify-content:flex-start;text-align:left;height:auto;padding:14px 16px">
+                            <span style="display:block">
+                                <strong style="display:block;font-size:14px">${o.ic} ${escapeHtml(o.titulo)}</strong>
+                                <span style="font-size:12.5px;color:var(--color-text-muted);font-weight:400">${escapeHtml(o.desc)}</span>
+                            </span>
+                        </button>`).join('')}
+                </div>`
+        });
+
+        setTimeout(() => {
+            const bEnviar = document.getElementById('portal-enviar');
+            const bReset  = document.getElementById('portal-resetar');
+            if (bEnviar) bEnviar.addEventListener('click', () => {
+                janela.fecharJanela();
+                setTimeout(() => abrirWhatsAppPortal(), 260);
+            });
+            if (bReset) bReset.addEventListener('click', () => {
+                janela.fecharJanela();
+                setTimeout(() => resetarSenhaPortal(), 260);
+            });
+        }, 60);
+    }
+
     // ── Acesso externo ──────────────────────────────────────────────────────
     // Libera ESTE paciente para um profissional de uma clínica parceira,
     // com escopo e prazo. O cadastro das clínicas e dos profissionais fica
@@ -3237,6 +3287,7 @@
     }
 
     window.CortexPasta = {
+        abrirPortal: function () { abrirPortal(); },
         acessoExterno: async function () { await acessoExterno(); },
         // Baixa a foto no tamanho em que está guardada (512 px, recortada).
         // Mesmo padrão do download do laudo: link assinado de 60 s com o

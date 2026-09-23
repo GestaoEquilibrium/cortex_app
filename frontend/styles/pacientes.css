@@ -974,3 +974,65 @@
 @media (max-width: 420px) {
     .pasta-actions .btn { flex: 1 1 100%; }
 }
+
+/* ============================================================================
+   CABEÇALHO DA PASTA — botões agrupados
+   ----------------------------------------------------------------------------
+   Antes eram onze botões na mesma faixa, três deles sobre foto. Agora:
+   os de foto ficam na própria moldura, editar vira um ícone ao lado do nome,
+   e as ações do portal viraram um botão só que abre uma janela.
+   ============================================================================ */
+
+.pasta-foto-wrap { position: relative; flex-shrink: 0; }
+
+.pasta-foto-acoes {
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, .96);
+    border: 1px solid var(--color-border, #e2e8f0);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .12);
+    /* Some no hover só no desktop; no celular fica sempre visível,
+       porque lá não existe hover. */
+    opacity: .55;
+    transition: opacity .18s ease;
+}
+
+.pasta-foto-wrap:hover .pasta-foto-acoes { opacity: 1; }
+
+.pasta-foto-btn {
+    width: 26px; height: 26px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: none; background: transparent; cursor: pointer;
+    border-radius: 50%; font-size: 13px; line-height: 1;
+    transition: background .15s ease, transform .15s ease;
+}
+.pasta-foto-btn:hover { background: var(--slate-100, #f1f5f9); transform: scale(1.12); }
+.pasta-foto-btn:active { transform: scale(.94); }
+
+/* Editar dados: discreto, ao lado do nome */
+.pasta-editar-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; margin-left: 8px;
+    border-radius: 7px; font-size: 12px; line-height: 1;
+    text-decoration: none; vertical-align: middle;
+    background: var(--slate-100, #f1f5f9);
+    border: 1px solid var(--color-border, #e2e8f0);
+    opacity: .6;
+    transition: opacity .15s ease, border-color .15s ease, background .15s ease;
+}
+.pasta-editar-btn:hover {
+    opacity: 1;
+    background: #fff;
+    border-color: var(--accent-blue, #2F6FED);
+}
+
+@media (hover: none), (pointer: coarse) {
+    .pasta-foto-acoes { opacity: 1; }
+    .pasta-editar-btn { opacity: 1; }
+}

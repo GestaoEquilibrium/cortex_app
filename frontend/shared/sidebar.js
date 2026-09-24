@@ -57,6 +57,15 @@ window.CortexSidebar = (function() {
             icon: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'
         },
         {
+            id: 'triagens',
+            labelCurto: 'Triagens',
+            accent: 'var(--accent-amber)',
+            label: 'Triagens',
+            href: '../triagens/triagens.html',
+            adminOnly: true,
+            icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>'
+        },
+        {
             id: 'relatorios',
             labelCurto: 'Relatórios',
             accent: 'var(--accent-pink)',

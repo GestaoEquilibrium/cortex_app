@@ -1,0 +1,108 @@
+/* ============================================================================
+   TRIAGENS — lista interna de quem respondeu nos eventos
+   ============================================================================ */
+
+.tg-alerta {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px 17px; margin-bottom: 18px; border-radius: 14px;
+    background: #FEF2F2; border: 1px solid #FECACA;
+    color: #991B1B; font-size: 13.5px; line-height: 1.6;
+}
+.tg-alerta span { font-size: 18px; line-height: 1.3; }
+
+.tg-resumo { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 16px; }
+.tg-num { font-size: 13px; color: var(--color-text-muted, #64748b); }
+.tg-num strong { font-size: 22px; font-weight: 750; color: var(--color-text, #14213A); margin-right: 5px; }
+.tg-num.risco strong { color: #dc2626; }
+
+.tg-filtros { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
+.tg-filtro {
+    padding: 8px 15px; border-radius: 99px; cursor: pointer;
+    font-size: 13px; font-weight: 650; color: var(--color-text-muted, #64748b);
+    background: #fff; border: 1px solid var(--color-border, #e2e8f0);
+}
+.tg-filtro:hover { border-color: var(--accent-blue, #2F6FED); color: var(--accent-blue, #2F6FED); }
+.tg-filtro.ativo {
+    background: var(--accent-blue, #2F6FED); border-color: var(--accent-blue, #2F6FED); color: #fff;
+}
+
+.tg-lista { display: flex; flex-direction: column; gap: 12px; }
+
+.tg-card {
+    background: #fff; border: 1px solid var(--color-border, #e2e8f0);
+    border-left: 3px solid var(--slate-300, #cbd5e1);
+    border-radius: 16px; padding: 16px 18px;
+    box-shadow: 0 1px 2px rgba(20,31,60,.05), 0 4px 12px rgba(20,31,60,.05);
+}
+.tg-card.risco { border-left-color: #dc2626; background: #FFFBFB; }
+.tg-card.feito { opacity: .72; }
+
+.tg-card-topo {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; margin-bottom: 14px;
+}
+
+.tg-nome { font-size: 15.5px; font-weight: 750; letter-spacing: -.01em; }
+.tg-flag {
+    font-size: 10.5px; font-weight: 750; text-transform: uppercase; letter-spacing: .05em;
+    padding: 2px 8px; border-radius: 99px; background: #FEE2E2; color: #991B1B;
+    vertical-align: 2px; margin-left: 4px;
+}
+.tg-meta   { font-size: 13px; color: var(--color-text-muted, #64748b); margin-top: 3px; }
+.tg-quando { font-size: 11.5px; color: var(--color-text-soft, #94a3b8); margin-top: 3px; }
+
+.tg-acoes { display: flex; gap: 7px; flex-shrink: 0; }
+.tg-mini {
+    padding: 8px 14px; border-radius: 9px; cursor: pointer;
+    font-size: 12.5px; font-weight: 650; text-decoration: none;
+    color: var(--color-text-muted, #64748b);
+    background: var(--slate-50, #f8fafc);
+    border: 1px solid var(--color-border, #e2e8f0);
+    display: inline-flex; align-items: center;
+}
+.tg-mini:hover { background: #fff; border-color: var(--accent-blue, #2F6FED); color: var(--accent-blue, #2F6FED); }
+.tg-mini.zap { color: #047857; background: #ECFDF5; border-color: #A7F3D0; }
+.tg-mini.zap:hover { background: #fff; border-color: #047857; color: #047857; }
+.tg-mini.feito { background: #DCFCE7; border-color: #86EFAC; color: #15803D; }
+
+.tg-escalas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+
+.tg-escala {
+    padding: 11px 13px; border-radius: 12px;
+    background: var(--slate-50, #f8fafc);
+    border: 1px solid var(--color-border, #e2e8f0);
+    display: flex; flex-direction: column; gap: 2px;
+}
+.tg-escala-nome  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-muted, #64748b); }
+.tg-escala-valor { font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+.tg-escala-valor small { font-size: 12px; font-weight: 600; color: var(--color-text-soft, #94a3b8); }
+.tg-escala-faixa { font-size: 11.5px; color: var(--color-text-muted, #64748b); }
+
+.tg-escala.ok    { background: #F0FDF4; border-color: #BBF7D0; }
+.tg-escala.ok    .tg-escala-valor { color: #15803D; }
+.tg-escala.leve  { background: #FEFCE8; border-color: #FEF08A; }
+.tg-escala.leve  .tg-escala-valor { color: #A16207; }
+.tg-escala.media { background: #FFF7ED; border-color: #FED7AA; }
+.tg-escala.media .tg-escala-valor { color: #C2410C; }
+.tg-escala.alta  { background: #FEF2F2; border-color: #FECACA; }
+.tg-escala.alta  .tg-escala-valor { color: #B91C1C; }
+
+.tg-feito-nota {
+    margin-top: 11px; padding-top: 10px;
+    border-top: 1px solid var(--slate-100, #f1f5f9);
+    font-size: 11.5px; color: var(--color-text-muted, #64748b);
+}
+
+.tg-vazio {
+    text-align: center; padding: 44px 22px; font-size: 13.5px; line-height: 1.6;
+    color: var(--color-text-muted, #64748b);
+    background: var(--slate-50, #f8fafc);
+    border: 1px dashed var(--color-border-strong, #cbd5e1); border-radius: 18px;
+}
+.tg-vazio strong { display: block; color: var(--color-text, #14213A); font-size: 15px; margin-bottom: 5px; }
+
+@media (max-width: 700px) {
+    .tg-escalas { grid-template-columns: 1fr; }
+    .tg-acoes { width: 100%; }
+    .tg-mini { flex: 1; justify-content: center; }
+}

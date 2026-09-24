@@ -314,12 +314,29 @@
 
     function agrupar() {
         state.agrupado = {};
+
+        // Reaplicação: um mesmo instrumento pode ter mais de uma aplicação.
+        // Numeramos cada uma (1ª, 2ª, …) para a equipe não confundir dois
+        // cards idênticos e corrigir o errado. state.aplicacoes já vem
+        // ordenado por created_at, então a contagem sai na ordem certa.
+        const totalPorInstrumento = {};
+        state.aplicacoes.forEach(a => {
+            totalPorInstrumento[a.instrumento_id] = (totalPorInstrumento[a.instrumento_id] || 0) + 1;
+        });
+        const ordemPorInstrumento = {};
+
         state.aplicacoes.forEach(apl => {
             const inst = state.catalogo.find(i => i.id === apl.instrumento_id);
             if (!inst) return; // instrumento órfão
+            ordemPorInstrumento[apl.instrumento_id] = (ordemPorInstrumento[apl.instrumento_id] || 0) + 1;
             const cat = inst.dominio_principal || 'Outros';
             if (!state.agrupado[cat]) state.agrupado[cat] = [];
-            state.agrupado[cat].push({ ...apl, instrumento: inst });
+            state.agrupado[cat].push({
+                ...apl,
+                instrumento: inst,
+                _ordem: ordemPorInstrumento[apl.instrumento_id],
+                _totalAplicacoes: totalPorInstrumento[apl.instrumento_id]
+            });
         });
     }
 
@@ -513,6 +530,9 @@
                     <div class="bateria-item-titulo">
                         <span class="bateria-item-status-icone">${st.icone}</span>
                         <strong>${escapeHtml(inst.sigla)}</strong>
+                        ${apl._totalAplicacoes > 1
+                            ? `<span class="bateria-item-ordem" title="Este teste foi aplicado ${apl._totalAplicacoes} vezes neste paciente">${apl._ordem}ª aplicação</span>`
+                            : ''}
                         <span class="bateria-item-faixa">${escapeHtml(inst.faixa_etaria_label || '—')}</span>
                     </div>
                     <span class="bateria-tag ${st.class}">${st.label}</span>
@@ -569,6 +589,11 @@
                             <a class="btn btn-primary btn-sm" href="${montarUrlResultado(inst.sigla, apl.id)}" style="background: linear-gradient(135deg, #1e40af 0%, #059669 100%);">
                                 📊 Ver resultado
                             </a>
+                        ` : ''}
+                        ${(apl.status === 'corrigido' || apl.status === 'integrado_laudo') && apl._ordem === apl._totalAplicacoes ? `
+                            <button class="btn btn-secondary btn-sm" onclick="window.CortexBateria.reaplicar('${apl.id}')" title="Cria uma nova aplicação deste mesmo teste, mantendo o resultado atual">
+                                🔁 Reaplicar
+                            </button>
                         ` : ''}
                         <button class="btn btn-ghost btn-sm" onclick="window.CortexBateria.abrirModal('${apl.id}')">
                             ✎ Editar
@@ -712,6 +737,90 @@
                 renderizar();
             } catch (err) {
                 window.CortexUI.toast('Erro ao sincronizar: ' + err.message, 'danger');
+            }
+        },
+
+        /**
+         * Reaplicar: cria uma NOVA aplicação do mesmo instrumento para o
+         * mesmo paciente, mantendo intactas a aplicação anterior e o
+         * resultado dela.
+         *
+         * Funciona sem mexer no banco porque cada resultado é guardado por
+         * `aplicacao_id` — correcoes, respostas_brutas, wais_resultados e
+         * companhia todos apontam para a aplicação, não para o instrumento.
+         * Então as duas correções coexistem naturalmente.
+         *
+         * O `link_unico` nasce nulo de propósito: a coluna é UNIQUE no banco,
+         * e o link novo sai do gerar_link_aplicacao quando for pedido.
+         *
+         * No portal do paciente não foi preciso mexer em nada: a lista separa
+         * "aguardando" de "concluídos", então a reaplicação aparece para
+         * responder e a anterior fica no histórico.
+         */
+        reaplicar: async function(aplicacaoId) {
+            const apl = state.aplicacoes.find(a => a.id === aplicacaoId);
+            if (!apl) return;
+            const inst = state.catalogo.find(i => i.id === apl.instrumento_id);
+            if (!inst) return;
+
+            const jaTem = state.aplicacoes.filter(a => a.instrumento_id === apl.instrumento_id).length;
+            const ordem = jaTem + 1;
+
+            const seguir = async () => {
+                try {
+                    const { data, error } = await window.cortexClient
+                        .from('aplicacoes_instrumento')
+                        .insert({
+                            paciente_id: state.pacienteId,
+                            instrumento_id: apl.instrumento_id,
+                            modalidade: apl.modalidade,
+                            status: 'aguardando'
+                        })
+                        .select()
+                        .single();
+                    if (error) throw error;
+
+                    await CortexAudit.log('criacao', 'aplicacoes_instrumento', data.id, {
+                        pacienteId: state.pacienteId,
+                        detalhes: {
+                            operacao: 'reaplicar_instrumento',
+                            instrumento: inst.sigla,
+                            aplicacao_anterior: aplicacaoId,
+                            ordem: ordem
+                        }
+                    });
+
+                    state.aplicacoes.push(data);
+                    agrupar();
+                    renderizar();
+                    window.CortexUI.toast(`${inst.sigla}: ${ordem}ª aplicação criada.`, 'success');
+
+                    // Autoaplicável: o motivo mais comum de reaplicar é o
+                    // paciente responder de novo, então já oferecemos o link.
+                    if (ehAutoaplicavel(inst.sigla)) {
+                        await window.CortexBateria.gerarLink(data.id, inst.sigla);
+                    }
+                } catch (err) {
+                    console.error('[bateria] reaplicar:', err);
+                    window.CortexUI.toast('Erro ao reaplicar: ' + (err.message || ''), 'danger');
+                }
+            };
+
+            const texto = `Isto cria uma NOVA aplicação (a ${ordem}ª) do ${inst.sigla} para este paciente.\n\n`
+                + `A aplicação anterior e o resultado dela continuam salvos — nada é apagado.`
+                + (ehAutoaplicavel(inst.sigla) ? ` Em seguida você poderá gerar o link novo para o paciente responder.` : '');
+
+            if (window.CortexConfirm) {
+                window.CortexConfirm.mostrar({
+                    icone: '🔁',
+                    titulo: `Reaplicar o ${inst.sigla}?`,
+                    texto: texto,
+                    btnSim: 'Sim, reaplicar',
+                    btnNao: 'Cancelar',
+                    onSim: seguir
+                });
+            } else {
+                if (confirm(`Reaplicar o ${inst.sigla}?\n\n` + texto)) await seguir();
             }
         },
 

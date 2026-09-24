@@ -652,3 +652,20 @@
     .bateria-fim-box { padding: 28px 20px 22px; }
     .bateria-fim-acoes .btn { width: 100%; }
 }
+
+/* ── Reaplicação ──────────────────────────────────────────────────────────
+   Quando o mesmo teste foi aplicado mais de uma vez, cada card recebe a
+   ordem. Sem isso a equipe vê dois cards idênticos e corre o risco de
+   abrir a correção errada. */
+
+.bateria-item-ordem {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: #7C3AED;
+    background: #F3E8FF;
+    border: 1px solid #E9D5FF;
+    padding: 2px 8px;
+    border-radius: 99px;
+    white-space: nowrap;
+}

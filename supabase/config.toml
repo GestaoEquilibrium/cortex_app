@@ -415,3 +415,7 @@ verify_jwt = false
 # Valida o token sozinha, como no CORTEX aba.
 [functions.assinar-documento]
 verify_jwt = false
+
+[functions.externo-acesso]
+verify_jwt = false
+

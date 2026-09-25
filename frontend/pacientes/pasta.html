@@ -260,6 +260,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../solicitacao-escolar/solicitacao_escolar_modelos.js"></script>
     <link rel="stylesheet" href="../shared/externos.css">
+    <link rel="stylesheet" href="../shared/qr_prontuario.css">
+    <script src="../shared/vendor/qrcode.js"></script>
+    <script src="../shared/qr_prontuario.js"></script>
     <link rel="stylesheet" href="../shared/assinatura.css">
     <script src="../shared/assinatura.js"></script>
     <link rel="stylesheet" href="../documentos/documentos.css">
@@ -1045,8 +1048,13 @@
                             Faça upload do PDF do laudo final. Cada envio gera uma nova versão automaticamente.
                         </p>
                     </div>
-                    <div>
+                    <div class="laudo-topo-acoes">
                         <input type="file" id="laudo-file-input" accept="application/pdf" style="display: none;">
+                        ${ehAdmin ? `
+                        <button class="btn btn-secondary" onclick="window.CortexPasta.qrProntuario()"
+                                title="QR para colar no laudo: o profissional de fora escaneia e pede acesso">
+                            🔗 QR do prontuário
+                        </button>` : ''}
                         <button class="btn btn-primary" id="btn-laudo-upload">
                             📤 Enviar laudo (PDF)
                         </button>
@@ -3046,6 +3054,14 @@
                         pelo prazo escolhido. Ele não terá acesso ao CORTEX, e o que escrever
                         fica separado do prontuário de vocês.
                     </div>
+                    <div class="ext-qr-atalho">
+                        <div>
+                            <strong>Profissional ainda não cadastrado?</strong>
+                            <div class="ext-sub">Cole o QR no laudo: ele se cadastra e pede
+                                 o acesso, e você autoriza depois.</div>
+                        </div>
+                        <button class="ext-mini" id="ext-abrir-qr">🔗 QR do prontuário</button>
+                    </div>
                     ${listaAtual}
                     ${formNovo}`,
                 rodape: disponiveis.length
@@ -3053,6 +3069,12 @@
                        { label: 'Liberar acesso', classe: 'btn-primary', fechar: false,
                          onClick: (j) => concederAcessoExterno(j) }]
                     : [{ label: 'Fechar', classe: 'btn-secondary' }]
+            });
+
+            const btnQr = janela.corpo.querySelector('#ext-abrir-qr');
+            if (btnQr) btnQr.addEventListener('click', () => {
+                janela.fecharJanela();
+                window.CortexPasta.qrProntuario();
             });
 
             janela.corpo.querySelectorAll('[data-ext-revogar]').forEach(b =>
@@ -3289,6 +3311,15 @@
     window.CortexPasta = {
         abrirPortal: function () { abrirPortal(); },
         acessoExterno: async function () { await acessoExterno(); },
+        // QR que vai impresso no laudo. Quem escaneia se cadastra e pede
+        // acesso a ESTE prontuário; a liberação continua sendo nossa.
+        qrProntuario: async function () {
+            if (!window.CortexQR) {
+                window.CortexUI.toast('Módulo do QR não carregou. Recarregue a página.', 'danger');
+                return;
+            }
+            await window.CortexQR.abrir(pacienteId, paciente?.nome_completo || '');
+        },
         // Baixa a foto no tamanho em que está guardada (512 px, recortada).
         // Mesmo padrão do download do laudo: link assinado de 60 s com o
         // nome do arquivo já definido.

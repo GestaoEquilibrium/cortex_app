@@ -1,0 +1,106 @@
+/* ============================================================================
+   QR DO PRONTUÁRIO — janela dentro do CORTEX
+   ============================================================================ */
+
+/* Atalho para o QR dentro da janela "Acesso externo". */
+.ext-qr-atalho {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 14px; padding: 12px 14px;
+    border: 1px dashed #C7D7F5; border-radius: 12px; background: #F6F9FF;
+    font-size: 13px;
+}
+.ext-qr-atalho strong { font-size: 13.5px; color: #0c1f3f; }
+
+/* Topo da aba de laudos: o botão do QR fica ao lado do "Enviar laudo". */
+.laudo-topo-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.qrp-explica {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #F6F9FF;
+    border: 1px solid #C7D7F5;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #33518A;
+}
+
+.qrp-caixa {
+    margin: 18px auto 0;
+    max-width: 300px;
+    padding: 18px 18px 14px;
+    background: #fff;
+    border: 1px solid var(--color-border, #E3E9F2);
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(12, 31, 63, .06);
+}
+
+.qrp-canvas {
+    width: 100%;
+    max-width: 240px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    image-rendering: pixelated;   /* QR não pode sair borrado */
+}
+
+.qrp-legenda { margin-top: 10px; }
+.qrp-legenda-tit {
+    font-size: 11px; font-weight: 800; letter-spacing: .08em;
+    color: #0c1f3f;
+}
+.qrp-legenda-sub {
+    font-size: 11px; color: #5B6B85; margin-top: 3px; line-height: 1.45;
+}
+
+.qrp-falha {
+    padding: 16px; font-size: 13px; line-height: 1.6; color: #B91C1C;
+}
+
+.qrp-link {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 16px; padding: 10px 12px;
+    background: #F8FAFC; border: 1px solid var(--color-border, #E3E9F2);
+    border-radius: 10px;
+    font-size: 12px; color: #475569;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    word-break: break-all;
+}
+.qrp-link > span { flex: 1; }
+
+.qrp-mini {
+    flex: 0 0 auto;
+    padding: 5px 11px; border-radius: 8px;
+    border: 1px solid var(--color-border, #E3E9F2); background: #fff;
+    font-family: inherit; font-size: 11.5px; font-weight: 600; color: #2F6FED;
+    cursor: pointer;
+}
+.qrp-mini:hover { background: #F1F5FD; }
+
+.qrp-acoes {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 16px;
+}
+.qrp-acoes .btn { flex: 1 1 auto; }
+
+.qrp-avancado {
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px solid var(--color-border, #E3E9F2);
+}
+.qrp-avancado summary {
+    font-size: 12.5px; font-weight: 600; color: #64748B;
+    cursor: pointer; list-style: none;
+}
+.qrp-avancado summary::-webkit-details-marker { display: none; }
+.qrp-avancado summary::before { content: '⚙ '; }
+.qrp-avancado p {
+    margin: 10px 0 12px;
+    font-size: 12.5px; line-height: 1.6; color: #64748B;
+}
+.qrp-perigo { color: var(--color-danger-text, #B91C1C) !important; }

@@ -12,7 +12,11 @@
 //
 // Esses profissionais não entram em `profissionais`, então não conseguem
 // entrar no CORTEX: o auth_guard exige uma linha naquela tabela e desconecta
-// quem não tiver. Eles usarão uma área separada (etapa 2).
+// quem não tiver. Eles usam a área separada em /e/.
+//
+// sprint_qr_externo: ganhou a aba "Pendentes", que é a caixa de entrada de
+// quem chegou pelo QR do laudo — cadastro para autorizar e pedido de
+// prontuário para liberar. Nada é liberado sozinho.
 // ============================================================================
 
 window.CortexExternosAdmin = (function () {
@@ -26,7 +30,10 @@ window.CortexExternosAdmin = (function () {
         laudos:     'Laudos'
     };
 
-    const state = { clinicas: [], profs: [], acessos: [], aba: 'clinicas' };
+    const state = { clinicas: [], profs: [], acessos: [], solicitacoes: [], aba: 'pendentes' };
+
+    // Quem se autocadastrou e ainda não foi autorizado.
+    const pendentesCadastro = () => state.profs.filter(p => p.situacao === 'pendente');
 
     const c = () => window.cortexClient;
     const esc = (t) => { const d = document.createElement('div'); d.textContent = t ?? ''; return d.innerHTML; };
@@ -47,18 +54,22 @@ window.CortexExternosAdmin = (function () {
 
     async function carregar() {
         try {
-            const [cl, pr, ac] = await Promise.all([
+            const [cl, pr, ac, so] = await Promise.all([
                 c().from('clinicas_externas').select('*').order('nome'),
                 c().from('usuarios_externos')
                    .select('*, clinica:clinica_externa_id(nome)').order('nome_completo'),
                 c().from('acessos_externos')
                    .select('*, externo:usuario_externo_id(nome_completo, conselho, registro), paciente:paciente_id(nome_completo)')
-                   .eq('ativo', true).order('concedido_em', { ascending: false })
+                   .eq('ativo', true).order('concedido_em', { ascending: false }),
+                c().from('solicitacoes_acesso_externo')
+                   .select('*, externo:usuario_externo_id(nome_completo, conselho, registro, email, situacao, clinica_nome_informado), paciente:paciente_id(nome_completo)')
+                   .eq('situacao', 'pendente').order('solicitado_em', { ascending: false })
             ]);
             if (cl.error) throw cl.error;
             state.clinicas = cl.data || [];
             state.profs = pr.data || [];
             state.acessos = ac.data || [];
+            state.solicitacoes = so.data || [];
         } catch (err) {
             console.error('[externos] carregar:', err);
             toast('Erro ao carregar: ' + (err.message || ''), 'danger');
@@ -70,6 +81,7 @@ window.CortexExternosAdmin = (function () {
     function render() {
         const ativos = state.acessos.filter(a => diasRestantes(a.expira_em) > 0).length;
         const vencidos = state.acessos.length - ativos;
+        const aguardando = pendentesCadastro().length + state.solicitacoes.length;
 
         return `
             <div class="ext-intro">
@@ -86,9 +98,13 @@ window.CortexExternosAdmin = (function () {
                 <div class="ext-num"><strong>${state.profs.filter(x => x.ativo).length}</strong> profissionais</div>
                 <div class="ext-num"><strong>${ativos}</strong> acessos ativos</div>
                 ${vencidos ? `<div class="ext-num alerta"><strong>${vencidos}</strong> vencidos</div>` : ''}
+                ${aguardando ? `<div class="ext-num aguardando"><strong>${aguardando}</strong> aguardando você</div>` : ''}
             </div>
 
             <div class="ext-abas">
+                <button class="ext-aba ${state.aba === 'pendentes' ? 'ativa' : ''}" data-eaba="pendentes">
+                    Pendentes${aguardando ? ` <span class="ext-badge">${aguardando}</span>` : ''}
+                </button>
                 <button class="ext-aba ${state.aba === 'clinicas' ? 'ativa' : ''}" data-eaba="clinicas">Clínicas</button>
                 <button class="ext-aba ${state.aba === 'profs' ? 'ativa' : ''}" data-eaba="profs">Profissionais</button>
                 <button class="ext-aba ${state.aba === 'acessos' ? 'ativa' : ''}" data-eaba="acessos">Pacientes liberados</button>
@@ -98,9 +114,94 @@ window.CortexExternosAdmin = (function () {
     }
 
     function painel() {
-        if (state.aba === 'clinicas') return painelClinicas();
-        if (state.aba === 'profs')    return painelProfs();
+        if (state.aba === 'pendentes') return painelPendentes();
+        if (state.aba === 'clinicas')  return painelClinicas();
+        if (state.aba === 'profs')     return painelProfs();
         return painelAcessos();
+    }
+
+    // ── Pendentes: a caixa de entrada do QR ─────────────────────────────────
+    // Duas filas: quem quer entrar na plataforma e quem quer um prontuário.
+    // São coisas diferentes: a primeira é "confio nessa pessoa", a segunda é
+    // "essa pessoa realmente acompanha esse paciente".
+
+    function painelPendentes() {
+        const cads = pendentesCadastro();
+        const sols = state.solicitacoes;
+
+        if (!cads.length && !sols.length) {
+            return `
+                <div class="ext-vazio">
+                    Nada aguardando. Quando alguém escanear o QR de um laudo e se
+                    cadastrar, o pedido aparece aqui.
+                </div>
+                <p class="ext-dica">
+                    O QR fica na pasta do paciente, na aba <strong>Laudo</strong> →
+                    “QR do prontuário”. Baixe o PNG e cole no laudo antes de gerar o PDF.
+                </p>`;
+        }
+
+        return `
+            ${cads.length ? `
+            <div class="ext-fila">
+                <h4 class="ext-fila-tit">Cadastros aguardando autorização
+                    <span class="ext-badge">${cads.length}</span></h4>
+                <p class="ext-dica">
+                    Confirme o registro no conselho antes de autorizar. Autorizar só dá
+                    acesso à área externa — não libera nenhum paciente.
+                </p>
+                ${cads.map(p => `
+                    <div class="ext-ficha-pend">
+                        <div class="ext-ficha-dados">
+                            <strong>${esc(p.nome_completo)}</strong>
+                            <div class="ext-sub">
+                                ${esc([p.conselho, p.registro].filter(Boolean).join(' ') || 'sem registro informado')}
+                                ${p.especialidade ? ' · ' + esc(p.especialidade) : ''}
+                            </div>
+                            <div class="ext-sub">
+                                ${esc(p.clinica_nome_informado || p.clinica?.nome || 'clínica não informada')}
+                            </div>
+                            <div class="ext-sub">${esc(p.email)}${p.telefone ? ' · ' + esc(p.telefone) : ''}</div>
+                            <div class="ext-sub">pedido em ${data(p.solicitado_em || p.created_at)}</div>
+                        </div>
+                        <div class="ext-ficha-acoes">
+                            <button class="ext-mini ok" data-aprova-cad="${p.id}">Autorizar</button>
+                            <button class="ext-mini perigo" data-recusa-cad="${p.id}">Recusar</button>
+                        </div>
+                    </div>`).join('')}
+            </div>` : ''}
+
+            ${sols.length ? `
+            <div class="ext-fila">
+                <h4 class="ext-fila-tit">Pedidos de prontuário
+                    <span class="ext-badge">${sols.length}</span></h4>
+                <p class="ext-dica">
+                    Liberar aqui é o mesmo que liberar pela pasta do paciente: você
+                    escolhe o que ele vê e por quanto tempo.
+                </p>
+                ${sols.map(s => {
+                    const esperando = s.externo?.situacao === 'pendente';
+                    return `
+                    <div class="ext-ficha-pend">
+                        <div class="ext-ficha-dados">
+                            <strong>${esc(s.paciente?.nome_completo || '—')}</strong>
+                            <div class="ext-sub">
+                                pedido por ${esc(s.externo?.nome_completo || '—')}
+                                ${esc([s.externo?.conselho, s.externo?.registro].filter(Boolean).join(' '))}
+                            </div>
+                            ${s.mensagem ? `<div class="ext-msg">“${esc(s.mensagem)}”</div>` : ''}
+                            <div class="ext-sub">em ${data(s.solicitado_em)}</div>
+                            ${esperando ? `<div class="ext-sub alerta">
+                                O cadastro dele ainda não foi autorizado — autorize primeiro, na fila acima.
+                            </div>` : ''}
+                        </div>
+                        <div class="ext-ficha-acoes">
+                            <button class="ext-mini ok" data-aprova-sol="${s.id}" ${esperando ? 'disabled' : ''}>Liberar</button>
+                            <button class="ext-mini perigo" data-recusa-sol="${s.id}">Recusar</button>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>` : ''}`;
     }
 
     function painelClinicas() {
@@ -152,7 +253,12 @@ window.CortexExternosAdmin = (function () {
                                 <td>${esc(p.clinica?.nome || '—')}</td>
                                 <td>${esc(p.email)}</td>
                                 <td>${n ? `${n} paciente(s)` : '—'}</td>
-                                <td>${p.ativo ? '<span class="ext-selo ok">Ativo</span>' : '<span class="ext-selo off">Inativo</span>'}</td>
+                                <td>${
+                                    p.situacao === 'pendente' ? '<span class="ext-selo aguardando">Aguardando</span>'
+                                  : p.situacao === 'recusado' ? '<span class="ext-selo off">Recusado</span>'
+                                  : p.ativo ? '<span class="ext-selo ok">Ativo</span>'
+                                  : '<span class="ext-selo off">Inativo</span>'
+                                }</td>
                                 <td><button class="ext-mini" data-edit-prof="${p.id}">Editar</button></td>
                             </tr>`;
                         }).join('')}
@@ -216,6 +322,240 @@ window.CortexExternosAdmin = (function () {
             b.addEventListener('click', () => fichaProf(state.profs.find(x => x.id === b.dataset.editProf))));
         document.querySelectorAll('[data-revogar]').forEach(b =>
             b.addEventListener('click', () => revogar(b.dataset.revogar)));
+
+        document.querySelectorAll('[data-aprova-cad]').forEach(b =>
+            b.addEventListener('click', () => aprovarCadastro(b.dataset.aprovaCad)));
+        document.querySelectorAll('[data-recusa-cad]').forEach(b =>
+            b.addEventListener('click', () => recusarCadastro(b.dataset.recusaCad)));
+        document.querySelectorAll('[data-aprova-sol]').forEach(b =>
+            b.addEventListener('click', () => liberarSolicitacao(b.dataset.aprovaSol)));
+        document.querySelectorAll('[data-recusa-sol]').forEach(b =>
+            b.addEventListener('click', () => recusarSolicitacao(b.dataset.recusaSol)));
+    }
+
+    // ── Autorizações ────────────────────────────────────────────────────────
+
+    async function recarregar() {
+        await carregar();
+        repintar();
+    }
+
+    // Autorizar o cadastro: ele passa a conseguir entrar na área externa.
+    // Se vinculou a uma clínica nossa, aproveita para amarrar o vínculo.
+    function aprovarCadastro(id) {
+        const p = state.profs.find(x => x.id === id);
+        if (!p) return;
+        const clinicasAtivas = state.clinicas.filter(x => x.ativo);
+
+        const j = window.CortexPop.abrir({
+            titulo: 'Autorizar este profissional?',
+            subtitulo: p.nome_completo,
+            tone: 'green', tamanho: 'sm', persistente: true,
+            html: `
+                <div class="ext-aviso">
+                    Ele passa a conseguir entrar na área externa. <strong>Nenhum paciente
+                    é liberado por isso</strong> — a liberação é o pedido de prontuário,
+                    na outra fila.
+                </div>
+                <div class="ext-campo">
+                    <label>Clínica informada por ele</label>
+                    <input value="${esc(p.clinica_nome_informado || '—')}" disabled>
+                </div>
+                ${clinicasAtivas.length ? `
+                <div class="ext-campo">
+                    <label>Vincular a uma clínica cadastrada (opcional)</label>
+                    <select id="ap-clinica">
+                        <option value="">— não vincular —</option>
+                        ${clinicasAtivas.map(cl =>
+                            `<option value="${cl.id}">${esc(cl.nome)}</option>`).join('')}
+                    </select>
+                </div>` : ''}`,
+            rodape: [
+                { label: 'Cancelar', classe: 'btn-secondary' },
+                { label: 'Autorizar', classe: 'btn-primary', fechar: false,
+                  onClick: async (jj) => {
+                    const cli = jj.corpo.querySelector('#ap-clinica')?.value || null;
+                    try {
+                        const { error } = await c().rpc('externo_aprovar_cadastro', {
+                            p_usuario_externo_id: id,
+                            p_clinica_externa_id: cli || null
+                        });
+                        if (error) throw error;
+                        if (window.CortexAudit) {
+                            window.CortexAudit.log('edicao', 'usuarios_externos', id, {
+                                detalhes: { operacao: 'aprovar_cadastro_externo', nome: p.nome_completo }
+                            });
+                        }
+                        jj.fecharJanela();
+                        toast('Profissional autorizado.', 'success');
+                        await recarregar();
+                        return true;
+                    } catch (err) {
+                        console.error('[externos] aprovar cadastro:', err);
+                        toast('Erro ao autorizar: ' + (err.message || ''), 'danger');
+                        return false;
+                    }
+                  }}
+            ]
+        });
+        return j;
+    }
+
+    function recusarCadastro(id) {
+        const p = state.profs.find(x => x.id === id);
+        if (!p) return;
+        window.CortexPop.abrir({
+            titulo: 'Recusar este cadastro?',
+            subtitulo: p.nome_completo,
+            tone: 'red', tamanho: 'sm', persistente: true,
+            html: `
+                <div class="ext-aviso">
+                    Ele deixa de conseguir entrar e os pedidos dele são encerrados.
+                    A sessão aberta cai na hora.
+                </div>
+                ${campo('Motivo (ele vê esta mensagem)', 'rc-motivo', '')}`,
+            rodape: [
+                { label: 'Cancelar', classe: 'btn-secondary' },
+                { label: 'Recusar', classe: 'btn-primary', fechar: false,
+                  onClick: async (jj) => {
+                    const motivo = jj.corpo.querySelector('#rc-motivo').value.trim() || null;
+                    try {
+                        const { error } = await c().rpc('externo_recusar_cadastro', {
+                            p_usuario_externo_id: id, p_motivo: motivo
+                        });
+                        if (error) throw error;
+                        if (window.CortexAudit) {
+                            window.CortexAudit.log('edicao', 'usuarios_externos', id, {
+                                detalhes: { operacao: 'recusar_cadastro_externo',
+                                            nome: p.nome_completo, motivo: motivo }
+                            });
+                        }
+                        jj.fecharJanela();
+                        toast('Cadastro recusado.', 'success');
+                        await recarregar();
+                        return true;
+                    } catch (err) {
+                        console.error('[externos] recusar cadastro:', err);
+                        toast('Erro ao recusar: ' + (err.message || ''), 'danger');
+                        return false;
+                    }
+                  }}
+            ]
+        });
+    }
+
+    // Liberar o prontuário: cria a mesma linha de acesso que a pasta cria.
+    function liberarSolicitacao(id) {
+        const s = state.solicitacoes.find(x => x.id === id);
+        if (!s) return;
+
+        window.CortexPop.abrir({
+            titulo: 'Liberar este prontuário?',
+            subtitulo: s.paciente?.nome_completo || '',
+            tone: 'blue', tamanho: 'md', persistente: true,
+            html: `
+                <div class="ext-aviso">
+                    <strong>${esc(s.externo?.nome_completo || '—')}</strong> passa a ver
+                    apenas este paciente e apenas o que você marcar, pelo prazo escolhido.
+                </div>
+                <div class="ext-campo">
+                    <label>O que ele poderá ver</label>
+                    <div class="ext-escopos">
+                        ${Object.entries(ESCOPO_LABEL).map(([v, l]) => `
+                            <label class="ext-check">
+                                <input type="checkbox" class="ls-escopo" value="${v}" checked> ${esc(l)}
+                            </label>`).join('')}
+                    </div>
+                </div>
+                <div class="ext-campo">
+                    <label>Prazo</label>
+                    <select id="ls-prazo">
+                        <option value="90" selected>90 dias</option>
+                        <option value="30">30 dias</option>
+                        <option value="180">180 dias</option>
+                        <option value="365">1 ano</option>
+                    </select>
+                </div>`,
+            rodape: [
+                { label: 'Cancelar', classe: 'btn-secondary' },
+                { label: 'Liberar acesso', classe: 'btn-primary', fechar: false,
+                  onClick: async (jj) => {
+                    const escopo = [...jj.corpo.querySelectorAll('.ls-escopo:checked')].map(x => x.value);
+                    if (!escopo.length) {
+                        toast('Marque pelo menos um item que ele poderá ver.', 'danger');
+                        return false;
+                    }
+                    const dias = parseInt(jj.corpo.querySelector('#ls-prazo').value, 10) || 90;
+                    try {
+                        const { error } = await c().rpc('externo_responder_solicitacao', {
+                            p_solicitacao_id: id, p_aprovar: true,
+                            p_escopo: escopo, p_dias: dias, p_motivo: null
+                        });
+                        if (error) throw error;
+                        if (window.CortexAudit) {
+                            window.CortexAudit.log('criacao', 'acessos_externos', null, {
+                                pacienteId: s.paciente_id,
+                                detalhes: { operacao: 'liberar_por_solicitacao',
+                                            profissional: s.externo?.nome_completo,
+                                            escopo: escopo, dias: dias }
+                            });
+                        }
+                        jj.fecharJanela();
+                        toast(`Acesso liberado por ${dias} dias.`, 'success');
+                        await recarregar();
+                        return true;
+                    } catch (err) {
+                        console.error('[externos] liberar solicitacao:', err);
+                        toast('Erro ao liberar: ' + (err.message || ''), 'danger');
+                        return false;
+                    }
+                  }}
+            ]
+        });
+    }
+
+    function recusarSolicitacao(id) {
+        const s = state.solicitacoes.find(x => x.id === id);
+        if (!s) return;
+        window.CortexPop.abrir({
+            titulo: 'Recusar este pedido?',
+            subtitulo: s.paciente?.nome_completo || '',
+            tone: 'red', tamanho: 'sm', persistente: true,
+            html: `
+                <div class="ext-aviso">
+                    O profissional continua com acesso à área externa, mas não verá
+                    este paciente. Ele pode pedir de novo depois.
+                </div>
+                ${campo('Motivo (opcional)', 'rs-motivo', '')}`,
+            rodape: [
+                { label: 'Cancelar', classe: 'btn-secondary' },
+                { label: 'Recusar', classe: 'btn-primary', fechar: false,
+                  onClick: async (jj) => {
+                    const motivo = jj.corpo.querySelector('#rs-motivo').value.trim() || null;
+                    try {
+                        const { error } = await c().rpc('externo_responder_solicitacao', {
+                            p_solicitacao_id: id, p_aprovar: false,
+                            p_escopo: null, p_dias: null, p_motivo: motivo
+                        });
+                        if (error) throw error;
+                        if (window.CortexAudit) {
+                            window.CortexAudit.log('edicao', 'solicitacoes_acesso_externo', id, {
+                                pacienteId: s.paciente_id,
+                                detalhes: { operacao: 'recusar_solicitacao_externa', motivo: motivo }
+                            });
+                        }
+                        jj.fecharJanela();
+                        toast('Pedido recusado.', 'success');
+                        await recarregar();
+                        return true;
+                    } catch (err) {
+                        console.error('[externos] recusar solicitacao:', err);
+                        toast('Erro ao recusar: ' + (err.message || ''), 'danger');
+                        return false;
+                    }
+                  }}
+            ]
+        });
     }
 
     function repintar() {

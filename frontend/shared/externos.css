@@ -102,3 +102,57 @@
     .ext-grid { grid-template-columns: 1fr; }
     .ext-abas { overflow-x: auto; }
 }
+
+/* ============================================================================
+   sprint_qr_externo — fila de pendentes (quem chegou pelo QR do laudo)
+   ============================================================================ */
+
+.ext-num.aguardando strong { color: #2F6FED; }
+
+.ext-badge {
+    display: inline-block; margin-left: 5px;
+    min-width: 18px; padding: 1px 6px; border-radius: 99px;
+    background: #2F6FED; color: #fff;
+    font-size: 10.5px; font-weight: 700; line-height: 16px; text-align: center;
+}
+
+.ext-selo.aguardando { background: #dbeafe; color: #1d4ed8; }
+
+.ext-mini.ok { color: #15803d; }
+.ext-mini.ok:hover { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.ext-mini:disabled { opacity: .45; cursor: default; }
+.ext-mini:disabled:hover { background: #f8fafc; color: inherit; border-color: var(--color-border, #e2e8f0); }
+
+.ext-sub.alerta { color: #b45309; font-weight: 600; }
+
+.ext-fila { margin-bottom: 26px; }
+.ext-fila-tit {
+    display: flex; align-items: center;
+    font-size: 14px; font-weight: 700; margin-bottom: 4px;
+    color: var(--color-text, #14213A);
+}
+
+.ext-ficha-pend {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    padding: 14px 16px; margin-bottom: 10px;
+    border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px;
+    background: #fff;
+}
+.ext-ficha-dados strong { font-size: 14.5px; font-weight: 650; }
+.ext-ficha-dados .ext-sub { display: block; margin-top: 2px; }
+
+.ext-ficha-acoes {
+    display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto;
+}
+
+.ext-msg {
+    margin: 8px 0 4px; padding: 8px 11px;
+    border-left: 3px solid #bfdbfe; background: #f8fafc; border-radius: 6px;
+    font-size: 12.5px; line-height: 1.55; color: #475569; font-style: italic;
+}
+
+@media (max-width: 700px) {
+    .ext-ficha-pend { flex-direction: column; }
+    .ext-ficha-acoes { flex-direction: row; width: 100%; }
+    .ext-ficha-acoes .ext-mini { flex: 1; }
+}

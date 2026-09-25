@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Acesso profissional — CORTEX</title>
+    <link rel="icon" type="image/svg+xml" href="/frontend/favicon.svg">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0; background: #EEF2F9; color: #0c1f3f;
+        }
+        a { color: #2F6FED; }
+    </style>
+</head>
+<body>
+    <p>Abrindo o acesso profissional... <a id="ea-manual" href="/frontend/externo/">continuar</a></p>
+    <script>
+        // Atalho curto para o QR impresso no laudo: /e/?t=TOKEN
+        // Quanto menor a URL, menos quadradinhos o QR tem e melhor ele
+        // escaneia depois de impresso.
+        //
+        // Caminho ABSOLUTO de propósito: o Cloudflare Pages serve este arquivo
+        // para URLs inexistentes, e um caminho relativo empilharia /e/e/e/...
+        (function () {
+            var t = new URLSearchParams(location.search).get('t') || '';
+            var destino = '/frontend/externo/' + (t ? '?t=' + encodeURIComponent(t) : '');
+            document.getElementById('ea-manual').setAttribute('href', destino);
+            location.replace(destino);
+        })();
+    </script>
+</body>
+</html>

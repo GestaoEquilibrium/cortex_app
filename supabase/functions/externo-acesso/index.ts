@@ -13,6 +13,8 @@
 //   login        { email, senha }                 → devolve sessão opaca
 //   painel       { sessao, token? }               → situação + liberados
 //   solicitar    { sessao, token, mensagem? }     → pede aquele prontuário
+//   prontuario   { sessao, paciente_id }          → evoluções e laudos liberados
+//   laudo        { sessao, laudo_id }             → URL assinada de 2 min
 //   logout       { sessao }
 //
 // verify_jwt = false no config.toml: a página é pública.
@@ -51,6 +53,30 @@ async function rpc(nome: string, args: Record<string, unknown>) {
         throw new Error(`rpc_${nome}_${resp.status}`);
     }
     return texto ? JSON.parse(texto) : null;
+}
+
+// URL assinada e curta para o PDF do laudo. O externo nunca recebe a anon key
+// nem fala com o storage: ele recebe um link que morre em 2 minutos.
+async function assinarArquivo(bucket: string, path: string, segundos = 120) {
+    const resp = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/sign/${bucket}/${path}`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                apikey: SERVICE_KEY,
+                Authorization: `Bearer ${SERVICE_KEY}`,
+            },
+            body: JSON.stringify({ expiresIn: segundos }),
+        },
+    );
+    const texto = await resp.text();
+    if (!resp.ok) {
+        console.error(`[externo-acesso] sign ${resp.status}: ${texto}`);
+        throw new Error("falha_assinar_arquivo");
+    }
+    const { signedURL } = JSON.parse(texto);
+    return `${SUPABASE_URL}/storage/v1${signedURL}`;
 }
 
 const str = (v: unknown, max = 200): string | null => {
@@ -135,6 +161,34 @@ Deno.serve(async (req) => {
                     p_ip: ip,
                     p_ua: ua,
                 }));
+            }
+
+            case "prontuario": {
+                const sessao = str(corpo.sessao, 120);
+                const paciente = str(corpo.paciente_id, 64);
+                if (!sessao) return json({ ok: false, erro: "sessao_invalida" });
+                if (!paciente) return json({ ok: false, erro: "paciente_ausente" }, 400);
+                return json(await rpc("externo_prontuario", {
+                    p_sessao: sessao,
+                    p_paciente_id: paciente,
+                }));
+            }
+
+            case "laudo": {
+                const sessao = str(corpo.sessao, 120);
+                const laudo = str(corpo.laudo_id, 64);
+                if (!sessao) return json({ ok: false, erro: "sessao_invalida" });
+                if (!laudo) return json({ ok: false, erro: "laudo_ausente" }, 400);
+
+                const r = await rpc("externo_laudo_arquivo", {
+                    p_sessao: sessao,
+                    p_laudo_id: laudo,
+                });
+                if (!r?.ok) return json(r);
+                if (!r.path) return json({ ok: false, erro: "arquivo_ausente" });
+
+                const url = await assinarArquivo(r.bucket, r.path);
+                return json({ ok: true, url, nome: r.nome, assinado: r.assinado });
             }
 
             case "logout": {

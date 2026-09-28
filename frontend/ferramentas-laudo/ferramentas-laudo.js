@@ -4,7 +4,13 @@
 // Parte A: tabelas prontas de referência (Classificação de QI) — copiar imagem.
 // Parte B: montador de tabela livre — colunas e linhas definidas pelo usuário;
 //          cor por linha automática pela classificação (com troca manual).
+// Parte C: blocos de laudo — o convite de avaliação no Google, com QR.
 // Estética: sólida-suave (cola bem em documento). Copia como imagem via CortexCopy.
+//
+// O bloco do Google usa shared/bloco_laudo.js, o mesmo motor do QR do
+// prontuário: HTML montado na largura de impressão, virado imagem pelo
+// html2canvas e copiado para a área de transferência. Aqui o link é fixo, sem
+// token e sem banco — é a mesma página de avaliação para todos os pacientes.
 // ============================================================================
 
 (function () {
@@ -199,6 +205,116 @@
         }));
     }
 
+    // ════════════════════════════════════════════════════════════════════════
+    // PARTE C — Blocos de laudo: convite de avaliação no Google
+    // ════════════════════════════════════════════════════════════════════════
+
+    // Página de avaliação do Grupo Equilibrium no Google. Os utm_* são o que
+    // faz a avaliação aparecer como vinda do QR no painel do Google Business.
+    const LINK_GOOGLE = 'https://g.page/r/CVq0oQK8oq7HEBM/review' +
+                        '?utm_source=gbp&utm_medium=reviews&utm_campaign=qr';
+
+    const TEXTO_GOOGLE =
+        'Ficamos muito felizes em realizar essa Avaliação Neuropsicológica, esperamos ' +
+        'que esse laudo possa auxiliar em sua jornada. Você poderia nos ajudar com uma ' +
+        'breve avaliação no Google? É rapidinho, leva menos de um minuto. Sua opinião é ' +
+        'fundamental para que outras pessoas também encontrem o suporte de que precisam!';
+
+    const B = () => window.CortexBlocoLaudo;
+
+    function blocoGoogleHtml() {
+        return `
+            <div class="cbl-barra"></div>
+            <div class="cbl-esq">
+                <div class="cbl-qr"><canvas class="cbl-canvas" id="fl-canvas-google"></canvas></div>
+                <div class="cbl-escaneie">Escaneie aqui</div>
+            </div>
+            <div class="cbl-dir">
+                <div class="cbl-selos">
+                    <span class="cbl-estrelas">★★★★★</span>
+                    <span class="cbl-selo ambar">AVALIE NO GOOGLE</span>
+                </div>
+                <div class="cbl-tit conversa">Sua opinião faz a diferença!</div>
+                <p class="cbl-texto">${esc(TEXTO_GOOGLE)}</p>
+            </div>`;
+    }
+
+    // Monta o bloco na largura de impressão, fora da vista, e entrega pronto.
+    function comBlocoGoogle(trabalho) {
+        return B().comPalco(blocoGoogleHtml(), { classe: 'cbl-bloco' },
+            async (bloco, palco) => {
+                B().desenharQr(palco.querySelector('.cbl-canvas'), LINK_GOOGLE,
+                               B().ladoQrParaEscala());
+                return await trabalho(bloco);
+            });
+    }
+
+    function renderSecaoBlocos() {
+        return `
+            <h2 class="fl-h2">Avaliação no Google</h2>
+            <p class="fl-nota">
+                Bloco para o fim do laudo. Copie a imagem e cole no documento —
+                o QR abre direto a página de avaliação da clínica.
+            </p>
+
+            <div class="fl-bloco-moldura">
+                <div class="cbl-previa" id="fl-previa-google">
+                    <div class="cbl-previa-palco" id="fl-palco-google">
+                        <div class="cbl-bloco" style="width:${B().LARGURA_PADRAO}px; font-size:${B().ESCALA_PADRAO}px">${blocoGoogleHtml()}</div>
+                    </div>
+                </div>
+
+                <div class="cbl-acoes">
+                    <button class="btn btn-primary btn-sm" id="fl-copiar-google">
+                        📋 Copiar imagem para o laudo
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="fl-imprimir-google">🖨️ Imprimir</button>
+                </div>
+                <p class="cbl-dica">
+                    Copie e cole no laudo com <strong>Ctrl+V</strong>.
+                    <button class="cbl-link-acao" id="fl-baixar-google">Ou baixe o arquivo PNG</button>
+                </p>
+            </div>`;
+    }
+
+    function ligarSecaoBlocos() {
+        if (!B()) {
+            const m = document.querySelector('.fl-bloco-moldura');
+            if (m) m.innerHTML = '<div class="cbl-falha">O módulo dos blocos de laudo não ' +
+                                 'carregou. Recarregue a página.</div>';
+            return;
+        }
+
+        const moldura = document.getElementById('fl-previa-google');
+        const palco = document.getElementById('fl-palco-google');
+
+        try {
+            B().desenharQr(document.getElementById('fl-canvas-google'), LINK_GOOGLE,
+                           B().ladoQrParaEscala());
+            B().ajustarPrevia(moldura, palco);
+            window.addEventListener('resize', () => B().ajustarPrevia(moldura, palco));
+        } catch (err) {
+            console.error('[fl] QR do Google:', err);
+            if (moldura) moldura.innerHTML = '<div class="cbl-falha">Não foi possível ' +
+                'desenhar o QR nesta tela.</div>';
+        }
+
+        const arquivo = 'bloco_avaliacao_google.png';
+
+        const copiar = document.getElementById('fl-copiar-google');
+        if (copiar) copiar.onclick = (ev) => comBlocoGoogle((bloco) =>
+            B().copiar(bloco, arquivo, ev.currentTarget, '📋 Copiar imagem para o laudo'));
+
+        const baixar = document.getElementById('fl-baixar-google');
+        if (baixar) baixar.onclick = (ev) => comBlocoGoogle((bloco) =>
+            B().baixar(bloco, arquivo, ev.currentTarget, 'Ou baixe o arquivo PNG'));
+
+        const imprimir = document.getElementById('fl-imprimir-google');
+        if (imprimir) imprimir.onclick = (ev) => comBlocoGoogle((bloco) =>
+            B().imprimir(bloco, 'Avaliação no Google — Grupo Equilibrium',
+                         ev.currentTarget, '🖨️ Imprimir'));
+    }
+
     function atualizarPreview() {
         document.getElementById('fl-preview-wrap').innerHTML = renderMontadorPreview();
         if (window.CortexCopy?.aplicar) { try { window.CortexCopy.aplicar(); } catch(e){} }
@@ -214,6 +330,7 @@
             <div class="fl-tabs">
                 <button class="fl-tab ativa" data-tab="prontas">Tabelas prontas</button>
                 <button class="fl-tab" data-tab="montar">Montar tabela</button>
+                <button class="fl-tab" data-tab="blocos">Blocos do laudo</button>
             </div>
 
             <section id="fl-sec-prontas" class="fl-sec">
@@ -231,6 +348,10 @@
                         <div id="fl-preview-wrap"></div>
                     </div>
                 </div>
+            </section>
+
+            <section id="fl-sec-blocos" class="fl-sec" style="display:none;">
+                ${renderSecaoBlocos()}
             </section>`;
 
         document.querySelectorAll('.fl-tab').forEach(t => t.addEventListener('click', e => {
@@ -239,8 +360,17 @@
             const tab = e.target.dataset.tab;
             document.getElementById('fl-sec-prontas').style.display = tab==='prontas'?'':'none';
             document.getElementById('fl-sec-montar').style.display  = tab==='montar'?'':'none';
+            document.getElementById('fl-sec-blocos').style.display  = tab==='blocos'?'':'none';
             if (tab==='montar') reRenderMontador();
+            // A prévia é encolhida por transform e precisa da largura real da
+            // moldura: enquanto a seção está escondida, ela mede zero.
+            if (tab==='blocos') {
+                B() && B().ajustarPrevia(document.getElementById('fl-previa-google'),
+                                         document.getElementById('fl-palco-google'));
+            }
         }));
+
+        ligarSecaoBlocos();
 
         if (window.CortexCopy?.aplicar) { try { window.CortexCopy.aplicar(); } catch(e){} }
     }

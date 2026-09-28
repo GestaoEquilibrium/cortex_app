@@ -1,7 +1,7 @@
 // ============================================================================
 // CORTEX — qr_prontuario.js
 // ----------------------------------------------------------------------------
-// O QR que vai impresso no laudo.
+// O bloco de QR que vai impresso no laudo.
 //
 // Quem escaneia cai em /e/?t=TOKEN: se não tem conta, se cadastra e o pedido
 // fica esperando a autorização do admin; se já tem, pede (ou já vê) aquele
@@ -11,8 +11,17 @@
 // Trocar o código invalida os laudos já impressos. É de propósito: é o botão
 // de "esse papel vazou".
 //
+// O bloco é montado em HTML e convertido em imagem com html2canvas, não
+// desenhado no canvas à mão. Texto justificado, fonte Inter e cantos
+// arredondados saem certos assim; no canvas sairiam à força e feios.
+//
+// A escala inteira do bloco sai do `font-size` do container: tudo por dentro
+// está em `em`. Por isso a prévia na tela e o PNG de impressão são o mesmo
+// HTML com um número diferente, sem duas listas de tamanhos para manter.
+//
 // Depende de shared/vendor/qrcode.js (Kazuhiko Arase, MIT), servido junto com
-// o app — nada de CDN aqui, porque isso tem que funcionar na hora de imprimir.
+// o app — nada de CDN para o QR, porque isso tem que funcionar na hora de
+// imprimir.
 // ============================================================================
 
 window.CortexQR = (function () {
@@ -20,9 +29,24 @@ window.CortexQR = (function () {
 
     const BASE_PUBLICA = 'https://cortexneuro.com.br';
 
-    // Tamanho do desenho: o PNG sai grande para colar no Word sem serrilhar.
-    const PNG_LADO   = 1000;   // px do quadrado do QR
-    const PNG_MARGEM = 4;      // módulos de borda branca (a norma pede 4)
+    const QR_MARGEM = 4;    // módulos de borda branca (a norma pede 4)
+
+    // Escala do bloco. 17px reproduz, num bloco de 16 cm (largura útil de um
+    // A4 com margem de 2,5 cm), um QR de ~2,8 cm — abaixo de ~2,5 cm a leitura
+    // do papel começa a falhar.
+    const ESCALA_EXPORT = 17;
+    const LARGURA_EXPORT = 1400;   // px; com scale 2 o PNG sai com 2800
+
+    const TEXTO_LEGAL =
+        'Documento de natureza técnico-científica emitido sob responsabilidade do(a) ' +
+        'profissional signatário(a), nos termos da Resolução CFP nº 06/2019. Destina-se ' +
+        'exclusivamente à(s) finalidade(s) e ao(à) solicitante indicados neste laudo, sendo ' +
+        'vedada sua utilização para fins diversos daqueles a que se propõe. A reprodução ' +
+        'parcial, a divulgação, a publicação ou o compartilhamento deste conteúdo com ' +
+        'terceiros não autorizados são expressamente vedados, nos termos da Lei nº ' +
+        '13.709/2018 (LGPD) e do sigilo profissional previsto no Código de Ética ' +
+        'Profissional do Psicólogo. O acesso por profissional externo somente será ' +
+        'concedido mediante autorização expressa do responsável técnico.';
 
     const toast = (m, t) => window.CortexUI?.toast ? window.CortexUI.toast(m, t) : null;
 
@@ -36,28 +60,31 @@ window.CortexQR = (function () {
         return `${BASE_PUBLICA}/e/?t=${encodeURIComponent(token)}`;
     }
 
-    // ── Desenho ─────────────────────────────────────────────────────────────
+    // ── QR ──────────────────────────────────────────────────────────────────
 
     function matriz(texto) {
         if (typeof window.qrcode !== 'function') {
             throw new Error('Biblioteca de QR não carregada (shared/vendor/qrcode.js).');
         }
-        // 0 = escolhe a menor versão que couber; 'M' = 15% de correção de erro,
-        // que é o equilíbrio certo para papel impresso.
+        // 0 = menor versão que couber; 'M' = 15% de correção de erro, que é o
+        // equilíbrio certo para papel.
         const q = window.qrcode(0, 'M');
         q.addData(texto);
         q.make();
         return q;
     }
 
-    function desenhar(canvas, texto, lado) {
+    // Desenha num canvas com passo inteiro de pixel: meio pixel por módulo é
+    // o que faz QR impresso falhar.
+    function desenhar(canvas, texto, ladoAlvo) {
         const q = matriz(texto);
         const n = q.getModuleCount();
-        const total = n + PNG_MARGEM * 2;
-        // Passo inteiro: meio pixel por módulo é o que faz QR impresso falhar.
-        const passo = Math.max(1, Math.floor(lado / total));
+        const total = n + QR_MARGEM * 2;
+        const passo = Math.max(1, Math.floor(ladoAlvo / total));
         const px = passo * total;
 
+        // Só a resolução interna. O tamanho na tela/no papel é do CSS, em `em`:
+        // se mexer aqui, o bloco inteiro desanda.
         canvas.width = px;
         canvas.height = px;
 
@@ -68,38 +95,89 @@ window.CortexQR = (function () {
         for (let r = 0; r < n; r++) {
             for (let c = 0; c < n; c++) {
                 if (q.isDark(r, c)) {
-                    ctx.fillRect((c + PNG_MARGEM) * passo, (r + PNG_MARGEM) * passo, passo, passo);
+                    ctx.fillRect((c + QR_MARGEM) * passo, (r + QR_MARGEM) * passo, passo, passo);
                 }
             }
         }
         return canvas;
     }
 
-    // PNG com legenda embaixo, do jeito que vai para dentro do laudo.
-    function canvasParaLaudo(texto, nomePaciente) {
-        const qrCanvas = desenhar(document.createElement('canvas'), texto, PNG_LADO);
-        const lado = qrCanvas.width;
-        const rodape = Math.round(lado * 0.20);
+    // ── O bloco ─────────────────────────────────────────────────────────────
+    // Sem truque de borda: a barra azul da esquerda é um elemento de verdade e
+    // a divisória é uma borda simples. html2canvas erra borda de larguras
+    // diferentes com canto arredondado; assim não tem o que errar.
 
-        const out = document.createElement('canvas');
-        out.width = lado;
-        out.height = lado + rodape;
+    function blocoHtml() {
+        return `
+            <div class="qrp-bloco-barra"></div>
+            <div class="qrp-bloco-esq">
+                <div class="qrp-bloco-qr"><canvas class="qrp-bloco-canvas"></canvas></div>
+                <div class="qrp-bloco-escaneie">Escaneie aqui</div>
+            </div>
+            <div class="qrp-bloco-dir">
+                <div class="qrp-bloco-selos">
+                    <span class="qrp-selo">CFP 06/2019</span>
+                    <span class="qrp-selo">LGPD</span>
+                    <span class="qrp-selo verde">ACESSO AUDITADO</span>
+                </div>
+                <div class="qrp-bloco-tit">ACOMPANHE ESTE PACIENTE</div>
+                <p class="qrp-bloco-legal">${esc(TEXTO_LEGAL)}</p>
+            </div>`;
+    }
 
-        const ctx = out.getContext('2d');
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, out.width, out.height);
-        ctx.drawImage(qrCanvas, 0, 0);
+    // Monta o bloco pronto para virar imagem, fora da vista.
+    function montarParaExport(link) {
+        const palco = document.createElement('div');
+        palco.className = 'qrp-palco';
+        palco.innerHTML = `<div class="qrp-bloco" style="width:${LARGURA_EXPORT}px; font-size:${ESCALA_EXPORT}px">${blocoHtml()}</div>`;
+        document.body.appendChild(palco);
 
-        ctx.fillStyle = '#0c1f3f';
-        ctx.textAlign = 'center';
-        ctx.font = `700 ${Math.round(lado * 0.050)}px Inter, Arial, sans-serif`;
-        ctx.fillText('ACOMPANHE ESTE PACIENTE', lado / 2, lado + rodape * 0.36);
-        ctx.fillStyle = '#5B6B85';
-        ctx.font = `400 ${Math.round(lado * 0.040)}px Inter, Arial, sans-serif`;
-        ctx.fillText('Profissional de saúde: escaneie para', lado / 2, lado + rodape * 0.64);
-        ctx.fillText('solicitar acesso ao prontuário', lado / 2, lado + rodape * 0.88);
+        const bloco = palco.querySelector('.qrp-bloco');
+        // Lado do QR em px a partir do em, para o canvas nascer na resolução
+        // em que vai ser usado em vez de ser esticado.
+        const ladoQr = Math.round(14.4 * ESCALA_EXPORT) * 2;
+        desenhar(palco.querySelector('.qrp-bloco-canvas'), link, ladoQr);
 
-        return out;
+        return { palco, bloco };
+    }
+
+    // Encolhe a prévia para caber na janela, mantendo a proporção do impresso.
+    function ajustarPrevia(corpo) {
+        const moldura = corpo.querySelector('.qrp-previa');
+        const palco = corpo.querySelector('#qrp-palco-previa');
+        const bloco = palco && palco.querySelector('.qrp-bloco');
+        if (!moldura || !palco || !bloco) return;
+
+        const disponivel = moldura.clientWidth - 2;   // respira dentro da borda
+        if (disponivel <= 0) return;
+
+        const escala = Math.min(1, disponivel / LARGURA_EXPORT);
+        palco.style.transform = `scale(${escala})`;
+        // O transform não encolhe a caixa: a altura tem que ser dada na mão,
+        // senão sobra um buraco embaixo da prévia.
+        moldura.style.height = Math.ceil(bloco.offsetHeight * escala) + 'px';
+    }
+
+    async function blocoParaCanvas(link) {
+        if (typeof window.html2canvas !== 'function') {
+            throw new Error('html2canvas não carregou nesta página.');
+        }
+        const { palco, bloco } = montarParaExport(link);
+        try {
+            // Duas voltas de fonte: sem isso o html2canvas às vezes fotografa
+            // antes da Inter entrar e o PNG sai com a fonte de fallback.
+            if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            return await window.html2canvas(bloco, {
+                scale: 2,
+                backgroundColor: '#FFFFFF',
+                useCORS: true,
+                logging: false
+            });
+        } finally {
+            palco.remove();
+        }
     }
 
     // ── Banco ───────────────────────────────────────────────────────────────
@@ -140,50 +218,61 @@ window.CortexQR = (function () {
             subtitulo: nomePaciente || '',
             icone: '🔗',
             tone: 'blue',
-            tamanho: 'md',
+            tamanho: 'lg',
             html: `
                 <div class="qrp-explica">
-                    Cole este QR no laudo. O profissional de fora escaneia, se cadastra e
-                    pede acesso ao prontuário deste paciente — e <strong>nada aparece para
-                    ele antes de você autorizar</strong> em Configurações → Acesso externo.
+                    Este é o bloco que vai no laudo. Baixe o PNG e cole no documento antes
+                    de gerar o PDF. Quem escanear se cadastra e pede acesso ao prontuário
+                    deste paciente — e <strong>nada aparece para ele antes de você
+                    autorizar</strong> em Configurações → Acesso externo.
                 </div>
 
-                <div class="qrp-caixa">
-                    <canvas id="qrp-canvas" class="qrp-canvas"></canvas>
-                    <div class="qrp-legenda">
-                        <div class="qrp-legenda-tit">ACOMPANHE ESTE PACIENTE</div>
-                        <div class="qrp-legenda-sub">Escaneie para solicitar acesso ao prontuário</div>
+                <div class="qrp-previa-rot">Como vai sair no laudo</div>
+                <div class="qrp-previa">
+                    <div class="qrp-previa-palco" id="qrp-palco-previa">
+                        <div class="qrp-bloco" style="width:${LARGURA_EXPORT}px; font-size:${ESCALA_EXPORT}px">${blocoHtml()}</div>
                     </div>
                 </div>
 
-                <div class="qrp-link">
-                    <span id="qrp-url">${esc(link)}</span>
-                    <button class="qrp-mini" id="qrp-copiar">Copiar</button>
-                </div>
-
                 <div class="qrp-acoes">
-                    <button class="btn btn-primary btn-sm" id="qrp-baixar">⬇ Baixar PNG para o laudo</button>
-                    <button class="btn btn-secondary btn-sm" id="qrp-imprimir">🖨️ Imprimir etiqueta</button>
+                    <button class="btn btn-primary btn-sm" id="qrp-baixar">
+                        ⬇ Baixar PNG para o laudo
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="qrp-imprimir">🖨️ Imprimir</button>
                 </div>
 
                 <details class="qrp-avancado">
-                    <summary>Trocar o código deste paciente</summary>
-                    <p>Use se um laudo impresso foi para as mãos erradas. O código novo passa
-                       a valer e <strong>todos os laudos já impressos deixam de abrir</strong>.
-                       Quem já está liberado continua liberado.</p>
+                    <summary>Link direto e troca do código</summary>
+                    <div class="qrp-link">
+                        <span id="qrp-url">${esc(link)}</span>
+                        <button class="qrp-mini" id="qrp-copiar">Copiar</button>
+                    </div>
+                    <p>O link é o mesmo do QR — serve para mandar por WhatsApp quando o
+                       profissional não está com o laudo na mão. <strong>Ele não sai
+                       impresso no bloco.</strong></p>
+                    <p>Trocar o código é para quando um laudo impresso foi para as mãos
+                       erradas: o novo passa a valer e <strong>todos os laudos já impressos
+                       deixam de abrir</strong>. Quem já está liberado continua liberado.</p>
                     <button class="btn btn-ghost btn-sm qrp-perigo" id="qrp-trocar">🔁 Gerar um código novo</button>
                 </details>`,
             rodape: [{ label: 'Fechar', classe: 'btn-secondary' }]
         });
 
-        // Prévia na tela (pequena; o PNG que baixa é o grande).
+        // Prévia: o bloco de verdade, na largura de verdade, encolhido por
+        // transform. Mudar o font-size aqui mudaria as proporções — o texto
+        // reflui e a prévia deixa de ser fiel ao que sai impresso.
         try {
-            desenhar(janela.corpo.querySelector('#qrp-canvas'), link, 460);
+            desenhar(janela.corpo.querySelector('.qrp-bloco-canvas'),
+                     link, Math.round(14.4 * ESCALA_EXPORT) * 2);
+            ajustarPrevia(janela.corpo);
+            // A janela abre com animação; quando ela assenta, remede.
+            setTimeout(() => ajustarPrevia(janela.corpo), 320);
+            window.addEventListener('resize', () => ajustarPrevia(janela.corpo));
         } catch (err) {
             console.error('[qr] desenhar:', err);
-            janela.corpo.querySelector('.qrp-caixa').innerHTML =
-                '<div class="qrp-falha">Não foi possível desenhar o QR nesta tela. ' +
-                'O link abaixo funciona do mesmo jeito.</div>';
+            const p = janela.corpo.querySelector('.qrp-previa');
+            if (p) p.innerHTML = '<div class="qrp-falha">Não foi possível desenhar o QR nesta ' +
+                                 'tela. O link, no rodapé, funciona do mesmo jeito.</div>';
         }
 
         janela.corpo.querySelector('#qrp-copiar').onclick = async () => {
@@ -199,8 +288,10 @@ window.CortexQR = (function () {
             }
         };
 
-        janela.corpo.querySelector('#qrp-baixar').onclick = () => baixarPng(link, nomePaciente, pacienteId);
-        janela.corpo.querySelector('#qrp-imprimir').onclick = () => imprimirEtiqueta(link, nomePaciente);
+        janela.corpo.querySelector('#qrp-baixar').onclick = (ev) =>
+            baixarPng(link, nomePaciente, pacienteId, ev.currentTarget);
+        janela.corpo.querySelector('#qrp-imprimir').onclick = (ev) =>
+            imprimir(link, nomePaciente, ev.currentTarget);
 
         janela.corpo.querySelector('#qrp-trocar').onclick = () => {
             window.CortexConfirm.mostrar({
@@ -238,47 +329,61 @@ window.CortexQR = (function () {
         return `qr_prontuario_${base || 'paciente'}.png`;
     }
 
-    function baixarPng(link, nomePaciente, pacienteId) {
+    function ocupado(botao, sim, rotuloOriginal) {
+        if (!botao) return;
+        botao.disabled = sim;
+        if (sim) botao.dataset.rotulo = botao.textContent;
+        botao.textContent = sim ? 'Gerando...' : (rotuloOriginal || botao.dataset.rotulo || botao.textContent);
+    }
+
+    async function baixarPng(link, nomePaciente, pacienteId, botao) {
+        ocupado(botao, true);
         try {
-            const canvas = canvasParaLaudo(link, nomePaciente);
-            canvas.toBlob((blob) => {
-                if (!blob) return toast('Não foi possível gerar o PNG.', 'danger');
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = nomeArquivo(nomePaciente);
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 4000);
-                toast('PNG baixado — cole no laudo.', 'success');
-                if (window.CortexAudit) {
-                    window.CortexAudit.log('leitura', 'qr_prontuario', null, {
-                        pacienteId, detalhes: { operacao: 'baixar_qr_prontuario' }
-                    });
-                }
-            }, 'image/png');
+            const canvas = await blocoParaCanvas(link);
+            await new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    if (!blob) { toast('Não foi possível gerar o PNG.', 'danger'); return resolve(); }
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = nomeArquivo(nomePaciente);
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 4000);
+                    toast('PNG baixado — cole no laudo.', 'success');
+                    if (window.CortexAudit) {
+                        window.CortexAudit.log('leitura', 'qr_prontuario', null, {
+                            pacienteId, detalhes: { operacao: 'baixar_qr_prontuario' }
+                        });
+                    }
+                    resolve();
+                }, 'image/png');
+            });
         } catch (err) {
             console.error('[qr] baixar:', err);
             toast('Erro ao gerar o PNG: ' + (err.message || ''), 'danger');
+        } finally {
+            ocupado(botao, false, '⬇ Baixar PNG para o laudo');
         }
     }
 
-    // Uma etiqueta só, do tamanho de colar no papel.
-    function imprimirEtiqueta(link, nomePaciente) {
+    // Imprime o bloco sozinho numa folha, para colar no papel.
+    async function imprimir(link, nomePaciente, botao) {
+        ocupado(botao, true);
         try {
-            const dataUrl = canvasParaLaudo(link, nomePaciente).toDataURL('image/png');
+            const dataUrl = (await blocoParaCanvas(link)).toDataURL('image/png');
             const w = window.open('', '_blank');
             if (!w) return toast('O navegador bloqueou a janela de impressão.', 'danger');
             w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
                 <meta charset="UTF-8"><title>QR do prontuário</title>
                 <style>
-                    @page { margin: 12mm; }
-                    body { margin: 0; font-family: Arial, sans-serif; text-align: center; }
-                    img { width: 55mm; height: auto; }
-                    .nome { margin-top: 6mm; font-size: 11pt; color: #0c1f3f; }
+                    @page { margin: 20mm; }
+                    body { margin: 0; font-family: Arial, sans-serif; }
+                    img { width: 100%; height: auto; display: block; }
+                    .nome { margin-top: 8mm; font-size: 10pt; color: #5B6B85; text-align: center; }
                 </style></head><body>
-                <img src="${dataUrl}" alt="QR do prontuário">
+                <img src="${dataUrl}" alt="Bloco de acesso ao prontuário">
                 <div class="nome">${esc(nomePaciente || '')}</div>
                 <script>window.onload = function () { window.print(); };<\/script>
                 </body></html>`);
@@ -286,6 +391,8 @@ window.CortexQR = (function () {
         } catch (err) {
             console.error('[qr] imprimir:', err);
             toast('Erro ao preparar a impressão: ' + (err.message || ''), 'danger');
+        } finally {
+            ocupado(botao, false, '🖨️ Imprimir');
         }
     }
 

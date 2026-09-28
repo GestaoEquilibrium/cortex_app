@@ -221,10 +221,10 @@ window.CortexQR = (function () {
             tamanho: 'lg',
             html: `
                 <div class="qrp-explica">
-                    Este é o bloco que vai no laudo. Baixe o PNG e cole no documento antes
-                    de gerar o PDF. Quem escanear se cadastra e pede acesso ao prontuário
-                    deste paciente — e <strong>nada aparece para ele antes de você
-                    autorizar</strong> em Configurações → Acesso externo.
+                    Este é o bloco que vai no laudo. Copie a imagem e cole no documento
+                    antes de gerar o PDF. Quem escanear se cadastra e pede acesso ao
+                    prontuário deste paciente — e <strong>nada aparece para ele antes de
+                    você autorizar</strong> em Configurações → Acesso externo.
                 </div>
 
                 <div class="qrp-previa-rot">Como vai sair no laudo</div>
@@ -235,11 +235,15 @@ window.CortexQR = (function () {
                 </div>
 
                 <div class="qrp-acoes">
-                    <button class="btn btn-primary btn-sm" id="qrp-baixar">
-                        ⬇ Baixar PNG para o laudo
+                    <button class="btn btn-primary btn-sm" id="qrp-copiar-img">
+                        📋 Copiar imagem para o laudo
                     </button>
                     <button class="btn btn-secondary btn-sm" id="qrp-imprimir">🖨️ Imprimir</button>
                 </div>
+                <p class="qrp-dica">
+                    Copie e cole direto no laudo com <strong>Ctrl+V</strong>.
+                    <button class="qrp-link-acao" id="qrp-baixar">Ou baixe o arquivo PNG</button>
+                </p>
 
                 <details class="qrp-avancado">
                     <summary>Link direto e troca do código</summary>
@@ -288,6 +292,8 @@ window.CortexQR = (function () {
             }
         };
 
+        janela.corpo.querySelector('#qrp-copiar-img').onclick = (ev) =>
+            copiarImagem(link, nomePaciente, pacienteId, ev.currentTarget);
         janela.corpo.querySelector('#qrp-baixar').onclick = (ev) =>
             baixarPng(link, nomePaciente, pacienteId, ev.currentTarget);
         janela.corpo.querySelector('#qrp-imprimir').onclick = (ev) =>
@@ -336,35 +342,72 @@ window.CortexQR = (function () {
         botao.textContent = sim ? 'Gerando...' : (rotuloOriginal || botao.dataset.rotulo || botao.textContent);
     }
 
+    function auditar(pacienteId, operacao) {
+        if (!window.CortexAudit) return;
+        window.CortexAudit.log('leitura', 'qr_prontuario', null, {
+            pacienteId, detalhes: { operacao }
+        });
+    }
+
+    async function gerarBlob(link) {
+        const canvas = await blocoParaCanvas(link);
+        const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+        if (!blob) throw new Error('Não foi possível gerar a imagem.');
+        return blob;
+    }
+
+    function salvarBlob(blob, nomePaciente) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nomeArquivo(nomePaciente);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+    }
+
+    // Copia o bloco como imagem, para colar no laudo com Ctrl+V.
+    //
+    // A área de transferência de imagem depende do navegador. Se ela negar
+    // — navegador antigo, página sem HTTPS, webview do app — cai para o
+    // download, porque o que não pode é ele ficar sem a imagem.
+    async function copiarImagem(link, nomePaciente, pacienteId, botao) {
+        ocupado(botao, true);
+        try {
+            if (!navigator.clipboard || typeof window.ClipboardItem !== 'function') {
+                throw new Error('sem_suporte');
+            }
+            const blob = await gerarBlob(link);
+            await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': blob })]);
+            toast('Imagem copiada — cole no laudo com Ctrl+V.', 'success');
+            auditar(pacienteId, 'copiar_qr_prontuario');
+        } catch (err) {
+            console.warn('[qr] copiar imagem falhou, baixando:', err);
+            try {
+                salvarBlob(await gerarBlob(link), nomePaciente);
+                toast('Este navegador não deixa copiar imagem — baixei o PNG.', 'info');
+                auditar(pacienteId, 'baixar_qr_prontuario');
+            } catch (err2) {
+                console.error('[qr] baixar (após falha ao copiar):', err2);
+                toast('Erro ao gerar a imagem: ' + (err2.message || ''), 'danger');
+            }
+        } finally {
+            ocupado(botao, false, '📋 Copiar imagem para o laudo');
+        }
+    }
+
     async function baixarPng(link, nomePaciente, pacienteId, botao) {
         ocupado(botao, true);
         try {
-            const canvas = await blocoParaCanvas(link);
-            await new Promise((resolve) => {
-                canvas.toBlob((blob) => {
-                    if (!blob) { toast('Não foi possível gerar o PNG.', 'danger'); return resolve(); }
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = nomeArquivo(nomePaciente);
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    setTimeout(() => URL.revokeObjectURL(url), 4000);
-                    toast('PNG baixado — cole no laudo.', 'success');
-                    if (window.CortexAudit) {
-                        window.CortexAudit.log('leitura', 'qr_prontuario', null, {
-                            pacienteId, detalhes: { operacao: 'baixar_qr_prontuario' }
-                        });
-                    }
-                    resolve();
-                }, 'image/png');
-            });
+            salvarBlob(await gerarBlob(link), nomePaciente);
+            toast('PNG baixado.', 'success');
+            auditar(pacienteId, 'baixar_qr_prontuario');
         } catch (err) {
             console.error('[qr] baixar:', err);
             toast('Erro ao gerar o PNG: ' + (err.message || ''), 'danger');
         } finally {
-            ocupado(botao, false, '⬇ Baixar PNG para o laudo');
+            ocupado(botao, false, 'Ou baixe o arquivo PNG');
         }
     }
 

@@ -25,6 +25,11 @@
 }
 
 .cbl-bloco {
+    /* Acréscimo SÓ de fonte. A geometria (QR, respiros, borda, raio) continua
+       saindo do `font-size` em `em`; os textos somam estes 2px por cima, para
+       ler melhor no papel sem inchar o bloco. */
+    --cbl-mais: 2px;
+
     display: flex;
     align-items: stretch;
     background: #F5F8FE;
@@ -68,7 +73,7 @@
 }
 
 .cbl-escaneie {
-    font-size: 0.82em;
+    font-size: calc(0.82em + var(--cbl-mais));
     font-weight: 700;
     letter-spacing: .05em;
     text-transform: uppercase;
@@ -86,7 +91,7 @@
 .cbl-selos { display: flex; align-items: center; gap: 0.41em; margin-bottom: 0.59em; }
 
 .cbl-selo {
-    font-size: 0.76em;
+    font-size: calc(0.76em + var(--cbl-mais));
     font-weight: 700;
     letter-spacing: .04em;
     padding: 0.31em 0.85em;
@@ -110,7 +115,7 @@
 }
 
 .cbl-tit {
-    font-size: 1.06em;
+    font-size: calc(1.06em + var(--cbl-mais));
     font-weight: 800;
     letter-spacing: .06em;
     color: #0c1f3f;
@@ -120,7 +125,7 @@
 /* Variante de título "de conversa": maior, sem caixa alta, para o bloco de
    avaliação, onde o tom é um pedido e não um aviso jurídico. */
 .cbl-tit.conversa {
-    font-size: 1.41em;
+    font-size: calc(1.41em + var(--cbl-mais));
     font-weight: 800;
     letter-spacing: -.01em;
     text-transform: none;
@@ -130,7 +135,7 @@
 
 .cbl-texto {
     margin: 0;
-    font-size: 1em;
+    font-size: calc(1em + var(--cbl-mais));
     line-height: 1.62;
     color: #4A5568;
     text-align: justify;

@@ -31,7 +31,9 @@
         salvando: false,
         editado: false,
         ehAdmin: false,      // só admin: controla a FAIXA do checklist
-        podeEditar: false    // admin + aplicador: controla a MARCAÇÃO (Sprint 78)
+        podeEditar: false,   // admin + aplicador: controla a MARCAÇÃO (Sprint 78)
+        baterias: [],        // sprint_baterias: modelos de bateria (base + módulos)
+        bateriasAbertas: false
     };
 
     let autoSaveTimeout = null;
@@ -63,7 +65,8 @@
             await Promise.all([
                 carregarPaciente(),
                 carregarCatalogo(),
-                carregarHipotese()
+                carregarHipotese(),
+                carregarBaterias()
             ]);
 
             state.faixaPaciente = calcularFaixaAuto();
@@ -89,7 +92,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, descricao_longa, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online, ativo')
+            .select('id, sigla, nome_completo, o_que_avalia, descricao_longa, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online')
             .order('dominio_principal')
             .order('sigla');
 
@@ -113,6 +116,25 @@
             state.hipoteseId = data.id;
             state.instrumentosSelecionados = data.instrumentos_sugeridos || [];
             state.hipoteseTexto = data.hipotese_checklist || '';
+        }
+    }
+
+    // sprint_baterias: modelos prontos. Falha aqui não pode derrubar o
+    // checklist — sem bateria ele funciona como sempre funcionou.
+    async function carregarBaterias() {
+        try {
+            const { data, error } = await window.cortexClient
+                .from('baterias_modelo')
+                .select('id, nome, descricao, tipo, faixa, ordem, itens:baterias_modelo_itens(instrumento_id)')
+                .eq('ativo', true)
+                .order('ordem');
+            if (error) throw error;
+            state.baterias = (data || []).map(m => ({
+                ...m, ids: (m.itens || []).map(x => x.instrumento_id)
+            }));
+        } catch (err) {
+            console.warn('[checklist] baterias não carregaram:', err);
+            state.baterias = [];
         }
     }
 
@@ -155,15 +177,6 @@
         const meses = idadePacienteMeses();
 
         state.catalogoFiltrado = state.catalogo.filter(i => {
-            // Instrumento inativo não aparece para ninguém — nem no "ver todos"
-            // do admin, que é justamente o que inativar quer evitar.
-            // Exceção: se este paciente já o tinha marcado, ele continua
-            // visível (com aviso). Sumir com ele faria a marcação se perder
-            // no próximo salvamento do checklist.
-            const jaMarcado = state.instrumentosSelecionados.includes(i.id);
-            i._inativo = i.ativo === false;
-            if (i._inativo && !jaMarcado) return false;
-
             // Sexo SEMPRE filtra (mesmo no modo "ver todos")
             const sexoOk = (i.sexo_filtro === null || i.sexo_filtro === undefined) || (i.sexo_filtro === sexoChar);
             if (!sexoOk) return false;
@@ -184,6 +197,135 @@
             if (!state.agrupado[cat]) state.agrupado[cat] = [];
             state.agrupado[cat].push(inst);
         });
+    }
+
+
+    // ════════════════════════════════════════════════════════════════════════
+    // BATERIAS (sprint_baterias)
+    // ════════════════════════════════════════════════════════════════════════
+    // Aplicar uma bateria SOMA instrumentos à seleção; nunca desmarca o que
+    // já estava. Desmarcar é sempre decisão de quem está na tela.
+    //
+    // O que não se aplica ao paciente (idade ou sexo) é contado e dito em voz
+    // alta, em vez de sumir silenciosamente: é assim que a base escolar única
+    // serve dos 6 aos 17 anos sem ninguém se perguntar onde foi o Raven.
+
+    function bateriasDaFaixa() {
+        const f = state.faixaPaciente;
+        return state.baterias.filter(b => b.faixa === f || b.faixa === 'qualquer');
+    }
+
+    // Um instrumento entra se estiver no catálogo já filtrado por idade e
+    // sexo — a mesma regra que a tela usa para listar.
+    function aplicaveisDaBateria(b) {
+        const permitidos = new Set(state.catalogoFiltrado.filter(i => !i._foraDaFaixa).map(i => i.id));
+        const dentro = b.ids.filter(id => permitidos.has(id));
+        return { dentro, fora: b.ids.length - dentro.length };
+    }
+
+    function renderBaterias() {
+        if (!state.podeEditar) return '';
+        const lista = bateriasDaFaixa();
+        if (!lista.length) return '';
+
+        const bases = lista.filter(b => b.tipo === 'base');
+        const mods  = lista.filter(b => b.tipo === 'modulo');
+
+        const cartao = (b) => {
+            const { dentro, fora } = aplicaveisDaBateria(b);
+            const jaTem = dentro.length > 0 && dentro.every(id => state.instrumentosSelecionados.includes(id));
+            return `
+                <label class="bat-op ${jaTem ? 'aplicada' : ''}">
+                    <input type="checkbox" class="bat-op-check" value="${b.id}" ${jaTem ? 'checked disabled' : ''}>
+                    <span class="bat-op-corpo">
+                        <span class="bat-op-nome">${escapeHtml(b.nome.replace(/^(Base|Módulo)\s*—\s*/, ''))}</span>
+                        <span class="bat-op-conta">
+                            ${dentro.length} instrumento${dentro.length === 1 ? '' : 's'}
+                            ${fora ? `<span class="bat-op-fora">· ${fora} fora da idade/sexo</span>` : ''}
+                            ${jaTem ? '<span class="bat-op-ok">· já aplicada</span>' : ''}
+                        </span>
+                        ${b.descricao ? `<span class="bat-op-desc">${escapeHtml(b.descricao)}</span>` : ''}
+                    </span>
+                </label>`;
+        };
+
+        return `
+            <div class="bat-painel ${state.bateriasAbertas ? 'aberto' : ''}">
+                <button type="button" class="bat-painel-topo" id="bat-toggle">
+                    <span class="bat-painel-tit">⚡ Baterias prontas</span>
+                    <span class="bat-painel-sub">
+                        ${lista.length} para a faixa ${escapeHtml(state.faixaPaciente === 'adulto' ? 'Adulto'
+                            : state.faixaPaciente === 'escolar' ? 'Escolar' : 'Pré-escolar')}
+                    </span>
+                    <span class="bat-painel-seta">${state.bateriasAbertas ? '▴' : '▾'}</span>
+                </button>
+                ${state.bateriasAbertas ? `
+                <div class="bat-painel-corpo">
+                    ${bases.length ? `<div class="bat-op-grupo"><div class="bat-op-grupo-tit">Base</div>
+                        ${bases.map(cartao).join('')}</div>` : ''}
+                    ${mods.length ? `<div class="bat-op-grupo"><div class="bat-op-grupo-tit">Módulos por hipótese</div>
+                        ${mods.map(cartao).join('')}</div>` : ''}
+                    <div class="bat-painel-acoes">
+                        <button type="button" class="btn btn-primary btn-sm" id="bat-aplicar">Aplicar às marcações</button>
+                        <span class="bat-painel-nota">Soma à seleção atual. Nada é desmarcado.</span>
+                    </div>
+                </div>` : ''}
+            </div>`;
+    }
+
+    function bindBaterias() {
+        const t = document.getElementById('bat-toggle');
+        if (t) t.addEventListener('click', () => {
+            state.bateriasAbertas = !state.bateriasAbertas;
+            renderizar();
+        });
+
+        const ap = document.getElementById('bat-aplicar');
+        if (ap) ap.addEventListener('click', aplicarBateriasMarcadas);
+    }
+
+    function aplicarBateriasMarcadas() {
+        if (!state.podeEditar) return;
+
+        const escolhidas = [...document.querySelectorAll('.bat-op-check:checked:not([disabled])')]
+            .map(cb => state.baterias.find(b => b.id === cb.value))
+            .filter(Boolean);
+
+        if (!escolhidas.length) {
+            window.CortexUI.toast('Marque ao menos uma bateria.', 'info');
+            return;
+        }
+
+        let novos = 0, fora = 0;
+        escolhidas.forEach(b => {
+            const r = aplicaveisDaBateria(b);
+            fora += r.fora;
+            r.dentro.forEach(id => {
+                if (!state.instrumentosSelecionados.includes(id)) {
+                    state.instrumentosSelecionados.push(id);
+                    novos++;
+                }
+            });
+        });
+
+        marcarEditado();
+        filtrarECategorizar();
+        renderizar();
+
+        if (window.CortexAudit) {
+            window.CortexAudit.log('edicao', 'hipoteses', state.hipoteseId || null, {
+                pacienteId: state.pacienteId,
+                detalhes: { operacao: 'aplicar_bateria',
+                            baterias: escolhidas.map(b => b.nome),
+                            incluidos: novos, fora_da_faixa: fora }
+            });
+        }
+
+        const msg = novos
+            ? `${novos} instrumento${novos === 1 ? '' : 's'} incluído${novos === 1 ? '' : 's'}`
+                + (fora ? ` · ${fora} fora da idade/sexo do paciente` : '')
+            : 'Todos os instrumentos dessas baterias já estavam marcados';
+        window.CortexUI.toast(msg, novos ? 'success' : 'info');
     }
 
     // ============================================================================
@@ -294,7 +436,9 @@
             </div>
         `;
 
-        container.innerHTML = cabecalho + aviso + caixaHipoteses + lista + navegacao;
+        container.innerHTML = cabecalho + aviso + caixaHipoteses + renderBaterias() + lista + navegacao;
+
+        bindBaterias();
 
         // Caixa de hipóteses: atualiza estado e marca como editado
         const txtHip = document.getElementById('checklist-hipotese-texto');
@@ -369,7 +513,6 @@
                         <strong>${escapeHtml(inst.sigla)}</strong>
                         ${inst.faixa_etaria_label ? `<span class="checklist-item-idade">${escapeHtml(inst.faixa_etaria_label)}</span>` : ''}
                         ${inst._foraDaFaixa ? `<span class="checklist-item-fora-tag" title="Este teste está fora da faixa etária do paciente">fora da faixa</span>` : ''}
-                        ${inst._inativo ? `<span class="checklist-item-fora-tag checklist-item-inativo-tag" title="Este teste foi inativado no catálogo. Continua aqui porque já estava marcado para este paciente.">inativo</span>` : ''}
                     </div>
                     <div class="checklist-item-descricao">${escapeHtml(inst.o_que_avalia)}</div>
                 </div>

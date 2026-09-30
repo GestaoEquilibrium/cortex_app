@@ -666,3 +666,64 @@
     .perm-opcoes { width: 100%; }
     .perm-op { flex: 1; text-align: center; }
 }
+
+/* ── Baterias do checklist (sprint_baterias) ────────────────────────────── */
+
+.bat-grid-topo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.bat-grid-topo .bat-col-2 { grid-column: span 2; }
+@media (max-width: 760px) {
+    .bat-grid-topo { grid-template-columns: 1fr; }
+    .bat-grid-topo .bat-col-2 { grid-column: span 1; }
+}
+
+.bat-sel-topo {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin: 18px 0 8px; padding-top: 14px;
+    border-top: 1px solid var(--color-border, #e2e8f0);
+}
+.bat-sel-topo strong { font-size: 14px; }
+.bat-sel-topo .ext-sub { margin-left: 8px; }
+
+.bat-busca {
+    flex: 0 1 260px; padding: 8px 12px;
+    border: 1.5px solid var(--color-border, #e2e8f0); border-radius: 9px;
+    font-family: inherit; font-size: 13px;
+}
+.bat-busca:focus { outline: none; border-color: var(--accent-blue, #2F6FED); }
+
+.bat-lista {
+    max-height: 46vh; overflow-y: auto;
+    border: 1px solid var(--color-border, #e2e8f0); border-radius: 12px;
+    padding: 6px 10px; background: var(--color-surface-alt, #fafbfd);
+}
+
+.bat-grupo { margin: 10px 0 14px; }
+.bat-grupo-tit {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: #6B84B0;
+    padding: 4px 0 6px; position: sticky; top: 0;
+    background: var(--color-surface-alt, #fafbfd);
+}
+
+.bat-item {
+    display: grid; grid-template-columns: 18px 130px 1fr auto;
+    align-items: center; gap: 10px;
+    padding: 7px 9px; border-radius: 8px; cursor: pointer;
+    font-size: 13px;
+}
+.bat-item:hover { background: #fff; }
+.bat-item.marcado { background: #EFF6FF; }
+.bat-item.inativo { opacity: .55; }
+.bat-item input { width: 17px; height: 17px; accent-color: var(--accent-blue, #2F6FED); }
+.bat-item-sigla { font-weight: 650; color: var(--color-text, #14213A); }
+.bat-item-nome  { color: var(--color-text-muted, #64748b); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bat-item-faixa { font-size: 11px; color: var(--color-text-soft, #94a3b8); white-space: nowrap; }
+.bat-sexo {
+    margin-left: 6px; padding: 1px 7px; border-radius: 99px;
+    background: #F3E8FF; color: #7E22CE; font-size: 10px; font-weight: 600;
+}
+
+@media (max-width: 760px) {
+    .bat-item { grid-template-columns: 18px 1fr; }
+    .bat-item-nome, .bat-item-faixa { grid-column: 2; }
+}

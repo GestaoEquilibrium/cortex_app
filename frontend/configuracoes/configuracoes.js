@@ -57,6 +57,14 @@
             if (tabE) tabE.style.display = '';
         }
 
+        // Baterias do checklist: admin clínico e gestor. Quem monta bateria
+        // decide o que será aplicado em paciente, então fica com a mesma
+        // régua do acesso externo.
+        if (state.ehAdmin) {
+            const tabB = document.getElementById('tab-baterias');
+            if (tabB) tabB.style.display = '';
+        }
+
         // Bind das abas
         document.querySelectorAll('.cfg-tab').forEach(btn => {
             btn.addEventListener('click', () => trocarAba(btn.dataset.tab));
@@ -106,6 +114,18 @@
                 await window.CortexExternosAdmin.carregar();
                 cont.innerHTML = window.CortexExternosAdmin.render();
                 window.CortexExternosAdmin.bind();
+            } else if (aba === 'baterias') {
+                if (!state.ehAdmin) {
+                    cont.innerHTML = '<div class="cfg-vazio">Apenas administradores.</div>';
+                    return;
+                }
+                if (!window.CortexBateriasAdmin) {
+                    cont.innerHTML = '<div class="cfg-vazio">Módulo de baterias não carregou. Recarregue a página.</div>';
+                    return;
+                }
+                await window.CortexBateriasAdmin.carregar();
+                cont.innerHTML = window.CortexBateriasAdmin.render();
+                window.CortexBateriasAdmin.bind();
             } else if (aba === 'permissoes') {
                 if (state.profissional?.perfil !== 'admin_clinico') {
                     cont.innerHTML = `<div class="cfg-erro">Acesso restrito ao Admin Clínico.</div>`;

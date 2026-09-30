@@ -803,8 +803,65 @@
     cursor: default;
 }
 
-/* Instrumento inativado que continua visível porque já estava marcado */
-.checklist-item-inativo-tag {
-    background: #FEE2E2 !important;
-    color: #991B1B !important;
+/* ============================================================================
+   BATERIAS PRONTAS (sprint_baterias)
+   ----------------------------------------------------------------------------
+   Painel recolhido por padrão: quem já sabe o que quer marca na mão, quem
+   quer velocidade abre e aplica. Some na impressão.
+   ============================================================================ */
+
+.bat-painel {
+    margin-bottom: 18px;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #F6F9FF, #FFFFFF);
+    overflow: hidden;
 }
+.bat-painel.aberto { border-color: #C7D7F5; }
+
+.bat-painel-topo {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 13px 16px; border: none; background: none; cursor: pointer;
+    font-family: inherit; text-align: left;
+}
+.bat-painel-tit  { font-size: 14px; font-weight: 700; color: #0c1f3f; }
+.bat-painel-sub  { font-size: 12px; color: var(--color-text-soft, #94a3b8); flex: 1; }
+.bat-painel-seta { font-size: 12px; color: var(--color-text-soft, #94a3b8); }
+
+.bat-painel-corpo {
+    padding: 4px 16px 16px;
+    border-top: 1px dashed var(--color-border, #e2e8f0);
+}
+
+.bat-op-grupo { margin-top: 12px; }
+.bat-op-grupo-tit {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: #6B84B0; margin-bottom: 6px;
+}
+
+.bat-op {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 13px; margin-bottom: 7px;
+    border: 1px solid var(--color-border, #e2e8f0); border-radius: 11px;
+    background: #fff; cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+}
+.bat-op:hover { border-color: #C7D7F5; box-shadow: 0 2px 8px rgba(12,31,63,.06); }
+.bat-op.aplicada { background: #F2FDF6; border-color: #BBF0D0; cursor: default; }
+.bat-op input { width: 17px; height: 17px; margin-top: 1px; flex: 0 0 17px; accent-color: #2F6FED; }
+
+.bat-op-corpo { display: flex; flex-direction: column; gap: 2px; }
+.bat-op-nome  { font-size: 13.5px; font-weight: 650; color: var(--color-text, #14213A); }
+.bat-op-conta { font-size: 11.5px; color: var(--color-text-muted, #64748b); }
+.bat-op-fora  { color: #B45309; }
+.bat-op-ok    { color: #15803D; font-weight: 600; }
+.bat-op-desc  { font-size: 11.5px; line-height: 1.5; color: var(--color-text-soft, #94a3b8); margin-top: 2px; }
+
+.bat-painel-acoes {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px dashed var(--color-border, #e2e8f0);
+}
+.bat-painel-nota { font-size: 11.5px; color: var(--color-text-soft, #94a3b8); }
+
+@media print { .bat-painel { display: none !important; } }

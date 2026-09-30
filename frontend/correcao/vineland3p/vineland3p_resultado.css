@@ -339,3 +339,45 @@
 .vineland-cca-card.cca-baixo .vineland-cca-card-label   { color: #c2607a; }
 .vineland-cca-card.cca-baixo .vineland-cca-card-classif { background: rgba(159, 18, 57, 0.10); color: #9f1239; }
 .vineland-cca-card.cca-baixo .vineland-cca-card-desc    { color: #a13b52; }
+
+/* ============================================================================
+   APLICAÇÃO INCOMPLETA
+   Domínio com item sem resposta não recebe PP nem classificação. O laudo diz
+   isso em três lugares: banner no topo, card do domínio e tabela resumo.
+   ============================================================================ */
+.vineland-aviso-incompleto {
+    margin-top: 0;
+    margin-bottom: 22px;
+}
+
+.vineland-aviso-incompleto ul {
+    margin: 10px 0 8px 0;
+    padding-left: 22px;
+}
+
+.vineland-aviso-incompleto li {
+    margin-bottom: 3px;
+}
+
+.vineland-aviso-itens {
+    margin: 8px 0 10px 0;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, .6);
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #78350f;
+    word-break: break-word;
+}
+
+.vineland-dom-card-incompleto {
+    background: #fffdf5;
+}
+
+.vineland-tab-nota {
+    margin-top: 10px;
+    font-size: 11.5px;
+    font-style: italic;
+    color: #b45309;
+    line-height: 1.5;
+}

@@ -90,6 +90,37 @@
     }
 
 
+    // Valor sentinela gravado em respostas_parciais para um item que o
+    // respondente marcou como "Não se aplica". Fica fora da escala 0-2, então
+    // o publico_finalizar_aplicacao antigo o rejeitaria — de propósito: item
+    // omitido só pode ser enviado pelo publico_finalizar_parcial.
+    const OMITIDO = -1;
+
+    // Itens que de fato entram no formulário.
+    // HMOT (121-145) só é aplicável até os 9 anos e a correção DESCARTA esses
+    // itens quando a idade é ≥10 — não faz sentido cobrar 25 respostas que
+    // serão jogadas fora.
+    function itensAtivos() {
+        if (state.hmotAplicavel) return state.itens;
+        return state.itens.filter(i => ITEM_TO_SECAO[i.numero] !== 'HMOT');
+    }
+
+    function itensOmitidosAuto() {
+        if (state.hmotAplicavel) return [];
+        return state.itens
+            .filter(i => ITEM_TO_SECAO[i.numero] === 'HMOT')
+            .map(i => i.numero);
+    }
+
+    // Payload do auto-save: respostas reais + os omitidos como OMITIDO, para
+    // que a marcação sobreviva se o respondente fechar a página.
+    function payloadParcial() {
+        const p = {};
+        for (const [k, v] of Object.entries(state.respostas)) p[k] = v;
+        for (const k of Object.keys(state.omitidos)) p[k] = OMITIDO;
+        return p;
+    }
+
     const state = {
         token: null,
         aplicacao: null,
@@ -97,6 +128,8 @@
         norma: null,
         itens: [],
         respostas: {},  // {numero: 1|2|3|4}
+        omitidos: {},   // {numero: true} — itens marcados "Não se aplica"
+        hmotAplicavel: true,  // ≥10 anos → HMOT não é exibido nem exigido
         consentimentoAceito: false,
         tela: 'loading'  // loading | consentimento | perguntas | agradecimento | erro
     };
@@ -172,10 +205,33 @@
             state.itens = data.itens || [];
             state.consentimentoAceito = data.consentimento_aceito;
 
-            // Restaura respostas parciais (caso paciente esteja voltando)
+            // Contexto de idade: devolve APENAS um booleano — nem nome, nem data
+            // de nascimento. Serve para esconder o HMOT de quem tem ≥10 anos.
+            // Falha soft: se a RPC não existir ou der erro, mantém o
+            // comportamento antigo (mostra as 7 seções).
+            try {
+                const { data: ctx } = await supabase.rpc(
+                    'publico_vineland_contexto', { p_token: state.token }
+                );
+                if (ctx && ctx.ok === true && typeof ctx.hmot_aplicavel === 'boolean') {
+                    state.hmotAplicavel = ctx.hmot_aplicavel;
+                }
+            } catch (err) {
+                console.warn('Contexto de idade indisponível; exibindo todas as seções:', err);
+            }
+
+            // Restaura respostas parciais (caso paciente esteja voltando).
+            // OMITIDO (-1) não é resposta: volta como marcação "Não se aplica".
             const parciais = data.respostas_parciais || {};
             for (const [k, v] of Object.entries(parciais)) {
-                state.respostas[parseInt(k)] = parseInt(v);
+                const n = parseInt(k);
+                const val = parseInt(v);
+                if (!Number.isFinite(n)) continue;
+                if (val === OMITIDO) {
+                    state.omitidos[n] = true;
+                } else if (Number.isFinite(val)) {
+                    state.respostas[n] = val;
+                }
             }
 
             // Decide tela inicial
@@ -251,12 +307,15 @@
         }
 
         progressoEl.style.display = 'flex';
-        const respondidos = Object.keys(state.respostas).length;
-        const total = state.itens.length;
-        const pct = total > 0 ? Math.round((respondidos / total) * 100) : 0;
+        const ativos = itensAtivos();
+        const total = ativos.length;
+        const resolvidos = ativos.filter(i =>
+            state.respostas[i.numero] !== undefined || state.omitidos[i.numero]
+        ).length;
+        const pct = total > 0 ? Math.round((resolvidos / total) * 100) : 0;
 
         document.getElementById('header-progresso-label').textContent =
-            `Questão ${Math.min(respondidos + 1, total)} de ${total}`;
+            `Questão ${Math.min(resolvidos + 1, total)} de ${total}`;
         document.getElementById('header-progresso-fill').style.width = pct + '%';
     }
 
@@ -341,16 +400,26 @@
         const labels = state.norma.answer_labels || ['Nunca', 'Às vezes', 'Usualmente ou Frequentemente'];
         const labelsBinary = ['Não', 'Sim'];
 
-        // NOTA: idade do paciente não está disponível no responder por privacidade.
-        // HMOT (Habilidades Motoras) é mostrado sempre — o JS do laudo (que tem
-        // acesso à idade) decide se inclui no cálculo final.
+        // A idade em si não chega aqui — só o booleano hmotAplicavel, vindo do
+        // publico_vineland_contexto. Quando é false, o HMOT nem é exibido:
+        // a correção o descarta de qualquer forma acima dos 9 anos.
+        const ativos = itensAtivos();
+
+        const notaSecoes = state.hmotAplicavel
+            ? `O questionário está organizado em <strong>7 seções</strong>.
+               A seção <em>Habilidades Motoras</em> só será considerada no resultado se a pessoa tiver até 9 anos.`
+            : `O questionário está organizado em <strong>6 seções</strong>, com
+               <strong>${ativos.length} perguntas</strong>. A seção <em>Habilidades Motoras</em>
+               não se aplica a esta idade e por isso não aparece aqui.`;
 
         let html = `
             <div class="tela-perguntas-instrucoes">
                 <p>Para cada afirmação abaixo, escolha a opção que <strong>melhor descreve a pessoa avaliada</strong>.</p>
+                <p style="margin-top:8px;font-size:13px;color:#475569;">${notaSecoes}</p>
                 <p style="margin-top:8px;font-size:13px;color:#475569;">
-                    O questionário está organizado em <strong>7 seções</strong>.
-                    A seção <em>Habilidades Motoras</em> só será considerada no resultado se a pessoa tiver até 9 anos.
+                    Se alguma pergunta realmente não fizer sentido para a pessoa avaliada, use
+                    <strong>“Não se aplica”</strong>. Prefira sempre responder — áreas com perguntas
+                    em branco ficam sem pontuação padronizada no resultado.
                 </p>
             </div>
             <div class="tela-perguntas">
@@ -358,7 +427,7 @@
 
         let secaoAtual = null;
 
-        for (const item of state.itens) {
+        for (const item of ativos) {
             const secaoItem = ITEM_TO_SECAO[item.numero];
 
             // Cabeçalho de seção quando muda
@@ -378,7 +447,11 @@
             const tipoItem = ITEM_TO_TIPO[item.numero] || 'standard';
             const isBinary = tipoItem === 'binary';
             const respondido = state.respostas[item.numero] !== undefined;
-            const respondidoClass = respondido ? 'respondido' : '';
+            const omitido = !!state.omitidos[item.numero];
+            const respondidoClass = [
+                respondido ? 'respondido' : '',
+                omitido ? 'omitido' : ''
+            ].filter(Boolean).join(' ');
             const tip = ITEM_TIPS[item.numero] || '';
 
             // Render das opções: standard 0/1/2 ou binary 0/2
@@ -388,7 +461,7 @@
                 : [{ v: 0, label: labels[0] }, { v: 1, label: labels[1] }, { v: 2, label: labels[2] }];
 
             for (const opt of opts) {
-                const ativo = state.respostas[item.numero] === opt.v ? 'ativo' : '';
+                const ativo = (!omitido && state.respostas[item.numero] === opt.v) ? 'ativo' : '';
                 opcoes += `
                     <button class="item-opcao ${ativo}" data-numero="${item.numero}" data-valor="${opt.v}" type="button">
                         <span class="item-opcao-bullet"></span>
@@ -415,6 +488,10 @@
                     <div class="item-opcoes">
                         ${opcoes}
                     </div>
+                    <div class="item-acoes">
+                        <button class="item-pular ${omitido ? 'ativo' : ''}"
+                                data-numero="${item.numero}" type="button">${omitido ? '✓ Não se aplica' : 'Não se aplica'}</button>
+                    </div>
                 </div>
             `;
         }
@@ -432,6 +509,7 @@
                 const valor = parseInt(btn.dataset.valor);
 
                 state.respostas[numero] = valor;
+                delete state.omitidos[numero];   // responder desfaz "Não se aplica"
 
                 // Re-renderiza só esse item (mais leve que renderizar tudo)
                 renderItemSingle(numero);
@@ -441,16 +519,35 @@
                 // Auto-save em background
                 salvarParcial();
 
-                // Scroll suave pro próximo item não respondido
+                // Scroll suave pro próximo item ainda em aberto
                 setTimeout(() => {
-                    const proximo = state.itens.find(i =>
-                        i.numero > numero && state.respostas[i.numero] === undefined
+                    const proximo = itensAtivos().find(i =>
+                        i.numero > numero &&
+                        state.respostas[i.numero] === undefined &&
+                        !state.omitidos[i.numero]
                     );
                     if (proximo) {
                         const el = document.getElementById('item-' + proximo.numero);
                         el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 }, 100);
+            });
+        });
+
+        // Botões "Não se aplica"
+        document.querySelectorAll('.item-pular').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const numero = parseInt(btn.dataset.numero);
+                if (state.omitidos[numero]) {
+                    delete state.omitidos[numero];
+                } else {
+                    delete state.respostas[numero];
+                    state.omitidos[numero] = true;
+                }
+                renderItemSingle(numero);
+                atualizarHeader();
+                atualizarRodape();
+                salvarParcial();
             });
         });
 
@@ -466,38 +563,50 @@
         if (!itemEl) return;
 
         const respondido = state.respostas[numero] !== undefined;
-        if (respondido) {
-            itemEl.classList.add('respondido');
-        } else {
-            itemEl.classList.remove('respondido');
-        }
+        const omitido = !!state.omitidos[numero];
+
+        itemEl.classList.toggle('respondido', respondido);
+        itemEl.classList.toggle('omitido', omitido);
 
         // Atualiza estado das opções
         itemEl.querySelectorAll('.item-opcao').forEach(btn => {
             const v = parseInt(btn.dataset.valor);
-            if (state.respostas[numero] === v) {
-                btn.classList.add('ativo');
-            } else {
-                btn.classList.remove('ativo');
-            }
+            btn.classList.toggle('ativo', !omitido && state.respostas[numero] === v);
         });
+
+        const pular = itemEl.querySelector('.item-pular');
+        if (pular) {
+            pular.classList.toggle('ativo', omitido);
+            pular.textContent = omitido ? '✓ Não se aplica' : 'Não se aplica';
+        }
     }
 
     function atualizarRodape() {
-        const respondidos = Object.keys(state.respostas).length;
-        const total = state.itens.length;
-        const todosRespondidos = respondidos === total;
+        const ativos = itensAtivos();
+        const total = ativos.length;
+        const respondidos = ativos.filter(i => state.respostas[i.numero] !== undefined).length;
+        const omitidos = ativos.filter(i => state.omitidos[i.numero]).length;
+        const faltam = total - respondidos - omitidos;
 
         const statusEl = document.getElementById('rodape-status');
         const btnEl = document.getElementById('btn-enviar');
 
-        if (todosRespondidos) {
-            statusEl.textContent = `✓ Todas as ${total} questões respondidas`;
-            btnEl.disabled = false;
-        } else {
-            const faltam = total - respondidos;
+        // O botão libera quando não sobra nada em aberto — respondido OU
+        // marcado "Não se aplica". Em branco continua travando.
+        if (faltam > 0) {
             statusEl.textContent = `Faltam ${faltam} ${faltam === 1 ? 'questão' : 'questões'}`;
             btnEl.disabled = true;
+            btnEl.textContent = 'Enviar respostas';
+            return;
+        }
+
+        btnEl.disabled = false;
+        if (omitidos === 0) {
+            statusEl.textContent = `✓ Todas as ${total} questões respondidas`;
+            btnEl.textContent = 'Enviar respostas';
+        } else {
+            statusEl.textContent = `${respondidos} respondidas · ${omitidos} marcadas como "Não se aplica"`;
+            btnEl.textContent = `Enviar com ${omitidos} sem resposta`;
         }
     }
 
@@ -509,7 +618,7 @@
         try {
             await supabase.rpc('publico_salvar_parcial', {
                 p_token: state.token,
-                p_respostas: state.respostas
+                p_respostas: payloadParcial()
             });
         } catch (err) {
             // Falha silenciosa — paciente continua respondendo
@@ -528,32 +637,65 @@
     // ============================================================================
 
     async function enviarRespostas() {
-        const respondidos = Object.keys(state.respostas).length;
-        if (respondidos !== state.itens.length) {
-            alert('Por favor, responda todas as questões antes de enviar.');
+        const ativos = itensAtivos();
+        const total = ativos.length;
+
+        const respostas = {};
+        const omitidosManuais = [];
+        let emAberto = 0;
+        for (const i of ativos) {
+            if (state.omitidos[i.numero]) omitidosManuais.push(i.numero);
+            else if (state.respostas[i.numero] !== undefined) respostas[i.numero] = state.respostas[i.numero];
+            else emAberto++;
+        }
+
+        if (emAberto > 0) {
+            alert('Ainda há questões em aberto. Responda ou marque "Não se aplica" nas que faltam.');
             return;
         }
 
+        // Omitidos = o que o respondente marcou + o HMOT que a idade dispensou.
+        const omitidos = itensOmitidosAuto().concat(omitidosManuais).sort((a, b) => a - b);
+        const parcial = omitidos.length > 0;
+
+        if (omitidosManuais.length > 0) {
+            const n = omitidosManuais.length;
+            const ok = window.confirm(
+                `${n} ${n === 1 ? 'pergunta ficou' : 'perguntas ficaram'} sem resposta.\n\n` +
+                'As áreas afetadas não vão receber pontuação padronizada no resultado — ' +
+                'o profissional verá apenas a soma bruta e um aviso de área incompleta.\n\n' +
+                'Enviar assim?'
+            );
+            if (!ok) return;
+        }
+
         const btn = document.getElementById('btn-enviar');
+        const rotuloBtn = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Enviando...';
 
         try {
-            const { data, error } = await supabase.rpc(
-                'publico_finalizar_aplicacao',
-                {
+            // Sem nenhuma omissão o caminho é o antigo, byte por byte.
+            // Com omissão vai para a função que registra quais itens ficaram
+            // de fora — sem isso a correção somaria os ausentes como zero.
+            const { data, error } = parcial
+                ? await supabase.rpc('publico_finalizar_parcial', {
+                    p_token: state.token,
+                    p_respostas: respostas,
+                    p_omitidos: omitidos
+                })
+                : await supabase.rpc('publico_finalizar_aplicacao', {
                     p_token: state.token,
                     p_respostas_finais: state.respostas
-                }
-            );
+                });
 
             if (error || data?.erro) {
                 console.error('Erro ao finalizar:', error || data);
                 btn.disabled = false;
-                btn.textContent = 'Enviar respostas';
+                btn.textContent = rotuloBtn;
 
                 let msg = 'Não foi possível enviar suas respostas. Verifique sua conexão e tente novamente.';
-                if (data?.erro === 'respostas_incompletas') {
+                if (data?.erro === 'respostas_incompletas' || data?.erro === 'contagem_invalida') {
                     msg = 'Algumas respostas não foram registradas. Por favor, revise as questões.';
                 }
                 alert(msg);
@@ -567,7 +709,7 @@
         } catch (err) {
             console.error('Erro inesperado:', err);
             btn.disabled = false;
-            btn.textContent = 'Enviar respostas';
+            btn.textContent = rotuloBtn;
             alert('Erro de conexão. Verifique sua internet e tente novamente.');
         }
     }

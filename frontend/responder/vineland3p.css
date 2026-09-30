@@ -75,3 +75,45 @@
 .vineland-item-tip strong {
     color: #075985;
 }
+
+/* ============================================================================
+   "Não se aplica" — item que o respondente decidiu deixar sem resposta.
+   Visual deliberadamente apagado: é uma saída de emergência, não um atalho.
+   ============================================================================ */
+.item-acoes {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.item-pular {
+    padding: 6px 13px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+}
+.item-pular:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #64748b;
+}
+.item-pular.ativo {
+    border-style: solid;
+    border-color: #f59e0b;
+    background: #fffbeb;
+    color: #b45309;
+}
+
+.item-pergunta.omitido {
+    background: #fffdf5;
+    border-color: #fde68a;
+}
+.item-pergunta.omitido .item-opcoes {
+    opacity: .45;
+}

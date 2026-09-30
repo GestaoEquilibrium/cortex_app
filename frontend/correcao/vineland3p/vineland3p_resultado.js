@@ -226,13 +226,32 @@
     // CÁLCULO PRINCIPAL — pipeline Vineland
     // ========================================================================
     function calcularResultados(correcao) {
-        const respostas = (correcao?.escores_brutos || {}).respostas || {};
+        const brutosJson = correcao?.escores_brutos || {};
+        const respostas = brutosJson.respostas || {};
 
-        // 1. Lê valores 0-2 (binary respeita 0 ou 2 — não tem 1)
+        // Itens que o respondente deixou explicitamente de fora
+        // (publico_finalizar_parcial). Aplicações antigas não têm essa chave —
+        // a lista vem vazia e nada muda.
+        const omitidos = {};
+        (brutosJson.itens_omitidos || []).forEach(n => {
+            const k = parseInt(n, 10);
+            if (Number.isFinite(k)) omitidos[k] = true;
+        });
+
+        // 1. Lê valores 0-2 (binary respeita 0 ou 2 — não tem 1).
+        //    Item sem resposta fica null, NÃO zero: zero é uma resposta
+        //    ("Nunca") e somá-lo rebaixaria a bruta do domínio.
         const valores = {};
+        const semResposta = {};
         for (let n = 1; n <= 180; n++) {
             const r = respostas[n];
-            valores[n] = (r != null && !isNaN(r)) ? parseInt(r, 10) : 0;
+            const temValor = (r != null && !isNaN(r));
+            if (omitidos[n] || !temValor) {
+                valores[n] = null;
+                semResposta[n] = true;
+            } else {
+                valores[n] = parseInt(r, 10);
+            }
         }
 
         // 2. Idade do paciente na data da avaliação
@@ -241,19 +260,35 @@
         const faixaE2 = getFaixaE2(idade.anos);
         const hmotAplicavel = idade.anos < 10;
 
-        // 3. Soma brutas por seção
-        const brutos = { COM: 0, AVD: 0, SOC: 0, HMOT: 0, INT: 0, EXT: 0, OTR: 0 };
+        // 3. Soma brutas por seção e conta quantos itens ficaram sem resposta
+        const brutos    = { COM: 0, AVD: 0, SOC: 0, HMOT: 0, INT: 0, EXT: 0, OTR: 0 };
+        const faltantes = { COM: 0, AVD: 0, SOC: 0, HMOT: 0, INT: 0, EXT: 0, OTR: 0 };
         for (const [itemStr, secao] of Object.entries(ITEM_TO_SECAO)) {
             const n = parseInt(itemStr, 10);
-            if (brutos[secao] !== undefined) {
+            if (brutos[secao] === undefined) continue;
+            if (semResposta[n]) {
+                faltantes[secao]++;
+            } else {
                 brutos[secao] += valores[n];
             }
         }
 
-        // 4. Lookup C3 — bruto → PP por domínio
+        // Faltantes que realmente comprometem o laudo — o HMOT dispensado pela
+        // idade não conta, já era descartado antes desta mudança.
+        let totalFaltantes = 0;
+        for (const k of Object.keys(faltantes)) {
+            if (k === 'HMOT' && !hmotAplicavel) continue;
+            totalFaltantes += faltantes[k];
+        }
+
+        // 4. Lookup C3 — bruto → PP por domínio.
+        //    Domínio incompleto NÃO recebe PP: escore padronizado calculado
+        //    sobre item faltando não é escore, é um número menor que o real.
         const pps = {};
         for (const k of DOMAINS_ORDEM) {
             if (k === 'HMOT' && !hmotAplicavel) {
+                pps[k] = null;
+            } else if (faltantes[k] > 0) {
                 pps[k] = null;
             } else {
                 pps[k] = lkC3(faixaC3, k, brutos[k]);
@@ -273,8 +308,8 @@
         const ppCCA = (faixaC3 && countPP === 3) ? lkC3(faixaC3, 'ABC', somaPP) : null;
 
         // 6. Lookup E2 — INT/EXT
-        const veInt = faixaE2 ? lkE2(faixaE2, 'int', brutos.INT) : null;
-        const veExt = faixaE2 ? lkE2(faixaE2, 'ext', brutos.EXT) : null;
+        const veInt = (faixaE2 && faltantes.INT === 0) ? lkE2(faixaE2, 'int', brutos.INT) : null;
+        const veExt = (faixaE2 && faltantes.EXT === 0) ? lkE2(faixaE2, 'ext', brutos.EXT) : null;
 
         // 7. OTR — conta itens com pontuação > 0 (críticos)
         const itensCriticos = [];
@@ -299,6 +334,10 @@
 
         return {
             valores,
+            semResposta,
+            omitidos,
+            faltantes,
+            totalFaltantes,
             idade,
             faixaC3,
             faixaE2,
@@ -380,6 +419,8 @@
             </div>
 
             <div class="laudo-body">
+
+                ${renderAvisoIncompleto()}
 
                 <div class="laudo-secao-titulo">
                     <span class="laudo-secao-tag">1</span>
@@ -501,8 +542,49 @@
         `;
     }
 
+    // Aviso de aplicação incompleta. Aparece no alto do laudo porque muda a
+    // leitura de tudo o que vem depois.
+    function renderAvisoIncompleto() {
+        const total = state.scores.totalFaltantes;
+        if (!total) return '';
+
+        const f = state.scores.faltantes;
+        const afetados = DOMAINS_ORDEM.concat(['INT', 'EXT', 'OTR'])
+            .filter(k => f[k] > 0 && !(k === 'HMOT' && !state.scores.hmotAplicavel))
+            .map(k => {
+                const info = DOMAINS_INFO[k] || BEHAVIOR_INFO[k] || SECTIONS_INFO[k] || { label: k };
+                const nome = String(info.label).replace(/^[^\p{L}]+/u, '').trim() || k;
+                return `<li><strong>${escapeHtml(nome)}</strong> — ${f[k]} ${f[k] === 1 ? 'item' : 'itens'} sem resposta</li>`;
+            }).join('');
+
+        const nums = Object.keys(state.scores.semResposta)
+            .map(n => parseInt(n, 10))
+            .filter(n => !(ITEM_TO_SECAO[n] === 'HMOT' && !state.scores.hmotAplicavel))
+            .sort((a, b) => a - b);
+
+        return `
+            <div class="vineland-aviso vineland-aviso-incompleto">
+                <strong>⚠ Aplicação incompleta:</strong> ${total} ${total === 1 ? 'item ficou' : 'itens ficaram'}
+                sem resposta. As áreas abaixo aparecem <strong>sem Pontuação Ponderada e sem
+                classificação</strong> — a soma bruta de um domínio incompleto não é comparável
+                às normas, e o CCA / ABC só é calculado com os três domínios principais completos.
+                <ul>${afetados}</ul>
+                <div class="vineland-aviso-itens">Itens sem resposta: ${nums.join(', ')}</div>
+                Para obter as pontuações padronizadas destas áreas, reaplique o instrumento
+                com os itens faltantes respondidos.
+            </div>
+        `;
+    }
+
     function renderCCADesc(pp, label) {
         if (pp == null) {
+            const f = state.scores.faltantes;
+            const incompletos = ['COM', 'AVD', 'SOC'].filter(k => f[k] > 0);
+            if (incompletos.length) {
+                const nomes = incompletos.map(k => (DOMAINS_INFO[k] || {}).label || k)
+                    .map(t => String(t).replace(/^[^\p{L}]+/u, '').trim()).join(', ');
+                return `O CCA <strong>não foi calculado</strong> porque ${incompletos.length === 1 ? 'o domínio' : 'os domínios'} <strong>${escapeHtml(nomes)}</strong> ${incompletos.length === 1 ? 'está' : 'estão'} incompleto${incompletos.length === 1 ? '' : 's'}. O composto exige Comunicação, Atividades de Vida Diária e Socialização integralmente respondidos.`;
+            }
             return 'O CCA não pôde ser calculado — verifique se a idade do avaliado está dentro da faixa normativa (3-90+ anos) e se os 3 domínios principais (COM/AVD/SOC) foram completos.';
         }
         if (pp <= 70) {
@@ -538,6 +620,20 @@
             `;
         }
 
+        const faltam = state.scores.faltantes[code] || 0;
+        if (faltam > 0) {
+            return `
+                <div class="vineland-dom-card vineland-dom-card-incompleto" style="border-left-color:#f59e0b;">
+                    <div class="vineland-dom-card-header">
+                        <span class="vineland-dom-card-nome">${info.label}</span>
+                        <span class="vineland-dom-card-pp" style="color:#b45309;">—</span>
+                    </div>
+                    <div class="vineland-dom-card-bruto">Bruto parcial: ${bruto} · PP não calculada</div>
+                    <span class="vineland-dom-card-classif" style="background:#f59e0b;">Incompleto · ${faltam} ${faltam === 1 ? 'item' : 'itens'} sem resposta</span>
+                </div>
+            `;
+        }
+
         return `
             <div class="vineland-dom-card" style="border-left-color:${info.cor};">
                 <div class="vineland-dom-card-header">
@@ -553,6 +649,21 @@
     function renderBehCard(code, ve, bruto, classif) {
         const info = BEHAVIOR_INFO[code];
         const corClass = code === 'INT' ? 'cor-int' : 'cor-ext';
+
+        const faltam = state.scores.faltantes[code] || 0;
+        if (faltam > 0) {
+            return `
+                <div class="vineland-beh-card ${corClass} vineland-dom-card-incompleto">
+                    <div class="vineland-beh-card-header">
+                        <span class="vineland-beh-card-nome">${info.label}</span>
+                        <span class="vineland-beh-card-v" style="color:#b45309;">—</span>
+                    </div>
+                    <div class="vineland-beh-card-bruto">Bruto parcial: ${bruto} · Escore-v não calculado</div>
+                    <span class="vineland-dom-card-classif" style="background:#f59e0b;">Incompleto · ${faltam} ${faltam === 1 ? 'item' : 'itens'} sem resposta</span>
+                </div>
+            `;
+        }
+
         return `
             <div class="vineland-beh-card ${corClass}">
                 <div class="vineland-beh-card-header">
@@ -600,6 +711,17 @@
                 </tr>`;
             }
 
+            const faltam = state.scores.faltantes[code] || 0;
+            if (faltam > 0) {
+                return `<tr>
+                    <td><span class="nome-dom"><span class="nome-dom-bullet" style="background:${info.cor};"></span>${info.label}</span></td>
+                    <td class="ctr">${bruto}*</td>
+                    <td class="ctr">—</td>
+                    <td class="ctr">—</td>
+                    <td class="ctr"><span class="vineland-dom-card-classif" style="background:#f59e0b;font-size:10px;padding:3px 10px;">Incompleto (${faltam})</span></td>
+                </tr>`;
+            }
+
             return `<tr>
                 <td><span class="nome-dom"><span class="nome-dom-bullet" style="background:${info.cor};"></span>${info.label}</span></td>
                 <td class="ctr">${bruto}</td>
@@ -633,6 +755,11 @@
                     </thead>
                     <tbody>${linhasDom}${linhaCCA}</tbody>
                 </table>
+                ${state.scores.totalFaltantes ? `
+                <div class="vineland-tab-nota">
+                    * Soma bruta parcial — o domínio tem itens sem resposta e por isso não recebe
+                    Pontuação Ponderada nem classificação. O valor não é comparável às normas.
+                </div>` : ''}
             </div>
         `;
     }
@@ -730,6 +857,17 @@
             for (const it of itensSecao) {
                 const tipo = ITEM_TO_TIPO[it.numero] || 'standard';
                 const v = state.scores.valores[it.numero];
+
+                if (v === null) {
+                    html += `<tr style="background:#fffdf5;">
+                        <td style="text-align:center;font-weight:700;color:#1e40af;">${it.numero}</td>
+                        <td>${escapeHtml(it.texto)}</td>
+                        <td style="text-align:center;font-size:10px;">${tipo === 'binary' ? 'Sim/Não' : '0-1-2'}</td>
+                        <td style="text-align:center;font-weight:700;color:#b45309;">Não se aplica</td>
+                    </tr>`;
+                    continue;
+                }
+
                 const respLabel = tipo === 'binary'
                     ? (labelsBinary[v] !== undefined ? labelsBinary[v] : '—')
                     : (labelsStandard[v] !== undefined ? labelsStandard[v] : '—');

@@ -31,7 +31,7 @@ window.CortexBlocoLaudo = (function () {
 
     // 17px de escala dá um QR de ~2,8 cm no papel. Abaixo de ~2,5 cm a
     // leitura de QR impresso começa a falhar.
-    const ESCALA_PADRAO = 17;
+    const ESCALA_PADRAO = 24;
 
     const QR_MARGEM = 4;   // módulos de borda branca (a norma pede 4)
 

@@ -6,9 +6,14 @@
    prontuário e pelo bloco de avaliação no Google.
 
    TUDO aqui está em `em`. Quem manda na escala é o `font-size` do .cbl-bloco:
-   17px na hora de virar PNG (QR de ~2,8 cm num bloco de 16 cm) e o mesmo 17px
+   24px (ESCALA_PADRAO no bloco_laudo.js) na hora de virar PNG e o mesmo 24px
    na prévia, que é encolhida por transform. Mudar `font-size` para encolher
    refluiria o texto e a prévia deixaria de ser fiel ao impresso.
+
+   A largura do PNG é fixa em 1400px, então quem decide o tamanho aparente no
+   laudo é a RAZÃO entre a fonte e essa largura — colado na largura da página,
+   o bloco a 24px lê bem maior que a 17px, e fica mais alto. QR em 24,7% da
+   largura: ~3,9 cm num bloco de 16 cm.
 
    Sem truque de borda: a barra de acento é um elemento de verdade. O
    html2canvas erra borda de larguras diferentes com canto arredondado.
@@ -25,10 +30,9 @@
 }
 
 .cbl-bloco {
-    /* Acréscimo SÓ de fonte. A geometria (QR, respiros, borda, raio) continua
-       saindo do `font-size` em `em`; os textos somam estes 2px por cima, para
-       ler melhor no papel sem inchar o bloco. */
-    --cbl-mais: 2px;
+    /* Acréscimo SÓ de fonte, por cima da escala em `em`. A geometria (QR,
+       respiros, borda, raio) continua saindo do `font-size`. */
+    --cbl-mais: 3px;
 
     display: flex;
     align-items: stretch;
@@ -138,7 +142,10 @@
     font-size: calc(1em + var(--cbl-mais));
     line-height: 1.62;
     color: #4A5568;
-    text-align: justify;
+    /* Esquerda, não justificado: nesta escala a coluna de texto fica estreita
+       e o justificado abre rios de espaço entre as palavras — "Documento  de
+       natureza  técnico-científica  emitido  sob" numa linha só. */
+    text-align: left;
 }
 
 /* ── Moldura da prévia (dentro do CORTEX) ───────────────────────────────── */

@@ -5,15 +5,15 @@
    esquerda com divisória tracejada e texto à direita. Usado hoje pelo QR do
    prontuário e pelo bloco de avaliação no Google.
 
-   TUDO aqui está em `em`. Quem manda na escala é o `font-size` do .cbl-bloco:
-   24px (ESCALA_PADRAO no bloco_laudo.js) na hora de virar PNG e o mesmo 24px
-   na prévia, que é encolhida por transform. Mudar `font-size` para encolher
-   refluiria o texto e a prévia deixaria de ser fiel ao impresso.
+   A GEOMETRIA está toda em `em` e sai do `font-size` do .cbl-bloco: 17px
+   (ESCALA_PADRAO no bloco_laudo.js), na imagem e na prévia. Esses 17px dão o
+   QR em 17,5% da largura — ~2,8 cm num bloco de 16 cm — e os respiros, a
+   borda e o raio que o bloco tem desde o começo.
 
-   A largura do PNG é fixa em 1400px, então quem decide o tamanho aparente no
-   laudo é a RAZÃO entre a fonte e essa largura — colado na largura da página,
-   o bloco a 24px lê bem maior que a 17px, e fica mais alto. QR em 24,7% da
-   largura: ~3,9 cm num bloco de 16 cm.
+   O TAMANHO DA LETRA é outra coisa: sai de --cbl-mais, somado por cima. Subir
+   a escala em vez do --cbl-mais seria o caminho errado: cresceria o QR junto,
+   estreitaria a coluna de texto e o texto legal passaria de 6 para 11 linhas —
+   a caixa incharia quase o dobro de altura só para a letra crescer.
 
    Sem truque de borda: a barra de acento é um elemento de verdade. O
    html2canvas erra borda de larguras diferentes com canto arredondado.
@@ -30,9 +30,12 @@
 }
 
 .cbl-bloco {
-    /* Acréscimo SÓ de fonte, por cima da escala em `em`. A geometria (QR,
-       respiros, borda, raio) continua saindo do `font-size`. */
-    --cbl-mais: 3px;
+    /* Acréscimo SÓ de fonte, somado por cima da escala em `em`. É o único
+       jeito de a letra crescer sem a caixa engordar: a geometria (QR,
+       respiros, borda, raio) continua saindo do `font-size`, intacta.
+       8px leva o texto de 19 para 25px e a coluna de texto segue com 1068px
+       dos 1400, então o justificado continua sem rios de espaço. */
+    --cbl-mais: 8px;
 
     display: flex;
     align-items: stretch;
@@ -140,12 +143,11 @@
 .cbl-texto {
     margin: 0;
     font-size: calc(1em + var(--cbl-mais));
-    line-height: 1.62;
+    /* 1.48 em vez de 1.62: com a letra maior o entrelinhas de 1.62 sobrava e
+       era o que mais engordava a caixa. Em 1.48 a leitura continua folgada. */
+    line-height: 1.48;
     color: #4A5568;
-    /* Esquerda, não justificado: nesta escala a coluna de texto fica estreita
-       e o justificado abre rios de espaço entre as palavras — "Documento  de
-       natureza  técnico-científica  emitido  sob" numa linha só. */
-    text-align: left;
+    text-align: justify;
 }
 
 /* ── Moldura da prévia (dentro do CORTEX) ───────────────────────────────── */

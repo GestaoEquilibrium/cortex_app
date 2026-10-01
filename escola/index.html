@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Acesso ao Prontuário — Grupo Equilibrium</title>
+<title>Relatório Escolar — Grupo Equilibrium</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="/frontend/favicon.svg">
 <style>
@@ -29,17 +29,17 @@
     <div class="giro"></div>
     <p>Abrindo…</p>
     <noscript>
-        <p>Toque para continuar: <a href="/frontend/externo/index.html">abrir a área do profissional</a><br>
+        <p>Toque para continuar: <a href="/frontend/escola/index.html">abrir o relatório escolar</a><br>
         (e cole de novo o código que veio no seu link)</p>
     </noscript>
 </div>
 <script>
 // O site é servido a partir da raiz do repositório, então a página de verdade
-// mora em /frontend/externo/. Este encaminhador existe para o link curto
-// /e/?t=TOKEN funcionar — é ele que vai no QR do laudo.
+// mora em /frontend/escola/. Este encaminhador existe para o link curto
+// /escola/?t=TOKEN funcionar — é ele que vai no QR e no WhatsApp.
 // Precisa ser JS: um meta refresh com URL fixa perderia o ?t=.
 (function () {
-    var destino = '/frontend/externo/index.html' + (window.location.search || '') + (window.location.hash || '');
+    var destino = '/frontend/escola/index.html' + (window.location.search || '') + (window.location.hash || '');
     window.location.replace(destino);
 })();
 </script>

@@ -187,28 +187,322 @@
 .tisd-calc-btn:hover { background: #EAF1FF; }
 .tisd-calc-regra { flex: 1 1 100%; font-size: 11.5px; color: #94A3B8; }
 
-/* ── Cartões de classificação ───────────────────────────────────────────── */
+/* ============================================================================
+   LAUDO — cores das sete faixas do manual
+   Uma classe só, usada em card, régua, legenda e marcador.
+   ============================================================================ */
 
-.tisd-classif-amostra {
-    margin-top: 8px; padding-top: 8px;
-    border-top: 1px solid rgba(12, 31, 63, .08);
-    font-size: 11.5px; line-height: 1.5; color: #64748B;
+.tisd-f-grave    { --tf: #DC2626; --tf-claro: #FEE2E2; --tf-escuro: #991B1B; }
+.tisd-f-moderado { --tf: #EA580C; --tf-claro: #FFEDD5; --tf-escuro: #9A3412; }
+.tisd-f-leve     { --tf: #D97706; --tf-claro: #FEF3C7; --tf-escuro: #92400E; }
+.tisd-f-alerta   { --tf: #CA8A04; --tf-claro: #FEF9C3; --tf-escuro: #854D0E; }
+.tisd-f-dentro   { --tf: #16A34A; --tf-claro: #DCFCE7; --tf-escuro: #166534; }
+.tisd-f-acima    { --tf: #0D9488; --tf-claro: #CCFBF1; --tf-escuro: #115E59; }
+.tisd-f-muito    { --tf: #4F46E5; --tf-claro: #E0E7FF; --tf-escuro: #3730A3; }
+.tisd-f-nulo     { --tf: #94A3B8; --tf-claro: #F1F5F9; --tf-escuro: #475569; }
+
+.tisd-t-grave    { color: #991B1B; }
+.tisd-t-moderado { color: #9A3412; }
+.tisd-t-leve     { color: #92400E; }
+.tisd-t-alerta   { color: #854D0E; }
+.tisd-t-dentro   { color: #166534; }
+.tisd-t-acima    { color: #115E59; }
+.tisd-t-muito    { color: #3730A3; }
+
+/* ── Cards do resultado ──────────────────────────────────────────────────── */
+
+.tisd-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-bottom: 20px;
 }
 
-.tisd-classif-card.grave    { border-color: #FCA5A5; background: #FEF2F2; }
-.tisd-classif-card.moderado { border-color: #FDBA74; background: #FFF7ED; }
-.tisd-classif-card.leve     { border-color: #FCD34D; background: #FFFBEB; }
-.tisd-classif-card.alerta   { border-color: #FDE68A; background: #FEFCE8; }
-.tisd-classif-card.bom      { border-color: #BBF7D0; background: #F0FDF4; }
-.tisd-classif-card.otimo    { border-color: #A5B4FC; background: #EEF2FF; }
+.tisd-card {
+    border-radius: 11px; padding: 17px 14px 14px;
+    text-align: center;
+    border: 1px solid var(--tf, #CBD5E1);
+    background: var(--tf-claro, #F8FAFC);
+}
+.tisd-card.bruta {
+    border-color: #1E3A5F;
+    background: linear-gradient(135deg, #1E3A5F 0%, #14213F 100%);
+    color: #fff;
+}
 
-.tisd-classif-card.grave    .tisd-classif-num { color: #B91C1C; }
-.tisd-classif-card.moderado .tisd-classif-num { color: #C2410C; }
-.tisd-classif-card.leve     .tisd-classif-num { color: #B45309; }
-.tisd-classif-card.alerta   .tisd-classif-num { color: #A16207; }
-.tisd-classif-card.bom      .tisd-classif-num { color: #15803D; }
-.tisd-classif-card.otimo    .tisd-classif-num { color: #4338CA; }
+.tisd-card-label {
+    font-size: 9.5px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #64748B; margin-bottom: 7px;
+}
+.tisd-card.bruta .tisd-card-label { color: rgba(255,255,255,.82); }
+
+.tisd-card-valor {
+    font-size: 34px; font-weight: 800; line-height: 1;
+    letter-spacing: -.02em; color: var(--tf-escuro, #334155);
+}
+.tisd-card.bruta .tisd-card-valor { color: #fff; }
+
+.tisd-card-pe {
+    margin-top: 7px; font-size: 11.5px; font-weight: 600;
+    line-height: 1.35; color: var(--tf-escuro, #475569);
+}
+.tisd-card.bruta .tisd-card-pe { color: rgba(255,255,255,.72); font-weight: 500; }
+
+/* ── Blocos de gráfico ───────────────────────────────────────────────────── */
+
+.tisd-grafico-regua,
+.tisd-grafico-perfil,
+.tisd-grafico-amostra {
+    background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 11px;
+    padding: 20px 22px 16px; margin-bottom: 20px;
+}
+
+.tisd-grafico-tit {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #64748B;
+    text-align: center; margin-bottom: 18px;
+}
+
+/* ── Régua do percentil ──────────────────────────────────────────────────── */
+
+.tisd-regua-bloco { margin-bottom: 22px; }
+.tisd-regua-bloco:last-of-type { margin-bottom: 14px; }
+
+.tisd-regua-rot {
+    font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 9px;
+}
+
+.tisd-regua-trilho {
+    position: relative; height: 22px;
+    border-radius: 11px; overflow: visible;
+    border: 1px solid #CBD5E1; background: #fff;
+    margin: 20px 22px 0;
+}
+
+.tisd-regua-faixa {
+    position: absolute; top: 0; bottom: 0;
+    background: var(--tf-claro);
+    border-right: 1px solid rgba(255, 255, 255, .85);
+}
+.tisd-regua-faixa:first-child  { border-radius: 10px 0 0 10px; }
+.tisd-regua-faixa:last-child   { border-radius: 0 10px 10px 0; border-right: none; }
+
+.tisd-regua-marcador {
+    position: absolute; top: -9px;
+    min-width: 40px; height: 40px; padding: 0 7px;
+    border-radius: 20px; transform: translateX(-50%);
+    background: var(--tf); border: 3px solid #fff;
+    box-shadow: 0 2px 7px rgba(15, 23, 42, .28);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 12.5px; letter-spacing: -.01em;
+    z-index: 3;
+}
+
+.tisd-regua-pes {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 11px 22px 0; font-size: 10.5px; color: #94A3B8; font-weight: 600;
+}
+.tisd-regua-classif { font-size: 13px; font-weight: 800; }
+
+.tisd-regua-arred {
+    margin-top: 7px; font-size: 11px; color: #64748B; text-align: center;
+    font-style: italic;
+}
+
+.tisd-regua-bloco.vazia .tisd-regua-trilho { opacity: .45; }
+.tisd-regua-vazia-txt {
+    margin-top: 10px; text-align: center;
+    font-size: 12px; font-weight: 600; color: #94A3B8;
+}
+
+/* ── Legenda das faixas ──────────────────────────────────────────────────── */
+
+.tisd-legenda {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+    gap: 5px 10px;
+    padding-top: 14px; border-top: 1px solid #E2E8F0;
+}
+
+.tisd-leg-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10.5px; color: #64748B;
+    padding: 3px 5px; border-radius: 6px;
+}
+.tisd-leg-item.ativo {
+    background: #fff; color: #0F172A; font-weight: 700;
+    box-shadow: inset 0 0 0 1px #E2E8F0;
+}
+.tisd-leg-cor {
+    flex: 0 0 auto; width: 11px; height: 11px; border-radius: 3px;
+    background: var(--tf); border: 1px solid rgba(15, 23, 42, .12);
+}
+.tisd-leg-faixa { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tisd-leg-nome  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Composição da bruta ─────────────────────────────────────────────────── */
+
+.tisd-perfil-linha {
+    display: grid;
+    grid-template-columns: 182px 1fr 40px 42px;
+    align-items: center; gap: 11px;
+    padding: 4px 0;
+}
+
+.tisd-perfil-rot {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600; color: #334155;
+}
+.tisd-perfil-num {
+    flex: 0 0 auto; width: 18px; height: 18px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 10.5px; font-weight: 800;
+}
+
+.tisd-perfil-trilho {
+    height: 15px; border-radius: 8px; background: #E9EEF5; overflow: hidden;
+}
+.tisd-perfil-fill { height: 100%; border-radius: 8px; min-width: 2px; }
+
+.tisd-perfil-val {
+    text-align: right; font-size: 13px; font-weight: 800; color: #0F172A;
+    font-variant-numeric: tabular-nums;
+}
+.tisd-perfil-pct {
+    text-align: right; font-size: 11.5px; color: #94A3B8; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.tisd-perfil-nota {
+    margin-top: 14px; padding-top: 11px; border-top: 1px solid #E2E8F0;
+    font-size: 11px; line-height: 1.5; color: #94A3B8; text-align: center;
+}
+
+/* ── Amostra de referência ───────────────────────────────────────────────── */
+
+.tisd-amostra-bloco { margin-bottom: 20px; }
+.tisd-amostra-bloco:last-child { margin-bottom: 4px; }
+
+.tisd-amostra-rot {
+    font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 9px;
+}
+
+.tisd-amostra-trilho {
+    position: relative; height: 16px; margin: 22px 20px 0;
+    border-radius: 8px; border: 1px solid #CBD5E1; background: #fff;
+}
+
+.tisd-amostra-dp {
+    position: absolute; top: 0; bottom: 0;
+    background: #DBEAFE; border-radius: 3px;
+}
+.tisd-amostra-media {
+    position: absolute; top: -7px; bottom: -7px; width: 2px;
+    background: #1E3A5F;
+}
+.tisd-amostra-media::after {
+    content: 'M'; position: absolute; top: -15px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 9.5px; font-weight: 800; color: #1E3A5F;
+}
+
+.tisd-amostra-paciente {
+    position: absolute; top: -10px;
+    min-width: 34px; height: 34px; padding: 0 6px;
+    border-radius: 17px; transform: translateX(-50%);
+    background: #1E3A5F; border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, .26);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 11.5px; font-weight: 800;
+    font-variant-numeric: tabular-nums; z-index: 3;
+}
+.tisd-amostra-paciente.fora { background: #B91C1C; }
+
+.tisd-amostra-pes {
+    display: flex; justify-content: space-between;
+    margin: 11px 20px 0; font-size: 10.5px; color: #94A3B8; font-weight: 600;
+}
+.tisd-amostra-nota {
+    margin-top: 6px; font-size: 11.5px; line-height: 1.5; color: #64748B;
+}
+.tisd-amostra-nota:empty { display: none; }
+
+/* ── Leitura clínica ─────────────────────────────────────────────────────── */
+
+.tisd-interp {
+    background: #fff; border: 1px solid #E2E8F0; border-left: 4px solid #2F6FED;
+    border-radius: 10px; padding: 17px 19px; margin-bottom: 20px;
+}
+.tisd-interp p {
+    margin: 0 0 11px; font-size: 13px; line-height: 1.68;
+    color: #334155; text-align: justify;
+}
+.tisd-interp p:last-child { margin-bottom: 0; }
+.tisd-interp em { color: #475569; }
+
+/* ── Folha lançada ───────────────────────────────────────────────────────── */
+
+.tisd-tabela-folha {
+    border: 1px solid #E2E8F0; border-radius: 10px;
+    overflow: hidden; margin-bottom: 20px; background: #fff;
+}
+.tisd-tabela-folha table { width: 100%; border-collapse: collapse; }
+.tisd-tabela-folha th {
+    padding: 9px 13px; background: #F1F5F9;
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #64748B; text-align: left;
+}
+.tisd-tabela-folha th.ctr, .tisd-tabela-folha td.ctr { text-align: center; }
+.tisd-tabela-folha td {
+    padding: 7px 13px; font-size: 12.5px; color: #334155;
+    border-top: 1px solid #EEF2F7;
+}
+.tisd-tabela-folha tr.tisd-folha-grupo td {
+    background: #F8FAFC; font-weight: 700; color: #0F172A; font-size: 12.5px;
+}
+.tisd-folha-vazio { width: 26px; }
+.tisd-folha-item  { color: #64748B; font-size: 12px; }
+.tisd-tabela-folha tr.tisd-folha-total td {
+    background: #1E3A5F; color: #fff; font-size: 13.5px; border-top: none;
+}
+
+.tisd-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 8px; vertical-align: middle;
+}
+
+/* ── Conclusões e nota ───────────────────────────────────────────────────── */
+
+.tisd-conclusao {
+    background: #fff; border: 1px solid #E2E8F0; border-radius: 10px;
+    padding: 15px 18px; margin-bottom: 18px;
+}
+.tisd-conclusao p {
+    margin: 0 0 9px; font-size: 13px; line-height: 1.6; color: #334155;
+}
+.tisd-conclusao p:last-child { margin-bottom: 0; }
+
+.tisd-nota {
+    background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px;
+    padding: 14px 17px;
+    font-size: 11.5px; line-height: 1.65; color: #64748B; text-align: justify;
+}
+.tisd-nota strong { color: #334155; }
+
+/* ── Impressão / PDF ─────────────────────────────────────────────────────── */
+
+.exportando .tisd-acoes,
+.exportando .tisd-calc { display: none !important; }
 
 @media print {
-    .tisd-calc { display: none; }
+    .tisd-acoes, .tisd-calc { display: none; }
+}
+
+/* ── Telas estreitas ─────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+    .tisd-cards { grid-template-columns: 1fr; }
+    .tisd-legenda { grid-template-columns: repeat(2, 1fr); }
+    .tisd-perfil-linha { grid-template-columns: 130px 1fr 34px 38px; gap: 7px; }
+    .tisd-perfil-rot { font-size: 11.5px; }
+    .tisd-grafico-regua, .tisd-grafico-perfil, .tisd-grafico-amostra {
+        padding: 16px 13px 12px;
+    }
 }

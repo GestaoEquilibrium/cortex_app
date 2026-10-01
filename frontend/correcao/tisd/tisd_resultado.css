@@ -1,0 +1,148 @@
+/* ============================================================================
+   TISD — folha de pontuação e laudo
+   ============================================================================ */
+
+.tisd-aviso {
+    padding: 13px 16px; margin-bottom: 18px;
+    border-radius: 12px; font-size: 13.5px; line-height: 1.6;
+}
+.tisd-aviso.info    { background: #F6F9FF; border: 1px solid #C7D7F5; color: #33518A; }
+.tisd-aviso.atencao { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+.tisd-aviso.ruim    { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+
+/* ── Cabeçalho da folha ───────────────────────────────────────────────── */
+
+.tisd-cab {
+    display: grid; gap: 14px; margin-bottom: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+.tisd-campo { display: flex; flex-direction: column; }
+.tisd-campo.largo { grid-column: 1 / -1; }
+.tisd-campo label {
+    margin-bottom: 6px;
+    font-size: 12.5px; font-weight: 600; color: #44546F;
+}
+.tisd-campo input, .tisd-campo select, .tisd-campo textarea {
+    padding: 9px 11px;
+    border: 1px solid #CBD5E1; border-radius: 9px;
+    font-family: inherit; font-size: 14px; color: #0c1f3f; background: #fff;
+}
+.tisd-campo input:disabled { background: #F1F5F9; color: #64748B; }
+.tisd-campo input:focus, .tisd-campo select:focus, .tisd-campo textarea:focus {
+    outline: none; border-color: #2F6FED; box-shadow: 0 0 0 3px rgba(47,111,237,.14);
+}
+.tisd-campo textarea { resize: vertical; }
+
+/* ── Subtestes ────────────────────────────────────────────────────────── */
+
+.tisd-subs {
+    display: grid; gap: 14px; margin-bottom: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+}
+
+.tisd-sub {
+    background: #fff;
+    border: 1px solid var(--color-border, #E3E9F2);
+    border-left: 4px solid #2F6FED;
+    border-radius: 12px; padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(12,31,63,.05);
+}
+.tisd-sub-cab {
+    display: flex; align-items: center; gap: 9px;
+    padding-bottom: 10px; margin-bottom: 10px;
+    border-bottom: 1px solid var(--color-border, #E3E9F2);
+}
+.tisd-sub-ic { font-size: 17px; }
+.tisd-sub-nome { flex: 1; font-size: 14.5px; font-weight: 700; color: #0c1f3f; }
+.tisd-sub-total {
+    min-width: 36px; padding: 3px 10px; border-radius: 8px;
+    background: #EEF4FF; color: #1D4ED8;
+    font-size: 15px; font-weight: 800; text-align: center;
+}
+
+.tisd-linha {
+    display: flex; align-items: center; gap: 12px;
+    padding: 7px 0;
+}
+.tisd-linha label { flex: 1; font-size: 13px; line-height: 1.45; color: #44546F; }
+.tisd-entrada { flex: 0 0 auto; display: flex; align-items: center; gap: 7px; }
+.tisd-entrada input {
+    width: 72px; padding: 7px 9px; text-align: center;
+    border: 1px solid #CBD5E1; border-radius: 8px;
+    font-family: inherit; font-size: 15px; font-weight: 700; color: #0c1f3f;
+}
+.tisd-entrada input:focus {
+    outline: none; border-color: #2F6FED; box-shadow: 0 0 0 3px rgba(47,111,237,.14);
+}
+.tisd-max { font-size: 11px; color: #94A3B8; min-width: 52px; }
+
+/* ── Rodapé da folha ──────────────────────────────────────────────────── */
+
+.tisd-rodape { display: grid; gap: 14px; margin-bottom: 18px; }
+.tisd-bruta {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-radius: 12px;
+    background: linear-gradient(135deg, #141F3C, #2F6FED); color: #fff;
+}
+.tisd-bruta span { font-size: 14px; font-weight: 600; }
+.tisd-bruta strong { font-size: 26px; font-weight: 800; }
+
+.tisd-check { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: #44546F; }
+.tisd-check input { width: 17px; height: 17px; accent-color: #2F6FED; }
+
+.tisd-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+
+/* ── Laudo ────────────────────────────────────────────────────────────── */
+
+.tisd-tabela { margin-bottom: 24px; }
+.tisd-tabela table {
+    width: 100%; border-collapse: collapse;
+    border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+}
+.tisd-tabela th {
+    padding: 10px 12px; background: #141F3C; color: #fff;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; text-align: left;
+}
+.tisd-tabela th.ctr, .tisd-tabela td.ctr { text-align: center; }
+.tisd-tabela td {
+    padding: 9px 12px; border-top: 1px solid #eef2f7; font-size: 13px; color: #334155;
+}
+.tisd-tabela tr.tisd-total-linha td { background: #f1f5f9; font-weight: 700; }
+.tisd-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    margin-right: 8px; vertical-align: middle;
+}
+
+.tisd-classif-row {
+    display: grid; gap: 14px; margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+.tisd-classif-card {
+    padding: 18px; border-radius: 12px; text-align: center;
+    background: #F6F9FF; border: 1px solid #C7D7F5;
+}
+.tisd-classif-rot { font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: #64748B; }
+.tisd-classif-num { margin: 7px 0 4px; font-size: 32px; font-weight: 800; color: #1D4ED8; }
+.tisd-classif-lbl { font-size: 13px; font-weight: 600; color: #44546F; }
+
+.tisd-conclusao {
+    padding: 14px 16px; margin-bottom: 22px;
+    background: #fafafa; border: 1px solid #e2e8f0; border-radius: 12px;
+}
+.tisd-conclusao p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.6; color: #334155; }
+.tisd-conclusao p:last-child { margin-bottom: 0; }
+
+.tisd-nota {
+    padding: 14px 16px;
+    background: #f8fafc; border-left: 4px solid #94a3b8; border-radius: 10px;
+    font-size: 12px; line-height: 1.65; color: #475569;
+}
+
+@media (max-width: 560px) {
+    .tisd-subs { grid-template-columns: 1fr; }
+    .tisd-linha { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .tisd-entrada { width: 100%; }
+    .tisd-entrada input { width: 100%; }
+}

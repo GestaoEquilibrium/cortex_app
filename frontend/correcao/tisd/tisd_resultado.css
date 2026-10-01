@@ -146,3 +146,69 @@
     .tisd-entrada { width: 100%; }
     .tisd-entrada input { width: 100%; }
 }
+
+/* ── Ano escolar e aviso de norma (sprint normas) ───────────────────────── */
+
+.tisd-obrig {
+    margin-left: 6px; padding: 1px 6px; border-radius: 6px;
+    background: #FEF3C7; color: #92400E;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .02em;
+    text-transform: uppercase; vertical-align: middle;
+}
+
+.tisd-nota-norma {
+    padding: 9px 12px; border-radius: 9px;
+    font-size: 12.5px; line-height: 1.5;
+}
+.tisd-nota-norma:empty { display: none; }
+.tisd-nota-norma.info   { background: #F6F9FF; border: 1px solid #C7D7F5; color: #33518A; }
+.tisd-nota-norma.bom    { background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; }
+.tisd-nota-norma.alerta { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+
+/* ── Calculadora da nomeação rápida ─────────────────────────────────────── */
+
+.tisd-calc {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+    margin: -4px 0 10px; padding: 8px 10px;
+    background: #F8FAFC; border: 1px dashed var(--color-border, #E3E9F2);
+    border-radius: 9px;
+}
+.tisd-calc-rot { font-size: 12px; font-weight: 600; color: #475569; }
+.tisd-calc input {
+    width: 92px; padding: 5px 8px;
+    border: 1px solid var(--color-border, #E3E9F2); border-radius: 7px;
+    font-family: inherit; font-size: 12.5px;
+}
+.tisd-calc-btn {
+    padding: 5px 11px; border: 1px solid #C7D7F5; border-radius: 7px;
+    background: #F6F9FF; font-family: inherit; font-size: 12.5px;
+    font-weight: 600; color: #1D4ED8; cursor: pointer;
+}
+.tisd-calc-btn:hover { background: #EAF1FF; }
+.tisd-calc-regra { flex: 1 1 100%; font-size: 11.5px; color: #94A3B8; }
+
+/* ── Cartões de classificação ───────────────────────────────────────────── */
+
+.tisd-classif-amostra {
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid rgba(12, 31, 63, .08);
+    font-size: 11.5px; line-height: 1.5; color: #64748B;
+}
+
+.tisd-classif-card.grave    { border-color: #FCA5A5; background: #FEF2F2; }
+.tisd-classif-card.moderado { border-color: #FDBA74; background: #FFF7ED; }
+.tisd-classif-card.leve     { border-color: #FCD34D; background: #FFFBEB; }
+.tisd-classif-card.alerta   { border-color: #FDE68A; background: #FEFCE8; }
+.tisd-classif-card.bom      { border-color: #BBF7D0; background: #F0FDF4; }
+.tisd-classif-card.otimo    { border-color: #A5B4FC; background: #EEF2FF; }
+
+.tisd-classif-card.grave    .tisd-classif-num { color: #B91C1C; }
+.tisd-classif-card.moderado .tisd-classif-num { color: #C2410C; }
+.tisd-classif-card.leve     .tisd-classif-num { color: #B45309; }
+.tisd-classif-card.alerta   .tisd-classif-num { color: #A16207; }
+.tisd-classif-card.bom      .tisd-classif-num { color: #15803D; }
+.tisd-classif-card.otimo    .tisd-classif-num { color: #4338CA; }
+
+@media print {
+    .tisd-calc { display: none; }
+}

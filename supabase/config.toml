@@ -419,3 +419,6 @@ verify_jwt = false
 [functions.externo-acesso]
 verify_jwt = false
 
+
+[functions.escola-portal]
+verify_jwt = false

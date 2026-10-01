@@ -1,0 +1,242 @@
+/* ============================================================================
+   PORTAL DA ESCOLA — página pública
+   ----------------------------------------------------------------------------
+   Autossuficiente de propósito: é a única página do CORTEX que roda sem login
+   e quem abre quase sempre está no celular, na sala dos professores. Nada de
+   depender de base.css/components.css, que carregam coisa de app.
+   ============================================================================ */
+
+:root {
+    --navy:   #141F3C;
+    --azul:   #2F6FED;
+    --azul-e: #1D4ED8;
+    --verde:  #22C55E;
+    --ambar:  #F59E0B;
+    --fundo:  #ECEEF3;
+    --borda:  #E3E9F2;
+    --texto:  #0c1f3f;
+    --suave:  #64748B;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--fundo);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    color: var(--texto);
+    -webkit-text-size-adjust: 100%;
+}
+
+/* ── Topo ──────────────────────────────────────────────────────────────── */
+
+.esc-topo {
+    background: var(--navy);
+    color: #fff;
+    padding: 14px 16px;
+    padding-top: max(14px, env(safe-area-inset-top));
+}
+.esc-topo-interno {
+    max-width: 760px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.esc-marca { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.esc-logo {
+    flex: 0 0 auto;
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--azul), #7C4DFF);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 19px;
+}
+.esc-marca-txt { display: flex; flex-direction: column; min-width: 0; }
+.esc-marca-txt strong { font-size: 15px; font-weight: 700; }
+.esc-marca-txt small { font-size: 11.5px; color: #A8B6CE; }
+.esc-topo-rotulo { font-size: 12px; color: #A8B6CE; text-align: right; }
+
+/* ── Corpo ─────────────────────────────────────────────────────────────── */
+
+.esc-main { max-width: 760px; margin: 0 auto; padding: 18px 16px 40px; }
+
+.esc-carregando { padding: 60px 0; text-align: center; color: var(--suave); }
+.esc-spinner {
+    width: 32px; height: 32px; margin: 0 auto 14px;
+    border: 3px solid #D6DEEB; border-top-color: var(--azul);
+    border-radius: 50%; animation: esc-gira .8s linear infinite;
+}
+@keyframes esc-gira { to { transform: rotate(360deg); } }
+
+.esc-cartao {
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(12, 31, 63, .05);
+}
+
+.esc-cartao h1 { margin: 0 0 6px; font-size: 20px; font-weight: 800; }
+.esc-cartao h2 { margin: 0 0 12px; font-size: 16px; font-weight: 700; }
+.esc-cartao p  { margin: 0 0 12px; font-size: 14.5px; line-height: 1.6; color: #44546F; }
+.esc-cartao p:last-child { margin-bottom: 0; }
+
+.esc-aluno {
+    display: flex; flex-wrap: wrap; gap: 6px 18px;
+    padding: 12px 14px; margin-bottom: 14px;
+    background: #F6F9FF; border: 1px solid #C7D7F5; border-radius: 12px;
+    font-size: 14px;
+}
+.esc-aluno b { color: var(--azul-e); }
+
+/* ── Formulário ────────────────────────────────────────────────────────── */
+
+.esc-campo { margin-bottom: 14px; }
+.esc-campo label {
+    display: block; margin-bottom: 6px;
+    font-size: 13px; font-weight: 600; color: #44546F;
+}
+.esc-campo input, .esc-campo select, .esc-campo textarea {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid #CBD5E1; border-radius: 10px;
+    font-family: inherit; font-size: 16px;   /* 16px evita o zoom do iOS */
+    color: var(--texto); background: #fff;
+}
+.esc-campo input:focus, .esc-campo select:focus, .esc-campo textarea:focus {
+    outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(47, 111, 237, .14);
+}
+
+.esc-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px 18px;
+    border: none; border-radius: 11px;
+    background: var(--azul); color: #fff;
+    font-family: inherit; font-size: 15.5px; font-weight: 700;
+    cursor: pointer;
+}
+.esc-btn:hover:not(:disabled) { background: var(--azul-e); }
+.esc-btn:disabled { opacity: .5; cursor: default; }
+.esc-btn.secundario { background: #fff; color: var(--azul); border: 1px solid #C7D7F5; }
+.esc-btn.secundario:hover:not(:disabled) { background: #F1F5FD; }
+
+/* ── Lista de escalas ──────────────────────────────────────────────────── */
+
+.esc-escala {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px; margin-bottom: 10px;
+    border: 1px solid var(--borda); border-radius: 12px;
+    background: #fff; text-align: left; width: 100%;
+    font-family: inherit; cursor: pointer;
+}
+.esc-escala:hover { border-color: #C7D7F5; background: #FAFCFF; }
+.esc-escala.feita { background: #F6FEF9; border-color: #BBF7D0; cursor: default; }
+.esc-escala-mid { flex: 1; min-width: 0; }
+.esc-escala-sigla { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; color: var(--azul-e); }
+.esc-escala-nome  { font-size: 14.5px; font-weight: 600; margin-top: 2px; }
+.esc-escala-sub   { font-size: 12.5px; color: var(--suave); margin-top: 3px; }
+.esc-escala-ic {
+    flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: #EEF4FF; font-size: 17px;
+}
+.esc-escala.feita .esc-escala-ic { background: #DCFCE7; }
+.esc-escala-seta { flex: 0 0 auto; color: #94A3B8; font-size: 19px; }
+
+/* ── Itens da escala ──────────────────────────────────────────────────── */
+
+.esc-progresso {
+    position: sticky; top: 0; z-index: 5;
+    margin: -18px -16px 14px; padding: 11px 16px;
+    background: rgba(255, 255, 255, .96);
+    border-bottom: 1px solid var(--borda);
+    backdrop-filter: blur(6px);
+    font-size: 13px; font-weight: 600; color: #44546F;
+}
+.esc-progresso-barra { height: 5px; margin-top: 7px; background: #E3E9F2; border-radius: 99px; overflow: hidden; }
+.esc-progresso-fill  { height: 100%; background: var(--azul); border-radius: 99px; transition: width .2s; }
+
+.esc-item {
+    padding: 14px; margin-bottom: 10px;
+    border: 1px solid var(--borda); border-radius: 12px; background: #fff;
+}
+.esc-item.ok { background: #FAFCFF; border-color: #C7D7F5; }
+.esc-item-txt { display: flex; gap: 10px; font-size: 14.5px; line-height: 1.55; margin-bottom: 11px; }
+.esc-item-num {
+    flex: 0 0 auto; width: 25px; height: 25px; border-radius: 7px;
+    background: #EEF4FF; color: var(--azul-e);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+}
+.esc-opcoes { display: flex; flex-wrap: wrap; gap: 7px; }
+.esc-opcao {
+    flex: 1 1 auto; min-width: 84px;
+    padding: 10px 12px;
+    border: 1px solid #CBD5E1; border-radius: 9px; background: #fff;
+    font-family: inherit; font-size: 13.5px; font-weight: 600; color: #44546F;
+    cursor: pointer;
+}
+.esc-opcao:hover { border-color: var(--azul); color: var(--azul-e); }
+.esc-opcao.ativa { background: var(--azul); border-color: var(--azul); color: #fff; }
+
+/* ── Anexos ───────────────────────────────────────────────────────────── */
+
+.esc-anexo-area {
+    padding: 18px 14px; text-align: center;
+    border: 2px dashed #C7D7F5; border-radius: 12px; background: #F6F9FF;
+}
+.esc-anexo-area p { margin: 8px 0 12px; font-size: 13.5px; color: #44546F; }
+.esc-anexo-lista { margin-top: 12px; }
+.esc-anexo-linha {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 11px; margin-bottom: 7px;
+    background: #F6FEF9; border: 1px solid #BBF7D0; border-radius: 9px;
+    font-size: 13px;
+}
+
+/* ── Avisos ───────────────────────────────────────────────────────────── */
+
+.esc-aviso {
+    padding: 12px 14px; margin-bottom: 14px;
+    border-radius: 11px; font-size: 13.5px; line-height: 1.55;
+}
+.esc-aviso.info   { background: #F6F9FF; border: 1px solid #C7D7F5; color: #33518A; }
+.esc-aviso.bom    { background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; }
+.esc-aviso.atenc  { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+.esc-aviso.ruim   { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+
+.esc-vazio { padding: 48px 20px; text-align: center; color: var(--suave); }
+.esc-vazio-ic { font-size: 42px; margin-bottom: 12px; }
+.esc-vazio h1 { font-size: 19px; color: var(--texto); margin: 0 0 8px; }
+.esc-vazio p  { font-size: 14px; line-height: 1.6; margin: 0; }
+
+.esc-voltar {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0; margin-bottom: 14px;
+    border: none; background: none;
+    font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--azul);
+    cursor: pointer;
+}
+
+.esc-rodape {
+    max-width: 760px; margin: 0 auto;
+    padding: 18px 16px calc(24px + env(safe-area-inset-bottom));
+}
+.esc-rodape p { margin: 0; font-size: 11.5px; line-height: 1.6; color: #8A9BB5; text-align: center; }
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+
+.esc-toast {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 50; max-width: calc(100vw - 32px);
+    padding: 12px 18px; border-radius: 11px;
+    background: var(--navy); color: #fff;
+    font-size: 13.5px; font-weight: 600;
+    box-shadow: 0 8px 24px rgba(12, 31, 63, .25);
+}
+.esc-toast.bom  { background: #15803D; }
+.esc-toast.ruim { background: #B91C1C; }
+
+@media (min-width: 620px) {
+    .esc-main { padding: 26px 20px 48px; }
+    .esc-cartao { padding: 22px; }
+    .esc-progresso { margin: -26px -20px 18px; padding: 13px 20px; }
+}

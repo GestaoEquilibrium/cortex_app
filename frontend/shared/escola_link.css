@@ -1,0 +1,143 @@
+/* ============================================================================
+   LINK DA ESCOLA — botão na Bateria e a janela dele
+   ============================================================================ */
+
+.esl-botao {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 15px;
+    border: 1px solid #C7D7F5; border-radius: 10px;
+    background: #F6F9FF;
+    font-family: inherit; font-size: 13.5px; font-weight: 600;
+    color: #1D4ED8; cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.esl-botao:hover { background: #EAF1FF; border-color: #93B4F0; }
+.esl-botao.junto { margin-left: 14px; vertical-align: middle; }
+.esl-botao.flutuante {
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    background: #2F6FED; color: #fff; border-color: #2F6FED;
+    box-shadow: 0 6px 18px rgba(12, 31, 63, .22);
+}
+.esl-botao.flutuante:hover { background: #1D4ED8; }
+
+/* ── Janela ───────────────────────────────────────────────────────────── */
+
+.esl-overlay {
+    position: fixed; inset: 0; z-index: 90;
+    background: rgba(12, 31, 63, .45);
+    backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+}
+
+.esl-janela {
+    width: 100%; max-width: 580px; max-height: 88vh;
+    display: flex; flex-direction: column;
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 18px 50px rgba(12, 31, 63, .28);
+    overflow: hidden;
+}
+
+.esl-cab {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--color-border, #E3E9F2);
+}
+.esl-cab h2 { margin: 0; font-size: 17px; font-weight: 800; color: #0c1f3f; }
+.esl-cab p  { margin: 3px 0 0; font-size: 13px; color: #64748B; }
+.esl-x {
+    flex: 0 0 auto; width: 30px; height: 30px;
+    border: none; border-radius: 8px; background: #F1F5F9;
+    font-size: 19px; line-height: 1; color: #64748B; cursor: pointer;
+}
+.esl-x:hover { background: #E2E8F0; }
+
+.esl-corpo { padding: 18px 20px 20px; overflow-y: auto; }
+
+.esl-texto { margin: 0 0 12px; font-size: 13.5px; line-height: 1.6; color: #44546F; }
+
+/* ── Lista de escalas ─────────────────────────────────────────────────── */
+
+.esl-lista { margin-bottom: 14px; }
+
+.esl-item {
+    display: flex; align-items: flex-start; gap: 11px;
+    padding: 11px 13px; margin-bottom: 8px;
+    border: 1px solid var(--color-border, #E3E9F2); border-radius: 11px;
+    cursor: pointer;
+}
+.esl-item:hover { border-color: #C7D7F5; background: #FAFCFF; }
+.esl-item input { margin: 2px 0 0; width: 17px; height: 17px; accent-color: #2F6FED; cursor: pointer; }
+.esl-item.feita { background: #F6FEF9; border-color: #BBF7D0; cursor: default; }
+.esl-item.feita:hover { background: #F6FEF9; border-color: #BBF7D0; }
+
+.esl-check {
+    flex: 0 0 auto; width: 17px; height: 17px; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+    color: #15803D; font-weight: 800; font-size: 14px;
+}
+
+.esl-item-mid { display: flex; flex-direction: column; min-width: 0; }
+.esl-sigla { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; color: #1D4ED8; }
+.esl-nome  { font-size: 13.5px; font-weight: 600; color: #0c1f3f; margin-top: 1px; }
+.esl-sub   { font-size: 12px; color: #64748B; margin-top: 3px; }
+.esl-sub.ok     { color: #15803D; }
+.esl-sub.alerta { color: #B45309; }
+
+/* ── Avisos ───────────────────────────────────────────────────────────── */
+
+.esl-aviso {
+    padding: 11px 13px; margin-bottom: 13px;
+    border-radius: 10px; font-size: 13px; line-height: 1.55;
+}
+.esl-aviso.info   { background: #F6F9FF; border: 1px solid #C7D7F5; color: #33518A; }
+.esl-aviso.bom    { background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; }
+.esl-aviso.alerta { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+.esl-aviso.ruim   { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+
+/* ── QR e link ────────────────────────────────────────────────────────── */
+
+.esl-qr-area { text-align: center; margin-bottom: 14px; }
+.esl-qr {
+    display: inline-block;
+    padding: 12px; border-radius: 12px;
+    background: #fff; border: 1px solid var(--color-border, #E3E9F2);
+    image-rendering: pixelated;
+}
+.esl-qr-txt { margin: 9px 0 0; font-size: 12.5px; color: #64748B; }
+
+.esl-url {
+    padding: 10px 12px; margin-bottom: 14px;
+    background: #F8FAFC; border: 1px solid var(--color-border, #E3E9F2);
+    border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; color: #475569; word-break: break-all;
+}
+
+.esl-acoes { display: flex; flex-wrap: wrap; gap: 9px; }
+.esl-acoes .btn { flex: 1 1 auto; }
+
+.esl-dica { margin: 11px 0 0; font-size: 12px; line-height: 1.55; color: #64748B; text-align: center; }
+
+.esl-link-acao {
+    display: block; width: 100%; margin-top: 16px; padding: 0;
+    border: none; background: none;
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; text-decoration: underline;
+}
+.esl-perigo { color: var(--color-danger-text, #B91C1C); }
+
+/* ── Carregando ───────────────────────────────────────────────────────── */
+
+.esl-carregando { padding: 40px 0; text-align: center; color: #64748B; font-size: 13.5px; }
+.esl-spinner {
+    width: 28px; height: 28px; margin: 0 auto 12px;
+    border: 3px solid #D6DEEB; border-top-color: #2F6FED;
+    border-radius: 50%; animation: esl-gira .8s linear infinite;
+}
+@keyframes esl-gira { to { transform: rotate(360deg); } }
+
+@media (max-width: 560px) {
+    .esl-overlay { padding: 0; align-items: flex-end; }
+    .esl-janela { max-width: none; max-height: 92vh; border-radius: 16px 16px 0 0; }
+}

@@ -10,6 +10,9 @@
 //   interferir em qualquer navegação. Ele só escuta 'push' e 'notificationclick'.
 //
 // Escopo: /frontend/ (definido no register do notificacoes.js).
+//
+// Chat (sprint_chat_notif): mensagem do chat com o CORTEX aberto e em primeiro
+// plano não vira aviso do sistema — o cartão dentro da página já mostrou.
 // ============================================================================
 
 self.addEventListener('install', () => {
@@ -42,7 +45,15 @@ self.addEventListener('push', (event) => {
         requireInteraction: dados.tipo === 'bateria_concluida'
     };
 
-    event.waitUntil(self.registration.showNotification(titulo, opcoes));
+    event.waitUntil((async () => {
+        if (dados.tipo === 'chat_mensagem') {
+            const janelas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+            const emUso = janelas.some((c) =>
+                c.url.includes('/frontend/') && c.visibilityState === 'visible' && c.focused);
+            if (emUso) return;
+        }
+        return self.registration.showNotification(titulo, opcoes);
+    })());
 });
 
 self.addEventListener('notificationclick', (event) => {

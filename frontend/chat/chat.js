@@ -42,6 +42,8 @@
 
     // Avisa o contador da sidebar que esta página já cuida das não lidas.
     window.CortexChatPagina = true;
+    // Conversa aberta na tela: o chat_badge.js não mostra cartão dela.
+    window.CortexChatConversaAberta = null;
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -53,6 +55,13 @@
 
     function toast(msg, tipo) {
         if (window.CortexUI && window.CortexUI.toast) window.CortexUI.toast(msg, tipo || 'info');
+    }
+
+    // Aviso de mensagem em outra conversa. Com o chat_badge.js novo carregado,
+    // o cartão flutuante já faz isso com nome e texto; o toast é o reserva.
+    function avisarMensagem(msg) {
+        if (window.CortexChatBadge && window.CortexChatBadge.mostrarPopup) return;
+        toast(msg, 'info');
     }
 
     function iniciais(nome) {
@@ -291,6 +300,8 @@
         state.ativa = conv;
         state.mensagens = [];
         state.grupo = null;
+        window.CortexChatConversaAberta = id;
+        if (window.CortexChatBadge && window.CortexChatBadge.fecharPopsDaConversa) window.CortexChatBadge.fecharPopsDaConversa(id);
         app().classList.add('aberta');
         renderLista();
         renderThread(true);
@@ -320,6 +331,7 @@
 
     function fecharConversa() {
         state.ativa = null;
+        window.CortexChatConversaAberta = null;
         state.mensagens = [];
         state.grupo = null;
         app().classList.remove('aberta');
@@ -564,7 +576,7 @@
             // Conversa que ainda não estava na lista (ex.: primeiro contato
             // de um profissional externo, ou grupo em que acabei de entrar).
             carregarConversas();
-            if (!minha(m) && !sistema(m)) toast('💬 Nova mensagem', 'info');
+            if (!minha(m) && !sistema(m)) avisarMensagem('💬 Nova mensagem');
             return;
         }
 
@@ -582,7 +594,7 @@
             }
         } else if (!minha(m) && !sistema(m)) {
             conv.nao_lidas = Number(conv.nao_lidas || 0) + 1;
-            toast('💬 ' + (conv.outro?.nome || 'Nova mensagem'), 'info');
+            avisarMensagem('💬 ' + (conv.outro?.nome || 'Nova mensagem'));
             if (window.CortexChatBadge) window.CortexChatBadge.atualizar();
         } else if (sistema(m) && conv.tipo === 'grupo') {
             carregarConversas();   // nome ou nº de membros pode ter mudado
@@ -1071,6 +1083,13 @@
         montar();
         await carregarConversas();
         assinarRealtime();
+
+        // O cartão flutuante (chat_badge.js) abre a conversa aqui mesmo, sem
+        // recarregar a página. Se ela ainda não está na lista, busca antes.
+        window.CortexChatAbrir = async function (id) {
+            if (!state.conversas.some(x => x.id === id)) await carregarConversas();
+            if (state.conversas.some(x => x.id === id)) abrirConversa(id);
+        };
 
         const p = new URLSearchParams(window.location.search);
         const conversa = p.get('conversa');

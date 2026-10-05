@@ -269,14 +269,14 @@ window.CortexSidebar = (function() {
             if (!document.querySelector('link[data-cortex-chat-css]')) {
                 await carregarAsset('link', {
                     rel: 'stylesheet',
-                    href: base + 'chat_badge.css?v=1',
+                    href: base + 'chat_badge.css?v=2',
                     'data-cortex-chat-css': '1'
                 });
             }
 
             if (!window.CortexChatBadge) {
                 const ok = await carregarAsset('script', {
-                    src: base + 'chat_badge.js?v=1',
+                    src: base + 'chat_badge.js?v=2',
                     'data-cortex-chat-js': '1'
                 });
                 if (!ok) return;

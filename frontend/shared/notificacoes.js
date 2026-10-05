@@ -102,6 +102,8 @@ window.CortexNotificacoes = (function () {
             const { data, error } = await window.cortexClient
                 .from('notificacoes')
                 .select('id, tipo, titulo, corpo, paciente_id, url, lida_em, created_at')
+                // Mensagens do chat têm contador e cartão próprios (chat_badge.js).
+                .neq('tipo', 'chat_mensagem')
                 .order('created_at', { ascending: false })
                 .limit(LIMITE);
 
@@ -171,7 +173,8 @@ window.CortexNotificacoes = (function () {
                     },
                     (payload) => {
                         const nova = payload.new;
-                        if (!nova || state.lista.some((n) => n.id === nova.id)) return;
+                        if (!nova || nova.tipo === 'chat_mensagem') return;   // é do chat_badge.js
+                        if (state.lista.some((n) => n.id === nova.id)) return;
                         state.lista.unshift(nova);
                         state.lista = state.lista.slice(0, LIMITE);
                         state.naoLidas++;

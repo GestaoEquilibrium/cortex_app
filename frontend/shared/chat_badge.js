@@ -50,11 +50,17 @@ window.CortexChatBadge = (function () {
                     const m = payload.new;
                     if (!m) return;
                     const minha = m.autor_tipo === 'profissional' && m.autor_prof_id === profId;
+                    const sistema = m.autor_tipo === 'sistema';
                     atualizar();
                     // A página de mensagens já avisa do jeito dela.
-                    if (payload.eventType === 'INSERT' && !minha && !window.CortexChatPagina && window.CortexUI) {
+                    if (payload.eventType === 'INSERT' && !minha && !sistema && !window.CortexChatPagina && window.CortexUI) {
                         window.CortexUI.toast('💬 Nova mensagem', 'info');
                     }
+                })
+                // Entrar ou sair de um grupo muda o que conta como não lido.
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participantes' }, (payload) => {
+                    const p = payload.new || payload.old || {};
+                    if (p.prof_id === profId && payload.eventType !== 'UPDATE') atualizar();
                 })
                 .subscribe();
         } catch (err) {

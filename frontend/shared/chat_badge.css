@@ -1,0 +1,39 @@
+/* ============================================================================
+   CORTEX — contador de mensagens na navegação
+   ============================================================================ */
+
+/* Sidebar expandida: o .sidebar-badge do cortex-v2.css já faz o pill. Aqui só
+   o pulso quando aparece. */
+#chat-nav-badge {
+    animation: chat-badge-pulsa .45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes chat-badge-pulsa {
+    from { transform: scale(.4); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+}
+
+/* Sidebar em trilho (só ícones): o número vira um ponto no canto. O
+   cortex-v2.css esconde todo .sidebar-badge no trilho; este fica. */
+@media (min-width: 769px) {
+.sidebar.collapsed .nav-item #chat-nav-badge:not([hidden]) {
+    display: block;
+    position: absolute;
+    top: 7px; right: 7px;
+    min-width: 9px; height: 9px; padding: 0;
+    border-radius: 50%;
+    font-size: 0; line-height: 0;
+    box-shadow: 0 0 0 2px var(--navy);
+}
+}
+
+/* Barra inferior do celular: ponto sobre o ícone. */
+#cortex-tabbar .tabbar-item.tem-badge::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: calc(50% + 7px);
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    box-shadow: 0 0 0 2px #fff;
+}

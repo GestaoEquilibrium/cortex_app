@@ -42,6 +42,15 @@ window.CortexSidebar = (function() {
             icon: '<rect x="3" y="4" width="18" height="18" rx="2.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'
         },
         {
+            id: 'mensagens',
+            labelCurto: 'Mensagens',
+            accent: 'var(--accent-blue-2)',
+            label: 'Mensagens',
+            href: '../chat/chat.html',
+            badge: 'chat-nav-badge',
+            icon: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+        },
+        {
             id: 'graficos',
             accent: 'var(--accent-amber)',
             label: 'Gráficos',
@@ -250,6 +259,37 @@ window.CortexSidebar = (function() {
         }
     }
 
+    // ── sprint_chat: contador de mensagens não lidas no item "Mensagens".
+    // Mesmo esquema das notificações: carrega o módulo aqui, sem tocar nas
+    // páginas. Nunca pode derrubar a navegação.
+    async function iniciarChatBadge() {
+        try {
+            const base = caminhoShared();
+
+            if (!document.querySelector('link[data-cortex-chat-css]')) {
+                await carregarAsset('link', {
+                    rel: 'stylesheet',
+                    href: base + 'chat_badge.css?v=1',
+                    'data-cortex-chat-css': '1'
+                });
+            }
+
+            if (!window.CortexChatBadge) {
+                const ok = await carregarAsset('script', {
+                    src: base + 'chat_badge.js?v=1',
+                    'data-cortex-chat-js': '1'
+                });
+                if (!ok) return;
+            }
+
+            if (window.CortexChatBadge) {
+                await window.CortexChatBadge.iniciar();
+            }
+        } catch (err) {
+            console.warn('[sidebar] contador de mensagens indisponível:', err.message || err);
+        }
+    }
+
     function pegarIniciais(nome) {
         if (!nome) return '?';
         const partes = nome.trim().split(/\s+/);
@@ -367,6 +407,7 @@ window.CortexSidebar = (function() {
                 <a href="${hrefFinal}" class="nav-item ${ativa}" ${onclick} title="${item.label}" data-nav="${item.id}" style="--nav-accent: ${item.accent || 'var(--accent-blue)'}">
                     <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${item.icon}</svg>
                     <span class="sidebar-text">${item.label}</span>
+                    ${item.badge ? `<span class="sidebar-badge" id="${item.badge}" hidden>0</span>` : ''}
                 </a>
             `;
         }).join('');
@@ -478,6 +519,9 @@ window.CortexSidebar = (function() {
 
         // Sprint 91 — sino de notificações (não bloqueia o render da sidebar)
         iniciarNotificacoes();
+
+        // sprint_chat — contador de mensagens (idem)
+        iniciarChatBadge();
     }
 
     function setupEventos() {

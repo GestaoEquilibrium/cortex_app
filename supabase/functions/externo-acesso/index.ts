@@ -15,6 +15,8 @@
 //   solicitar    { sessao, token, mensagem? }     → pede aquele prontuário
 //   prontuario   { sessao, paciente_id }          → evoluções e laudos liberados
 //   laudo        { sessao, laudo_id }             → URL assinada de 2 min
+//   chat_listar  { sessao, depois? }              → conversa com a clínica
+//   chat_enviar  { sessao, texto }                → manda mensagem à clínica
 //   logout       { sessao }
 //
 // verify_jwt = false no config.toml: a página é pública.
@@ -143,9 +145,42 @@ Deno.serve(async (req) => {
             case "painel": {
                 const sessao = str(corpo.sessao, 120);
                 if (!sessao) return json({ ok: false, erro: "sessao_invalida" });
-                return json(await rpc("externo_painel", {
+                const painel = await rpc("externo_painel", {
                     p_sessao: sessao,
                     p_token: str(corpo.token, 64),
+                });
+                // Não lidas do chat para o item da sidebar. Se a função não
+                // existir ainda, o painel sai sem o número — nunca quebra.
+                if (painel?.ok && !painel.situacao) {
+                    try {
+                        painel.chat_nao_lidas = await rpc("externo_chat_nao_lidas", { p_sessao: sessao });
+                    } catch (_) {
+                        painel.chat_nao_lidas = 0;
+                    }
+                }
+                return json(painel);
+            }
+
+            case "chat_listar": {
+                const sessao = str(corpo.sessao, 120);
+                if (!sessao) return json({ ok: false, erro: "sessao_invalida" });
+                const depois = str(corpo.depois, 40);
+                return json(await rpc("externo_chat_listar", {
+                    p_sessao: sessao,
+                    p_depois: depois && !isNaN(Date.parse(depois)) ? depois : null,
+                }));
+            }
+
+            case "chat_enviar": {
+                const sessao = str(corpo.sessao, 120);
+                if (!sessao) return json({ ok: false, erro: "sessao_invalida" });
+                const texto = typeof corpo.texto === "string" ? corpo.texto.trim().slice(0, 4000) : "";
+                if (!texto) return json({ ok: false, erro: "texto_vazio" }, 400);
+                return json(await rpc("externo_chat_enviar", {
+                    p_sessao: sessao,
+                    p_texto: texto,
+                    p_ip: ip,
+                    p_ua: ua,
                 }));
             }
 

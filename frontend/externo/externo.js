@@ -30,8 +30,19 @@
         painel: null,       // { nome, liberados, solicitacoes, qr }
         paciente: null,     // prontuário aberto
         aba: 'evolucoes',
-        enviando: false
+        enviando: false,
+        // Chat com a clínica: uma conversa só, com quem atende o chat externo.
+        chat: {
+            conversaId: null,
+            mensagens: [],
+            atendente: null,
+            marca: null,        // 'agora' do servidor na última leitura (polling)
+            timer: null,
+            enviando: false
+        }
     };
+
+    const CHAT_POLL_MS = 5000;
 
     const raiz = () => document.getElementById('ea-raiz');
 
@@ -117,6 +128,7 @@
     const ICO = {
         pacientes: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>',
         pedidos: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+        mensagens: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
         sair: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'
     };
 
@@ -142,6 +154,10 @@
         document.body.classList.add('tem-shell');
         const nome = state.painel?.nome || '';
         const pend = (state.painel?.solicitacoes || []).length;
+        const naoLidas = Number(state.painel?.chat_nao_lidas || 0);
+
+        // Trocar de tela encerra o polling do chat.
+        pararPollingChat();
 
         raiz().innerHTML = `
             <header class="cortex-topbar" id="cortex-topbar">
@@ -174,6 +190,12 @@
                            data-ir="pedidos" style="--nav-accent: var(--accent-amber)">
                             <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICO.pedidos}</svg>
                             <span class="sidebar-text">Pedidos${pend ? ` (${pend})` : ''}</span>
+                        </a>
+                        <a href="#" class="nav-item ${itemAtivo === 'mensagens' ? 'active' : ''}"
+                           data-ir="mensagens" style="--nav-accent: var(--accent-purple)">
+                            <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICO.mensagens}</svg>
+                            <span class="sidebar-text">Mensagens</span>
+                            ${naoLidas ? `<span class="sidebar-badge" id="ea-chat-badge">${naoLidas > 99 ? '99+' : naoLidas}</span>` : ''}
                         </a>
                     </nav>
 
@@ -212,6 +234,7 @@
             fechar();
             if (a.dataset.ir === 'lista') verLista();
             if (a.dataset.ir === 'pedidos') verPedidos();
+            if (a.dataset.ir === 'mensagens') verMensagens();
         }));
     }
 
@@ -492,6 +515,221 @@
                 </div>`}`, 'pedidos');
     }
 
+    // ── Mensagens com a clínica ─────────────────────────────────────────────
+    // Uma conversa só, com quem atende o chat externo. Sem Realtime aqui (o
+    // externo não tem sessão do Supabase): a tela pergunta à Edge Function a
+    // cada 5 s o que chegou depois da última leitura, enquanto está visível.
+
+    function pararPollingChat() {
+        if (state.chat.timer) { clearInterval(state.chat.timer); state.chat.timer = null; }
+    }
+
+    function chatMesmoDia(a, b) {
+        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    function chatRotuloDia(d) {
+        const hoje = new Date();
+        if (chatMesmoDia(d, hoje)) return 'Hoje';
+        const ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
+        if (chatMesmoDia(d, ontem)) return 'Ontem';
+        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
+    function chatHora(iso) {
+        const d = new Date(iso);
+        return isNaN(d) ? '' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function chatMensagemHtml(m) {
+        const ticks = m.minha
+            ? `<span class="ea-msg-tick ${m.lida_em ? 'lida' : ''}" title="${m.lida_em ? 'Lida pela clínica' : 'Enviada'}">${m.lida_em ? '✓✓' : '✓'}</span>`
+            : '';
+        return `
+            <div class="ea-msg ${m.minha ? 'minha' : 'outra'}" data-msg="${esc(m.id)}">
+                <div class="ea-msg-balao">${esc(m.texto)}</div>
+                <div class="ea-msg-meta">${ticks}<span>${chatHora(m.criado_em)}</span></div>
+            </div>`;
+    }
+
+    function chatMensagensHtml() {
+        if (!state.chat.mensagens.length) {
+            return `<div class="ea-chat-vazio">
+                        <div class="ico">👋</div>
+                        Escreva para a clínica. Quem atende é
+                        <strong>${esc(state.chat.atendente?.nome || 'a equipe')}</strong>.
+                    </div>`;
+        }
+        let html = '';
+        let dia = null;
+        for (const m of state.chat.mensagens) {
+            const d = new Date(m.criado_em);
+            if (!dia || !chatMesmoDia(d, dia)) {
+                html += `<div class="ea-chat-dia">${esc(chatRotuloDia(d))}</div>`;
+                dia = d;
+            }
+            html += chatMensagemHtml(m);
+        }
+        return html;
+    }
+
+    function chatRolarFim() {
+        const box = document.getElementById('ea-chat-msgs');
+        if (box) box.scrollTop = box.scrollHeight;
+    }
+
+    function chatAcrescentar(m) {
+        if (state.chat.mensagens.some(x => x.id === m.id)) return;
+        const anterior = state.chat.mensagens[state.chat.mensagens.length - 1];
+        state.chat.mensagens.push(m);
+        const box = document.getElementById('ea-chat-msgs');
+        if (!box) return;
+        const vazio = box.querySelector('.ea-chat-vazio');
+        if (vazio) vazio.remove();
+        const d = new Date(m.criado_em);
+        if (!anterior || !chatMesmoDia(d, new Date(anterior.criado_em))) {
+            box.insertAdjacentHTML('beforeend', `<div class="ea-chat-dia">${esc(chatRotuloDia(d))}</div>`);
+        }
+        box.insertAdjacentHTML('beforeend', chatMensagemHtml(m));
+        chatRolarFim();
+    }
+
+    function chatAtualizarTicks(m) {
+        const i = state.chat.mensagens.findIndex(x => x.id === m.id);
+        if (i < 0) return;
+        state.chat.mensagens[i] = Object.assign(state.chat.mensagens[i], m);
+        const el = document.querySelector(`[data-msg="${CSS.escape(m.id)}"] .ea-msg-tick`);
+        if (el && m.lida_em) { el.classList.add('lida'); el.textContent = '✓✓'; el.title = 'Lida pela clínica'; }
+    }
+
+    async function verMensagens() {
+        telaApp(`
+            <div class="ea-chat">
+                <div class="ea-chat-cab">
+                    <div class="ea-chat-av" id="ea-chat-av">🏥</div>
+                    <div class="ea-chat-info">
+                        <div class="ea-chat-nome" id="ea-chat-nome">Equilibrium</div>
+                        <div class="ea-chat-sub" id="ea-chat-sub">Carregando...</div>
+                    </div>
+                    <span class="ea-chat-chip">Clínica</span>
+                </div>
+                <div class="ea-chat-msgs" id="ea-chat-msgs">
+                    <div class="loading-state"><div class="spinner"></div><p>Abrindo a conversa...</p></div>
+                </div>
+                <div class="ea-chat-escrever" id="ea-chat-escrever">
+                    <textarea id="ea-chat-texto" rows="1" maxlength="4000"
+                              placeholder="Escreva para a clínica…"></textarea>
+                    <button class="ea-chat-enviar" id="ea-chat-enviar" title="Enviar" aria-label="Enviar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+                <p class="ea-ajuda ea-chat-nota">Conversa registrada no prontuário de acesso externo. Não envie dados de outros pacientes por aqui.</p>
+            </div>`, 'mensagens');
+
+        const ta = document.getElementById('ea-chat-texto');
+        const btn = document.getElementById('ea-chat-enviar');
+        btn.addEventListener('click', enviarMensagemChat);
+        ta.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensagemChat(); }
+        });
+        ta.addEventListener('input', () => {
+            ta.style.height = 'auto';
+            ta.style.height = Math.min(150, ta.scrollHeight) + 'px';
+        });
+
+        state.chat.mensagens = [];
+        state.chat.marca = null;
+        await carregarChat(false);
+
+        pararPollingChat();
+        state.chat.timer = setInterval(() => {
+            if (document.visibilityState === 'visible') carregarChat(true);
+        }, CHAT_POLL_MS);
+    }
+
+    // incremental = só o que chegou depois da última leitura.
+    async function carregarChat(incremental) {
+        const box = document.getElementById('ea-chat-msgs');
+        if (!box) { pararPollingChat(); return; }
+        try {
+            const r = await chamar('chat_listar', {
+                sessao: state.sessao,
+                depois: incremental ? state.chat.marca : null
+            });
+            if (!r.ok) {
+                if (r.erro === 'sessao_invalida') return sair();
+                if (r.erro === 'sem_atendente') {
+                    pararPollingChat();
+                    document.getElementById('ea-chat-sub').textContent = 'Chat indisponível no momento';
+                    box.innerHTML = `<div class="ea-chat-vazio"><div class="ico">⏸️</div>
+                        A clínica ainda não ligou o atendimento por mensagens. Fale pelo telefone (34) 3212-9269.</div>`;
+                    document.getElementById('ea-chat-escrever').hidden = true;
+                    return;
+                }
+                if (!incremental) box.innerHTML = `<div class="ea-chat-vazio">Não foi possível abrir a conversa. Tente de novo.</div>`;
+                return;
+            }
+
+            state.chat.conversaId = r.conversa_id;
+            state.chat.atendente = r.atendente || null;
+            state.chat.marca = r.agora || state.chat.marca;
+
+            const at = r.atendente || {};
+            document.getElementById('ea-chat-nome').textContent = at.nome || 'Equilibrium';
+            document.getElementById('ea-chat-sub').textContent =
+                'Grupo Equilibrium' + (at.crp ? ' · CRP ' + at.crp : '');
+            document.getElementById('ea-chat-av').textContent = iniciais(at.nome || 'EQ');
+
+            // O que a clínica mandou já conta como lido: some o contador.
+            if (state.painel) state.painel.chat_nao_lidas = 0;
+            const badge = document.getElementById('ea-chat-badge');
+            if (badge) badge.remove();
+
+            if (!incremental) {
+                state.chat.mensagens = r.mensagens || [];
+                box.innerHTML = chatMensagensHtml();
+                chatRolarFim();
+                if (window.innerWidth > 768) document.getElementById('ea-chat-texto')?.focus();
+            } else {
+                (r.mensagens || []).forEach(chatAcrescentar);
+                // O que a clínica leu nesse meio tempo troca o tique.
+                (r.lidas || []).forEach(chatAtualizarTicks);
+            }
+        } catch (err) {
+            console.error('[externo] chat:', err);
+            if (!incremental) box.innerHTML = `<div class="ea-chat-vazio">Erro de conexão ao abrir a conversa.</div>`;
+        }
+    }
+
+    async function enviarMensagemChat() {
+        const ta = document.getElementById('ea-chat-texto');
+        const btn = document.getElementById('ea-chat-enviar');
+        if (!ta || state.chat.enviando) return;
+        const texto = ta.value.trim();
+        if (!texto) return;
+        state.chat.enviando = true;
+        btn.disabled = true;
+        try {
+            const r = await chamar('chat_enviar', { sessao: state.sessao, texto });
+            if (!r.ok) {
+                if (r.erro === 'sessao_invalida') return sair();
+                return alert(r.erro === 'sem_atendente'
+                    ? 'A clínica ainda não ligou o atendimento por mensagens.'
+                    : 'Não foi possível enviar. Tente de novo.');
+            }
+            ta.value = '';
+            ta.style.height = 'auto';
+            chatAcrescentar(r.mensagem);
+        } catch (err) {
+            console.error('[externo] chat enviar:', err);
+            alert('Erro de conexão ao enviar.');
+        } finally {
+            state.chat.enviando = false;
+            btn.disabled = false;
+            ta.focus();
+        }
+    }
+
     // ── Prontuário ──────────────────────────────────────────────────────────
 
     async function abrirProntuario(pacienteId) {
@@ -769,6 +1007,7 @@
 
     async function sair() {
         const s = state.sessao;
+        pararPollingChat();
         state.sessao = null;
         state.painel = null;
         state.paciente = null;

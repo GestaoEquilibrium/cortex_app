@@ -27,6 +27,7 @@
     );
 
     const state = {
+        nomePaciente: '',
         abaAtiva: 'inicio',
         anamneses: null,        // Sprint 57: anamneses pendentes (tokens)
         instrumentos: null,
@@ -57,6 +58,7 @@
             nome = meta.nome || 'Paciente';
         }
         const primeiroNome = nome.split(' ')[0];
+        state.nomePaciente = nome;
 
         document.getElementById('saudacao-h1').textContent = `Olá, ${primeiroNome}!`;
 
@@ -359,6 +361,17 @@
             ? `<div style="margin-top:8px;">${window.CortexRespondente.gerarTag(item.tipo_respondente)}</div>`
             : '';
 
+        // Heterorrelato (sprint_hetero_cpf): quem responde é outra pessoa, então o
+        // paciente pode mandar o link para ela. Quem receber informa o próprio CPF.
+        const hetero = !isConcluido && item.tipo_respondente && window.CortexRespondente
+            && typeof window.CortexRespondente.exigeCpf === 'function'
+            && window.CortexRespondente.exigeCpf(item.tipo_respondente);
+        const enviar = hetero
+            ? `<button class="btn-acao btn-acao-enviar" onclick="window.enviarInstrumento('${escapeAttr(item.aplicacao_id)}', '${escapeAttr(item.sigla)}')">
+                   <i class="ti ti-send"></i> Enviar para outra pessoa
+               </button>`
+            : '';
+
         return `
             <div class="app-item">
                 <div class="app-item-info">
@@ -370,7 +383,7 @@
                     </div>
                     ${tagRespondente}
                 </div>
-                <div class="app-item-acao">${acao}</div>
+                <div class="app-item-acao">${acao}${enviar}</div>
             </div>
         `;
     }
@@ -581,6 +594,99 @@
             alert('Erro inesperado. Tente novamente.');
         }
     };
+
+    // ─── ENVIAR PARA OUTRA PESSOA (heterorrelato) ─────────────────────────
+    // Gera o mesmo link único e abre uma folha com WhatsApp, copiar e
+    // compartilhar. Quem abrir o link informa o próprio CPF antes de responder.
+    window.enviarInstrumento = async function(aplicacaoId, sigla) {
+        try {
+            const { data: token, error } = await client.rpc('portal_gerar_link_aplicacao', { p_aplicacao_id: aplicacaoId });
+            if (error || !token) {
+                alert('Não foi possível gerar o link. Procure a clínica.');
+                return;
+            }
+            const slug = String(sigla || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!slug) { alert('Configuração de teste inválida. Procure a clínica.'); return; }
+            const url = new URL(`../frontend/responder/${slug}.html?token=${encodeURIComponent(token)}`, window.location.href).href;
+            const primeiro = String(state.nomePaciente || '').trim().split(/\s+/)[0] || 'o(a) paciente';
+            const texto =
+                `Olá! A Equilibrium Neuropsicologia pediu que você responda o questionário ${sigla} sobre ${primeiro}. ` +
+                `Leva poucos minutos e dá para fazer pelo celular:\n\n${url}\n\n` +
+                `Antes de começar, você vai informar o seu CPF. O link é pessoal.`;
+
+            try {
+                await client.rpc('portal_log_acesso', { p_acao: 'enviou_instrumento', p_recurso_id: aplicacaoId, p_detalhes: { sigla: sigla } });
+            } catch (e) { /* ignore */ }
+
+            abrirFolhaEnvio({ sigla, url, texto });
+        } catch (err) {
+            console.error('Erro enviarInstrumento:', err);
+            alert('Erro inesperado. Tente novamente.');
+        }
+    };
+
+    function abrirFolhaEnvio({ sigla, url, texto }) {
+        fecharFolhaEnvio();
+        const fundo = document.createElement('div');
+        fundo.id = 'folha-envio';
+        fundo.className = 'folha-fundo';
+        fundo.innerHTML = `
+            <div class="folha" role="dialog" aria-label="Enviar para outra pessoa">
+                <div class="folha-alca"></div>
+                <div class="folha-topo">
+                    <div class="folha-icone"><i class="ti ti-send"></i></div>
+                    <div>
+                        <div class="folha-titulo">Enviar ${escapeHtml(sigla)} para outra pessoa</div>
+                        <div class="folha-sub">Este questionário é respondido por quem convive com o(a) paciente. Quem receber o link informa o próprio CPF antes de começar.</div>
+                    </div>
+                </div>
+                <div class="folha-link" id="folha-link">${escapeHtml(url)}</div>
+                <div class="folha-botoes">
+                    <a class="folha-btn folha-btn-whats" id="folha-whats" href="https://wa.me/?text=${encodeURIComponent(texto)}" target="_blank" rel="noopener">
+                        <i class="ti ti-brand-whatsapp"></i> WhatsApp
+                    </a>
+                    <button class="folha-btn folha-btn-copiar" id="folha-copiar" type="button"><i class="ti ti-copy"></i> Copiar link</button>
+                    ${navigator.share ? '<button class="folha-btn folha-btn-share" id="folha-share" type="button"><i class="ti ti-share"></i> Outros apps</button>' : ''}
+                </div>
+                <button class="folha-fechar" id="folha-fechar" type="button">Fechar</button>
+            </div>`;
+        document.body.appendChild(fundo);
+        requestAnimationFrame(() => fundo.classList.add('aberta'));
+
+        fundo.addEventListener('click', (e) => { if (e.target === fundo) fecharFolhaEnvio(); });
+        fundo.querySelector('#folha-fechar').addEventListener('click', fecharFolhaEnvio);
+        fundo.querySelector('#folha-copiar').addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            let ok = false;
+            try { await navigator.clipboard.writeText(url); ok = true; } catch (_) { ok = copiarFallback(url); }
+            btn.innerHTML = ok ? '<i class="ti ti-check"></i> Copiado' : '<i class="ti ti-copy"></i> Não copiou';
+            setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy"></i> Copiar link'; }, 2200);
+        });
+        const share = fundo.querySelector('#folha-share');
+        if (share) {
+            share.addEventListener('click', async () => {
+                try { await navigator.share({ text: texto }); fecharFolhaEnvio(); } catch (_) { /* cancelou */ }
+            });
+        }
+    }
+
+    function fecharFolhaEnvio() {
+        const el = document.getElementById('folha-envio');
+        if (!el) return;
+        el.classList.remove('aberta');
+        setTimeout(() => el.remove(), 220);
+    }
+
+    function copiarFallback(txt) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = txt; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            const ok = document.execCommand('copy');
+            ta.remove();
+            return ok;
+        } catch (_) { return false; }
+    }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────
     function escapeHtml(t) {

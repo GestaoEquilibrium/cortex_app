@@ -36,6 +36,29 @@
 
     const el = () => document.getElementById('esc-conteudo');
 
+    // ── CPF de quem preenche (sprint_escola_cpf) ────────────────────────────
+    // Mesma conta do banco (publico_cpf_valido): dígitos verificadores. O
+    // banco confere de novo e recusa o CPF do aluno.
+    function soDigitos(v) { return String(v || '').replace(/\D/g, ''); }
+    function mascararCpf(v) {
+        const d = soDigitos(v).slice(0, 11);
+        if (d.length > 9) return d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6, 9) + '-' + d.slice(9);
+        if (d.length > 6) return d.slice(0, 3) + '.' + d.slice(3, 6) + '.' + d.slice(6);
+        if (d.length > 3) return d.slice(0, 3) + '.' + d.slice(3);
+        return d;
+    }
+    function cpfValido(v) {
+        const d = soDigitos(v);
+        if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+        let s = 0;
+        for (let i = 0; i < 9; i++) s += parseInt(d[i], 10) * (10 - i);
+        let d1 = (s * 10) % 11; if (d1 === 10) d1 = 0;
+        s = 0;
+        for (let i = 0; i < 10; i++) s += parseInt(d[i], 10) * (11 - i);
+        let d2 = (s * 10) % 11; if (d2 === 10) d2 = 0;
+        return d1 === parseInt(d[9], 10) && d2 === parseInt(d[10], 10);
+    }
+
     function esc(t) {
         const d = document.createElement('div');
         d.textContent = (t === null || t === undefined) ? '' : String(t);
@@ -135,6 +158,12 @@
                            placeholder="Ex.: Maria Souza" value="${esc(d.respondente_nome || '')}">
                 </div>
                 <div class="esc-campo">
+                    <label for="i-cpf">Seu CPF</label>
+                    <input id="i-cpf" type="text" inputmode="numeric" autocomplete="off" maxlength="14"
+                           placeholder="000.000.000-00" value="${esc(mascararCpf(d.respondente_cpf || ''))}">
+                    <small class="esc-dica">O CPF de quem está preenchendo — não o do(a) aluno(a). Fica registrado com as respostas.</small>
+                </div>
+                <div class="esc-campo">
                     <label for="i-funcao">Sua função na escola</label>
                     <select id="i-funcao">
                         <option value="">Selecione…</option>
@@ -150,6 +179,8 @@
 
         const sel = document.getElementById('i-funcao');
         const wrap = document.getElementById('i-outra-wrap');
+        const cpfEl = document.getElementById('i-cpf');
+        cpfEl.addEventListener('input', () => { cpfEl.value = mascararCpf(cpfEl.value); });
         sel.addEventListener('change', () => {
             wrap.style.display = sel.value === 'Outro' ? 'block' : 'none';
         });
@@ -160,17 +191,27 @@
             let funcao = sel.value;
             if (funcao === 'Outro') funcao = (document.getElementById('i-outra').value || '').trim();
 
+            const cpf = soDigitos(cpfEl.value);
+
             if (!escola) { toast('Informe o nome da escola.', 'ruim'); return; }
             if (nome.length < 3) { toast('Informe seu nome completo.', 'ruim'); return; }
             if (!funcao) { toast('Informe sua função na escola.', 'ruim'); return; }
+            if (!cpfValido(cpf)) { toast('Informe um CPF válido.', 'ruim'); cpfEl.focus(); return; }
 
             ev.target.disabled = true;
             ev.target.textContent = 'Salvando…';
-            const r = await chamar('identificar', { escola, nome, funcao });
+            const r = await chamar('identificar', { escola, nome, funcao, cpf });
             if (!r || !r.ok) {
                 ev.target.disabled = false;
                 ev.target.textContent = 'Começar';
-                toast('Não foi possível salvar. Tente de novo.', 'ruim');
+                const msgs = {
+                    cpf_invalido: 'Informe um CPF válido.',
+                    cpf_do_paciente: 'Este é o CPF do(a) aluno(a). Informe o seu CPF — de quem está preenchendo.',
+                    identificacao_incompleta: 'Preencha todos os campos.',
+                    token_invalido_ou_expirado: 'Este link não é mais válido. Peça um novo à clínica.'
+                };
+                toast(msgs[r && r.erro] || 'Não foi possível salvar. Tente de novo.', 'ruim');
+                if (r && (r.erro === 'cpf_invalido' || r.erro === 'cpf_do_paciente')) cpfEl.focus();
                 return;
             }
             await abrir();

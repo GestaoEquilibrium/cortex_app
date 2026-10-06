@@ -350,8 +350,12 @@
 
     function renderItemInstrumento(item) {
         const isConcluido = item.status === 'corrigido';
+        // Escala de professor/escola: quem responde é a escola, nunca quem está
+        // logado no portal. Fica só o botão de enviar o link.
+        const soEscola = !isConcluido && item.tipo_respondente === 'professor';
         const acao = isConcluido
             ? `<span class="app-item-data">${formatarDataCurta(item.created_at)}</span>`
+            : soEscola ? ''
             : `<button class="btn-acao" onclick="window.responderInstrumento('${escapeAttr(item.aplicacao_id)}', '${escapeAttr(item.sigla)}')">
                    <i class="ti ti-pencil"></i> Responder
                </button>`;

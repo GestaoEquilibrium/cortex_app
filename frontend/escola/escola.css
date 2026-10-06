@@ -240,3 +240,7 @@ body {
     .esc-cartao { padding: 22px; }
     .esc-progresso { margin: -26px -20px 18px; padding: 13px 20px; }
 }
+
+/* CPF de quem preenche (sprint_escola_cpf) */
+.esc-dica { display: block; margin-top: 6px; font-size: 12px; line-height: 1.4; color: #64748B; }
+#i-cpf { letter-spacing: .06em; font-variant-numeric: tabular-nums; }

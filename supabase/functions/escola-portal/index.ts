@@ -9,7 +9,7 @@
 //
 // Ações (JSON):
 //   abrir        { token }                            → aluno, escalas, situação
-//   identificar  { token, escola, nome, funcao, cpf }  → quem está preenchendo
+//   identificar  { token, escola, nome, funcao, matricula } → quem está preenchendo
 //   escala       { token, aplicacao_id }               → itens para responder
 //   salvar       { token, aplicacao_id, respostas }    → autosave
 //   finalizar    { token, aplicacao_id, respostas }    → pontua e marca escola
@@ -166,7 +166,7 @@ Deno.serve(async (req: Request) => {
                     p_escola: corpo.escola ?? "",
                     p_nome: corpo.nome ?? "",
                     p_funcao: corpo.funcao ?? "",
-                    p_cpf: corpo.cpf ?? "",
+                    p_matricula: corpo.matricula ?? "",
                 }));
 
             case "escala":

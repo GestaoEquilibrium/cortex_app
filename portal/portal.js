@@ -371,7 +371,7 @@
             && typeof window.CortexRespondente.exigeCpf === 'function'
             && window.CortexRespondente.exigeCpf(item.tipo_respondente);
         const enviar = hetero
-            ? `<button class="btn-acao btn-acao-enviar" onclick="window.enviarInstrumento('${escapeAttr(item.aplicacao_id)}', '${escapeAttr(item.sigla)}')">
+            ? `<button class="btn-acao btn-acao-enviar" onclick="window.enviarInstrumento('${escapeAttr(item.aplicacao_id)}', '${escapeAttr(item.sigla)}', '${escapeAttr(item.tipo_respondente)}')">
                    <i class="ti ti-send"></i> Enviar para outra pessoa
                </button>`
             : '';
@@ -602,7 +602,7 @@
     // ─── ENVIAR PARA OUTRA PESSOA (heterorrelato) ─────────────────────────
     // Gera o mesmo link único e abre uma folha com WhatsApp, copiar e
     // compartilhar. Quem abrir o link informa o próprio CPF antes de responder.
-    window.enviarInstrumento = async function(aplicacaoId, sigla) {
+    window.enviarInstrumento = async function(aplicacaoId, sigla, tipo) {
         try {
             const { data: token, error } = await client.rpc('portal_gerar_link_aplicacao', { p_aplicacao_id: aplicacaoId });
             if (error || !token) {
@@ -613,23 +613,27 @@
             if (!slug) { alert('Configuração de teste inválida. Procure a clínica.'); return; }
             const url = new URL(`../frontend/responder/${slug}.html?token=${encodeURIComponent(token)}`, window.location.href).href;
             const primeiro = String(state.nomePaciente || '').trim().split(/\s+/)[0] || 'o(a) paciente';
+            // O que a pessoa vai informar antes de começar, conforme quem responde
+            const documento = tipo === 'professor' ? 'sua matrícula profissional'
+                : tipo === 'responsavel_ou_professor' ? 'o seu CPF (pai, mãe ou responsável) ou sua matrícula profissional (professor/a)'
+                : 'o seu CPF';
             const texto =
                 `Olá! A Equilibrium Neuropsicologia pediu que você responda o questionário ${sigla} sobre ${primeiro}. ` +
                 `Leva poucos minutos e dá para fazer pelo celular:\n\n${url}\n\n` +
-                `Antes de começar, você vai informar o seu CPF. O link é pessoal.`;
+                `Antes de começar, você vai informar ${documento}. O link é pessoal.`;
 
             try {
                 await client.rpc('portal_log_acesso', { p_acao: 'enviou_instrumento', p_recurso_id: aplicacaoId, p_detalhes: { sigla: sigla } });
             } catch (e) { /* ignore */ }
 
-            abrirFolhaEnvio({ sigla, url, texto });
+            abrirFolhaEnvio({ sigla, url, texto, documento });
         } catch (err) {
             console.error('Erro enviarInstrumento:', err);
             alert('Erro inesperado. Tente novamente.');
         }
     };
 
-    function abrirFolhaEnvio({ sigla, url, texto }) {
+    function abrirFolhaEnvio({ sigla, url, texto, documento }) {
         fecharFolhaEnvio();
         const fundo = document.createElement('div');
         fundo.id = 'folha-envio';
@@ -641,7 +645,7 @@
                     <div class="folha-icone"><i class="ti ti-send"></i></div>
                     <div>
                         <div class="folha-titulo">Enviar ${escapeHtml(sigla)} para outra pessoa</div>
-                        <div class="folha-sub">Este questionário é respondido por quem convive com o(a) paciente. Quem receber o link informa o próprio CPF antes de começar.</div>
+                        <div class="folha-sub">Este questionário é respondido por quem convive com o(a) paciente. Quem receber o link informa ${escapeHtml(documento)} antes de começar.</div>
                     </div>
                 </div>
                 <div class="folha-link" id="folha-link">${escapeHtml(url)}</div>

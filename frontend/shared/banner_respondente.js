@@ -217,8 +217,10 @@
     // com o cliente da página.
     function clienteCpf() {
         if (cpfState.cliente) return cpfState.cliente;
-        if (!window.supabase || !window.SUPABASE_CONFIG) return null;
-        cpfState.cliente = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
+        // config.js declara `const SUPABASE_CONFIG`, que não vira window.SUPABASE_CONFIG.
+        const cfg = (typeof SUPABASE_CONFIG !== 'undefined') ? SUPABASE_CONFIG : window.SUPABASE_CONFIG;
+        if (!window.supabase || !cfg || !cfg.url || !cfg.anonKey) return null;
+        cpfState.cliente = window.supabase.createClient(cfg.url, cfg.anonKey, {
             auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'cortex-resp-cpf' }
         });
         return cpfState.cliente;

@@ -70,7 +70,10 @@
             btn.addEventListener('click', () => trocarAba(btn.dataset.tab));
         });
 
-        await renderAba(state.abaAtiva);
+        // ?aba=externos — link das notificações de acesso externo (sprint_crm_auto)
+        const abaUrl = new URLSearchParams(window.location.search).get('aba');
+        if (abaUrl && document.querySelector(`.cfg-tab[data-tab="${abaUrl}"]`)) await trocarAba(abaUrl);
+        else await renderAba(state.abaAtiva);
     });
 
     async function trocarAba(aba) {

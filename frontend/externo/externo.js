@@ -380,6 +380,23 @@
         document.getElementById('ea-sair-pub').onclick = sair;
     }
 
+    // sprint_crm_auto: CRM consta como médico solicitante de paciente da
+    // clínica → o cadastro sai aprovado e os pacientes já estão liberados.
+    function telaAprovadoAuto(nome, liberados) {
+        telaPublica(`
+            <div class="ea-centro">
+                <div class="ea-icone">✅</div>
+                <h1>Cadastro liberado</h1>
+                <p>${nome ? esc(String(nome).split(' ')[0]) + ', s' : 'S'}eu CRM consta como médico solicitante
+                   na clínica, então o acesso foi liberado na hora.</p>
+                ${liberados > 0 ? `<div class="ea-nota">${liberados === 1 ? '1 paciente seu já está' : liberados + ' pacientes seus já estão'}
+                    disponíveis em <strong>Meus pacientes</strong>.</div>` : ''}
+                <p class="ea-ajuda">Entre com o e-mail e a senha que você acabou de criar.</p>
+                <button class="btn btn-primary btn-lg ea-bloco" id="ea-ir-login">Entrar</button>
+            </div>`);
+        document.getElementById('ea-ir-login').onclick = telaLogin;
+    }
+
     function telaRecusado(nome, motivo) {
         telaPublica(`
             <div class="ea-centro">
@@ -955,7 +972,8 @@
                 };
                 return mostrarErro('ea-erro-cad', msgs[r.erro] || 'Não foi possível enviar. Tente de novo.');
             }
-            telaPendente(nome, r.com_solicitacao);
+            if (r.situacao === 'aprovado') telaAprovadoAuto(nome, Number(r.pacientes_liberados || 0));
+            else telaPendente(nome, r.com_solicitacao);
         } catch (err) {
             console.error('[externo] cadastro:', err);
             mostrarErro('ea-erro-cad', 'Erro de conexão. Tente de novo.');

@@ -289,7 +289,8 @@ window.CortexExternosAdmin = (function () {
                                 <td><strong>${esc(a.paciente?.nome_completo || '—')}</strong></td>
                                 <td>${esc(a.externo?.nome_completo || '—')}
                                     <br><span class="ext-sub">${esc([a.externo?.conselho, a.externo?.registro].filter(Boolean).join(' '))}</span></td>
-                                <td>${(a.escopo || []).map(e => `<span class="ext-tag">${esc(ESCOPO_LABEL[e] || e)}</span>`).join(' ')}</td>
+                                <td>${(a.escopo || []).map(e => `<span class="ext-tag">${esc(ESCOPO_LABEL[e] || e)}</span>`).join(' ')}
+                                    ${/automática/i.test(a.observacao || '') ? `<br><span class="ext-sub" title="${esc(a.observacao)}">⚡ automático pelo CRM</span>` : ''}</td>
                                 <td>${venceu
                                         ? `<span class="ext-selo off">Vencido em ${data(a.expira_em)}</span>`
                                         : `${d} dia(s)<br><span class="ext-sub">até ${data(a.expira_em)}</span>`}</td>

@@ -133,6 +133,7 @@
                 <button class="ia-btn ia-btn-secundario" id="btn-novo-instr">+ Cadastrar teste novo</button>
                 <button class="ia-btn ia-btn-secundario" id="btn-editar-instr" disabled>Editar dados do teste</button>
                 <button class="ia-btn ia-btn-secundario" id="btn-ativo-instr" disabled>Inativar teste</button>
+                <a class="ia-btn ia-btn-secundario" href="catalogo.html" title="Lista de todos os testes com descrição, por categoria, pronta para imprimir">🖨 Imprimir catálogo</a>
             </div>
 
             <div id="ia-ficha"></div>

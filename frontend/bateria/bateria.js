@@ -146,6 +146,7 @@
         paciente: null,
         hipoteseId: null,
         instrumentosNoChecklist: [],   // UUIDs do checklist
+        quemAplica: {},                // sprint_modo: { instrumento_id: 'online' | 'presencial' } do checklist
         catalogo: [],                   // catálogo completo
         aplicacoes: [],                 // registros de aplicacoes_instrumento
         profissionais: [],              // dropdown de aplicadores
@@ -214,7 +215,7 @@
     async function carregarChecklist() {
         const { data, error } = await window.cortexClient
             .from('hipoteses')
-            .select('id, instrumentos_sugeridos')
+            .select('id, instrumentos_sugeridos, checklist_aplicacao')
             .eq('paciente_id', state.pacienteId)
             .maybeSingle();
 
@@ -226,7 +227,16 @@
         if (data) {
             state.hipoteseId = data.id;
             state.instrumentosNoChecklist = data.instrumentos_sugeridos || [];
+            state.quemAplica = (data.checklist_aplicacao && typeof data.checklist_aplicacao === 'object') ? data.checklist_aplicacao : {};
         }
+    }
+
+    // sprint_modo: modalidade escolhida no checklist (Online × Presencial).
+    // Sem escolha: online quando o teste permite; senão presencial.
+    function modalidadeDoChecklist(instId) {
+        const inst = state.catalogo.find(i => i.id === instId);
+        if (!inst || !inst.permite_aplicacao_online) return 'presencial';
+        return state.quemAplica[instId] === 'presencial' ? 'presencial' : 'online';
     }
 
     async function carregarCatalogo() {
@@ -273,7 +283,8 @@
     /**
      * Sincronização adicionar-só:
      * Para cada instrumento no checklist que ainda não tem aplicação criada,
-     * cria um registro com status 'aguardando' e modalidade 'presencial'.
+     * cria um registro com status 'aguardando' e a modalidade escolhida no
+     * checklist (online / presencial).
      * NUNCA remove registros existentes.
      */
     async function sincronizarComChecklist() {
@@ -288,7 +299,7 @@
         const inserts = novos.map(instId => ({
             paciente_id: state.pacienteId,
             instrumento_id: instId,
-            modalidade: 'presencial',  // default
+            modalidade: modalidadeDoChecklist(instId),  // escolha do checklist
             status: 'aguardando'        // default explícito
         }));
 
@@ -359,6 +370,11 @@
                     </p>
                 </div>
                 <div class="anamnese-cabecalho-acoes">
+                    ${state.podeCorrigir && state.aplicacoes.length ? `
+                        <button class="btn btn-sm bateria-btn-reaplicar" onclick="window.CortexBateria.abrirReaplicacao()" title="Escolher quais escalas serão reaplicadas">
+                            🔁 Reaplicar escalas
+                        </button>
+                    ` : ''}
                     ${state.podeChecklist ? `
                         <button class="btn btn-ghost btn-sm" onclick="window.CortexBateria.recarregar()">
                             🔄 Sincronizar checklist
@@ -723,7 +739,210 @@
         });
     }
 
+    // ============================================================================
+    // REAPLICAÇÃO EM LOTE (sprint_reaplicacao)
+    // ============================================================================
+    // Pop-up com os testes do checklist, agrupados por categoria. Marca-se
+    // teste a teste ou a categoria inteira. Para cada escolhido nasce uma
+    // NOVA aplicação (aguardando) — a anterior e o resultado continuam
+    // salvos, igual ao 🔁 de cada card. Só dá para reaplicar o que já foi
+    // encerrado; o que ainda não começou ou está em andamento aparece
+    // apagado, com o motivo.
+
+    const ORDEM_CATS_REAP = ['Inteligência / Raciocínio', 'Linguagem / Leitura / Escrita / Matemática',
+        'Atenção / Memória', 'Funções Executivas', 'TEA / Autismo', 'TDAH / Comportamento',
+        'Humor / Ansiedade / Depressão', 'Psicopatologia Geral / ASEBA',
+        'Personalidade / Habilidades Sociais / Adaptativo', 'Desenvolvimento Infantil', 'Sensorial'];
+
+    function opcoesReaplicacao() {
+        // Testes do checklist + qualquer teste que já tenha aplicação (mesmo fora do checklist)
+        const ids = [];
+        state.instrumentosNoChecklist.forEach(id => { if (!ids.includes(id)) ids.push(id); });
+        state.aplicacoes.forEach(a => { if (!ids.includes(a.instrumento_id)) ids.push(a.instrumento_id); });
+
+        const grupos = {};
+        ids.forEach(id => {
+            const inst = state.catalogo.find(i => i.id === id);
+            if (!inst) return;
+            const apls = state.aplicacoes.filter(a => a.instrumento_id === id);
+            const ultima = apls[apls.length - 1] || null;
+            let motivo = null;
+            if (!ultima) motivo = 'ainda não aplicado';
+            else if (!STATUS_ENCERRADOS.includes(ultima.status)) motivo = 'aplicação em andamento';
+            const cat = inst.dominio_principal || 'Outros';
+            (grupos[cat] = grupos[cat] || []).push({ inst, ultima, total: apls.length, motivo });
+        });
+        const cats = ORDEM_CATS_REAP.filter(c => grupos[c]);
+        Object.keys(grupos).forEach(c => { if (!cats.includes(c)) cats.push(c); });
+        cats.forEach(c => grupos[c].sort((a, b) => String(a.inst.sigla).localeCompare(String(b.inst.sigla), 'pt-BR')));
+        return { grupos, cats };
+    }
+
+    function abrirReaplicacao() {
+        const { grupos, cats } = opcoesReaplicacao();
+        const escolhidos = new Set();
+        let motivoTexto = '';
+
+        const ov = document.createElement('div');
+        ov.className = 'reap-ov';
+        document.body.appendChild(ov);
+        const fechar = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+        const esc = (e) => { if (e.key === 'Escape') fechar(); };
+        document.addEventListener('keydown', esc);
+        ov.addEventListener('mousedown', e => { if (e.target === ov) fechar(); });
+
+        const elegiveisDe = (cat) => grupos[cat].filter(o => !o.motivo).map(o => o.inst.id);
+
+        function estadoCat(cat) {
+            const el = elegiveisDe(cat);
+            const n = el.filter(id => escolhidos.has(id)).length;
+            return { total: el.length, n, todos: el.length > 0 && n === el.length, algum: n > 0 && n < el.length };
+        }
+
+        function render() {
+            const chipsCats = cats.map(cat => {
+                const e = estadoCat(cat);
+                return `<button type="button" class="reap-chip ${e.todos ? 'ativo' : e.algum ? 'parcial' : ''}" data-cat="${escapeHtml(cat)}" ${e.total ? '' : 'disabled'}>
+                    ${escapeHtml(cat)} <b>${e.total}</b></button>`;
+            }).join('');
+
+            const secoes = cats.map(cat => {
+                const e = estadoCat(cat);
+                const itens = grupos[cat].map(o => {
+                    const id = o.inst.id;
+                    const marcado = escolhidos.has(id);
+                    return `
+                        <label class="reap-item ${o.motivo ? 'off' : ''} ${marcado ? 'marcado' : ''}">
+                            <input type="checkbox" data-id="${id}" ${marcado ? 'checked' : ''} ${o.motivo ? 'disabled' : ''}>
+                            <span class="reap-item-corpo">
+                                <span class="reap-sigla">${escapeHtml(o.inst.sigla)}</span>
+                                <span class="reap-nome">${escapeHtml(o.inst.nome_completo || '')}</span>
+                            </span>
+                            <span class="reap-info">${o.motivo
+                                ? `<span class="reap-tag off">${o.motivo}</span>`
+                                : `<span class="reap-tag">${o.total}ª feita → ${o.total + 1}ª</span>`}</span>
+                        </label>`;
+                }).join('');
+                return `
+                    <div class="reap-cat">
+                        <label class="reap-cat-topo ${e.total ? '' : 'off'}">
+                            <input type="checkbox" data-catbox="${escapeHtml(cat)}" ${e.todos ? 'checked' : ''} ${e.total ? '' : 'disabled'}>
+                            <span>${escapeHtml(cat)}</span>
+                            <span class="reap-cat-n">${e.n}/${e.total}</span>
+                        </label>
+                        <div class="reap-itens">${itens}</div>
+                    </div>`;
+            }).join('');
+
+            const totalElegiveis = cats.reduce((a, c) => a + elegiveisDe(c).length, 0);
+            ov.innerHTML = `
+                <div class="reap-box" role="dialog" aria-modal="true" aria-label="Reaplicar escalas">
+                    <div class="reap-topo">
+                        <div class="reap-topo-ico">🔁</div>
+                        <div>
+                            <h2>Reaplicar escalas</h2>
+                            <p>${escapeHtml(state.paciente.nome_completo)} · escolha por teste ou pela categoria inteira</p>
+                        </div>
+                        <button type="button" class="reap-x" id="reap-x" aria-label="Fechar">×</button>
+                    </div>
+                    <div class="reap-corpo">
+                        ${totalElegiveis ? `
+                        <div class="reap-atalhos">
+                            <span class="reap-atalhos-rot">Por categoria</span>
+                            <div class="reap-chips">${chipsCats}</div>
+                            <div class="reap-atalhos-acoes">
+                                <button type="button" class="reap-link" id="reap-todos">Marcar todos</button>
+                                <button type="button" class="reap-link" id="reap-nenhum">Limpar</button>
+                            </div>
+                        </div>` : `
+                        <div class="reap-vazio">Nenhum teste encerrado ainda. A reaplicação libera depois que a aplicação anterior termina.</div>`}
+                        ${secoes}
+                        <label class="reap-motivo-rot" for="reap-motivo">Motivo da reaplicação <span>(opcional — fica nas observações de cada teste)</span></label>
+                        <textarea id="reap-motivo" rows="2" maxlength="200" placeholder="Ex.: reavaliação após 6 meses de intervenção">${escapeHtml(motivoTexto)}</textarea>
+                    </div>
+                    <div class="reap-rodape">
+                        <span class="reap-conta"><b>${escolhidos.size}</b> ${escolhidos.size === 1 ? 'escala selecionada' : 'escalas selecionadas'}</span>
+                        <button type="button" class="btn btn-secondary" id="reap-cancelar">Cancelar</button>
+                        <button type="button" class="btn btn-primary reap-ok" id="reap-ok" ${escolhidos.size ? '' : 'disabled'}>🔁 Reaplicar ${escolhidos.size || ''}</button>
+                    </div>
+                </div>`;
+
+            ov.querySelector('#reap-x').onclick = fechar;
+            ov.querySelector('#reap-cancelar').onclick = fechar;
+            const mt = ov.querySelector('#reap-motivo');
+            mt.oninput = () => { motivoTexto = mt.value; };
+            ov.querySelectorAll('input[data-id]').forEach(cb => cb.onchange = () => {
+                if (cb.checked) escolhidos.add(cb.dataset.id); else escolhidos.delete(cb.dataset.id);
+                manterScroll(render);
+            });
+            const alternarCat = (cat) => {
+                const e = estadoCat(cat);
+                elegiveisDe(cat).forEach(id => e.todos ? escolhidos.delete(id) : escolhidos.add(id));
+                manterScroll(render);
+            };
+            ov.querySelectorAll('input[data-catbox]').forEach(cb => cb.onchange = () => alternarCat(cb.dataset.catbox));
+            ov.querySelectorAll('[data-cat]').forEach(b => b.onclick = () => alternarCat(b.dataset.cat));
+            const bt = ov.querySelector('#reap-todos');
+            if (bt) bt.onclick = () => { cats.forEach(c => elegiveisDe(c).forEach(id => escolhidos.add(id))); manterScroll(render); };
+            const bn = ov.querySelector('#reap-nenhum');
+            if (bn) bn.onclick = () => { escolhidos.clear(); manterScroll(render); };
+            ov.querySelector('#reap-ok').onclick = confirmar;
+        }
+
+        function manterScroll(fn) {
+            const corpo = ov.querySelector('.reap-corpo');
+            const y = corpo ? corpo.scrollTop : 0;
+            fn();
+            const novo = ov.querySelector('.reap-corpo');
+            if (novo) novo.scrollTop = y;
+        }
+
+        async function confirmar() {
+            if (!escolhidos.size) return;
+            const btn = ov.querySelector('#reap-ok');
+            btn.disabled = true; btn.textContent = 'Criando...';
+            const motivo = (motivoTexto || '').trim();
+            const linhas = [...escolhidos].map(id => {
+                const apls = state.aplicacoes.filter(a => a.instrumento_id === id);
+                const ultima = apls[apls.length - 1];
+                return {
+                    paciente_id: state.pacienteId,
+                    instrumento_id: id,
+                    modalidade: state.instrumentosNoChecklist.includes(id) ? modalidadeDoChecklist(id) : ((ultima && ultima.modalidade) || 'presencial'),
+                    status: 'aguardando',
+                    observacoes_aplicacao: '🔁 Reaplicação' + (motivo ? ' — ' + motivo : '')
+                };
+            });
+            try {
+                const { data, error } = await window.cortexClient.from('aplicacoes_instrumento').insert(linhas).select();
+                if (error) throw error;
+                state.aplicacoes = [...state.aplicacoes, ...(data || [])];
+                await CortexAudit.log('criacao', 'aplicacoes_instrumento', null, {
+                    pacienteId: state.pacienteId,
+                    detalhes: {
+                        operacao: 'reaplicar_lote',
+                        instrumentos: linhas.map(l => (state.catalogo.find(i => i.id === l.instrumento_id) || {}).sigla),
+                        motivo: motivo || null
+                    }
+                });
+                fechar();
+                agrupar();
+                renderizar();
+                const n = (data || []).length;
+                window.CortexUI.toast(`🔁 ${n} ${n === 1 ? 'escala reaplicada' : 'escalas reaplicadas'} — já estão em "Aguardando".`, 'success');
+            } catch (err) {
+                console.error('[bateria] reaplicar lote:', err);
+                window.CortexUI.toast('Erro ao reaplicar: ' + (err.message || ''), 'danger');
+                btn.disabled = false; btn.textContent = `🔁 Reaplicar ${escolhidos.size}`;
+            }
+        }
+
+        render();
+    }
+
     window.CortexBateria = {
+        abrirReaplicacao: abrirReaplicacao,
+
         filtrar: function(status) {
             state.filtroStatus = status;
             renderizar();

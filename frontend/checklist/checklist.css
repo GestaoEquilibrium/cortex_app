@@ -161,453 +161,155 @@
 }
 
 /* ============================================================================
-   IMPRESSÃO PDF — fiel aos PDFs originais da Equilibrium
+   ONLINE × PRESENCIAL por teste (sprint_modo) — tela
+   ============================================================================ */
+.checklist-modo { display: inline-flex; gap: 0; margin-top: 8px; border-radius: 999px; padding: 2px;
+    background: #f1f5f9; border: 1px solid #e2e8f0; position: relative; z-index: 2; }
+.checklist-modo-btn { border: 0; background: transparent; cursor: pointer; border-radius: 999px;
+    padding: 4px 11px; font: 700 11.5px/1.2 'Inter', system-ui, sans-serif; color: #64748b;
+    transition: background .15s, color .15s, box-shadow .15s, transform .12s; }
+.checklist-modo-btn:hover:not(:disabled) { color: #141F3C; transform: translateY(-1px); }
+.checklist-modo-btn.online.ativo { background: linear-gradient(135deg, #2F6FED, #0891b2); color: #fff;
+    box-shadow: 0 3px 10px rgba(47, 111, 237, .32); }
+.checklist-modo-btn.presencial.ativo { background: linear-gradient(135deg, #F59E0B, #ea580c); color: #fff;
+    box-shadow: 0 3px 10px rgba(234, 88, 12, .30); }
+.checklist-modo-btn:disabled { opacity: .4; cursor: not-allowed; }
+.checklist-modo-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font: 700 11px/1.2 'Inter', sans-serif; }
+.checklist-modo-tag.online { background: #e0f2fe; color: #075985; }
+.checklist-modo-tag.presencial { background: #ffedd5; color: #9a3412; }
+.checklist-modo-resumo { display: inline-flex; gap: 6px; }
+.checklist-modo-resumo span { padding: 4px 10px; border-radius: 999px; font: 700 11.5px/1.2 'Inter', sans-serif; }
+.checklist-modo-resumo .cm-on { background: #e0f2fe; color: #075985; }
+.checklist-modo-resumo .cm-pr { background: #ffedd5; color: #9a3412; }
+
+/* ============================================================================
+   IMPRESSÃO — checklist "padrão ouro" (sprint_checklist_print)
    ============================================================================ */
 
-.print-only {
-    display: none;
-}
-
-@media print {
-    @page {
-        size: A4;
-        margin: 0;
-    }
-
-    /* CRÍTICO: Força navegadores a imprimirem cores de fundo (cabeçalho navy, bullets coloridos, etc.) */
-    *,
-    *::before,
-    *::after {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
-    }
-
-    .no-print, .no-print * {
-        display: none !important;
-    }
-
-    /* A sidebar fica dentro de .app-shell e some com o no-print. Mas a
-       topbar, a barra inferior, o botão flutuante e o backdrop são criados
-       pelo sidebar.js com document.body.appendChild() — ficam FORA do
-       app-shell e escapavam da regra acima. Era isso que imprimia o
-       cabeçalho do CORTEX e o "Painel · Pacientes · Agenda" no PDF. */
-    #cortex-topbar,
-    .cortex-topbar,
-    #cortex-tabbar,
-    .cortex-tabbar,
-    #sidebar-fab,
-    .sidebar-fab,
-    #sidebar-backdrop,
-    .sidebar-backdrop,
-    #cortex-sidebar,
-    .sidebar,
-    .cortex-toast,
-    .cx-pop-scrim,
-    .modal-overlay {
-        display: none !important;
-    }
-
-    .print-only {
-        display: block !important;
-    }
-
-    body {
-        margin: 0;
-        padding: 0;
-        background: white !important;
-    }
-
-    html, body {
-        width: 100%;
-        height: auto;
-        /* Sem isto, o espaço reservado para topbar/tabbar vira uma página
-           em branco no fim do PDF. */
-        overflow: visible !important;
-    }
-
-    /* ── Quebra de página ────────────────────────────────────────────────
-       A linha do instrumento não pode partir no meio: no PDF anterior o
-       SRBCSS ficava metade numa página e metade na outra, com o cabeçalho
-       passando por cima. */
-
-    .print-tabela tbody tr,
-    .print-tabela tbody tr.linha-teste,
-    .print-tabela tbody tr.linha-categoria {
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-    }
-
-    /* Cabeçalho de categoria sozinho no rodapé fica órfão: leva a primeira
-       linha junto para a página seguinte. */
-    .print-tabela tbody tr.linha-categoria {
-        page-break-after: avoid !important;
-        break-after: avoid !important;
-    }
-
-    /* Repete o cabeçalho da tabela em toda página */
-    .print-tabela thead { display: table-header-group; }
-    .print-tabela tfoot { display: table-footer-group; }
-
-    /* O container não pode cortar conteúdo entre páginas */
-    .print-tabela-container {
-        overflow: visible !important;
-        page-break-inside: auto;
-    }
-
-    /* Evita a página extra em branco no fim */
-    .print-doc > *:last-child { page-break-after: avoid !important; }
-    .print-doc { page-break-after: avoid !important; }
-}
+.print-only { display: none; }
 
 @media screen {
     #print-area { display: none; }
 }
 
-/* Estilos do documento ─── fiel ao PDF original Equilibrium ─── */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 11mm 11mm 14mm 11mm;
+        @bottom-left {
+            content: "Equilibrium Neuropsicologia · Checklist de Instrumentos · documento de uso interno";
+            font: 600 7.5pt 'Inter', sans-serif; color: #94a3b8;
+        }
+        @bottom-right {
+            content: "Página " counter(page) " de " counter(pages);
+            font: 700 7.5pt 'Inter', sans-serif; color: #64748b;
+        }
+    }
 
-.print-doc {
-    font-family: 'Inter', sans-serif;
-    color: #1a202c;
-    background: white;
-    font-size: 9px;
-    line-height: 1.4;
+    *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    .no-print, .no-print * { display: none !important; }
+
+    /* Elementos que o sidebar.js pendura direto no body */
+    #cortex-topbar, .cortex-topbar, #cortex-tabbar, .cortex-tabbar,
+    #sidebar-fab, .sidebar-fab, #sidebar-backdrop, .sidebar-backdrop,
+    #cortex-sidebar, .sidebar, .cortex-toast, .cx-pop-scrim, .modal-overlay {
+        display: none !important;
+    }
+
+    .print-only { display: block !important; }
+    html, body { margin: 0; padding: 0; background: #fff !important; width: 100%; height: auto; overflow: visible !important; }
+
+    .pck-tabela thead { display: table-header-group; }
+    .pck-tabela tr { break-inside: avoid; page-break-inside: avoid; }
+    .pck-tabela tr.pck-cat { break-after: avoid; page-break-after: avoid; }
+    .pck-fecho, .pck-ficha, .pck-hipoteses, .pck-resumo { break-inside: avoid; page-break-inside: avoid; }
 }
 
-/* === CABEÇALHO === */
-/* Fundo azul navy super escuro (quase preto-azulado), com pequeno gradiente sutil */
+.pck-doc { font-family: 'Inter', system-ui, sans-serif; color: #0f172a; font-size: 8.6pt; line-height: 1.38; }
 
-.print-header {
-    background: linear-gradient(135deg, #0a1f3d 0%, #163a6c 100%) !important;
-    background-color: #0a1f3d !important;
-    color: white !important;
-    padding: 22px 32px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-}
+/* Cabeçalho */
+.pck-topo { display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    padding: 14px 18px; border-radius: 12px 12px 0 0;
+    background: linear-gradient(120deg, #0a1f3d 0%, #141F3C 45%, #1e3a8a 100%); color: #fff; }
+.pck-marca { display: flex; align-items: center; gap: 11px; }
+.pck-logo { width: 36px; height: 36px; flex-shrink: 0; }
+.pck-logo svg { width: 100%; height: 100%; display: block; }
+.pck-marca-nome { font-size: 17pt; font-weight: 800; letter-spacing: -.01em; line-height: 1; }
+.pck-marca-sub { font-size: 8pt; color: rgba(255,255,255,.75); margin-top: 3px; letter-spacing: .02em; }
+.pck-titulo { text-align: right; }
+.pck-titulo-sup { font-size: 6.8pt; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #93c5fd; }
+.pck-titulo h1 { margin: 2px 0 2px; font-size: 15pt; font-weight: 800; letter-spacing: -.01em; color: #fff; line-height: 1.1; }
+.pck-titulo-data { font-size: 7.6pt; color: rgba(255,255,255,.75); }
+.pck-faixa-cor { height: 4px; border-radius: 0 0 4px 4px; background: linear-gradient(90deg, #2F6FED 0%, #7C4DFF 50%, #F59E0B 100%); }
 
-.print-header-logo {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
+/* Ficha do paciente */
+.pck-ficha { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 14px; margin-top: 10px;
+    padding: 11px 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; }
+.pck-span2 { grid-column: span 2; }
+.pck-rot { font-size: 6.6pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #64748b; margin-bottom: 2px; }
+.pck-val { font-size: 9pt; font-weight: 600; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 2px; min-height: 13pt; }
+.pck-destaque .pck-val { font-size: 11pt; font-weight: 800; color: #141F3C; }
+.pck-vazio { color: #94a3b8; font-weight: 500; }
 
-/* Cata-vento da Equilibrium em SVG inline */
-.print-logo-mark {
-    width: 38px;
-    height: 38px;
-    flex-shrink: 0;
-}
+/* Hipóteses */
+.pck-hipoteses { margin-top: 8px; padding: 9px 14px; border-radius: 10px; border: 1px solid #ddd6fe;
+    background: linear-gradient(135deg, #f5f3ff 0%, #eef4ff 100%); border-left: 4px solid #7C4DFF; }
+.pck-hipoteses .pck-rot { color: #5b21b6; }
+.pck-hip-texto { font-size: 9pt; white-space: pre-wrap; word-break: break-word; color: #1e1b4b; }
 
-.print-logo-text-block {
-    line-height: 1.15;
-}
+/* Resumo */
+.pck-resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 9px 0 10px; }
+.pck-res-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 9px; border: 1px solid #e2e8f0; }
+.pck-res-item b { font-size: 15pt; font-weight: 800; line-height: 1; }
+.pck-res-item span { font-size: 7.4pt; color: #475569; line-height: 1.2; }
+.pck-res-item.total { background: #eef4ff; border-color: #bfdbfe; } .pck-res-item.total b { color: #1d4ed8; }
+.pck-res-item.online { background: #ecfeff; border-color: #a5f3fc; } .pck-res-item.online b { color: #0e7490; }
+.pck-res-item.presencial { background: #fff7ed; border-color: #fed7aa; } .pck-res-item.presencial b { color: #c2410c; }
+.pck-res-item.cats { background: #f5f3ff; border-color: #ddd6fe; } .pck-res-item.cats b { color: #6d28d9; }
 
-.print-logo-title {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    color: white;
-}
+/* Tabela */
+.pck-tabela { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.pck-tabela thead th { background: #141F3C; color: #fff; font-size: 6.8pt; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; text-align: left; padding: 6px 6px; }
+.pck-tabela thead th:first-child { border-radius: 7px 0 0 7px; text-align: center; }
+.pck-tabela thead th:last-child { border-radius: 0 7px 7px 0; }
+.pck-th-ok { text-align: center !important; }
+.pck-tabela td { padding: 5px 6px; vertical-align: top; border-bottom: 1px solid #edf1f6; }
+.pck-cat td { padding: 9px 6px 4px; border-bottom: 1.5px solid var(--cat); font-size: 7.6pt; font-weight: 800;
+    letter-spacing: .07em; text-transform: uppercase; color: #141F3C; }
+.pck-cat-ponto { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--cat);
+    margin-right: 7px; vertical-align: 0; }
+.pck-cat-n { display: inline-block; margin-left: 7px; padding: 0 6px; border-radius: 999px; background: #f1f5f9;
+    color: #475569; font-size: 6.8pt; letter-spacing: 0; }
+.pck-linha:nth-child(even) td { background: #fafbfd; }
+.pck-c-num { text-align: center; color: #94a3b8; font-weight: 700; font-size: 7.4pt; box-shadow: inset 3px 0 0 var(--cat); }
+.pck-sigla { font-weight: 800; font-size: 9pt; color: #0f172a; }
+.pck-nome { font-size: 6.9pt; color: #64748b; line-height: 1.25; margin-top: 1px; }
+.pck-c-avalia { color: #334155; font-size: 7.9pt; }
+.pck-idade { margin-top: 2px; font-size: 6.8pt; color: #94a3b8; font-weight: 600; }
+.pck-c-resp { font-size: 7.6pt; color: #334155; font-weight: 600; }
+.pck-modo { display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 7pt; font-weight: 800; white-space: nowrap; }
+.pck-modo.online { background: #cffafe; color: #0e7490; border: 1px solid #67e8f9; }
+.pck-modo.presencial { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
+.pck-c-data { font-family: 'SF Mono', Consolas, monospace; color: #94a3b8; font-size: 7.6pt; white-space: nowrap; padding-top: 6px; }
+.pck-c-ok { text-align: center; }
+.pck-box { display: inline-block; width: 11px; height: 11px; border: 1.4px solid #64748b; border-radius: 3px; background: #fff; vertical-align: middle; }
 
-.print-logo-sub {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 400;
-    margin-top: -2px;
-}
-
-.print-logo-equipe {
-    font-size: 7.5px;
-    letter-spacing: 0.2em;
-    color: rgba(255, 255, 255, 0.5);
-    text-transform: uppercase;
-    margin-top: 1px;
-}
-
-.print-header-right {
-    text-align: right;
-}
-
-.print-doc-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: white;
-    letter-spacing: -0.01em;
-    margin-bottom: 4px;
-}
-
-.print-faixa {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.85);
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 6px;
-}
-
-.print-faixa::before {
-    content: '';
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #2bbcd4 !important;
-    background-color: #2bbcd4 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-}
-
-.print-contador-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(34, 197, 94, 0.18) !important;
-    background-color: rgba(34, 197, 94, 0.18) !important;
-    border: 1px solid rgba(34, 197, 94, 0.6) !important;
-    color: white !important;
-    padding: 5px 14px;
-    border-radius: 999px;
-    font-size: 10.5px;
-    font-weight: 500;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-}
-
-.print-contador-badge::before {
-    content: '';
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #22c55e !important;
-    background-color: #22c55e !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-}
-
-/* === BLOCO DO PACIENTE === */
-/* Faixa branca limpa, com labels CAPS pequenos cinza e valores logo abaixo */
-
-.print-paciente-info {
-    background: white;
-    padding: 16px 32px;
-    display: flex;
-    gap: 36px;
-    border-bottom: 1px solid #e5e7eb;
-    align-items: flex-start;
-}
-.print-paciente-bloco-hipotese {
-    flex: 1;
-    min-width: 0;
-}
-.print-valor-hipotese {
-    border-bottom: none !important;
-    font-weight: 400 !important;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
-.print-paciente-bloco {
-    display: flex;
-    flex-direction: column;
-}
-
-.print-label {
-    font-size: 9px;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 600;
-    margin-bottom: 6px;
-}
-
-.print-valor {
-    font-size: 11px;
-    color: #1e293b;
-    font-weight: 500;
-    border-bottom: 1.5px solid #1e293b;
-    padding-bottom: 1px;
-    min-width: 50px;
-    display: inline-block;
-}
-
-.print-valor-vazio {
-    color: transparent;
-    border-bottom: 1.5px solid #1e293b;
-    min-width: 50px;
-    display: inline-block;
-}
-
-.print-valor-data {
-    border-bottom: none;
-    color: #1e293b;
-    font-weight: 500;
-}
-
-/* === TABELA === */
-
-.print-tabela-container {
-    padding: 0 32px;
-    margin-top: 16px;
-}
-
-.print-tabela {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 9px;
-}
-
-.print-tabela thead th {
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 700;
-    padding: 7px 8px;
-    text-align: left;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.print-tabela thead th.col-check { width: 28px; }
-.print-tabela thead th.col-instrumento { width: 26%; }
-.print-tabela thead th.col-avalia { width: 38%; }
-.print-tabela thead th.col-faixa { width: 16%; }
-.print-tabela thead th.col-data { width: 16%; text-align: left; }
-
-/* Linhas de teste */
-.print-tabela tbody tr.linha-teste td {
-    padding: 4.5px 8px;
-    border-bottom: 1px solid #f1f5f9;
-    color: #1e293b;
-}
-
-.print-tabela tbody tr.linha-teste td.col-check {
-    text-align: center;
-}
-
-.print-tabela tbody tr.linha-teste td.col-check::before {
-    content: '';
-    display: inline-block;
-    width: 13px;
-    height: 13px;
-    border: 1.4px solid #94a3b8;
-    border-radius: 2.5px;
-    background: white;
-    vertical-align: middle;
-}
-
-.print-tabela tbody tr.linha-teste.marcado td.col-check::before {
-    background: #1e40af !important;
-    background-color: #1e40af !important;
-    border-color: #1e40af !important;
-    color: white !important;
-    content: '✓';
-    font-size: 10px;
-    line-height: 11px;
-    font-weight: bold;
-    text-align: center;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-}
-
-.print-tabela td.col-instrumento {
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.print-tabela td.col-avalia { color: #475569; }
-
-.print-tabela td.col-faixa {
-    color: #64748b;
-    font-size: 10px;
-}
-
-.print-tabela td.col-data {
-    font-family: 'SF Mono', Monaco, Consolas, monospace;
-    color: #94a3b8;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-}
-
-/* Linha de categoria — fundo azul claro pastel + bullet colorido */
-.print-tabela tbody tr.linha-categoria td {
-    background: #eaf1fb !important;
-    background-color: #eaf1fb !important;
-    color: #1e3a8a !important;
-    padding: 8px 8px;
-    border: none;
-    font-weight: 700;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-}
-
-.print-tabela tbody tr.linha-categoria td .bullet-cat {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 8px;
-    vertical-align: middle;
-    margin-top: -1px;
-}
-
-/* Cores dos bullets por categoria (igual aos PDFs originais) */
-.bullet-inteligencia { background: #ec7c8a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-atencao { background: #ef4444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-funcoes-exec { background: #facc15 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-linguagem { background: #93c5fd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-tea { background: #4ade80 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-tdah { background: #fbbf24 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-humor { background: #94a3b8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-psicopatologia { background: #818cf8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-personalidade { background: #c084fc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-desenvolvimento { background: #fb923c !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.bullet-sensorial { background: #2bbcd4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-/* === RODAPÉ === */
-
-.print-footer {
-    background: linear-gradient(135deg, #0a1f3d 0%, #163a6c 100%) !important;
-    background-color: #0a1f3d !important;
-    color: white !important;
-    padding: 12px 32px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 18px;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-}
-
-.print-footer-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.print-footer-logo svg { width: 22px; height: 22px; }
-
-.print-footer-data {
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.print-footer-contador {
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.85);
-}
+/* Fecho */
+.pck-fecho { margin-top: 14px; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 10px; }
+.pck-linha-esc { height: 15px; border-bottom: 1px solid #cbd5e1; }
+.pck-assinaturas { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 26px; }
+.pck-ass { text-align: center; }
+.pck-ass-linha { border-bottom: 1.2px solid #0f172a; height: 18px; margin-bottom: 4px; }
+.pck-ass span { font-size: 7.4pt; color: #475569; font-weight: 600; }
+.pck-legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; padding-top: 8px; border-top: 1px dashed #e2e8f0;
+    font-size: 7pt; color: #64748b; align-items: center; }
+.pck-legenda > span { display: inline-flex; align-items: center; gap: 5px; }
 
 /* ─── RESPONSIVO ──────────────────────────────────────────────────────── */
 

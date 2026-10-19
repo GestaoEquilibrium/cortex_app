@@ -65,6 +65,15 @@
                     <option value="entregue">Entregue</option>
                     <option value="pendente">Pendente</option>
                 </select>
+                <select id="filtro-estrelas" title="Nível de atendimento">
+                    <option value="">Todos os níveis</option>
+                    <option value="5">★★★★★ Nível 5</option>
+                    <option value="4">★★★★ Nível 4</option>
+                    <option value="3">★★★ Nível 3</option>
+                    <option value="2">★★ Nível 2</option>
+                    <option value="1">★ Nível 1</option>
+                    <option value="sem">Sem nível</option>
+                </select>
                 <select id="filtro-convenio">
                     <option value="">Todos os convênios</option>
                 </select>
@@ -116,6 +125,8 @@
     let filtroStatus = '';
     let filtroConvenio = '';
     let marcadoresMap = new Map();   // sprint_marcadores: paciente_id -> [marcadores]
+    let estrelasMap = new Map();     // sprint_estrelas: paciente_id -> 1..5
+    let filtroEstrelas = '';
 
     window.addEventListener('cortex:auth-ready', async (e) => {
         await CortexSidebar.render('pacientes');
@@ -140,6 +151,10 @@
 
         document.getElementById('filtro-convenio').addEventListener('change', (e) => {
             filtroConvenio = e.target.value;
+            renderizar();
+        });
+        document.getElementById('filtro-estrelas').addEventListener('change', (e) => {
+            filtroEstrelas = e.target.value;
             renderizar();
         });
 
@@ -282,14 +297,16 @@
     }
 
     async function carregarPacientes() {
-        const [{ data, error }, mapa] = await Promise.all([
+        const [{ data, error }, mapa, estrelas] = await Promise.all([
             window.cortexClient
                 .from('vw_pacientes_lista')
                 .select('*')
                 .order('nome_completo'),
-            window.CortexMarcadores ? window.CortexMarcadores.carregarTodos() : Promise.resolve(new Map())
+            window.CortexMarcadores ? window.CortexMarcadores.carregarTodos() : Promise.resolve(new Map()),
+            window.CortexEstrelas ? window.CortexEstrelas.carregarTodos() : Promise.resolve(new Map())
         ]);
         marcadoresMap = mapa;
+        estrelasMap = estrelas;
 
         if (error) {
             CortexUI.toast('Erro ao carregar pacientes: ' + error.message, 'danger');
@@ -309,6 +326,10 @@
                 if (!p.nome_completo.toLowerCase().includes(busca) && !marcas.includes(busca)) return false;
             }
             if (filtroStatus && p.status !== filtroStatus) return false;
+            if (filtroEstrelas) {
+                const n = estrelasMap.get(p.id) || 0;
+                if (filtroEstrelas === 'sem' ? n !== 0 : n !== parseInt(filtroEstrelas, 10)) return false;
+            }
             if (filtroConvenio) {
                 const select = document.getElementById('filtro-convenio');
                 const optionSelecionada = select.options[select.selectedIndex];
@@ -433,6 +454,7 @@
                         <div class="paciente-card-info">
                             <div class="paciente-card-nome">${escapeHtml(p.nome_completo)}</div>
                             <div class="paciente-card-idade">${p.idade_humanizada}</div>
+                            ${estrelasMap.has(p.id) ? `<div class="paciente-card-estrelas">${window.CortexEstrelas.html(estrelasMap.get(p.id))}</div>` : ''}
                             ${marcadoresMap.has(p.id) ? `<div class="paciente-card-marcadores">${window.CortexMarcadores.chips(marcadoresMap.get(p.id))}</div>` : ''}
                         </div>
                     </div>
@@ -476,6 +498,7 @@
                         <div class="col-nome">
                             ${avatar}
                             <span>${escapeHtml(p.nome_completo)}</span>
+                            ${estrelasMap.has(p.id) ? window.CortexEstrelas.html(estrelasMap.get(p.id)) : ''}
                             ${marcadoresMap.has(p.id) ? window.CortexMarcadores.chips(marcadoresMap.get(p.id)) : ''}
                         </div>
                     </td>

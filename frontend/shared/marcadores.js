@@ -318,3 +318,140 @@ body.exportando .cmk-add{display:none!important;}
 
     return { CORES, MAX_POR_PACIENTE, carregarTodos, carregarDoPaciente, chips, abrirEditor, podeEditar, injetarEstilo };
 })();
+
+// ============================================================================
+// CORTEX_APP — Estrelas de nível de atendimento (sprint_estrelas)
+// ============================================================================
+// 1 a 5 estrelas por paciente (tabela paciente_nivel, uma linha por paciente).
+// Clicar numa estrela define o nível; clicar de novo na mesma limpa.
+//
+// API:
+//   CortexEstrelas.carregarTodos()            → Map(paciente_id → estrelas)
+//   CortexEstrelas.carregarDoPaciente(id)     → número | null
+//   CortexEstrelas.html(n, {tamanho})         → estrelas só para exibir
+//   CortexEstrelas.montarEditavel(el, id, n, onMudou) → estrelas clicáveis
+// ============================================================================
+window.CortexEstrelas = (function () {
+    'use strict';
+
+    const TABELA = 'paciente_nivel';
+    const MAX = 5;
+    const ROTULOS = ['', 'Nível 1', 'Nível 2', 'Nível 3', 'Nível 4', 'Nível 5'];
+    const c = () => window.cortexClient;
+    const toast = (m, t) => (window.CortexUI && window.CortexUI.toast) ? window.CortexUI.toast(m, t) : null;
+
+    function injetarEstilo() {
+        if (document.getElementById('cst-estilo')) return;
+        const st = document.createElement('style');
+        st.id = 'cst-estilo';
+        st.textContent = `
+.cst{display:inline-flex;align-items:center;gap:1px;line-height:1;vertical-align:middle;-webkit-text-fill-color:initial;}
+.cst span{color:#d7dde6;-webkit-text-fill-color:#d7dde6;transition:transform .12s,color .12s,filter .12s;}
+.cst span.on{color:#F59E0B;-webkit-text-fill-color:#F59E0B;filter:drop-shadow(0 1px 2px rgba(245,158,11,.35));}
+.cst-sm span{font-size:13px;}
+.cst-md span{font-size:20px;}
+.cst-edit{display:inline-flex;align-items:center;gap:8px;padding:3px 10px 3px 6px;border-radius:999px;background:#fffbeb;border:1px solid #fde68a;}
+.cst-edit button{all:unset;cursor:pointer;font-size:21px;line-height:1;color:#d7dde6;-webkit-text-fill-color:#d7dde6;transition:transform .12s,color .12s;}
+.cst-edit button.on{color:#F59E0B;-webkit-text-fill-color:#F59E0B;filter:drop-shadow(0 1px 2px rgba(245,158,11,.4));}
+.cst-edit button.hover{color:#FBBF24;-webkit-text-fill-color:#FBBF24;}
+.cst-edit button:hover{transform:scale(1.22);}
+.cst-edit button:focus-visible{outline:2px solid #7C4DFF;outline-offset:2px;border-radius:4px;}
+.cst-edit .cst-lbl{font:700 11px/1 Inter,system-ui,sans-serif;color:#92400e;-webkit-text-fill-color:#92400e;letter-spacing:.03em;text-transform:uppercase;min-width:52px;}
+.paciente-card-estrelas{margin-top:3px;}
+.pasta-estrelas{display:inline-flex;align-items:center;margin-left:10px;vertical-align:middle;font-size:initial;font-weight:400;letter-spacing:0;}
+.col-nome .cst{margin-left:6px;}
+`;
+        document.head.appendChild(st);
+    }
+
+    async function carregarTodos() {
+        const mapa = new Map();
+        try {
+            const { data, error } = await c().from(TABELA).select('paciente_id, estrelas');
+            if (error) throw error;
+            (data || []).forEach(r => mapa.set(r.paciente_id, r.estrelas));
+        } catch (e) {
+            console.warn('Estrelas indisponíveis:', e && e.message);
+        }
+        return mapa;
+    }
+
+    async function carregarDoPaciente(pacienteId) {
+        try {
+            const { data, error } = await c().from(TABELA).select('estrelas').eq('paciente_id', pacienteId).maybeSingle();
+            if (error) throw error;
+            return data ? data.estrelas : null;
+        } catch (e) {
+            console.warn('Estrelas indisponíveis:', e && e.message);
+            return null;
+        }
+    }
+
+    function html(n, opts) {
+        opts = opts || {};
+        if (!n) return '';
+        const tam = opts.tamanho === 'md' ? 'cst-md' : 'cst-sm';
+        let s = '';
+        for (let i = 1; i <= MAX; i++) s += `<span class="${i <= n ? 'on' : ''}">★</span>`;
+        return `<span class="cst ${tam}" title="Nível de atendimento: ${n} de ${MAX}" aria-label="Nível de atendimento ${n} de ${MAX}">${s}</span>`;
+    }
+
+    async function salvar(pacienteId, n) {
+        if (n) {
+            const { error } = await c().from(TABELA)
+                .upsert({ paciente_id: pacienteId, estrelas: n, updated_at: new Date().toISOString() }, { onConflict: 'paciente_id' });
+            if (error) throw error;
+        } else {
+            const { error } = await c().from(TABELA).delete().eq('paciente_id', pacienteId);
+            if (error) throw error;
+        }
+        try { await window.CortexAudit?.log('edicao', TABELA, pacienteId, { pacienteId, detalhes: { estrelas: n || 0 } }); } catch (_) {}
+    }
+
+    // Estrelas clicáveis dentro de `el`. Clique na estrela atual = limpa.
+    function montarEditavel(el, pacienteId, valor, onMudou) {
+        if (!el) return;
+        let atual = valor || 0;
+        let ocupado = false;
+        const desenhar = (destaque) => {
+            el.innerHTML = `<span class="cst-edit" role="radiogroup" aria-label="Nível de atendimento">
+                ${Array.from({ length: MAX }, (_, k) => {
+                    const i = k + 1;
+                    const cls = i <= atual ? 'on' : (destaque && i <= destaque ? 'hover' : '');
+                    return `<button type="button" class="${cls}" data-n="${i}" role="radio" aria-checked="${i === atual}" title="${i === atual ? 'Clique para limpar' : 'Nível ' + i + ' de ' + MAX}">★</button>`;
+                }).join('')}
+                <span class="cst-lbl">${atual ? ROTULOS[atual] : 'Nível'}</span>
+            </span>`;
+            el.querySelectorAll('button[data-n]').forEach(b => {
+                b.addEventListener('mouseenter', () => marcarHover(+b.dataset.n));
+                b.addEventListener('mouseleave', () => marcarHover(0));
+                b.addEventListener('click', async (ev) => {
+                    ev.stopPropagation();
+                    if (ocupado) return;
+                    const novo = (+b.dataset.n === atual) ? 0 : +b.dataset.n;
+                    const anterior = atual;
+                    atual = novo; desenhar(0); ocupado = true;
+                    try {
+                        await salvar(pacienteId, novo);
+                        toast(novo ? `Nível de atendimento: ${novo} ${novo === 1 ? 'estrela' : 'estrelas'}` : 'Nível de atendimento removido', 'success');
+                        if (onMudou) onMudou(novo || null);
+                    } catch (e) {
+                        console.error(e);
+                        atual = anterior; desenhar(0);
+                        toast('Não foi possível salvar o nível: ' + (e.message || e), 'danger');
+                    } finally { ocupado = false; }
+                });
+            });
+        };
+        const marcarHover = (n) => {
+            el.querySelectorAll('button[data-n]').forEach(b => {
+                const i = +b.dataset.n;
+                b.classList.toggle('hover', !!n && i <= n && i > atual);
+            });
+        };
+        desenhar(0);
+    }
+
+    injetarEstilo();
+    return { MAX, carregarTodos, carregarDoPaciente, html, montarEditavel, salvar };
+})();

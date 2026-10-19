@@ -297,6 +297,7 @@
     let aplicadorAtivo = null;    // Sprint 8: vínculo paciente↔aplicador atual
     let respostasRemotas = [];    // Sprint 56: anamneses_tokens_publicos pendentes
     let marcadoresPaciente = [];  // sprint_marcadores: etiquetas coloridas no nome
+    let estrelasPaciente = null;  // sprint_estrelas: nível de atendimento (1-5)
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -366,7 +367,26 @@
     let anamnesesLegado = [];
     // sprint_marcadores — etiquetas coloridas ao lado do nome
     async function carregarMarcadores() {
-        marcadoresPaciente = window.CortexMarcadores ? await window.CortexMarcadores.carregarDoPaciente(pacienteId) : [];
+        const [m, e] = await Promise.all([
+            window.CortexMarcadores ? window.CortexMarcadores.carregarDoPaciente(pacienteId) : [],
+            window.CortexEstrelas ? window.CortexEstrelas.carregarDoPaciente(pacienteId) : null
+        ]);
+        marcadoresPaciente = m || [];
+        estrelasPaciente = e;
+    }
+
+    // sprint_estrelas — nível de atendimento ao lado do nome
+    function renderEstrelasPasta() {
+        if (!window.CortexEstrelas) return '';
+        const editavel = podeEditar && (!window.CortexMarcadores || window.CortexMarcadores.podeEditar());
+        if (editavel) return '<span class="pasta-estrelas" id="pasta-estrelas"></span>';
+        return estrelasPaciente ? `<span class="pasta-estrelas">${window.CortexEstrelas.html(estrelasPaciente, { tamanho: 'md' })}</span>` : '';
+    }
+    function montarEstrelasPasta() {
+        const el = document.getElementById('pasta-estrelas');
+        if (el && window.CortexEstrelas) {
+            window.CortexEstrelas.montarEditavel(el, pacienteId, estrelasPaciente, (n) => { estrelasPaciente = n; });
+        }
     }
 
     function renderFaixaMarcadores() {
@@ -549,6 +569,7 @@
                     <div class="pasta-nome">
                         ${escapeHtml(paciente.nome_completo)}${paciente.nome_social ? ` <span style="font-size: 14px; color: var(--color-text-muted); font-weight: 400;">(${escapeHtml(paciente.nome_social)})</span>` : ''}
                         ${podeEditar ? `<a class="pasta-editar-btn" href="novo.html?id=${pacienteId}" title="Editar dados do paciente" aria-label="Editar dados">✏️</a>` : ''}
+                        ${renderEstrelasPasta()}
                     </div>
                     ${renderFaixaMarcadores()}
                     <div class="pasta-meta">
@@ -680,6 +701,7 @@
 
         document.getElementById('foto-input-hidden').onchange = uploadFoto;
         document.getElementById('mae-foto-input-hidden').onchange = uploadFotoMae;
+        montarEstrelasPasta();
     }
 
     function trocarEtapa(novaEtapa) {

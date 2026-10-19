@@ -32,6 +32,7 @@
         editado: false,
         ehAdmin: false,      // só admin: controla a FAIXA do checklist
         podeEditar: false,   // admin + aplicador: controla a MARCAÇÃO (Sprint 78)
+        quemAplica: {},      // sprint_modo: { instrumento_id: 'online' | 'presencial' }
         baterias: [],        // sprint_baterias: modelos de bateria (base + módulos)
         bateriasAbertas: false
     };
@@ -103,7 +104,7 @@
     async function carregarHipotese() {
         const { data, error } = await window.cortexClient
             .from('hipoteses')
-            .select('id, instrumentos_sugeridos, hipotese_checklist')
+            .select('id, instrumentos_sugeridos, hipotese_checklist, checklist_aplicacao')
             .eq('paciente_id', state.pacienteId)
             .maybeSingle();
 
@@ -116,7 +117,46 @@
             state.hipoteseId = data.id;
             state.instrumentosSelecionados = data.instrumentos_sugeridos || [];
             state.hipoteseTexto = data.hipotese_checklist || '';
+            state.quemAplica = (data.checklist_aplicacao && typeof data.checklist_aplicacao === 'object') ? data.checklist_aplicacao : {};
         }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // ONLINE × PRESENCIAL (sprint_modo)
+    // ════════════════════════════════════════════════════════════════════════
+    // Para cada teste marcado, quem está no checklist escolhe se ele será
+    // respondido ONLINE (link / portal) ou PRESENCIAL (com a aplicadora).
+    // Sem escolha, vale o padrão: online quando o teste permite, senão
+    // presencial. Teste que não tem versão online é sempre presencial.
+    // A escolha vai para hipoteses.checklist_aplicacao, sai no checklist
+    // impresso e vira a modalidade da aplicação quando a bateria sincroniza.
+    function modoEfetivo(inst) {
+        if (!inst) return 'presencial';
+        const escolha = state.quemAplica[inst.id];
+        if (!inst.permite_aplicacao_online) return 'presencial';
+        if (escolha === 'presencial') return 'presencial';
+        return 'online';
+    }
+
+    function contarModos(lista) {
+        const c = { online: 0, presencial: 0 };
+        lista.forEach(i => { c[modoEfetivo(i)]++; });
+        return c;
+    }
+
+    function renderModo(inst) {
+        const modo = modoEfetivo(inst);
+        const temOnline = !!inst.permite_aplicacao_online;
+        if (!state.podeEditar) {
+            return `<div class="checklist-modo"><span class="checklist-modo-tag ${modo}">${modo === 'online' ? '📲 Online' : '🧑‍⚕️ Presencial'}</span></div>`;
+        }
+        return `
+            <div class="checklist-modo" role="radiogroup" aria-label="Como será aplicado">
+                <button type="button" class="checklist-modo-btn online ${modo === 'online' ? 'ativo' : ''}" ${temOnline ? '' : 'disabled title="Este teste não tem aplicação online"'}
+                        onclick="window.CortexChecklist.definirModo(event, '${inst.id}', 'online')">📲 Online</button>
+                <button type="button" class="checklist-modo-btn presencial ${modo === 'presencial' ? 'ativo' : ''}"
+                        onclick="window.CortexChecklist.definirModo(event, '${inst.id}', 'presencial')">🧑‍⚕️ Presencial</button>
+            </div>`;
     }
 
     // sprint_baterias: modelos prontos. Falha aqui não pode derrubar o
@@ -365,6 +405,7 @@
                 </div>
                 <div class="anamnese-cabecalho-acoes">
                     <span class="badge status-info">${totalSelecionados} selecionados</span>
+                    <span class="checklist-modo-resumo" id="checklist-modo-resumo">${resumoModosHtml()}</span>
                     <span id="indicador-save" class="indicador-save"></span>
                 </div>
             </div>
@@ -460,6 +501,16 @@
         }
     }
 
+    function selecionadosVisiveis() {
+        return state.catalogo.filter(i => state.instrumentosSelecionados.includes(i.id));
+    }
+
+    function resumoModosHtml() {
+        const c = contarModos(selecionadosVisiveis());
+        if (!c.online && !c.presencial) return '';
+        return `<span class="cm-on">📲 ${c.online} online</span><span class="cm-pr">🧑‍⚕️ ${c.presencial} presencial</span>`;
+    }
+
     // Formata a descricao_longa do tooltip de forma SEGURA:
     // escapa todo o texto e só converte: linha "- item" -> <li>; demais linhas -> <div>.
     // "Rótulo:" no início da linha vira destaque.
@@ -503,7 +554,7 @@
         const disabled = !state.podeEditar;
 
         return `
-            <label class="checklist-item ${selecionado ? 'selecionado' : ''} ${disabled ? 'disabled' : ''} ${inst._foraDaFaixa ? 'fora-faixa' : ''}">
+            <label class="checklist-item ${selecionado ? 'selecionado' : ''} ${disabled ? 'disabled' : ''} ${inst._foraDaFaixa ? 'fora-faixa' : ''}" data-inst="${inst.id}">
                 <input type="checkbox"
                        ${selecionado ? 'checked' : ''}
                        ${disabled ? 'disabled' : ''}
@@ -515,6 +566,7 @@
                         ${inst._foraDaFaixa ? `<span class="checklist-item-fora-tag" title="Este teste está fora da faixa etária do paciente">fora da faixa</span>` : ''}
                     </div>
                     <div class="checklist-item-descricao">${escapeHtml(inst.o_que_avalia)}</div>
+                    ${selecionado ? renderModo(inst) : ''}
                 </div>
                 <div class="checklist-item-tip" role="tooltip">
                     <div class="checklist-item-tip-nome">${escapeHtml(inst.nome_completo || inst.sigla)}</div>
@@ -564,6 +616,17 @@
             atualizarBadgeEItem(uuid, checked);
         },
 
+        definirModo: function(ev, uuid, modo) {
+            if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+            if (!state.podeEditar) return;
+            const inst = state.catalogo.find(i => i.id === uuid);
+            if (!inst) return;
+            if (modo === 'online' && !inst.permite_aplicacao_online) return;
+            state.quemAplica = Object.assign({}, state.quemAplica, { [uuid]: modo });
+            marcarEditado();
+            redesenharItem(uuid);
+        },
+
         salvarManualmente: async function() {
             state.editado = true;
             await salvarSilencioso();
@@ -575,6 +638,15 @@
             window.print();
         }
     };
+
+    // Troca só o card do instrumento (mostra/esconde o seletor online/presencial)
+    function redesenharItem(uuid) {
+        const el = document.querySelector(`.checklist-item[data-inst="${uuid}"]`);
+        const inst = state.catalogoFiltrado.find(i => i.id === uuid) || state.catalogo.find(i => i.id === uuid);
+        if (el && inst) el.outerHTML = renderItem(inst);
+        const r = document.getElementById('checklist-modo-resumo');
+        if (r) r.innerHTML = resumoModosHtml();
+    }
 
     function atualizarBadgeEItem(uuid, checked) {
         // Atualiza só o item específico sem re-render completo (mais fluido)
@@ -591,15 +663,8 @@
             btnImprimir.disabled = total === 0;
         }
 
-        // Classe visual do item
-        const checkbox = document.querySelector(`input[onchange*="${uuid}"]`);
-        if (checkbox) {
-            const label = checkbox.closest('.checklist-item');
-            if (label) {
-                if (checked) label.classList.add('selecionado');
-                else label.classList.remove('selecionado');
-            }
-        }
+        // Redesenha o card (classe visual + seletor online/presencial)
+        redesenharItem(uuid);
     }
 
     function marcarEditado() {
@@ -649,12 +714,21 @@
         }
     }
 
+    // Guarda a escolha só dos testes marcados (desmarcou, some do mapa)
+    function quemAplicaParaSalvar() {
+        const out = {};
+        state.instrumentosSelecionados.forEach(id => {
+            if (state.quemAplica[id] === 'online' || state.quemAplica[id] === 'presencial') out[id] = state.quemAplica[id];
+        });
+        return out;
+    }
+
     async function persistirNoBanco() {
         if (state.hipoteseId) {
             // Atualiza hipótese existente
             const { error } = await window.cortexClient
                 .from('hipoteses')
-                .update({ instrumentos_sugeridos: state.instrumentosSelecionados, hipotese_checklist: state.hipoteseTexto })
+                .update({ instrumentos_sugeridos: state.instrumentosSelecionados, hipotese_checklist: state.hipoteseTexto, checklist_aplicacao: quemAplicaParaSalvar() })
                 .eq('id', state.hipoteseId);
             if (error) throw error;
 
@@ -670,6 +744,7 @@
                     paciente_id: state.pacienteId,
                     instrumentos_sugeridos: state.instrumentosSelecionados,
                     hipotese_checklist: state.hipoteseTexto,
+                    checklist_aplicacao: quemAplicaParaSalvar(),
                     preenchido_por: window.cortexProfissional.id
                 })
                 .select()
@@ -686,31 +761,41 @@
     }
 
     // ============================================================================
-    // IMPRESSÃO PDF — fiel aos PDFs originais da Equilibrium
+    // IMPRESSÃO — checklist "padrão ouro" (sprint_checklist_print)
     // ============================================================================
+    // A4 com margens reais, cabeçalho institucional, ficha do paciente,
+    // hipóteses, resumo (total / online / presencial), tabela por categoria
+    // com quem responde e como será aplicado, campos para marcar, datar e
+    // vistar, observações e assinatura. Número de página no rodapé.
 
-    // Mapeamento de categorias → bullet color class (usado no PDF)
-    const BULLET_CATEGORIA = {
-        'Inteligência / Raciocínio': 'bullet-inteligencia',
-        'Linguagem / Leitura / Escrita / Matemática': 'bullet-linguagem',
-        'Atenção / Memória': 'bullet-atencao',
-        'Funções Executivas': 'bullet-funcoes-exec',
-        'TEA / Autismo': 'bullet-tea',
-        'TDAH / Comportamento': 'bullet-tdah',
-        'Humor / Ansiedade / Depressão': 'bullet-humor',
-        'Psicopatologia Geral / ASEBA': 'bullet-psicopatologia',
-        'Personalidade / Habilidades Sociais / Adaptativo': 'bullet-personalidade',
-        'Desenvolvimento Infantil': 'bullet-desenvolvimento',
-        'Sensorial': 'bullet-sensorial'
+    const COR_CATEGORIA = {
+        'Inteligência / Raciocínio': '#ec4899',
+        'Linguagem / Leitura / Escrita / Matemática': '#3b82f6',
+        'Atenção / Memória': '#ef4444',
+        'Funções Executivas': '#eab308',
+        'TEA / Autismo': '#22c55e',
+        'TDAH / Comportamento': '#f59e0b',
+        'Humor / Ansiedade / Depressão': '#64748b',
+        'Psicopatologia Geral / ASEBA': '#6366f1',
+        'Personalidade / Habilidades Sociais / Adaptativo': '#a855f7',
+        'Desenvolvimento Infantil': '#f97316',
+        'Sensorial': '#06b6d4'
+    };
+
+    const RESPONDENTE_CURTO = {
+        paciente: 'Paciente',
+        responsavel: 'Responsável',
+        professor: 'Professor(a)',
+        paciente_ou_responsavel: 'Paciente / Resp.',
+        responsavel_ou_professor: 'Resp. / Prof.'
     };
 
     function svgCataVento(cor) {
-        // Cata-vento de 4 pétalas (logo Equilibrium) - cor passada via parâmetro
         return `
             <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 4 C13 8 11 14 14 20 C8 17 2 19 4 26 C8 23 14 23 20 28 C17 22 19 16 26 14 C23 20 23 26 28 32 C25 25 25 19 20 14 C22 20 26 22 32 20 C26 17 22 13 20 8 Z" fill="${cor}"/>
                 <circle cx="20" cy="20" r="4.5" fill="${cor}"/>
-                <circle cx="20" cy="20" r="2" fill="white"/>
+                <circle cx="20" cy="20" r="2" fill="#0a1f3d"/>
             </svg>
         `;
     }
@@ -719,144 +804,135 @@
         const printArea = document.getElementById('print-area');
         if (!printArea) return;
 
-        const selecionados = state.catalogoFiltrado.filter(i =>
-            state.instrumentosSelecionados.includes(i.id)
-        );
+        const selecionados = state.catalogo.filter(i => state.instrumentosSelecionados.includes(i.id));
+        const modos = contarModos(selecionados);
 
-        // Agrupa selecionados por categoria
         const agrupado = {};
         selecionados.forEach(inst => {
             const cat = inst.dominio_principal || 'Outros';
-            if (!agrupado[cat]) agrupado[cat] = [];
-            agrupado[cat].push(inst);
+            (agrupado[cat] = agrupado[cat] || []).push(inst);
         });
-
-        const FAIXA_LABEL = {
-            pre_escolar: 'Pré-Escolar',
-            escolar: 'Adultos',  // ← no PDF original aparece "Adultos" para a faixa adulta
-            adulto: 'Adultos'
-        };
-        // Mais preciso: ajusta com base no contexto
-        const faixaLabel = state.faixaPaciente === 'pre_escolar' ? 'Pré-Escolar'
-                         : state.faixaPaciente === 'escolar' ? 'Escolar'
-                         : 'Adultos';
-
-        const dataHoje = new Date().toLocaleDateString('pt-BR', {
-            day: '2-digit', month: 'long', year: 'numeric'
-        });
-
-        const pacienteNome = escapeHtml(state.paciente.nome_completo);
-        const pacienteCpf = state.paciente.cpf ? escapeHtml(state.paciente.cpf) : '—';
-        const pacienteIdade = escapeHtml(state.paciente.idade_humanizada);
-
-        let html = `
-            <div class="print-doc">
-                <!-- CABEÇALHO -->
-                <div class="print-header">
-                    <div class="print-header-logo">
-                        <div class="print-logo-mark">${svgCataVento('white')}</div>
-                        <div class="print-logo-text-block">
-                            <div class="print-logo-title">Equilibrium</div>
-                            <div class="print-logo-sub">Neuropsicologia Clínica</div>
-                            <div class="print-logo-equipe">EQUIPE CLÍNICA</div>
-                        </div>
-                    </div>
-                    <div class="print-header-right">
-                        <div class="print-doc-title">Check List de Instrumentos</div>
-                        <div class="print-faixa">Faixa: ${faixaLabel}</div>
-                        <div class="print-contador-badge">${selecionados.length} instrumentos selecionados</div>
-                    </div>
-                </div>
-
-                <!-- BLOCO PACIENTE -->
-                <div class="print-paciente-info">
-                    <div class="print-paciente-bloco">
-                        <div class="print-label">PACIENTE</div>
-                        <span class="print-valor">${pacienteNome}</span>
-                    </div>
-                    <div class="print-paciente-bloco">
-                        <div class="print-label">CPF</div>
-                        <span class="print-valor">${pacienteCpf}</span>
-                    </div>
-                    <div class="print-paciente-bloco">
-                        <div class="print-label">IDADE</div>
-                        <span class="print-valor">${pacienteIdade}</span>
-                    </div>
-                    <div class="print-paciente-bloco print-paciente-bloco-hipotese">
-                        <div class="print-label">HIPÓTESES DIAGNÓSTICAS</div>
-                        <span class="print-valor print-valor-hipotese">${state.hipoteseTexto ? escapeHtml(state.hipoteseTexto) : '—'}</span>
-                    </div>
-                </div>
-
-                <!-- TABELA -->
-                <div class="print-tabela-container">
-                    <table class="print-tabela">
-                        <thead>
-                            <tr>
-                                <th class="col-check">✓</th>
-                                <th class="col-instrumento">INSTRUMENTO</th>
-                                <th class="col-avalia">O QUE AVALIA</th>
-                                <th class="col-faixa">FAIXA ETÁRIA</th>
-                                <th class="col-data">DATA</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-
-        const ORDEM = ['Inteligência / Raciocínio',
-                       'Linguagem / Leitura / Escrita / Matemática',
-                       'Atenção / Memória',
-                       'Funções Executivas',
-                       'TEA / Autismo',
-                       'TDAH / Comportamento',
-                       'Humor / Ansiedade / Depressão',
-                       'Personalidade / Habilidades Sociais / Adaptativo',
-                       'Desenvolvimento Infantil',
-                       'Sensorial'];
-
+        const ORDEM = Object.keys(COR_CATEGORIA);
         const categorias = ORDEM.filter(c => agrupado[c]);
         Object.keys(agrupado).forEach(c => { if (!categorias.includes(c)) categorias.push(c); });
+        categorias.forEach(c => agrupado[c].sort((a, b) => String(a.sigla).localeCompare(String(b.sigla), 'pt-BR')));
 
+        const p = state.paciente;
+        const faixaLabel = state.faixaPaciente === 'pre_escolar' ? 'Pré-Escolar'
+                         : state.faixaPaciente === 'escolar' ? 'Escolar' : 'Adulto';
+        const hoje = new Date();
+        const dataHoje = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+        const nasc = p.data_nascimento ? (window.CortexUI && window.CortexUI.formatarDataBR
+            ? window.CortexUI.formatarDataBR(p.data_nascimento)
+            : String(p.data_nascimento).split('-').reverse().join('/')) : '—';
+        const campo = (rot, val, cls) => `
+            <div class="pck-campo ${cls || ''}">
+                <div class="pck-rot">${rot}</div>
+                <div class="pck-val">${val ? escapeHtml(val) : '<span class="pck-vazio">—</span>'}</div>
+            </div>`;
+
+        let linhas = '';
+        let n = 0;
         categorias.forEach(cat => {
-            const bulletClass = BULLET_CATEGORIA[cat] || 'bullet-personalidade';
-            html += `
-                <tr class="linha-categoria">
-                    <td colspan="5">
-                        <span class="bullet-cat ${bulletClass}"></span>${escapeHtml(cat).toUpperCase()}
-                    </td>
-                </tr>
-            `;
+            const cor = COR_CATEGORIA[cat] || '#64748b';
+            linhas += `
+                <tr class="pck-cat" style="--cat:${cor};">
+                    <td colspan="7"><span class="pck-cat-ponto"></span>${escapeHtml(cat)}<span class="pck-cat-n">${agrupado[cat].length}</span></td>
+                </tr>`;
             agrupado[cat].forEach(inst => {
-                html += `
-                    <tr class="linha-teste marcado">
-                        <td class="col-check"></td>
-                        <td class="col-instrumento">${escapeHtml(inst.sigla)}</td>
-                        <td class="col-avalia">${escapeHtml(inst.o_que_avalia)}</td>
-                        <td class="col-faixa">${escapeHtml(inst.faixa_etaria_label || '—')}</td>
-                        <td class="col-data">__/__/____</td>
-                    </tr>
-                `;
+                n++;
+                const modo = modoEfetivo(inst);
+                linhas += `
+                    <tr class="pck-linha" style="--cat:${cor};">
+                        <td class="pck-c-num">${n}</td>
+                        <td class="pck-c-inst">
+                            <div class="pck-sigla">${escapeHtml(inst.sigla)}</div>
+                            ${inst.nome_completo && inst.nome_completo !== inst.sigla ? `<div class="pck-nome">${escapeHtml(inst.nome_completo)}</div>` : ''}
+                        </td>
+                        <td class="pck-c-avalia">${escapeHtml(inst.o_que_avalia || '')}${inst.faixa_etaria_label ? `<div class="pck-idade">${escapeHtml(inst.faixa_etaria_label)}</div>` : ''}</td>
+                        <td class="pck-c-resp">${escapeHtml(RESPONDENTE_CURTO[inst.tipo_respondente] || 'Paciente')}</td>
+                        <td class="pck-c-modo"><span class="pck-modo ${modo}">${modo === 'online' ? 'Online' : 'Presencial'}</span></td>
+                        <td class="pck-c-data">___/___/______</td>
+                        <td class="pck-c-ok"><span class="pck-box"></span></td>
+                    </tr>`;
             });
         });
 
-        html += `
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- RODAPÉ -->
-                <div class="print-footer">
-                    <div class="print-footer-logo">
-                        ${svgCataVento('white')}
-                        <span>Equilibrium Neuropsicologia</span>
+        printArea.innerHTML = `
+            <div class="pck-doc">
+                <header class="pck-topo">
+                    <div class="pck-marca">
+                        <div class="pck-logo">${svgCataVento('#ffffff')}</div>
+                        <div>
+                            <div class="pck-marca-nome">Equilibrium</div>
+                            <div class="pck-marca-sub">Neuropsicologia Clínica</div>
+                        </div>
                     </div>
-                    <div class="print-footer-data">${dataHoje}</div>
-                    <div class="print-footer-contador">${selecionados.length} instrumentos selecionados</div>
-                </div>
-            </div>
-        `;
+                    <div class="pck-titulo">
+                        <div class="pck-titulo-sup">Avaliação Neuropsicológica</div>
+                        <h1>Checklist de Instrumentos</h1>
+                        <div class="pck-titulo-data">Emitido em ${escapeHtml(dataHoje)}</div>
+                    </div>
+                </header>
+                <div class="pck-faixa-cor"></div>
 
-        printArea.innerHTML = html;
+                <section class="pck-ficha">
+                    ${campo('Paciente', p.nome_completo, 'pck-span2 pck-destaque')}
+                    ${campo('Idade', p.idade_humanizada)}
+                    ${campo('Nascimento', nasc)}
+                    ${campo('Sexo', p.sexo)}
+                    ${campo('Escolaridade', p.escolaridade_completa || p.escolaridade)}
+                    ${campo('Faixa do checklist', faixaLabel)}
+                    ${campo('Aplicador(a)', p.aplicador_nome)}
+                </section>
+
+                <section class="pck-hipoteses">
+                    <div class="pck-rot">Hipóteses diagnósticas</div>
+                    <div class="pck-hip-texto">${state.hipoteseTexto ? escapeHtml(state.hipoteseTexto) : '<span class="pck-vazio">Não informadas.</span>'}</div>
+                </section>
+
+                <section class="pck-resumo">
+                    <div class="pck-res-item total"><b>${selecionados.length}</b><span>instrumentos</span></div>
+                    <div class="pck-res-item online"><b>${modos.online}</b><span>online · link ou portal</span></div>
+                    <div class="pck-res-item presencial"><b>${modos.presencial}</b><span>presenciais · com a aplicadora</span></div>
+                    <div class="pck-res-item cats"><b>${categorias.length}</b><span>${categorias.length === 1 ? 'categoria' : 'categorias'}</span></div>
+                </section>
+
+                <table class="pck-tabela">
+                    <colgroup>
+                        <col style="width:6mm"><col style="width:41mm"><col><col style="width:21mm">
+                        <col style="width:19mm"><col style="width:25mm"><col style="width:10mm">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Instrumento</th>
+                            <th>O que avalia</th>
+                            <th>Responde</th>
+                            <th>Aplicação</th>
+                            <th>Data</th>
+                            <th class="pck-th-ok">✓</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+
+                <section class="pck-fecho">
+                    <div class="pck-obs">
+                        <div class="pck-rot">Observações da aplicação</div>
+                        <div class="pck-linha-esc"></div><div class="pck-linha-esc"></div><div class="pck-linha-esc"></div>
+                    </div>
+                    <div class="pck-assinaturas">
+                        <div class="pck-ass"><div class="pck-ass-linha"></div><span>Neuropsicólogo(a) responsável · CRP</span></div>
+                        <div class="pck-ass"><div class="pck-ass-linha"></div><span>Aplicador(a)</span></div>
+                    </div>
+                    <div class="pck-legenda">
+                        <span><span class="pck-modo online">Online</span> respondido por link ou portal do paciente</span>
+                        <span><span class="pck-modo presencial">Presencial</span> aplicado na clínica com a aplicadora</span>
+                        <span><span class="pck-box"></span> marcar quando concluído</span>
+                    </div>
+                </section>
+            </div>`;
     }
 
     // ============================================================================

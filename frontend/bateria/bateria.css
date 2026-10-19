@@ -669,3 +669,73 @@
     border-radius: 99px;
     white-space: nowrap;
 }
+
+/* ── Reaplicação em lote (sprint_reaplicacao) ──────────────────────────── */
+.bateria-btn-reaplicar { background: linear-gradient(135deg, #7C4DFF 0%, #2F6FED 100%); color: #fff; border: 0;
+    box-shadow: 0 4px 14px rgba(124, 77, 255, .32); }
+.bateria-btn-reaplicar:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(124, 77, 255, .42); color: #fff; }
+
+.reap-ov { position: fixed; inset: 0; z-index: 9998; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(15, 23, 42, .45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: reapFade .18s ease; }
+@keyframes reapFade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes reapSobe { from { opacity: 0; transform: translateY(14px) scale(.98) } to { opacity: 1; transform: none } }
+.reap-box { width: 100%; max-width: 640px; max-height: calc(100vh - 32px); display: flex; flex-direction: column; background: #fff;
+    border-radius: 18px; box-shadow: 0 24px 60px rgba(15, 23, 42, .32); overflow: hidden; animation: reapSobe .22s ease; }
+.reap-topo { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px; color: #fff;
+    background: linear-gradient(135deg, #141F3C 0%, #2F6FED 55%, #7C4DFF 100%); }
+.reap-topo-ico { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.16); display: flex; align-items: center;
+    justify-content: center; font-size: 20px; flex-shrink: 0; }
+.reap-topo h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
+.reap-topo p { margin: 3px 0 0; font-size: 12.5px; opacity: .85; }
+.reap-x { margin-left: auto; width: 32px; height: 32px; border: 0; border-radius: 10px; background: rgba(255,255,255,.16); color: #fff;
+    font-size: 20px; cursor: pointer; flex-shrink: 0; }
+.reap-x:hover { background: rgba(255,255,255,.3); }
+.reap-corpo { padding: 16px 20px; overflow-y: auto; flex: 1; }
+.reap-atalhos { padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #f5f3ff 0%, #eef4ff 100%);
+    border: 1.5px solid #c7d2fe; margin-bottom: 14px; }
+.reap-atalhos-rot { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #4c1d95; margin-bottom: 8px; }
+.reap-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.reap-chip { border: 1.5px solid #c4b5fd; background: #fff; color: #4c1d95; border-radius: 999px; padding: 5px 11px;
+    font: 600 12px/1.2 'Inter', sans-serif; cursor: pointer; transition: all .15s; }
+.reap-chip b { margin-left: 4px; font-weight: 800; color: #7C4DFF; }
+.reap-chip:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(124, 77, 255, .2); }
+.reap-chip.parcial { background: #ede9fe; }
+.reap-chip.ativo { background: linear-gradient(135deg, #7C4DFF, #2F6FED); border-color: transparent; color: #fff; }
+.reap-chip.ativo b { color: #fff; }
+.reap-chip:disabled { opacity: .4; cursor: not-allowed; }
+.reap-atalhos-acoes { display: flex; gap: 14px; margin-top: 10px; }
+.reap-link { border: 0; background: none; padding: 0; color: #2F6FED; font: 700 12px 'Inter', sans-serif; cursor: pointer; }
+.reap-link:hover { text-decoration: underline; }
+.reap-vazio { padding: 14px; border-radius: 12px; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; font-size: 13px; margin-bottom: 14px; }
+.reap-cat { margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+.reap-cat-topo { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f8fafc; cursor: pointer;
+    font-size: 13px; font-weight: 800; color: #141F3C; border-bottom: 1px solid #e2e8f0; }
+.reap-cat-topo.off { cursor: default; color: #94a3b8; }
+.reap-cat-topo input, .reap-item input { width: 17px; height: 17px; accent-color: #7C4DFF; flex-shrink: 0; }
+.reap-cat-n { margin-left: auto; font-size: 11px; font-weight: 800; color: #7C4DFF; background: #ede9fe; padding: 2px 8px; border-radius: 999px; }
+.reap-itens { display: flex; flex-direction: column; }
+.reap-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; cursor: pointer; border-top: 1px solid #f1f5f9; transition: background .12s; }
+.reap-item:first-child { border-top: 0; }
+.reap-item:hover:not(.off) { background: #f5f3ff; }
+.reap-item.marcado { background: linear-gradient(90deg, #ede9fe 0%, #fff 70%); box-shadow: inset 3px 0 0 #7C4DFF; }
+.reap-item.off { cursor: not-allowed; opacity: .55; }
+.reap-item-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.reap-sigla { font-size: 13.5px; font-weight: 800; color: #0f172a; }
+.reap-nome { font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reap-tag { font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: #e0f2fe; color: #075985; white-space: nowrap; }
+.reap-tag.off { background: #f1f5f9; color: #64748b; }
+.reap-motivo-rot { display: block; margin: 14px 0 6px; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #334155; }
+.reap-motivo-rot span { text-transform: none; letter-spacing: 0; font-weight: 500; color: #94a3b8; }
+#reap-motivo { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 11px; border: 1.5px solid #cbd5e1;
+    font: 500 13.5px 'Inter', sans-serif; resize: vertical; outline: none; }
+#reap-motivo:focus { border-color: #7C4DFF; box-shadow: 0 0 0 3px rgba(124, 77, 255, .16); }
+.reap-rodape { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid #e2e8f0; background: #fafbff; }
+.reap-conta { margin-right: auto; font-size: 13px; color: #475569; }
+.reap-conta b { font-size: 16px; color: #7C4DFF; }
+.reap-ok { background: linear-gradient(135deg, #7C4DFF, #2F6FED) !important; border: 0 !important; }
+.reap-ok:disabled { opacity: .45; }
+@media (max-width: 560px) {
+    .reap-rodape { flex-wrap: wrap; }
+    .reap-rodape .btn { flex: 1; }
+    .reap-conta { width: 100%; }
+}

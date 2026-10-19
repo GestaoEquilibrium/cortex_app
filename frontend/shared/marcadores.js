@@ -322,7 +322,7 @@ body.exportando .cmk-add{display:none!important;}
 // ============================================================================
 // CORTEX_APP — Estrelas de nível de atendimento (sprint_estrelas)
 // ============================================================================
-// 1 a 5 estrelas por paciente (tabela paciente_nivel, uma linha por paciente).
+// 1 a 3 estrelas por paciente (tabela paciente_nivel, uma linha por paciente).
 // Clicar numa estrela define o nível; clicar de novo na mesma limpa.
 //
 // API:
@@ -335,8 +335,8 @@ window.CortexEstrelas = (function () {
     'use strict';
 
     const TABELA = 'paciente_nivel';
-    const MAX = 5;
-    const ROTULOS = ['', 'Nível 1', 'Nível 2', 'Nível 3', 'Nível 4', 'Nível 5'];
+    const MAX = 3;   // 3 níveis de atendimento
+    const ROTULOS = ['', 'Nível 1', 'Nível 2', 'Nível 3'];
     const c = () => window.cortexClient;
     const toast = (m, t) => (window.CortexUI && window.CortexUI.toast) ? window.CortexUI.toast(m, t) : null;
 

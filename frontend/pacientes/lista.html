@@ -54,7 +54,7 @@
 
             <div class="lista-filtros">
                 <div class="lista-filtros-busca">
-                    <input type="text" id="busca" placeholder="Buscar por nome..." autocomplete="off">
+                    <input type="text" id="busca" placeholder="Buscar por nome ou marcador..." autocomplete="off">
                 </div>
                 <select id="filtro-status">
                     <option value="">Todos os status</option>
@@ -107,6 +107,7 @@
     <script src="../shared/ui_helpers.js"></script>
     <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
+    <script src="../shared/marcadores.js"></script>
 
     <script>
     let pacientes = [];
@@ -114,6 +115,7 @@
     let busca = '';
     let filtroStatus = '';
     let filtroConvenio = '';
+    let marcadoresMap = new Map();   // sprint_marcadores: paciente_id -> [marcadores]
 
     window.addEventListener('cortex:auth-ready', async (e) => {
         await CortexSidebar.render('pacientes');
@@ -280,10 +282,14 @@
     }
 
     async function carregarPacientes() {
-        const { data, error } = await window.cortexClient
-            .from('vw_pacientes_lista')
-            .select('*')
-            .order('nome_completo');
+        const [{ data, error }, mapa] = await Promise.all([
+            window.cortexClient
+                .from('vw_pacientes_lista')
+                .select('*')
+                .order('nome_completo'),
+            window.CortexMarcadores ? window.CortexMarcadores.carregarTodos() : Promise.resolve(new Map())
+        ]);
+        marcadoresMap = mapa;
 
         if (error) {
             CortexUI.toast('Erro ao carregar pacientes: ' + error.message, 'danger');
@@ -297,7 +303,11 @@
 
     function filtrarPacientes() {
         return pacientes.filter(p => {
-            if (busca && !p.nome_completo.toLowerCase().includes(busca)) return false;
+            if (busca) {
+                // Busca pelo nome ou pelo texto de algum marcador ("TEA", "prioridade"...)
+                const marcas = (marcadoresMap.get(p.id) || []).map(m => m.texto.toLowerCase()).join(' ');
+                if (!p.nome_completo.toLowerCase().includes(busca) && !marcas.includes(busca)) return false;
+            }
             if (filtroStatus && p.status !== filtroStatus) return false;
             if (filtroConvenio) {
                 const select = document.getElementById('filtro-convenio');
@@ -423,6 +433,7 @@
                         <div class="paciente-card-info">
                             <div class="paciente-card-nome">${escapeHtml(p.nome_completo)}</div>
                             <div class="paciente-card-idade">${p.idade_humanizada}</div>
+                            ${marcadoresMap.has(p.id) ? `<div class="paciente-card-marcadores">${window.CortexMarcadores.chips(marcadoresMap.get(p.id))}</div>` : ''}
                         </div>
                     </div>
                     <div class="paciente-card-meta">
@@ -465,6 +476,7 @@
                         <div class="col-nome">
                             ${avatar}
                             <span>${escapeHtml(p.nome_completo)}</span>
+                            ${marcadoresMap.has(p.id) ? window.CortexMarcadores.chips(marcadoresMap.get(p.id)) : ''}
                         </div>
                     </td>
                     <td>${p.idade_humanizada}</td>

@@ -281,6 +281,7 @@
     <script src="../shared/ui_helpers.js"></script>
     <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
+    <script src="../shared/marcadores.js"></script>
 
     <script>
     let pacienteId = null;
@@ -295,6 +296,7 @@
     let podeEditar = true;        // Sprint 78: controla edição da pasta (admin+aplicador)
     let aplicadorAtivo = null;    // Sprint 8: vínculo paciente↔aplicador atual
     let respostasRemotas = [];    // Sprint 56: anamneses_tokens_publicos pendentes
+    let marcadoresPaciente = [];  // sprint_marcadores: etiquetas coloridas no nome
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -353,7 +355,8 @@
             carregarBateriaInfo(),
             carregarAplicadorAtivo(),
             carregarRespostasRemotas(),
-            carregarAnamnesesLegado()
+            carregarAnamnesesLegado(),
+            carregarMarcadores()
         ]);
         renderizarPasta();
     }
@@ -361,6 +364,33 @@
     // Sprint 60: anamneses antigas respondidas (tabela anamneses_remotas),
     // preenchidas antes da migração. Somente leitura — visualizar + PDF.
     let anamnesesLegado = [];
+    // sprint_marcadores — etiquetas coloridas ao lado do nome
+    async function carregarMarcadores() {
+        marcadoresPaciente = window.CortexMarcadores ? await window.CortexMarcadores.carregarDoPaciente(pacienteId) : [];
+    }
+
+    function renderFaixaMarcadores() {
+        if (!window.CortexMarcadores) return '';
+        const M = window.CortexMarcadores;
+        const editavel = podeEditar && M.podeEditar();
+        if (!marcadoresPaciente.length && !editavel) return '';
+        return `
+            <div class="cmk-faixa" id="pasta-marcadores" ${marcadoresPaciente.length ? 'onclick="window.abrirMarcadoresPasta()" title="Ver marcadores"' : ''}>
+                ${M.chips(marcadoresPaciente, { tamanho: 'md' })}
+                ${editavel ? `<button type="button" class="cmk-add" onclick="event.stopPropagation(); window.abrirMarcadoresPasta()" title="Sinalizar uma característica ou hipótese">🏷️ ${marcadoresPaciente.length ? 'Editar' : 'Marcador'}</button>` : ''}
+            </div>`;
+    }
+
+    window.abrirMarcadoresPasta = function () {
+        if (!window.CortexMarcadores || !paciente) return;
+        window.CortexMarcadores.abrirEditor(pacienteId, paciente.nome_completo, marcadoresPaciente, (lista) => {
+            marcadoresPaciente = lista;
+            const el = document.getElementById('pasta-marcadores');
+            const novo = renderFaixaMarcadores();
+            if (el) el.outerHTML = novo || '<div id="pasta-marcadores"></div>';
+        });
+    };
+
     async function carregarAnamnesesLegado() {
         const { data, error } = await window.cortexClient
             .from('anamneses_remotas')
@@ -520,6 +550,7 @@
                         ${escapeHtml(paciente.nome_completo)}${paciente.nome_social ? ` <span style="font-size: 14px; color: var(--color-text-muted); font-weight: 400;">(${escapeHtml(paciente.nome_social)})</span>` : ''}
                         ${podeEditar ? `<a class="pasta-editar-btn" href="novo.html?id=${pacienteId}" title="Editar dados do paciente" aria-label="Editar dados">✏️</a>` : ''}
                     </div>
+                    ${renderFaixaMarcadores()}
                     <div class="pasta-meta">
                         <div class="pasta-meta-item">
                             <span class="pasta-meta-label">Idade:</span>

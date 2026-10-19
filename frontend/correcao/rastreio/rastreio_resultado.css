@@ -1,0 +1,113 @@
+/* ===== Escalas complementares (GDS-15 · PHQ-9 · GAD-7 · ZARIT) — laudo =====
+   Complementa a base laudo-* do raadsr_resultado.css. Cor de destaque da escala em --rast-cor. */
+
+.rast-laudo .laudo-header { border-bottom: 4px solid var(--rast-cor, #2F6FED); }
+
+/* ── Níveis em etapas (Modelo 2) ── */
+.rast-niveis-bloco { margin: 4px 0 14px; }
+.rast-niveis-grid { display: grid; gap: 10px; margin-bottom: 14px; }
+.rast-nivel-card {
+    position: relative; overflow: hidden;
+    border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 10px 14px; text-align: center;
+    background: #fff; opacity: .5; transition: transform .2s, box-shadow .2s, opacity .2s;
+}
+.rast-nivel-card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--c); }
+.rast-nivel-card:hover { opacity: .85; transform: translateY(-2px); }
+.rast-nivel-card.ativo {
+    opacity: 1; border: 2px solid var(--c);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 10%, #fff) 0%, #fff 70%);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--c) 22%, transparent);
+}
+.rast-nivel-dot { width: 16px; height: 16px; border-radius: 50%; margin: 0 auto 8px; background: var(--c);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent); }
+.rast-nivel-nome { font-size: 13.5px; font-weight: 700; color: #1e293b; line-height: 1.25; }
+.rast-nivel-faixa { font-size: 11.5px; color: #94a3b8; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.rast-nivel-voce { font-size: 11.5px; font-weight: 800; margin-top: 7px; color: var(--c); }
+.rast-nivel-expl { padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8;
+    border-radius: 10px; font-size: 13.5px; color: #334155; line-height: 1.6; }
+
+/* ── Régua com corte ── */
+.rast-regua-bloco { margin: 18px 0 8px; padding: 26px 4px 4px; }
+.rast-regua-track { position: relative; display: flex; height: 18px; border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
+.rast-regua-zona { height: 100%; opacity: .85; }
+.rast-regua-zona:first-child { border-radius: 999px 0 0 999px; }
+.rast-regua-zona:last-of-type { border-radius: 0 999px 999px 0; }
+.rast-regua-marker { position: absolute; top: -6px; width: 4px; height: 30px; background: #0f172a; border-radius: 2px;
+    transform: translateX(-50%); box-shadow: 0 0 0 2px #fff; }
+.rast-regua-marker span { position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
+    background: #0f172a; color: #fff; font-size: 12px; font-weight: 800; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.rast-regua-corte { position: absolute; top: -4px; bottom: -4px; border-left: 2px dashed #0f172a; opacity: .55; }
+.rast-regua-ticks span.corte { font-weight: 800; color: #334155; }
+.rast-regua-ticks { position: relative; height: 18px; margin-top: 6px; font-size: 11px; color: #94a3b8; font-variant-numeric: tabular-nums; }
+.rast-regua-ticks span { position: absolute; transform: translateX(-50%); }
+.rast-regua-ticks span:first-child { transform: none; }
+.rast-regua-ticks span.ult { transform: translateX(-100%); }
+
+/* ── Impacto funcional ── */
+.rast-impacto-card { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 14px 16px;
+    border-radius: 12px; border: 1.5px solid #fcd34d; background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%); }
+.rast-impacto-icone { font-size: 24px; flex-shrink: 0; }
+.rast-impacto-txt { flex: 1; min-width: 0; }
+.rast-impacto-titulo { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #92400e; }
+.rast-impacto-resp { font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 2px; }
+.rast-impacto-sub { font-size: 12px; color: #64748b; }
+.rast-imp-passos { display: flex; gap: 5px; flex-shrink: 0; }
+.rast-imp-passo { width: 22px; height: 10px; border-radius: 999px; background: #fde68a; }
+.rast-imp-passo.cheio { background: linear-gradient(90deg, #F59E0B, #ea580c); }
+.rast-imp-passo.ativo { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #ea580c; }
+
+/* ── Distribuição (Opção B) ── */
+.rast-int-bloco { padding: 4px 0; }
+.rast-int-row { display: flex; align-items: center; gap: 12px; margin-bottom: 11px; }
+.rast-int-lbl { font-size: 13px; font-weight: 700; width: 170px; flex-shrink: 0; }
+.rast-int-trk { flex: 1; height: 22px; background: #f1f5f9; border-radius: 7px; overflow: hidden; }
+.rast-int-fill { display: block; height: 100%; border-radius: 7px; min-width: 2px; transition: width .6s ease; }
+.rast-int-val { font-size: 12.5px; font-weight: 600; color: #64748b; width: 70px; text-align: right; flex-shrink: 0; }
+.rast-int-nota { font-size: 12px; color: #94a3b8; line-height: 1.5; margin-top: 6px; }
+
+/* ── Nota técnica / referência ── */
+.rast-nota-tecnica { margin-top: 22px; padding: 16px 18px; background: #f0f9ff; border-left: 4px solid var(--rast-cor, #0ea5e9);
+    border-radius: 10px; font-size: 13px; color: #334155; line-height: 1.6; }
+.rast-referencia { margin-top: 14px; font-size: 11.5px; color: #64748b; line-height: 1.55; }
+
+/* ── Alertas (seção do profissional) ── */
+.rast-alerta { padding: 12px 14px; border-radius: 10px; font-size: 13px; line-height: 1.55; margin-bottom: 12px; }
+.rast-alerta-risco { background: #fef2f2; border: 1.5px solid #fca5a5; color: #7f1d1d; }
+.rast-alerta-risco strong { color: #b91c1c; }
+.rast-alerta-info { background: #eef4ff; border: 1.5px solid #bfdbfe; color: #1e3a8a; }
+
+/* ── Tabela de itens ── */
+.rast-tabela-itens table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rast-tabela-itens thead th { background: linear-gradient(135deg, #141F3C, var(--rast-cor, #2F6FED)); color: #fff;
+    padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; }
+.rast-tabela-itens thead th:first-child { border-top-left-radius: 8px; }
+.rast-tabela-itens thead th:last-child { border-top-right-radius: 8px; }
+.rast-tabela-itens td { padding: 9px 12px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+.rast-tabela-itens tbody tr:nth-child(even) { background: #f8fafc; }
+.rast-tabela-itens tbody tr:hover { background: #eef4ff; }
+.rast-tabela-itens tfoot td { padding: 10px 12px; border-top: 2px solid #e2e8f0; }
+.rast-td-num { text-align: center; font-weight: 700; color: #1d4ed8; }
+.rast-td-nota { text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rast-linha-risco td { background: #fef2f2 !important; }
+.rast-tabela-obs { font-size: 11.5px; color: #94a3b8; margin-top: 6px; }
+
+/* ── Texto pronto para o laudo ── */
+.rast-texto-laudo { margin-top: 18px; padding: 14px 16px; border-radius: 12px; border: 1.5px dashed #a5b4fc;
+    background: linear-gradient(135deg, #f5f3ff 0%, #eef4ff 100%); }
+.rast-texto-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px;
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #4c1d95; }
+.rast-texto-laudo p { margin: 0; font-size: 13.5px; line-height: 1.65; color: #1e293b; text-align: justify; }
+.rast-btn-copiar { font-size: 12.5px; padding: 6px 14px; }
+
+/* PDF: botão de cópia de texto não sai na imagem */
+body.exportando .rast-btn-copiar { display: none; }
+
+@media (max-width: 640px) {
+    .rast-niveis-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .rast-int-lbl { width: 110px; }
+    .rast-impacto-card { flex-wrap: wrap; }
+}
+@media print {
+    .rast-nivel-card, .rast-int-row, .rast-regua-bloco, .rast-impacto-card, .rast-texto-laudo { break-inside: avoid; }
+}

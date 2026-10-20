@@ -157,7 +157,10 @@
         if (c.fundo) return `<td><span class="p-pilula ${c.fundo}">${I(c.texto)}</span></td>`;
         // fundo escuro: os mesmos tons, mais claros
         const CLARAS = { verde: '#86EFAC', azul: '#93C5FD', ambar: '#FCD34D', laranja: '#FDBA74', vermelho: '#FCA5A5', roxo: '#C4B5FD', cinza: '#CBD5E1' };
-        const L = C().lerCelula(cel), css = [L.cor ? `color:${CLARAS[L.cor]}` : '', L.negrito ? 'font-weight:700' : ''].filter(Boolean).join(';');
+        // cor livre escura (ex.: azuis do padrão) fica legível no fundo escuro: clareia
+        const clarear = hex => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, bl = n & 255; const lum = (0.299 * r + 0.587 * g + 0.114 * bl) / 255; if (lum > .55) return hex; const mx = v => Math.round(v + (255 - v) * .55); return `rgb(${mx(r)},${mx(g)},${mx(bl)})`; };
+        const L = C().lerCelula(cel), cor = L.cor ? (CLARAS[L.cor] || clarear(L.cor)) : null;
+        const css = [cor ? `color:${cor}` : '', L.bg ? `background:${L.bg}55` : '', L.negrito ? 'font-weight:700' : ''].filter(Boolean).join(';');
         return `<td${css ? ` style="${css}"` : ''}>${I(c.texto)}</td>`;
     }
     function logo() { return ((window.LaudoImpressao && window.LaudoImpressao.BASE) || '../shared/laudo/') + 'img/logo.png'; }

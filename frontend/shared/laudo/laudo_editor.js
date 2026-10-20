@@ -1100,7 +1100,8 @@
         }
 
         function editarTabela(b, aoAplicar) {
-            // Grade editável: cada célula guarda o texto e as marcas de cor ({sup}, {cor:vermelho}, {b}…).
+            // Grade editável: cada célula guarda o texto e as marcas de cor ({sup}, {cor:#1F4E79}, {bg:#…}, {b}).
+            // Seleção de várias células: arrastar, Shift+clique (intervalo), Ctrl+clique, ▸ linha, ▾ coluna ou "Tudo".
             const cab = (b.cabecalho || []).slice();
             let grade = (b.linhas || []).map(l => l.map(c => C().lerCelula(c)));
             const ncol = () => Math.max(cab.length, ...grade.map(l => l.length), 1);
@@ -1108,16 +1109,23 @@
             igualar(); if (!grade.length) grade.push(cab.map(() => C().lerCelula('')));
             let colorir = Array.isArray(b.colorir) ? b.colorir.slice() : null;      // null = automático pelo título da coluna
             let estilo = b.estilo_classif || 'fundo';
-            let foco = null;                                                         // [linha, coluna] da célula selecionada
-            const CORES = [['', 'Padrão', '#0F172A'], ['verde', 'Verde', '#15803D'], ['azul', 'Azul', '#1D4ED8'], ['ambar', 'Amarelo', '#A16207'], ['laranja', 'Laranja', '#C2410C'], ['vermelho', 'Vermelho', '#B91C1C'], ['roxo', 'Roxo', '#6D28D9'], ['cinza', 'Cinza', '#64748B']];
+            let sel = new Set(), ancora = null, arrastando = false;
+            const chave = (r, k) => r + ',' + k;
+            const PADRAO = C().CORES_PADRAO;                                         // #2E75B6 · #1F4E79 · #1F3864
+            const CORES = [['', 'Padrão (preto)', '#0F172A']].concat(PADRAO.map((c, n) => [c, 'Azul do padrão ' + (n + 1) + ' (' + c + ')', c]),
+                [['verde', 'Verde', '#15803D'], ['azul', 'Azul', '#1D4ED8'], ['ambar', 'Amarelo', '#A16207'], ['laranja', 'Laranja', '#C2410C'], ['vermelho', 'Vermelho', '#B91C1C'], ['roxo', 'Roxo', '#6D28D9'], ['cinza', 'Cinza', '#64748B'], ['#FFFFFF', 'Branco', '#FFFFFF']]);
             const FUNDOS = [['', 'Automático'], ['sup', 'Superior'], ['med', 'Médio'], ['mi', 'Médio inferior'], ['inf', 'Inferior'], ['neutro', 'Sem cor']];
             const m = modal(`
                 <h2>Tabela</h2>
-                <p>Clique numa célula e use as cores abaixo. A coluna de classificação pode ser pintada sozinha, igual às tabelas dos testes do CORTEX.</p>
+                <p>Selecione uma ou várias células e escolha a cor. Para várias: <b>arraste</b>, use <b>Shift</b> (intervalo) ou <b>Ctrl</b> (uma a uma), ou clique em ▸ (linha), ▾ (coluna) ou Tudo.</p>
                 <div class="ed-tab-barra">
-                    <div><span>Cor do texto</span>${CORES.map(c => `<button type="button" class="ed-cor" data-cor="${c[0]}" title="${c[1]}" style="--c:${c[2]}">A</button>`).join('')}
+                    <div><span>Cor do texto</span>${CORES.map(c => `<button type="button" class="ed-cor${c[2] === '#FFFFFF' ? ' branco' : ''}" data-cor="${c[0]}" title="${c[1]}" style="--c:${c[2]}">A</button>`).join('')}
+                        <label class="ed-cor livre" title="Outra cor do texto"><input type="color" id="et-cor-livre" value="#2E75B6">🎨</label>
                         <button type="button" class="ed-cor neg" data-neg="1" title="Negrito"><b>N</b></button></div>
-                    <div><span>Fundo da célula</span>${FUNDOS.map(f => `<button type="button" class="ed-fundo ${f[0] ? 'cl-' + f[0] : 'auto'}" data-fundo="${f[0]}">${f[1]}</button>`).join('')}</div>
+                    <div><span>Fundo da célula</span>${FUNDOS.map(f => `<button type="button" class="ed-fundo ${f[0] ? 'cl-' + f[0] : 'auto'}" data-fundo="${f[0]}">${f[1]}</button>`).join('')}
+                        ${PADRAO.map(c => `<button type="button" class="ed-bg" data-bg="${c}" title="Fundo ${c} (texto branco)" style="background:${c}"></button>`).join('')}
+                        <label class="ed-bg livre" title="Outra cor de fundo"><input type="color" id="et-bg-livre" value="#DEEAF6">🎨</label></div>
+                    <div class="ed-tab-selinfo"><span id="et-selinfo">Nenhuma célula selecionada</span><button type="button" class="lo-btn sec" id="et-tudo">Tudo</button><button type="button" class="lo-btn sec" id="et-limpar">Tirar as cores da seleção</button></div>
                 </div>
                 <div class="ed-tab-wrap"><table class="ed-tab-grade" id="et-grade"></table></div>
                 <div class="ed-tab-acoes"><button type="button" class="lo-btn sec" id="et-lin">+ Linha</button><button type="button" class="lo-btn sec" id="et-col">+ Coluna</button></div>
@@ -1132,16 +1140,23 @@
             const blocoAtual = () => ({ cabecalho: cab.slice(), linhas: grade.map(l => l.map(C().escreverCelula)), colorir: colorir === null ? undefined : colorir.slice(), estilo_classif: estilo === 'fundo' ? undefined : estilo, nota: $('et-nota').value.trim() || null });
             const autoCols = () => C().colunasColoridas({ cabecalho: cab });
             const colsAtivas = () => colorir === null ? autoCols() : colorir;
+            const pintarTd = (td, r, k) => {
+                const c = C().celulaTabela({ cabecalho: cab, colorir: colsAtivas() }, C().escreverCelula(grade[r][k]), k);
+                td.className = (c.fundo ? 'cl-' + c.fundo : '') + (sel.has(chave(r, k)) ? ' sel' : '');
+                td.style.background = c.bg || '';
+                const inp = td.querySelector('input'); if (inp) inp.setAttribute('style', (c.css || '').replace(/background:[^;]+;?/, ''));
+            };
+            function marcarSelecao() {
+                m.querySelectorAll('#et-grade td[data-r]').forEach(td => td.classList.toggle('sel', sel.has(chave(td.dataset.r, td.dataset.k))));
+                $('et-selinfo').textContent = sel.size === 0 ? 'Nenhuma célula selecionada' : sel.size === 1 ? '1 célula selecionada' : `${sel.size} células selecionadas`;
+            }
             function desenharGrade() {
-                const n = ncol(), ativas = colsAtivas();
-                $('et-grade').innerHTML = `<thead><tr>${cab.map((h, k) => `<th><input data-h="${k}" value="${esc(h)}" placeholder="Coluna ${k + 1}"><button type="button" class="ed-x" data-xcol="${k}" title="Tirar esta coluna">✕</button></th>`).join('')}<th></th></tr></thead>
-                    <tbody>${grade.map((l, r) => `<tr>${l.map((c, k) => {
-                        const cel = C().celulaTabela({ cabecalho: cab, colorir: ativas }, C().escreverCelula(c), k);
-                        const sel = foco && foco[0] === r && foco[1] === k;
-                        return `<td class="${cel.fundo ? 'cl-' + cel.fundo : ''}${sel ? ' sel' : ''}"><input data-r="${r}" data-k="${k}" value="${esc(c.texto)}" style="${cel.css}"></td>`;
-                    }).join('')}<td><button type="button" class="ed-x" data-xlin="${r}" title="Tirar esta linha">✕</button></td></tr>`).join('')}</tbody>`;
+                $('et-grade').innerHTML = `<thead><tr><th class="ed-tab-canto"></th>${cab.map((h, k) => `<th><button type="button" class="ed-selcol" data-selcol="${k}" title="Selecionar a coluna">▾</button><input data-h="${k}" value="${esc(h)}" placeholder="Coluna ${k + 1}"><button type="button" class="ed-x" data-xcol="${k}" title="Tirar esta coluna">✕</button></th>`).join('')}<th></th></tr></thead>
+                    <tbody>${grade.map((l, r) => `<tr><td class="ed-tab-canto"><button type="button" class="ed-sellin" data-sellin="${r}" title="Selecionar a linha">▸</button></td>${l.map((c, k) => `<td data-r="${r}" data-k="${k}"><input data-r="${r}" data-k="${k}" value="${esc(c.texto)}"></td>`).join('')}<td><button type="button" class="ed-x" data-xlin="${r}" title="Tirar esta linha">✕</button></td></tr>`).join('')}</tbody>`;
+                m.querySelectorAll('#et-grade td[data-r]').forEach(td => pintarTd(td, Number(td.dataset.r), Number(td.dataset.k)));
+                marcarSelecao();
+                const ativas = colsAtivas();
                 $('et-cols').innerHTML = cab.map((h, k) => `<label class="chk"><input type="checkbox" data-cc="${k}" ${ativas.includes(k) ? 'checked' : ''}> ${esc(h || 'Coluna ' + (k + 1))}</label>`).join('') || '<em>—</em>';
-                if (n === 0) return;
             }
             function previa() {
                 const t = blocoAtual();
@@ -1151,45 +1166,61 @@
                 }).join('')}</tr>`).join('')}</tbody></table>${t.nota ? `<p class="i-nota">${esc(t.nota)}</p>` : ''}`;
             }
             const tudo = () => { desenharGrade(); previa(); };
+            const intervalo = (a, z) => { const s2 = new Set(); for (let r = Math.min(a[0], z[0]); r <= Math.max(a[0], z[0]); r++) for (let k = Math.min(a[1], z[1]); k <= Math.max(a[1], z[1]); k++) s2.add(chave(r, k)); return s2; };
+            function aplicar(mudar) {
+                if (!sel.size) { toast('Selecione primeiro uma ou mais células da tabela.', 'info'); return; }
+                sel.forEach(x => { const [r, k] = x.split(',').map(Number); if (grade[r] && grade[r][k]) mudar(grade[r][k]); });
+                m.querySelectorAll('#et-grade td[data-r]').forEach(td => pintarTd(td, Number(td.dataset.r), Number(td.dataset.k)));
+                previa();
+            }
             $('et-estilo').value = estilo;
             tudo();
-            m.addEventListener('focusin', ev => {
-                const i = ev.target.closest('input[data-r]'); if (!i) return;
-                foco = [Number(i.dataset.r), Number(i.dataset.k)];
-                m.querySelectorAll('#et-grade td.sel').forEach(td => td.classList.remove('sel'));
-                i.parentElement.classList.add('sel');
+            // seleção: clique, Shift, Ctrl e arrastar
+            m.addEventListener('mousedown', ev => {
+                if (ev.target.closest('.ed-cor:not(.livre), .ed-fundo, .ed-bg:not(.livre)')) { ev.preventDefault(); return; }   // não tira o foco
+                const td = ev.target.closest('#et-grade td[data-r]'); if (!td) return;
+                const p = [Number(td.dataset.r), Number(td.dataset.k)];
+                if (ev.shiftKey && ancora) { sel = intervalo(ancora, p); ev.preventDefault(); }
+                else if (ev.ctrlKey || ev.metaKey) { const x = chave(p[0], p[1]); if (sel.has(x)) sel.delete(x); else sel.add(x); ancora = p; ev.preventDefault(); }
+                else { sel = new Set([chave(p[0], p[1])]); ancora = p; arrastando = true; }
+                marcarSelecao();
             });
+            m.addEventListener('mouseover', ev => {
+                if (!arrastando || !ancora) return;
+                const td = ev.target.closest('#et-grade td[data-r]'); if (!td) return;
+                const p = [Number(td.dataset.r), Number(td.dataset.k)];
+                if (p[0] !== ancora[0] || p[1] !== ancora[1]) { sel = intervalo(ancora, p); marcarSelecao(); if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
+            });
+            const soltar = () => { arrastando = false; };
+            document.addEventListener('mouseup', soltar);
+            new MutationObserver((_, ob) => { if (!document.body.contains(m)) { document.removeEventListener('mouseup', soltar); ob.disconnect(); } }).observe(document.body, { childList: true });
             m.addEventListener('input', ev => {
                 const i = ev.target;
-                if (i.dataset.h != null) { cab[Number(i.dataset.h)] = i.value; if (colorir === null) { const a = autoCols(); m.querySelectorAll('[data-cc]').forEach(x => { x.checked = a.includes(Number(x.dataset.cc)); }); } previa(); return; }
-                if (i.dataset.r != null) {
-                    grade[Number(i.dataset.r)][Number(i.dataset.k)].texto = i.value;
-                    const c = C().celulaTabela({ cabecalho: cab, colorir: colsAtivas() }, C().escreverCelula(grade[Number(i.dataset.r)][Number(i.dataset.k)]), Number(i.dataset.k));
-                    i.parentElement.className = (c.fundo ? 'cl-' + c.fundo : '') + ' sel';
-                    previa(); return;
-                }
+                if (i.dataset.h != null) { cab[Number(i.dataset.h)] = i.value; if (colorir === null) { const a = autoCols(); m.querySelectorAll('[data-cc]').forEach(x => { x.checked = a.includes(Number(x.dataset.cc)); }); m.querySelectorAll('#et-grade td[data-r]').forEach(td => pintarTd(td, Number(td.dataset.r), Number(td.dataset.k))); } previa(); return; }
+                if (i.dataset.r != null) { const r = Number(i.dataset.r), k = Number(i.dataset.k); grade[r][k].texto = i.value; pintarTd(i.parentElement, r, k); previa(); return; }
                 if (i.id === 'et-nota') previa();
             });
             m.addEventListener('change', ev => {
                 const i = ev.target;
                 if (i.dataset.cc != null) { colorir = [...m.querySelectorAll('[data-cc]:checked')].map(x => Number(x.dataset.cc)); tudo(); }
                 if (i.id === 'et-estilo') { estilo = i.value; previa(); }
+                if (i.id === 'et-cor-livre') aplicar(c => { c.cor = i.value.toUpperCase(); });
+                if (i.id === 'et-bg-livre') aplicar(c => { c.bg = i.value.toUpperCase(); c.fundo = null; });
             });
-            m.addEventListener('mousedown', ev => { if (ev.target.closest('.ed-cor, .ed-fundo')) ev.preventDefault(); });   // não tira o foco da célula
             m.addEventListener('click', ev => {
                 const t = ev.target.closest('button'); if (!t) return;
-                if (t.dataset.xcol != null) { if (cab.length <= 1) return; const k = Number(t.dataset.xcol); cab.splice(k, 1); grade.forEach(l => l.splice(k, 1)); if (colorir) colorir = colorir.filter(x => x !== k).map(x => x > k ? x - 1 : x); foco = null; tudo(); return; }
-                if (t.dataset.xlin != null) { if (grade.length <= 1) return; grade.splice(Number(t.dataset.xlin), 1); foco = null; tudo(); return; }
+                if (t.dataset.xcol != null) { if (cab.length <= 1) return; const k = Number(t.dataset.xcol); cab.splice(k, 1); grade.forEach(l => l.splice(k, 1)); if (colorir) colorir = colorir.filter(x => x !== k).map(x => x > k ? x - 1 : x); sel = new Set(); tudo(); return; }
+                if (t.dataset.xlin != null) { if (grade.length <= 1) return; grade.splice(Number(t.dataset.xlin), 1); sel = new Set(); tudo(); return; }
                 if (t.id === 'et-lin') { grade.push(cab.map(() => C().lerCelula(''))); tudo(); return; }
                 if (t.id === 'et-col') { cab.push(''); grade.forEach(l => l.push(C().lerCelula(''))); tudo(); return; }
-                if (!foco) { if (t.closest('.ed-tab-barra')) toast('Clique primeiro numa célula da tabela.', 'info'); return; }
-                const c = grade[foco[0]][foco[1]];
-                if (t.dataset.cor != null) c.cor = t.dataset.cor || null;
-                else if (t.dataset.neg) c.negrito = !c.negrito;
-                else if (t.dataset.fundo != null) c.fundo = t.dataset.fundo || null;
-                else return;
-                const f = foco; tudo();
-                const inp = m.querySelector(`input[data-r="${f[0]}"][data-k="${f[1]}"]`); if (inp) inp.focus();
+                if (t.dataset.sellin != null) { const r = Number(t.dataset.sellin); sel = new Set(cab.map((_, k) => chave(r, k))); ancora = [r, 0]; marcarSelecao(); return; }
+                if (t.dataset.selcol != null) { const k = Number(t.dataset.selcol); sel = new Set(grade.map((_, r) => chave(r, k))); ancora = [0, k]; marcarSelecao(); return; }
+                if (t.id === 'et-tudo') { sel = intervalo([0, 0], [grade.length - 1, cab.length - 1]); ancora = [0, 0]; marcarSelecao(); return; }
+                if (t.id === 'et-limpar') return aplicar(c => { c.cor = null; c.bg = null; c.fundo = null; c.negrito = false; });
+                if (t.dataset.cor != null) return aplicar(c => { c.cor = t.dataset.cor || null; });
+                if (t.dataset.neg) { const todos = [...sel].every(x => { const [r, k] = x.split(',').map(Number); return grade[r][k].negrito; }); return aplicar(c => { c.negrito = !todos; }); }
+                if (t.dataset.fundo != null) return aplicar(c => { c.fundo = t.dataset.fundo || null; c.bg = null; });
+                if (t.dataset.bg) return aplicar(c => { c.bg = t.dataset.bg; c.fundo = null; if (!c.cor) c.cor = '#FFFFFF'; });
             });
             $('et-ok').addEventListener('click', () => {
                 const t = blocoAtual();

@@ -193,6 +193,7 @@
         const total = (med.find(m => m.key === 'Total') || {}).raw;
         const cab = () => cabecalho({ titulo: op.titulo || 'RAVLT', sub: ['Teste de Aprendizagem Auditivo-Verbal de Rey', `Listas A e B · 15 palavras · norma ${d.faixa_norma || '—'}`],
             rot: 'Escore total', valor: `${total != null ? esc(total) : '—'}<small>/75</small>`, nota: 'A1 a A5' });
+        if (b.vista === 'cabecalho') return cab();
         if (b.vista === 'cartao') return cab() + curvaRavlt(d);
         if (b.vista === 'curva') return curvaRavlt(d);
         if (b.vista === 'tabela') {
@@ -218,10 +219,10 @@
             return `<div class="cx-fd"${pop(`${m.label}: ${m.raw} s`, `Percentil ${m.pctLabel || '—'} · ${cl}. Menos tempo é melhor.${erTxt}`, C().faixa(cl))}><span class="cx-fd-n">${esc(String(m.label || k).replace(/ \(.*\)/, ''))}</span>
                 <span class="cx-fd-t"><span class="cx-fd-b b-${tom(cl)}" style="width:${Math.max(4, Math.min(100, m.pctNum || 0))}%"></span></span><span class="cx-fd-p">${esc(m.pctLabel || '—')}</span>${selo(cl)}</div>`;
         }).join('')}</div>`;
-        if (b.vista === 'cartao') {
-            return cabecalho({ titulo: op.titulo || 'FDT', sub: ['Teste dos Cinco Dígitos', 'Five Digit Test · Atenção, Controle Inibitório e Flexibilidade Cognitiva'],
-                rot: 'Faixa normativa', valor: esc(String(d.faixa_norma || '—').replace(/\s/g, '')), nota: d.idade_anos != null ? `Idade: ${d.idade_anos}a` : '' }) + barras();
-        }
+        const cabFdt = () => cabecalho({ titulo: op.titulo || 'FDT', sub: ['Teste dos Cinco Dígitos', 'Five Digit Test · Atenção, Controle Inibitório e Flexibilidade Cognitiva'],
+            rot: 'Faixa normativa', valor: esc(String(d.faixa_norma || '—').replace(/\s/g, '')), nota: d.idade_anos != null ? `Idade: ${d.idade_anos}a` : '' });
+        if (b.vista === 'cabecalho') return cabFdt();
+        if (b.vista === 'cartao') return cabFdt() + barras();
         if (b.vista === 'barras') return barras();
         if (b.vista === 'tabela') {
             const grupos = [['tempo', 'Tempos (segundos)'], ['derivado', 'Índices derivados'], ['erro', 'Erros']];
@@ -265,11 +266,11 @@
 
     function bfp(b, d, glossario) {
         const op = b.opcoes || {};
-        if (b.vista === 'cartao') {
-            const sexo = d.sexo_norma === 'feminino' ? '♀ Feminino' : d.sexo_norma === 'masculino' ? '♂ Masculino' : 'Geral';
-            return cabecalho({ titulo: op.titulo || 'BFP', sub: ['Bateria Fatorial de Personalidade — Modelo Big Five', 'Nunes, Hutz & Nunes (2010) · 126 itens · 5 fatores e 17 facetas'],
-                rot: 'Norma', valor: sexo, nota: d.idade_anos != null ? `Idade: ${d.idade_anos}a` : 'Adulto' }) + bfpZ(d, glossario);
-        }
+        const sexo = d.sexo_norma === 'feminino' ? '♀ Feminino' : d.sexo_norma === 'masculino' ? '♂ Masculino' : 'Geral';
+        const cabBfp = () => cabecalho({ titulo: op.titulo || 'BFP', sub: ['Bateria Fatorial de Personalidade — Modelo Big Five', 'Nunes, Hutz & Nunes (2010) · 126 itens · 5 fatores e 17 facetas'],
+            rot: 'Norma', valor: sexo, nota: d.idade_anos != null ? `Idade: ${d.idade_anos}a` : 'Adulto' });
+        if (b.vista === 'cabecalho') return cabBfp();
+        if (b.vista === 'cartao') return cabBfp() + bfpZ(d, glossario);
         if (b.vista === 'fatores') {
             const pc = d.percentil_fatores || {}, cl = d.classificacao_fatores || {}, eb = d.eb_fatores || {};
             return `<div class="cx-card cx-tb cx-tb4"><div class="cx-tb-cab"><span>Fator</span><span>Escore bruto</span><span>Percentil</span><span>Classificação</span></div>
@@ -347,6 +348,7 @@
                 .map(sb => reguaEscala({ min: 0, max: sb.max, valor: sb.valor, zonas: sb.zonas }, `${sb.nome}${sb.classificacao ? ' · ' + sb.classificacao : ''}`)).join('');
             return rs ? `<div class="cx-card cx-regua">${rs}</div>` : '';
         };
+        if (b.vista === 'cabecalho') return cab();
         if (b.vista === 'cartao') return `${op.sem_cabecalho ? '' : cab()}${P && P.classificacao ? `<div class="cx-esc-cl">${seloTom(P.classificacao, P.tom)}${ind}</div>` : ind}${reguas()}${subs}`;
         if (b.vista === 'regua') return reguas() || subs;
         if (b.vista === 'subescalas') return subs || reguas();
@@ -358,6 +360,57 @@
             return `<div class="cx-card cx-tb cx-tb4"><div class="cx-tb-cab"><span>Medida</span><span>Escore</span><span>Máximo</span><span>Classificação</span></div>${lin.join('')}</div>${ind}`;
         }
         return null;
+    }
+
+    // ── FIGURAS DAS TELAS DE CORREÇÃO (LO-6) ──────────────────────────────────
+    // O laudo pode trazer, em doc.figuras, os blocos capturados da própria tela
+    // de correção de cada teste (cabeçalho, tabelas, gráficos): as mesmas
+    // imagens do 📷/📋 das telas, em alta resolução. Quem desenha a página
+    // informa as figuras e os links assinados com LaudoGraf.usarFiguras().
+    const FIG = { figuras: null, urls: {} };
+    const APELIDO_FIG = { 'SRS-2': ['SRS-2-HET', 'SRS-2-AUTO', 'SRS-2-PRE', 'SRS-2-ESC-F', 'SRS-2-ESC-M'], 'SCARED': ['SCARED-A', 'SCARED-H'], 'CARS-2': ['CARS2-ST', 'CARS2-HF'], 'CARS2': ['CARS2-ST', 'CARS2-HF'], 'QA16+': ['QA 16+'] };
+    function usarFiguras(figuras, urls) { FIG.figuras = figuras || null; FIG.urls = urls || {}; }
+    function figurasDaSigla(sig) {
+        const F = FIG.figuras || {};
+        if (F[sig]) return F[sig];
+        const ap = (APELIDO_FIG[sig] || []).find(x => F[x]);
+        return ap ? F[ap] : null;
+    }
+    /** Blocos de figura para um bloco `resultado`, ou null (desenha pelo banco). */
+    function figurasDe(b) {
+        const F = figurasDaSigla(b.sigla);
+        if (!F || !(F.blocos || []).length) return null;
+        const op = b.opcoes || {}, bs = F.blocos;
+        const por = ch => bs.find(x => x.chave === ch);
+        if (b.vista === 'figura' || op.figura || op.figuras) {
+            const lista = [].concat(op.figuras || op.figura || []).map(por).filter(Boolean);
+            return lista.length ? lista : null;
+        }
+        // Testes desenhados pelo próprio Laudo Online (WAIS, WISC, RAVLT, FDT, BFP) continuam vetoriais.
+        if (C().SIGLAS_DO_CORTEX.includes(b.sigla)) return null;
+        const corpo = bs.filter(x => x.chave !== 'cabecalho');
+        const achar = re => corpo.find(x => re.test(`${x.classe || ''} ${x.titulo || ''}`));
+        let lista;
+        switch (b.vista) {
+            case 'cabecalho': lista = [por('cabecalho')]; break;
+            case 'cartao': lista = [por('cabecalho'), corpo[0]]; break;
+            case 'tabela': lista = [corpo.find(x => x.tipo === 'tabela') || achar(/tab/i) || corpo[0]]; break;
+            case 'regua': lista = [achar(/regua|barra|gravidade|total/i) || corpo[0]]; break;
+            case 'subescalas': lista = [achar(/sub|perfil|fator|dom[ií]nio|escala/i) || corpo[0]]; break;
+            case 'resumo': return null;
+            default: lista = [corpo[0]];
+        }
+        lista = lista.filter(Boolean);
+        return lista.length ? lista : null;
+    }
+    function figurasHtml(b, figs) {
+        return `<div class="resultado cx-figs" data-sigla="${esc(b.sigla)}" data-vista="${esc(b.vista)}">${figs.map(f => {
+            const url = FIG.urls[f.arquivo];
+            const w = Math.round(f.w || 800), h = Math.round(f.h || 400);
+            return url
+                ? `<figure class="cx-fig"><img src="${esc(url)}" width="${w}" height="${h}" alt="${esc(f.titulo || b.sigla)}" decoding="async"></figure>`
+                : `<figure class="cx-fig cx-fig-vazia" style="aspect-ratio:${w}/${h}"><span>${esc(b.sigla)} · ${esc(f.titulo || 'figura')}</span></figure>`;
+        }).join('')}${(b.opcoes || {}).legenda ? `<p class="cx-leg">${esc(b.opcoes.legenda)}</p>` : ''}</div>`;
     }
 
     // ── Resumo (qualquer teste) ───────────────────────────────────────────────
@@ -374,6 +427,8 @@
     /** Motivo de um resultado não poder ser desenhado (null = pode). */
     function indisponivel(b, banco) {
         const sig = b.sigla;
+        if (figurasDe(b)) return null;
+        if (b.vista === 'figura') return `${sig}: figura da tela de correção ainda não capturada`;
         if (!C().vistasDe(sig).includes(b.vista)) return `${sig}: vista "${b.vista}" ainda não construída`;
         const d = ((banco || {}).resultados || {})[sig];
         if (!C().SIGLAS_DO_CORTEX.includes(sig)) {
@@ -396,6 +451,9 @@
     function render(b, banco, extra) {
         extra = extra || {};
         const sig = b.sigla, op = b.opcoes || {};
+        const figs = figurasDe(b);
+        if (figs) return figurasHtml(b, figs);
+        if (b.vista === 'figura') return aviso(`${esc(sig)}: figura da tela de correção ainda não capturada. Use 📷 Figuras dos testes.`, sig);
         if (!C().vistasDe(sig).includes(b.vista)) return aviso(`${esc(sig)}: componente ainda não construído (vista "${esc(b.vista)}").`, sig);
         const d = ((banco || {}).resultados || {})[sig];
         if (!C().SIGLAS_DO_CORTEX.includes(sig) && !d) return aviso(esc(indisponivel(b, banco) || `${sig}: sem dados`) + '.', sig);
@@ -432,5 +490,5 @@
         return r ? { valor: r.valor, rotulo: r.principal, sub: '', classe: r.classificacao } : null;
     }
 
-    window.LaudoGraf = { render, indisponivel, destaque, selo, tom, classComp, classPond, SUBTESTES, FACETAS, NOME_IDX };
+    window.LaudoGraf = { render, indisponivel, destaque, usarFiguras, figurasDaSigla, figurasDe, selo, tom, classComp, classPond, SUBTESTES, FACETAS, NOME_IDX };
 })();

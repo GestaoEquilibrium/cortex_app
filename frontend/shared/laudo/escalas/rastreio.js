@@ -9,9 +9,8 @@
      - faixas: instrumentos_classificacoes da norma (sem fator, base 'raw', com
        min/max, por ordem); sem linhas → faixas fixas do CFG (iguais às da tela)
      - escore máximo: norma.score_max || limite da última faixa do CFG
-   Diferença conhecida: a tela usa a norma gravada em escores_brutos.norma_id
-   quando existe; aqui vale ctx.norma (a ativa). Só diverge se a norma foi trocada
-   depois da correção.
+   Norma: igual à tela — a gravada em escores_brutos.norma_id quando existe,
+   senão a ativa (normaDaCorrecao no carregar).
    ============================================================================ */
 (function () {
     'use strict';
@@ -183,6 +182,6 @@
     }
 
     Object.keys(CFG).forEach(sigla => {
-        E.registrar({ siglas: [sigla], carregar: { itens: true, classificacoes: true }, calcular: calcularCom(sigla) });
+        E.registrar({ siglas: [sigla], carregar: { itens: true, classificacoes: true, normaDaCorrecao: true }, calcular: calcularCom(sigla) });
     });
 })();

@@ -487,3 +487,5 @@ html.p-pagina, html.p-pagina body { margin: 0; background: #060B18; min-height: 
 @media (max-width: 920px) { .port .p-graf .imp .cx-fd { grid-template-columns: 110px 1fr 44px; } }
 .port .p-graf .imp .cx-esc-cl, .port .p-graf .imp .cx-ind { display: none; }   /* a vitrine já mostra classificação e indicação no destaque */
 .port .p-graf .imp .cx-fdc .cx-fd { min-height: 32px; }
+.port .p-graf .imp .cx-fig img { border-radius: 14px; background: #fff; }
+.port .p-graf .imp .cx-fig-vazia { background: rgba(148, 178, 230, .08); border-color: var(--borda); color: var(--apagado); border-radius: 14px; }

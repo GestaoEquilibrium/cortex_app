@@ -262,7 +262,14 @@ Deno.serve(async (req) => {
                         if (b?.tipo === "imagem" && typeof b.arquivo === "string" && b.arquivo) arquivos.push(b.arquivo);
                     }
                 }
-                for (const a of arquivos.slice(0, 40)) {
+                // figuras das telas de correção (LO-6)
+                const figuras = r.snapshot?.documento?.figuras || {};
+                for (const sig of Object.keys(figuras)) {
+                    for (const b of (figuras[sig]?.blocos || [])) {
+                        if (typeof b?.arquivo === "string" && b.arquivo) arquivos.push(b.arquivo);
+                    }
+                }
+                for (const a of arquivos.slice(0, 120)) {
                     try { imagens[a] = await assinarArquivo("laudos-midia", a, 600); } catch (_) { /* segue sem */ }
                 }
                 let foto: string | null = null;

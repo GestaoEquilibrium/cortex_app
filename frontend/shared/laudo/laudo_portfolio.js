@@ -568,6 +568,7 @@
         O.banco.paciente = O.banco.paciente || {};
         O.ctx = C().contexto(O.banco, (O.doc || {}).meta);
         O.congelado = !!O.banco.congelado;
+        if (G().usarFiguras) G().usarFiguras((O.doc || {}).figuras || null, O.imagens || {});
 
         // seções → capítulos
         const porCap = {};

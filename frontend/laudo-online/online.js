@@ -54,6 +54,7 @@
             st.imagens = {};
             const arqs = [];
             window.LaudoCore.cadaBloco(st.doc, b => { if (b.tipo === 'imagem' && b.arquivo) arqs.push(b.arquivo); });
+            Object.values(st.doc.figuras || {}).forEach(f => (f.blocos || []).forEach(b => { if (b.arquivo) arqs.push(b.arquivo); }));
             for (const a of arqs) {
                 try { const r = await sb().storage.from('laudos-midia').createSignedUrl(a, 900); if (r.data) st.imagens[a] = r.data.signedUrl; } catch (e) { /* segue */ }
             }

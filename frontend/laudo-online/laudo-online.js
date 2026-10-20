@@ -40,6 +40,7 @@
         bancoVivo: null,         // sempre o banco de agora (para comparar com o laudo finalizado)
         congelado: false,        // true: doc e banco vêm do snapshot da finalização
         mudancas: [], snapGlossario: {},
+        urlsFig: {},             // links assinados das figuras das telas de correção (LO-6)
         glossario: {}, validacao: null, historico: [],
         importacao: null,
         visao: params.get('visao') === 'impressao' ? 'impressao' : 'editor',
@@ -112,6 +113,7 @@
             st.mudancas = [];
             st.doc = data.status === 'em_construcao' || !data.snapshot ? data.documento : (data.snapshot.documento || data.documento);
         }
+        await assinarFiguras();
         reconferir();
         st.historico = [];
         if (st.admClin) {
@@ -124,6 +126,25 @@
             pacienteId: st.pacienteId, detalhes: { versao: data.versao, status: data.status }
         });
         if (!semRender) render();
+    }
+
+    // Figuras das telas de correção (doc.figuras): links curtos para desenhar e imprimir.
+    async function assinarFiguras() {
+        st.urlsFig = {};
+        const F = (st.doc && st.doc.figuras) || {};
+        const arqs = [];
+        Object.keys(F).forEach(sig => (F[sig].blocos || []).forEach(b => { if (b.arquivo) arqs.push(b.arquivo); }));
+        if (arqs.length) {
+            try {
+                const r = await sb().storage.from('laudos-midia').createSignedUrls(arqs, 1800);
+                ((r && r.data) || []).forEach(x => { if (x && x.signedUrl && x.path) st.urlsFig[x.path] = x.signedUrl; });
+            } catch (e) { console.warn('[figuras] links', e); }
+            const faltam = arqs.filter(a => !st.urlsFig[a]);
+            for (const a of faltam) {
+                try { const r = await sb().storage.from('laudos-midia').createSignedUrl(a, 1800); if (r.data) st.urlsFig[a] = r.data.signedUrl; } catch (e) { /* segue sem */ }
+            }
+        }
+        if (window.LaudoGraf && window.LaudoGraf.usarFiguras) window.LaudoGraf.usarFiguras(F, st.urlsFig);
     }
 
     function reconferir() {
@@ -202,6 +223,7 @@
                 ${l && !st.congelado ? '<button class="lo-btn" id="lo-reconferir" title="Lê os resultados do banco de novo e refaz as conferências">↻ Reconferir</button>' : ''}
                 ${l && st.congelado ? '<button class="lo-btn" id="lo-reconferir" title="Compara os números deste laudo com o banco de agora. O laudo não muda.">↻ Comparar com o banco</button>' : ''}
                 ${acoesStatus()}
+                ${editavel() && window.LaudoFiguras ? '<button class="lo-btn" id="lo-figuras" title="Traz as tabelas, gráficos e cabeçalhos iguais aos das telas de correção de cada teste">📷 Figuras dos testes</button>' : ''}
                 ${editavel() ? '<button class="lo-btn" id="lo-reimportar" title="Trazer uma versão revisada do pacote do Gerador sem perder suas edições">⟳ Reimportar</button>' : ''}
                 ${l && l.status === 'em_construcao' && st.admClin ? '<button class="lo-btn" id="lo-descartar" title="Apaga esta versão em construção para importar de novo">🗑 Descartar</button>' : ''}
                 ${podeImportar() && !finalizado() ? '<button class="lo-btn prim" id="lo-importar">⤓ Importar pacote</button>' : ''}
@@ -423,6 +445,7 @@
         for (const a of arqs) {
             try { const { data } = await sb().storage.from('laudos-midia').createSignedUrl(a, 900); if (data) ctx.imagens[a] = data.signedUrl; } catch (e) { /* segue sem */ }
         }
+        Object.assign(ctx.imagens, st.urlsFig || {});
         st.ctxImp = ctx;
         return ctx;
     }
@@ -777,6 +800,7 @@
         on('lo-finalizar-2', abrirFinalizar);
         on('lo-nova-versao', abrirNovaVersao);
         on('lo-liberar', liberarOnline);
+        on('lo-figuras', () => abrirFiguras(false));
         raiz.querySelectorAll('[data-status]').forEach(bt => bt.addEventListener('click', () => mudarStatus(bt.dataset.status)));
         const sel = raiz.querySelector('#lo-versao');
         if (sel) sel.addEventListener('change', () => abrirLaudo(sel.value).catch(e => toast(e.message, 'danger')));
@@ -1063,6 +1087,88 @@
         });
     }
 
+    // ── Figuras das telas de correção (LO-6) ──────────────────────────────────
+    function aplicacoesComTela() {
+        const vistas = new Set(), lista = [];
+        (st.banco.aplicacoes || []).forEach(a => {      // a mais recente de cada teste, já corrigida
+            if (!a.corrigida || vistas.has(a.sigla)) return;
+            vistas.add(a.sigla); lista.push({ id: a.id, sigla: a.sigla, nome: a.nome });
+        });
+        return lista;
+    }
+
+    function abrirFiguras(aposImportar) {
+        if (!editavel() || document.querySelector('.lo-modal')) return;
+        const lista = aplicacoesComTela();
+        const F = st.doc.figuras || {};
+        const quando = iso => iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+        const m = document.createElement('div');
+        m.className = 'lo-modal';
+        m.innerHTML = `
+            <div class="lo-modal-card lo-fin" role="dialog" aria-modal="true" aria-labelledby="lo-fig-tit">
+                <h2 id="lo-fig-tit">📷 Figuras dos testes</h2>
+                <p>${aposImportar ? '<b>Laudo montado.</b> ' : ''}O CORTEX abre a tela de correção de cada teste e traz o cabeçalho, as tabelas e os gráficos <b>iguais aos que vocês copiam com 📷 e 📋</b>. Depois você escolhe no editor qual figura vai em cada lugar (inclusive <b>só o cabeçalho</b>). Leva alguns segundos por teste. Dados de identificação ficam de fora.</p>
+                ${lista.length ? `<div class="lo-fig-lista">${lista.map(a => {
+                    const f = F[a.sigla];
+                    const est = f ? `${(f.blocos || []).length} figura(s) · ${quando(f.capturado_em)}${f.aplicacao_id !== a.id ? ' · <b>há correção mais nova</b>' : ''}` : 'ainda não capturadas';
+                    return `<label class="lo-fig-item"><input type="checkbox" data-fig="${esc(a.id)}" ${!f || f.aplicacao_id !== a.id ? 'checked' : ''}>
+                        <span><b>${esc(a.sigla)}</b><em data-fig-est="${esc(a.id)}">${est}</em></span></label>`;
+                }).join('')}</div>` : '<p class="lo-imp-erro">Nenhum teste corrigido no CORTEX para este paciente.</p>'}
+                <div id="lo-fig-res" aria-live="polite"></div>
+                <div class="lo-modal-acoes">
+                    <button class="btn btn-secondary" id="lo-fig-fechar">${aposImportar ? 'Agora não' : 'Fechar'}</button>
+                    ${lista.length ? '<button class="btn btn-primary" id="lo-fig-ok">📷 Capturar as marcadas</button>' : ''}
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+        const $ = s => m.querySelector(s);
+        let rodando = false;
+        $('#lo-fig-fechar').addEventListener('click', () => { if (!rodando) m.remove(); });
+        const ok = $('#lo-fig-ok');
+        if (!ok) return;
+        ok.addEventListener('click', async () => {
+            const ids = [...m.querySelectorAll('[data-fig]:checked')].map(x => x.dataset.fig);
+            const alvo = lista.filter(a => ids.includes(a.id));
+            if (!alvo.length) { toast('Marque ao menos um teste.', 'info'); return; }
+            rodando = true; ok.disabled = true; $('#lo-fig-fechar').disabled = true; ok.textContent = 'Capturando…';
+            if (st.editor && st.editor.tem()) await st.editor.gravar();
+            const r = await window.LaudoFiguras.capturar({
+                client: sb(), pacienteId: st.pacienteId, laudoId: st.laudo.id, aplicacoes: alvo,
+                aoProgresso: (i, n, sigla, msg) => {
+                    const a = alvo.find(x => x.sigla === sigla);
+                    const el = a && m.querySelector(`[data-fig-est="${a.id}"]`);
+                    if (el) el.textContent = msg;
+                    $('#lo-fig-res').innerHTML = `<p class="lo-painel-sub">${i} de ${n} testes…</p>`;
+                }
+            });
+            const novas = Object.keys(r.figuras);
+            if (novas.length) {
+                const antes = Object.keys(st.doc.figuras || {});
+                st.doc.figuras = Object.assign({}, st.doc.figuras || {}, r.figuras);
+                const { data, error } = await sb().rpc('laudo_online_salvar', {
+                    p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc,
+                    p_eventos: [{ acao: 'editar', bloco_id: null, antes: { figuras: antes }, depois: { figuras_capturadas: novas } }]
+                });
+                if (error || !data || !data.ok) {
+                    $('#lo-fig-res').innerHTML = `<p class="lo-imp-erro">As figuras foram tiradas, mas não consegui gravar no laudo: ${esc((data && data.mensagem) || (error && error.message) || '')}</p>`;
+                    rodando = false; $('#lo-fig-fechar').disabled = false; ok.textContent = 'Tentar de novo'; ok.disabled = false;
+                    return;
+                }
+                st.laudo.revisao = data.revisao;
+                st.laudo.documento = st.doc;
+                window.CortexAudit && window.CortexAudit.log('edicao', 'laudos_online', st.laudo.id, { pacienteId: st.pacienteId, detalhes: { evento: 'figuras', testes: novas } });
+                await assinarFiguras();
+                st.ctxImp = null; st.impressao = null;
+            }
+            const errs = Object.keys(r.erros);
+            rodando = false;
+            m.remove();
+            render();
+            if (novas.length) toast(`${novas.length} teste(s) com figuras: ${novas.join(', ')}.`, 'success');
+            if (errs.length) toast(`Sem figura: ${errs.map(s => s + ' (' + r.erros[s] + ')').join('; ')}`, 'danger');
+        });
+    }
+
     // ── Descartar versão em construção ───────────────────────────────────────
     function descartar() {
         const l = st.laudo;
@@ -1192,6 +1298,7 @@
             st.laudoId = data.id;
             await carregarTudo();
             render();
+            if (window.LaudoFiguras) setTimeout(() => abrirFiguras(true), 300);
         } catch (err) {
             console.error('[importar]', err);
             btn.disabled = false; btn.textContent = 'Montar laudo';

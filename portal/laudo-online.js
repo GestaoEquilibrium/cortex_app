@@ -40,6 +40,7 @@
             const imagens = {};
             const arqs = [];
             window.LaudoCore.cadaBloco(snap.documento, b => { if (b.tipo === 'imagem' && b.arquivo) arqs.push(b.arquivo); });
+            Object.values(snap.documento.figuras || {}).forEach(f => (f.blocos || []).forEach(b => { if (b.arquivo) arqs.push(b.arquivo); }));
             for (const a of arqs) {
                 try { const r = await client.storage.from('laudos-midia').createSignedUrl(a, 600); if (r.data) imagens[a] = r.data.signedUrl; } catch (e) { /* segue sem */ }
             }

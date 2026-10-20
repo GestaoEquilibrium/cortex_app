@@ -38,12 +38,13 @@
 
     /** Vistas de resultado (Documento 1, §5.3). */
     const VISTAS = {
-        'WAIS-III': ['cabecalho', 'indice', 'qit_icg', 'perfil_subtestes', 'intervalos', 'discrepancias', 'tabela_subtestes', 'resumo'],
-        'WISC-IV': ['cabecalho', 'indice', 'qit_icg', 'perfil_subtestes', 'intervalos', 'discrepancias', 'tabela_subtestes', 'resumo'],
-        'RAVLT': ['cartao', 'curva', 'tabela', 'resumo'],
-        'FDT': ['cartao', 'barras', 'tabela', 'resumo'],
-        'BFP': ['cartao', 'fatores', 'facetas', 'resumo'],
-        '_escala': ['cartao', 'regua', 'subescalas', 'tabela', 'resumo']
+        'WAIS-III': ['cabecalho', 'indice', 'qit_icg', 'perfil_subtestes', 'intervalos', 'discrepancias', 'tabela_subtestes', 'resumo', 'figura'],
+        'WISC-IV': ['cabecalho', 'indice', 'qit_icg', 'perfil_subtestes', 'intervalos', 'discrepancias', 'tabela_subtestes', 'resumo', 'figura'],
+        'RAVLT': ['cabecalho', 'cartao', 'curva', 'tabela', 'resumo', 'figura'],
+        'FDT': ['cabecalho', 'cartao', 'barras', 'tabela', 'resumo', 'figura'],
+        'BFP': ['cabecalho', 'cartao', 'fatores', 'facetas', 'resumo', 'figura'],
+        // escalas e demais testes: as vistas do Gerador + 'figura' (bloco capturado da tela de correção)
+        '_escala': ['cabecalho', 'cartao', 'regua', 'subescalas', 'tabela', 'resumo', 'figura']
     };
     const SIGLAS_DO_CORTEX = ['WAIS-III', 'WISC-IV', 'RAVLT', 'FDT', 'BFP'];
     function vistasDe(sigla) { return VISTAS[sigla] || VISTAS._escala; }

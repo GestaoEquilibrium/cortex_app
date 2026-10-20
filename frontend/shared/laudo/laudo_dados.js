@@ -155,7 +155,8 @@
         const correcao = (q.data || [])[0] || null;
         if (!correcao && !def.semCorrecao) return null;
         let norma = null;
-        const normaUsada = correcao && correcao.escores_brutos && correcao.escores_brutos.norma_id;
+        // só as telas que usam a norma gravada na correção (ex.: rastreios) pedem normaDaCorrecao
+        const normaUsada = (def.carregar || {}).normaDaCorrecao && correcao && correcao.escores_brutos && correcao.escores_brutos.norma_id;
         if (normaUsada) {          // a norma gravada na correção vence a ativa (mesma regra das telas)
             const n = await c().from('instrumentos_normas').select('*').eq('id', normaUsada).limit(1);
             norma = (n.data || [])[0] || null;

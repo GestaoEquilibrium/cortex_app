@@ -233,6 +233,10 @@
 .imp .cx-ind { font-style: normal !important; color: #1E3A5F !important; font-weight: 600; margin: 0 !important; }
 .imp .cx-fd-p small { color: #94A3B8; font-size: 8px; margin-left: 1px; }
 .imp .b-n { background: #94A3B8; }
+.imp .cx-figs { margin: 6px 0 12px; }
+.imp .cx-fig { margin: 0 0 8px; }
+.imp .cx-fig img { display: block; width: 100%; height: auto; max-height: 900px; object-fit: contain; }
+.imp .cx-fig-vazia { display: grid; place-items: center; background: #F1F5F9; border: 1px dashed #CBD5E1; color: #64748B; font-size: 11px; }
 .imp .cx-fdc .cx-fd { height: auto; min-height: 21px; padding: 2px 0; }
 
 @media print {

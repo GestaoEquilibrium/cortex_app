@@ -700,6 +700,8 @@
                 const r = st.banco.resultados[s];
                 return C().SIGLAS_DO_CORTEX.includes(s) || (r && r.tipo === 'escala' && !r.erro && !r.apelido_de);
             });
+            // testes com figuras capturadas da tela de correção (inclusive os sem leitura de números)
+            Object.keys(st.doc.figuras || {}).forEach(s => { if (!disponiveis.includes(s)) disponiveis.push(s); });
             if (!disponiveis.length) { toast('Nenhum teste corrigido no CORTEX para este paciente.', 'info'); return; }
             const atual = existente ? C().clonar(existente) : novoBloco('resultado', { sigla: disponiveis[0], vista: C().vistasDe(disponiveis[0])[0], opcoes: {} });
             atual.opcoes = atual.opcoes || {};
@@ -720,20 +722,33 @@
                 </div>
                 <div class="lo-modal-acoes"><button class="btn btn-secondary" data-fechar>Cancelar</button><button class="btn btn-primary" id="er-ok">${existente ? 'Aplicar' : 'Inserir'}</button></div>`, 'largo');
             const $ = id => m.querySelector('#' + id);
-            const NOMES = { cabecalho: 'Cabeçalho do teste', indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes', intervalos: 'Intervalos de confiança', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas', regua: 'Régua de gravidade', subescalas: 'Subescalas' };
+            const NOMES = { indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes', intervalos: 'Intervalos de confiança', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', cabecalho: 'Só o cabeçalho', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas', regua: 'Régua de gravidade', subescalas: 'Subescalas' };
             function encherVistas() {
-                const vs = C().vistasDe($('er-sigla').value);
-                $('er-vista').innerHTML = vs.map(v => `<option value="${v}" ${v === atual.vista ? 'selected' : ''}>${NOMES[v] || v}</option>`).join('');
+                const sig = $('er-sigla').value;
+                const temDados = !!(st.banco.resultados || {})[sig];
+                const vs = temDados ? C().vistasDe(sig).filter(v => v !== 'figura') : [];
+                const F = (st.doc.figuras || {})[sig];
+                const figs = F ? (F.blocos || []) : [];
+                const atualV = atual.vista === 'figura' ? 'fig:' + ((atual.opcoes || {}).figura || '') : atual.vista;
+                const opt = (v, rot) => `<option value="${esc(v)}" ${v === atualV ? 'selected' : ''}>${esc(rot)}</option>`;
+                const gDesenho = vs.length ? `<optgroup label="Desenho do Laudo Online">${vs.map(v => opt(v, v === 'cabecalho' ? 'Só o cabeçalho (desenho)' : (NOMES[v] || v))).join('')}</optgroup>` : '';
+                const gFigura = figs.length ? `<optgroup label="Igual à tela de correção">${figs.map(f => opt('fig:' + f.chave, f.chave === 'cabecalho' ? 'Só o cabeçalho' : f.titulo)).join('')}</optgroup>` : '';
+                // escalas e demais testes: a figura da tela de correção vem primeiro
+                $('er-vista').innerHTML = C().SIGLAS_DO_CORTEX.includes(sig) ? gDesenho + gFigura : gFigura + gDesenho;
+                if (!$('er-vista').value && $('er-vista').options.length) $('er-vista').selectedIndex = 0;
             }
             function ler() {
-                atual.sigla = $('er-sigla').value; atual.vista = $('er-vista').value;
+                atual.sigla = $('er-sigla').value;
+                const vv = $('er-vista').value || '';
+                atual.vista = vv.startsWith('fig:') ? 'figura' : vv;
                 const op = {};
+                if (vv.startsWith('fig:')) op.figura = vv.slice(4);
                 if (atual.vista === 'indice') op.indice = $('er-indice').value;
                 if (atual.vista === 'facetas' && $('er-fator').value) op.fator = $('er-fator').value;
                 if ($('er-largura').value === 'metade') op.largura = 'metade';
                 if ($('er-semcab').checked) op.sem_cabecalho = true;
                 if ($('er-legenda').value.trim()) op.legenda = $('er-legenda').value.trim();
-                const resto = Object.assign({}, atual.opcoes); ['indice', 'fator', 'largura', 'sem_cabecalho', 'legenda'].forEach(k => delete resto[k]);
+                const resto = Object.assign({}, atual.opcoes); ['indice', 'fator', 'largura', 'sem_cabecalho', 'legenda', 'figura', 'figuras'].forEach(k => delete resto[k]);
                 atual.opcoes = Object.assign(resto, op);
             }
             function previa() {
@@ -748,7 +763,7 @@
             if (atual.opcoes.largura === 'metade') $('er-largura').value = 'metade';
             $('er-semcab').checked = !!atual.opcoes.sem_cabecalho;
             $('er-legenda').value = atual.opcoes.legenda || '';
-            $('er-sigla').addEventListener('change', () => { atual.vista = C().vistasDe($('er-sigla').value)[0]; encherVistas(); previa(); });
+            $('er-sigla').addEventListener('change', () => { atual.vista = ''; atual.opcoes = {}; encherVistas(); previa(); });
             ['er-vista', 'er-indice', 'er-fator', 'er-largura', 'er-semcab'].forEach(id => $(id).addEventListener('change', previa));
             $('er-legenda').addEventListener('input', previa);
             previa();

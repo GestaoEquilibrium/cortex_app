@@ -1,11 +1,13 @@
 /* ============================================================================
    CORTEX · Laudo Online — PÁGINA  (frontend/laudo-online/laudo-online.js)
    ----------------------------------------------------------------------------
-   Sprint LO-1 (Documento 3, §6 e §8):
-     - importar o pacote do Gerador, conferir com o banco e montar o laudo;
-     - visão Editor em modo leitura, com conferências, pendências e histórico.
-   Impressão (LO-2), edição (LO-3), finalização (LO-4) e página online (LO-5)
-   entram nas próximas sprints.
+   Documento 3, §6 a §8:
+     - LO-1: importar o pacote do Gerador, conferir com o banco e montar o laudo;
+     - LO-2: impressão A4, PDF e assinatura;
+     - LO-3: editor, lixeira e reimportação;
+     - LO-4: finalizar com confirmações, congelar números (snapshot), status,
+       nova versão e errata.
+   A página online (LO-5) entra na próxima sprint.
    URL: laudo-online.html?paciente=<uuid>[&laudo=<uuid>][&importar=1]
    ============================================================================ */
 (function () {
@@ -35,6 +37,9 @@
         laudoId: params.get('laudo'),
         perfil: null, admClin: false,
         banco: null, laudos: [], laudo: null, doc: null,
+        bancoVivo: null,         // sempre o banco de agora (para comparar com o laudo finalizado)
+        congelado: false,        // true: doc e banco vêm do snapshot da finalização
+        mudancas: [], snapGlossario: {},
         glossario: {}, validacao: null, historico: [],
         importacao: null,
         visao: params.get('visao') === 'impressao' ? 'impressao' : 'editor',
@@ -72,6 +77,7 @@
             sb().from('laudo_glossario').select('termo, titulo, texto').eq('ativo', true)
         ]);
         if (laudos.error) throw laudos.error;
+        st.bancoVivo = banco;
         st.banco = banco;
         st.laudos = laudos.data || [];
         st.glossario = {};
@@ -90,7 +96,22 @@
         st.laudo = data;
         st.laudoId = data.id;
         st.ctxImp = null; st.impressao = null;
-        st.doc = data.status === 'em_construcao' || !data.snapshot ? data.documento : (data.snapshot.documento || data.documento);
+        const snap = data.status !== 'em_construcao' && data.snapshot && data.snapshot.formato === (window.LaudoSnapshot || {}).FORMATO ? data.snapshot : null;
+        if (snap) {
+            // Finalizado: texto e números só do snapshot. Recorrigir um teste não muda este laudo.
+            st.congelado = true;
+            st.doc = snap.documento;
+            st.banco = window.LaudoSnapshot.bancoDe(snap);
+            st.snapGlossario = snap.glossario || {};
+            try { st.banco.paciente.foto_assinada = await window.LaudoDados.fotoAssinada(st.banco.paciente.foto_url); } catch (e) { /* sem foto */ }
+            st.mudancas = window.LaudoSnapshot.comparar(st.banco, st.bancoVivo);
+        } else {
+            st.congelado = false;
+            st.banco = st.bancoVivo;
+            st.snapGlossario = {};
+            st.mudancas = [];
+            st.doc = data.status === 'em_construcao' || !data.snapshot ? data.documento : (data.snapshot.documento || data.documento);
+        }
         reconferir();
         st.historico = [];
         if (st.admClin) {
@@ -106,7 +127,7 @@
     }
 
     function reconferir() {
-        if (!st.doc) { st.validacao = null; return; }
+        if (!st.doc || st.congelado) { st.validacao = null; return; }
         let pacote = null;
         if (st.laudo && st.laudo.pacote_original) { const r = C().lerPacote(st.laudo.pacote_original); pacote = r.pacote || null; }
         st.validacao = C().validar(st.doc, st.banco, { pacote: pacote || st.doc });
@@ -130,6 +151,11 @@
         return st.editor;
     }
 
+    function finalizado() { return !!(st.laudo && st.laudo.status !== 'em_construcao'); }
+    function glossario() { return st.congelado ? Object.assign({}, st.glossario, st.snapGlossario) : st.glossario; }
+    function linhaDoLaudo() { return st.laudos.find(v => st.laudo && v.id === st.laudo.id) || {}; }
+    function quando(iso) { return iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''; }
+
     function podeImportar() {
         return st.admClin && !st.laudos.some(l => l.status === 'em_construcao');
     }
@@ -149,6 +175,7 @@
         const p = st.banco.paciente;
         const l = st.laudo;
         const [stTxt, stCls] = l ? (STATUS[l.status] || [l.status, 'amb']) : ['Sem laudo', 'neutro'];
+        const errataTag = l && l.errata && l.status !== 'errata' ? '<span class="lo-status roxo">Errata</span>' : '';
         const versoes = st.laudos.length > 1 ? `
             <label class="lo-versoes">Versão
                 <select id="lo-versao">${st.laudos.map(v => `<option value="${v.id}" ${l && v.id === l.id ? 'selected' : ''}>v${v.versao} · ${esc((STATUS[v.status] || [v.status])[0])}</option>`).join('')}</select>
@@ -163,7 +190,7 @@
                 <div><small>Laudo Online${l ? ` · v${l.versao}` : ''}</small><strong>${esc(p.nome_completo || '')}</strong></div>
             </div>
             <span class="lo-codigo" title="Código do paciente">${esc(p.codigo || '—')}</span>
-            <span class="lo-status ${stCls}">${esc(stTxt)}</span>
+            <span class="lo-status ${stCls}">${esc(stTxt)}</span>${errataTag}
             ${versoes}
             <nav class="lo-visoes" role="tablist" aria-label="Visões do laudo">
                 <button role="tab" data-visao="editor" aria-selected="${st.visao === 'editor'}" ${l ? '' : 'disabled'}>Editor</button>
@@ -172,10 +199,13 @@
             </nav>
             <div class="lo-acoes">
                 ${editavel() ? editor().statusHtml() : ''}
-                ${l ? '<button class="lo-btn" id="lo-reconferir" title="Lê os resultados do banco de novo e refaz as conferências">↻ Reconferir</button>' : ''}
+                ${l && !st.congelado ? '<button class="lo-btn" id="lo-reconferir" title="Lê os resultados do banco de novo e refaz as conferências">↻ Reconferir</button>' : ''}
+                ${l && st.congelado ? '<button class="lo-btn" id="lo-reconferir" title="Compara os números deste laudo com o banco de agora. O laudo não muda.">↻ Comparar com o banco</button>' : ''}
+                ${acoesStatus()}
                 ${editavel() ? '<button class="lo-btn" id="lo-reimportar" title="Trazer uma versão revisada do pacote do Gerador sem perder suas edições">⟳ Reimportar</button>' : ''}
                 ${l && l.status === 'em_construcao' && st.admClin ? '<button class="lo-btn" id="lo-descartar" title="Apaga esta versão em construção para importar de novo">🗑 Descartar</button>' : ''}
-                ${podeImportar() ? '<button class="lo-btn prim" id="lo-importar">⤓ Importar pacote</button>' : ''}
+                ${podeImportar() && !finalizado() ? '<button class="lo-btn prim" id="lo-importar">⤓ Importar pacote</button>' : ''}
+                ${editavel() ? '<button class="lo-btn prim" id="lo-finalizar" title="Confere tudo, pede as confirmações e congela o laudo">✓ Finalizar</button>' : ''}
             </div>
         </header>`;
     }
@@ -199,8 +229,9 @@
                 <aside class="lo-painel" aria-label="Conferências">${painel()}</aside>
             </div>`;
         }
+        const fin = linhaDoLaudo();
         const ro = st.laudo.status !== 'em_construcao'
-            ? '<div class="lo-faixa ok">Laudo finalizado. Mudanças agora só em uma nova versão.</div>'
+            ? `<div class="lo-faixa ok">Laudo finalizado${st.laudo.finalizado_em ? ` em ${esc(quando(st.laudo.finalizado_em))}` : ''}${(fin.finalizador || {}).nome_completo ? ` por ${esc(fin.finalizador.nome_completo)}` : ''}. Texto e números estão congelados; mudanças só em uma nova versão.</div>`
             : '<div class="lo-faixa">Modo leitura: só o admin clínico edita o laudo em construção.</div>';
         return `
         <div class="lo-grade">
@@ -304,7 +335,7 @@
             case 'referencias': return `<div class="lo-refs">${(b.itens || []).map(x => `<p>${I(x, ctx)}</p>`).join('')}</div>`;
             case 'tabela': return `<table class="lo-tab"><thead><tr>${(b.cabecalho || []).map(h => `<th>${I(h, ctx)}</th>`).join('')}</tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map(cel => celula(cel, ctx)).join('')}</tr>`).join('')}</tbody></table>${b.nota ? `<p class="lo-nota">${I(b.nota, ctx)}</p>` : ''}`;
             case 'imagem': return `<div class="lo-auto">🖼 Imagem <code>${esc(b.arquivo || '')}</code>${b.legenda ? ` — ${I(b.legenda, ctx)}` : ''}</div>`;
-            case 'resultado': return `<div class="imp lo-imp-res">${window.LaudoGraf.render(b, st.banco, { glossario: st.glossario, congelado: !!st.congelado })}</div>`;
+            case 'resultado': return `<div class="imp lo-imp-res">${window.LaudoGraf.render(b, st.banco, { glossario: glossario(), congelado: !!st.congelado })}</div>`;
             case 'cracha': return `
                 <div class="lo-cracha">
                     <div><p class="nome">${esc(p.nome_completo || '')}</p>
@@ -341,16 +372,24 @@
         render();
     }
 
+    function rascunho() { return !!(st.laudo && st.laudo.status === 'em_construcao'); }
+
     function impressaoHtml() {
         const enviado = st.laudo.laudo_paciente_id
             ? '<span class="lo-imp-ok">PDF desta versão já enviado para a aba Laudo</span>' : '';
+        const origem = st.congelado
+            ? `Os números são os congelados na finalização${st.banco.carregado_em ? ` (lidos do banco em ${esc(quando(st.banco.carregado_em))})` : ''}.`
+            : 'Os números vêm do banco.';
+        const rasc = rascunho()
+            ? `<span class="lo-imp-dica">Rascunho: o PDF sai com a marca <b>RASCUNHO</b>. ${st.admClin ? 'Para gerar o PDF que vai para assinatura, finalize o laudo.' : ''}</span>` : '';
         return `
         <div class="lo-imp-barra">
-            <div class="lo-imp-info"><b id="lo-imp-pags">Paginando…</b><span>Folhas A4 iguais ao PDF. Os números vêm do banco.</span>${enviado}
+            <div class="lo-imp-info"><b id="lo-imp-pags">Paginando…</b><span>Folhas A4 iguais ao PDF. ${origem}</span>${enviado}${rasc}
                 ${podeAjustar() ? '<span class="lo-imp-dica">Para ajustar as páginas, passe o mouse num trecho da folha: <b>↵ Espaço</b> empurra para baixo e <b>Página nova</b> começa outra folha.</span>' : ''}</div>
             <div class="lo-imp-acoes">
-                ${st.admClin ? '<button class="btn btn-secondary" id="lo-enviar-assinatura">✍️ Enviar para assinatura</button>' : ''}
-                <button class="btn btn-primary" id="lo-gerar-pdf">🖨 Gerar PDF</button>
+                ${st.admClin && !rascunho() ? '<button class="btn btn-secondary" id="lo-enviar-assinatura">✍️ Enviar para assinatura</button>' : ''}
+                ${editavel() ? '<button class="btn btn-secondary" id="lo-finalizar-2">✓ Finalizar</button>' : ''}
+                <button class="btn btn-primary" id="lo-gerar-pdf">${rascunho() ? '🖨 PDF de rascunho' : '🖨 Gerar PDF'}</button>
             </div>
         </div>
         <div class="lo-imp-aviso" id="lo-imp-aviso" hidden></div>
@@ -359,7 +398,7 @@
 
     async function contextoImpressao() {
         if (st.ctxImp) return st.ctxImp;
-        const ctx = { banco: st.banco, glossario: st.glossario, congelado: false, imagens: {} };
+        const ctx = { banco: st.banco, glossario: glossario(), congelado: !!st.congelado, imagens: {} };
         // QR "Acompanhe este paciente": o mesmo token do prontuário (só admin gera)
         if (st.perfil === 'admin_clinico' || st.perfil === 'admin_gestor') {
             try {
@@ -396,6 +435,7 @@
             if (minha !== desenhando) return;
             const r = await window.LaudoImpressao.desenhar(st.doc, alvo, ctx);
             if (minha !== desenhando) return;
+            alvo.classList.toggle('rascunho', rascunho());
             st.impressao = r;
             const el = document.getElementById('lo-imp-pags');
             if (el) el.textContent = `${r.paginas} página${r.paginas === 1 ? '' : 's'} + capa`;
@@ -551,9 +591,10 @@
         let box = document.getElementById('lo-print');
         if (!box) { box = document.createElement('div'); box.id = 'lo-print'; box.className = 'imp'; document.body.appendChild(box); }
         box.innerHTML = origem.innerHTML;
+        box.className = 'imp' + (rascunho() ? ' rascunho' : '');
         box.style.setProperty('--escala', '1');
         const tituloAntes = document.title;
-        document.title = `Laudo Neuropsicológico - ${st.banco.paciente.nome_completo || ''} - v${st.laudo.versao}`;
+        document.title = `Laudo Neuropsicológico - ${st.banco.paciente.nome_completo || ''} - v${st.laudo.versao}${rascunho() ? ' - RASCUNHO' : ''}`;
         document.body.classList.add('lo-imprimindo');
         let terminou = false;
         const fim = () => {
@@ -562,11 +603,11 @@
             box.innerHTML = '';
             document.title = tituloAntes;
             window.removeEventListener('afterprint', fim);
-            if (st.admClin) setTimeout(abrirEnvioAssinatura, 150);
+            if (st.admClin && !rascunho()) setTimeout(abrirEnvioAssinatura, 150);
         };
         window.addEventListener('afterprint', fim);
         window.CortexAudit && window.CortexAudit.log('geracao_pdf', 'laudos_online', st.laudo.id, {
-            pacienteId: st.pacienteId, detalhes: { versao: st.laudo.versao, paginas: (st.impressao || {}).paginas }
+            pacienteId: st.pacienteId, detalhes: { versao: st.laudo.versao, paginas: (st.impressao || {}).paginas, rascunho: rascunho() }
         });
         await new Promise(r => setTimeout(r, 60));
         window.print();
@@ -574,7 +615,7 @@
     }
 
     function abrirEnvioAssinatura() {
-        if (!st.admClin || document.querySelector('.lo-modal')) return;
+        if (!st.admClin || rascunho() || document.querySelector('.lo-modal')) return;
         const ja = !!st.laudo.laudo_paciente_id;
         const m = document.createElement('div');
         m.className = 'lo-modal';
@@ -649,16 +690,45 @@
     }
 
     // ── Painel de conferências ────────────────────────────────────────────────
+    function historicoHtml() {
+        if (!st.admClin) return '';
+        return `
+            <h3>Histórico</h3>
+            <ul class="lo-hist">${st.historico.length ? st.historico.map(h => `
+                <li><b>${esc(acaoTxt(h.acao))}</b>${h.bloco_id ? ` <code>${esc(h.bloco_id)}</code>` : ''}<span>${esc(quando(h.em))} · ${esc((h.profissional || {}).nome_completo || '—')}</span></li>`).join('') : '<li class="vazio">Sem registros.</li>'}</ul>`;
+    }
+
+    // Laudo finalizado: o que foi confirmado e se o banco mudou depois.
+    function painelFinalizado() {
+        const fin = linhaDoLaudo();
+        const lidos = st.banco.carregado_em ? quando(st.banco.carregado_em) : '';
+        const mud = st.mudancas || [];
+        const banco = mud.length
+            ? `<div class="lo-chk aviso"><i>!</i><div><small>Banco · Depois da finalização</small><b>O banco mudou</b><p>${mud.map(m => esc(m.texto)).join('<br>')}</p>
+                <p>Este laudo não muda.${st.admClin ? ' Para usar os números novos, crie uma <b>nova versão</b>.' : ''}</p></div></div>`
+            : '<div class="lo-chk ok"><i>✓</i><div><small>Banco</small><b>Números iguais ao banco</b><p>Os resultados do banco continuam os mesmos que foram congelados.</p></div></div>';
+        const aceites = Array.isArray(st.laudo.aceites) ? st.laudo.aceites : [];
+        const conf = st.admClin ? `
+            <h3>Confirmações da finalização</h3>
+            ${aceites.length ? `<ul class="lo-aceites">${aceites.map(a => `
+                <li class="${(NIVEL[a.nivel] || NIVEL.info)[1]}"><b>${esc(a.titulo)}</b>${a.detalhe ? `<p>${esc(a.detalhe)}</p>` : ''}${a.justificativa ? `<p class="just"><span>Justificativa:</span> ${esc(a.justificativa)}</p>` : ''}</li>`).join('')}</ul>`
+                : '<p class="lo-painel-sub">Nenhum aviso precisou de confirmação.</p>'}` : '';
+        return `
+            <h3>Laudo finalizado <span class="lo-resumo ok">Congelado</span></h3>
+            <p class="lo-painel-sub">${st.laudo.finalizado_em ? `Finalizado em ${esc(quando(st.laudo.finalizado_em))}` : 'Finalizado'}${(fin.finalizador || {}).nome_completo ? ` por ${esc(fin.finalizador.nome_completo)}` : ''}.${lidos ? ` Números lidos do banco em ${esc(lidos)}.` : ''}</p>
+            <div class="lo-checks">${banco}</div>
+            ${conf}
+            ${historicoHtml()}`;
+    }
+
     function painel() {
+        if (st.congelado) return painelFinalizado();
         const v = st.validacao || { checks: [], pendencias: [] };
         const contagem = { erro: 0, aviso: 0 };
         v.checks.forEach(c => { const n = NIVEL[c.nivel] || NIVEL.info; if (n[1] === 'erro') contagem.erro++; else if (n[1] === 'aviso') contagem.aviso++; });
         const resumoTxt = contagem.erro ? `${contagem.erro} ponto(s) importante(s)` : contagem.aviso ? `${contagem.aviso} ponto(s) de atenção` : 'Tudo confere';
         const quando = st.banco.carregado_em ? new Date(st.banco.carregado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-        const hist = st.admClin ? `
-            <h3>Histórico</h3>
-            <ul class="lo-hist">${st.historico.length ? st.historico.map(h => `
-                <li><b>${esc(acaoTxt(h.acao))}</b>${h.bloco_id ? ` <code>${esc(h.bloco_id)}</code>` : ''}<span>${esc(new Date(h.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }))} · ${esc((h.profissional || {}).nome_completo || '—')}</span></li>`).join('') : '<li class="vazio">Sem registros.</li>'}</ul>` : '';
+        const hist = historicoHtml();
         return `
             <h3>Conferências <span class="lo-resumo ${contagem.erro ? 'erro' : contagem.aviso ? 'aviso' : 'ok'}">${esc(resumoTxt)}</span></h3>
             <p class="lo-painel-sub">Dados do banco lidos às ${esc(quando)}. Avisos não impedem nada; você decide na finalização.</p>
@@ -688,12 +758,23 @@
         if (st.visao === 'impressao' && st.laudo) desenharImpressao();
         on('lo-reconferir', async () => {
             try {
-                st.banco = await window.LaudoDados.carregar(st.pacienteId);
+                st.bancoVivo = await window.LaudoDados.carregar(st.pacienteId);
+                if (st.congelado) {
+                    st.mudancas = window.LaudoSnapshot.comparar(st.banco, st.bancoVivo);
+                    render();
+                    toast(st.mudancas.length ? 'O banco mudou depois da finalização. Este laudo continua como foi finalizado.' : 'Os números do banco continuam iguais aos deste laudo.', st.mudancas.length ? 'info' : 'success');
+                    return;
+                }
+                st.banco = st.bancoVivo;
                 st.ctxImp = null; st.impressao = null;
                 reconferir(); render();
                 toast('Conferências refeitas com os dados atuais do banco.', 'success');
             } catch (e) { toast('Erro ao reconferir: ' + (e.message || ''), 'danger'); }
         });
+        on('lo-finalizar', abrirFinalizar);
+        on('lo-finalizar-2', abrirFinalizar);
+        on('lo-nova-versao', abrirNovaVersao);
+        raiz.querySelectorAll('[data-status]').forEach(bt => bt.addEventListener('click', () => mudarStatus(bt.dataset.status)));
         const sel = raiz.querySelector('#lo-versao');
         if (sel) sel.addEventListener('change', () => abrirLaudo(sel.value).catch(e => toast(e.message, 'danger')));
         raiz.querySelectorAll('[data-ir]').forEach(a => a.addEventListener('click', ev => {
@@ -719,7 +800,7 @@
     function balao(el) {
         document.querySelectorAll('.lo-balao').forEach(b => b.remove());
         const termo = el.dataset.termo || '';
-        const g = st.glossario[termo.toLowerCase()];
+        const g = glossario()[termo.toLowerCase()];
         const texto = el.dataset.texto || (g && g.texto) || 'Termo sem explicação no glossário da clínica.';
         const div = document.createElement('div');
         div.className = 'lo-balao';
@@ -736,6 +817,219 @@
     function toast(msg, tipo) {
         if (window.CortexUI && window.CortexUI.toast) window.CortexUI.toast(msg, tipo || 'info');
         else console.log(msg);
+    }
+
+    // ── Finalizar (LO-4) ──────────────────────────────────────────────────────
+    // Documento 1, §10 e §11: avisos não impedem, mas cada um pede confirmação;
+    // número do texto diferente do banco pede justificativa.
+    function itensParaAceitar(v) {
+        const itens = [];
+        (v.checks || []).forEach(c => {
+            if (c.nivel !== 'importante' && c.nivel !== 'atencao') return;
+            let detalhe = c.detalhe || '';
+            if (c.id === 'pendencias') detalhe += ' As pendências saem em cinza no PDF.';
+            if (c.id === 'identificacao') detalhe += ' A confirmação fica registrada na auditoria.';
+            itens.push({ id: c.id, nivel: c.nivel, titulo: c.titulo, detalhe, justificar: c.id === 'conferencia' });
+        });
+        let conflitos = 0;
+        const semDados = [];
+        C().cadaBloco(st.doc, b => {
+            if (b._conflito) conflitos++;
+            if (b.tipo === 'resultado' && !b.oculto && b.exibir !== 'online' && window.LaudoGraf && window.LaudoGraf.indisponivel) {
+                const m = window.LaudoGraf.indisponivel(b, st.banco);
+                if (m) semDados.push(m);
+            }
+        });
+        if (conflitos) itens.push({ id: 'conflitos', nivel: 'atencao', titulo: 'Conflitos da reimportação sem decisão',
+            detalhe: `${conflitos} trecho(s) marcado(s) em amarelo. Fica o texto atual; a versão nova do Gerador é descartada.` });
+        if (semDados.length) itens.push({ id: 'resultados_sem_dados', nivel: 'atencao', titulo: 'Gráficos que não saem no laudo',
+            detalhe: Array.from(new Set(semDados)).join('; ') + '.' });
+        return itens;
+    }
+
+    function atualizarPainel() {
+        const p = document.querySelector('.lo-painel');
+        if (p) { p.innerHTML = painel(); ligarPainel(p); }
+    }
+
+    async function abrirFinalizar() {
+        if (!editavel() || document.querySelector('.lo-modal')) return;
+        try {
+            if (st.editor && st.editor.tem()) await st.editor.gravar();
+            // números de agora: é isto que vai ser congelado
+            st.bancoVivo = await window.LaudoDados.carregar(st.pacienteId);
+            st.banco = st.bancoVivo;
+            st.ctxImp = null; st.impressao = null;
+            reconferir();
+            atualizarPainel();
+        } catch (e) { toast('Não consegui ler o banco para finalizar: ' + (e.message || ''), 'danger'); return; }
+        const v = st.validacao;
+        if (v.bloqueios.length) { toast('Este laudo tem um bloqueio de segurança: ' + v.bloqueios.map(b => b.detalhe).join(' '), 'danger'); return; }
+        const itens = itensParaAceitar(v);
+        const l = st.laudo;
+        const m = document.createElement('div');
+        m.className = 'lo-modal';
+        m.innerHTML = `
+            <div class="lo-modal-card lo-fin" role="dialog" aria-modal="true" aria-labelledby="lo-fin-tit">
+                <h2 id="lo-fin-tit">Finalizar o Laudo Online v${esc(l.versao)}${l.errata ? ' (errata)' : ''}</h2>
+                <p>Ao finalizar, o texto e os números do banco ficam <b>congelados</b> nesta versão. Recorrigir um teste depois não muda este laudo; mudanças só em uma nova versão. Depois você gera o PDF e envia para assinatura.</p>
+                ${itens.length ? `
+                <h3>Confirme ${itens.length === 1 ? 'o aviso' : `os ${itens.length} avisos`}</h3>
+                <div class="lo-fin-itens">${itens.map((it, i) => {
+                    const n = NIVEL[it.nivel] || NIVEL.info;
+                    return `
+                    <div class="lo-fin-item ${n[1]}">
+                        <label><input type="checkbox" data-aceite="${i}">
+                            <span><small>${esc(n[0])}</small><b>${esc(it.titulo)}</b><em>${esc(it.detalhe)}</em></span></label>
+                        ${it.justificar ? `<textarea data-just="${i}" rows="2" placeholder="Justificativa obrigatória: por que o número do texto é diferente do banco?"></textarea>` : ''}
+                    </div>`;
+                }).join('')}</div>`
+                : '<div class="lo-chk ok"><i>✓</i><div><small>Conferências</small><b>Tudo confere</b><p>Nenhum aviso para confirmar.</p></div></div>'}
+                <label class="lo-fin-final"><input type="checkbox" id="lo-fin-revisei"> Revisei o laudo e quero finalizar a versão ${esc(l.versao)}.</label>
+                <div id="lo-fin-res" aria-live="polite"></div>
+                <div class="lo-modal-acoes">
+                    <button class="btn btn-secondary" id="lo-fin-cancelar">Cancelar</button>
+                    <button class="btn btn-primary" id="lo-fin-ok" disabled>✓ Finalizar laudo</button>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+        const $ = s => m.querySelector(s);
+        const btn = $('#lo-fin-ok');
+        const pronto = () => {
+            const todos = itens.every((it, i) => {
+                if (!$(`[data-aceite="${i}"]`).checked) return false;
+                return !it.justificar || $(`[data-just="${i}"]`).value.trim().length >= 10;
+            });
+            btn.disabled = !(todos && $('#lo-fin-revisei').checked);
+        };
+        m.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', pronto));
+        m.querySelectorAll('input[type=checkbox]').forEach(el => el.addEventListener('change', pronto));
+        $('#lo-fin-cancelar').addEventListener('click', () => m.remove());
+        m.addEventListener('click', ev => { if (ev.target === m) m.remove(); });
+        btn.addEventListener('click', async () => {
+            btn.disabled = true; btn.textContent = 'Finalizando…';
+            const res = $('#lo-fin-res');
+            res.innerHTML = '';
+            try {
+                const prof = (window.cortexProfissional || {}).id || null;
+                const agora = new Date().toISOString();
+                const aceites = itens.map((it, i) => ({
+                    id: it.id, nivel: it.nivel, titulo: it.titulo, detalhe: it.detalhe,
+                    justificativa: it.justificar ? $(`[data-just="${i}"]`).value.trim() : null, por: prof, em: agora
+                }));
+                const snap = window.LaudoSnapshot.montar({
+                    doc: st.doc, banco: st.banco, glossario: st.glossario,
+                    modelo: { id: l.modelo_id || null, versao: l.modelo_versao || null }, validacao: v
+                });
+                const { data, error } = await sb().rpc('laudo_online_finalizar', { p_id: l.id, p_revisao: l.revisao, p_snapshot: snap, p_aceites: aceites });
+                if (error) throw error;
+                if (!data || !data.ok) {
+                    const extra = data && data.erro === 'revisao' ? ' Recarregue a página (Ctrl+Shift+R) e finalize de novo.' : '';
+                    res.innerHTML = `<p class="lo-imp-erro">${esc(((data && data.mensagem) || 'Não consegui finalizar.') + extra)}</p>`;
+                    btn.textContent = '✓ Finalizar laudo'; pronto();
+                    return;
+                }
+                m.remove();
+                st.editor = null;
+                st.laudoId = l.id;
+                st.visao = 'impressao';
+                await carregarTudo();
+                render();
+                toast('Laudo finalizado e congelado. Agora gere o PDF e envie para assinatura.', 'success');
+            } catch (err) {
+                console.error('[finalizar]', err);
+                res.innerHTML = `<p class="lo-imp-erro">Não consegui finalizar: ${esc(err.message || 'erro desconhecido')}</p>`;
+                btn.textContent = '✓ Finalizar laudo'; pronto();
+            }
+        });
+    }
+
+    // ── Status, nova versão e errata (LO-4) ───────────────────────────────────
+    function acoesStatus() {
+        const l = st.laudo;
+        if (!st.admClin || !finalizado()) return '';
+        const out = [];
+        if (l.status === 'pronto_para_devolutiva') out.push('<button class="lo-btn" data-status="devolutiva_realizada" title="A devolutiva desta versão foi feita">✓ Devolutiva feita</button>');
+        if (l.status === 'devolutiva_realizada' || l.status === 'errata') out.push('<button class="lo-btn" data-status="entregue" title="O laudo assinado foi entregue">📦 Entregue</button>');
+        if (!st.laudos.some(v => v.status === 'em_construcao')) out.push('<button class="lo-btn prim" id="lo-nova-versao" title="Cria uma versão nova, em construção, a partir desta">＋ Nova versão</button>');
+        return out.join('');
+    }
+
+    function mudarStatus(para) {
+        const l = st.laudo;
+        if (!st.admClin || !finalizado()) return;
+        const txt = {
+            devolutiva_realizada: ['Marcar devolutiva feita?', `A devolutiva do Laudo Online v${l.versao} foi realizada.`],
+            entregue: ['Marcar como entregue?', `O Laudo Online v${l.versao} assinado foi entregue.${l.laudo_paciente_id ? '' : ' Atenção: ainda não há PDF desta versão na aba Laudo.'}`]
+        }[para];
+        if (!txt) return;
+        window.CortexConfirm.mostrar({
+            icone: para === 'entregue' ? '📦' : '✓', titulo: txt[0], texto: txt[1], btnSim: 'Sim, marcar', btnNao: 'Cancelar',
+            onSim: async () => {
+                const de = l.status;
+                const { error } = await sb().from('laudos_online').update({ status: para, atualizado_por: (window.cortexProfissional || {}).id || null }).eq('id', l.id);
+                if (error) { toast('Não consegui mudar o status: ' + (error.message || ''), 'danger'); return; }
+                window.CortexAudit && await window.CortexAudit.log('edicao', 'laudos_online', l.id, {
+                    pacienteId: st.pacienteId, detalhes: { evento: 'status', versao: l.versao, de, para }
+                });
+                await carregarTudo();
+                render();
+                toast(para === 'entregue' ? 'Laudo marcado como entregue.' : 'Devolutiva marcada como feita.', 'success');
+            }
+        });
+    }
+
+    function abrirNovaVersao() {
+        const l = st.laudo;
+        if (!st.admClin || !finalizado() || document.querySelector('.lo-modal')) return;
+        if (st.laudos.some(v => v.status === 'em_construcao')) { toast('Já existe uma versão em construção para este paciente.', 'info'); return; }
+        const prox = Math.max.apply(null, st.laudos.map(v => v.versao || 0)) + 1;
+        const jaEntregue = l.status === 'devolutiva_realizada' || l.status === 'entregue';
+        const m = document.createElement('div');
+        m.className = 'lo-modal';
+        m.innerHTML = `
+            <div class="lo-modal-card lo-fin" role="dialog" aria-modal="true" aria-labelledby="lo-nv-tit">
+                <h2 id="lo-nv-tit">Criar a versão ${prox}</h2>
+                <p>A versão ${prox} nasce em construção com o texto da v${esc(l.versao)}. A v${esc(l.versao)} continua íntegra e assinada. Na versão nova os números voltam a vir do banco de agora.</p>
+                <div class="lo-nv-opcoes">
+                    <label><input type="radio" name="lo-nv" value="versao" ${jaEntregue ? '' : 'checked'}>
+                        <span><b>Nova versão</b><em>Ajuste antes da entrega, ou números recorrigidos.</em></span></label>
+                    <label><input type="radio" name="lo-nv" value="errata" ${jaEntregue ? 'checked' : ''}>
+                        <span><b>Errata</b><em>Corrige um laudo que já foi entregue. A versão nova sai marcada como errata.</em></span></label>
+                </div>
+                <div id="lo-nv-res" aria-live="polite"></div>
+                <div class="lo-modal-acoes">
+                    <button class="btn btn-secondary" id="lo-nv-cancelar">Cancelar</button>
+                    <button class="btn btn-primary" id="lo-nv-ok">Criar versão ${prox}</button>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+        m.querySelector('#lo-nv-cancelar').addEventListener('click', () => m.remove());
+        m.addEventListener('click', ev => { if (ev.target === m) m.remove(); });
+        m.querySelector('#lo-nv-ok').addEventListener('click', async ev => {
+            const bt = ev.currentTarget;
+            const errata = (m.querySelector('input[name=lo-nv]:checked') || {}).value === 'errata';
+            bt.disabled = true; bt.textContent = 'Criando…';
+            try {
+                const { data, error } = await sb().rpc('laudo_online_nova_versao', { p_id: l.id, p_errata: errata });
+                if (error) throw error;
+                if (!data || !data.ok) throw new Error((data && data.mensagem) || 'Não consegui criar a versão.');
+                window.CortexAudit && await window.CortexAudit.log('criacao', 'laudos_online', data.id, {
+                    pacienteId: st.pacienteId, detalhes: { evento: 'nova_versao', de_versao: l.versao, errata }
+                });
+                m.remove();
+                st.editor = null;
+                st.laudoId = data.id;
+                st.visao = 'editor';
+                await carregarTudo();
+                render();
+                toast(`Versão ${prox}${errata ? ' (errata)' : ''} criada em construção.`, 'success');
+            } catch (err) {
+                console.error('[nova versão]', err);
+                bt.disabled = false; bt.textContent = `Criar versão ${prox}`;
+                m.querySelector('#lo-nv-res').innerHTML = `<p class="lo-imp-erro">${esc(err.message || 'erro desconhecido')}</p>`;
+            }
+        });
     }
 
     // ── Descartar versão em construção ───────────────────────────────────────

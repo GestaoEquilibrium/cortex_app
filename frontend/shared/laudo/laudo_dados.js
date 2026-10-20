@@ -172,5 +172,5 @@
         return null;
     }
 
-    window.LaudoDados = { TABELAS, carregar, valor, resumo, calculado };
+    window.LaudoDados = { TABELAS, carregar, valor, resumo, calculado, fotoAssinada };
 })();

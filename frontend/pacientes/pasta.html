@@ -1131,6 +1131,7 @@
                     <span class="lo-pasta-v">v${v.versao}</span>
                     <div class="lo-pasta-info">
                         <span class="lo-pasta-status ${cls}">${escapeHtml(txt)}</span>
+                        ${v.errata && v.status !== 'errata' ? '<span class="lo-pasta-status roxo">Errata</span>' : ''}
                         ${v.online_liberado_em ? '<span class="lo-pasta-status azul">Online liberado</span>' : ''}
                         <small>${quando}</small>
                     </div>

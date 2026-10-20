@@ -698,90 +698,150 @@
 
         // ── resultado: escolher teste e vista, com prévia ─────────────────────
         function escolherResultado(existente, aoInserir) {
-            // testes do CORTEX e escalas com leitura (LO-6); apelidos ("SRS-2") ficam de fora para não repetir
-            const disponiveis = Object.keys(st.banco.resultados || {}).filter(s => {
-                const r = st.banco.resultados[s];
-                return C().SIGLAS_DO_CORTEX.includes(s) || (r && r.tipo === 'escala' && !r.erro && !r.apelido_de);
-            });
-            // testes com figuras capturadas da tela de correção (inclusive os sem leitura de números)
-            Object.keys(st.doc.figuras || {}).forEach(s => { if (!disponiveis.includes(s)) disponiveis.push(s); });
-            // todo teste corrigido no CORTEX entra, nem que seja só com o cabeçalho
-            (st.banco.aplicacoes || []).forEach(a => {
-                const r = (st.banco.resultados || {})[a.sigla];
-                if (a.corrigida && !disponiveis.includes(a.sigla) && !(r && r.apelido_de)) disponiveis.push(a.sigla);
-            });
+            // Tudo o que entra aqui já existe nas telas de correção: o laudo só traz a foto
+            // das partes (cabeçalho, gráficos, tabelas, cartões). WAIS/WISC/RAVLT/FDT/BFP
+            // também têm os desenhos do modelo do laudo (LO-3).
+            const NUCLEO = C().SIGLAS_DO_CORTEX;
+            const res = st.banco.resultados || {};
+            const disponiveis = [];
+            const incluir = s => { if (s && !disponiveis.includes(s) && !(res[s] && res[s].apelido_de)) disponiveis.push(s); };
+            NUCLEO.forEach(s => { if (res[s]) incluir(s); });
+            (st.banco.aplicacoes || []).forEach(a => { if (a.corrigida) incluir(a.sigla); });
+            Object.keys(st.doc.figuras || {}).forEach(incluir);
             if (!disponiveis.length) { toast('Nenhum teste corrigido no CORTEX para este paciente.', 'info'); return; }
-            const atual = existente ? C().clonar(existente) : novoBloco('resultado', { sigla: disponiveis[0], vista: C().vistasDe(disponiveis[0])[0], opcoes: {} });
+            const atual = existente ? C().clonar(existente) : novoBloco('resultado', { sigla: disponiveis[0], vista: '', opcoes: {} });
             atual.opcoes = atual.opcoes || {};
+            if (!disponiveis.includes(atual.sigla)) disponiveis.unshift(atual.sigla);
+            const figurasDoTeste = sig => { const F = window.LaudoGraf.figurasDaSigla(sig); return F ? (F.blocos || []) : []; };
+            // seleção inicial
+            let sel = [], desenho = '';
+            if (existente) {
+                const fs = window.LaudoGraf.figurasDe(existente);
+                if (fs) sel = fs.map(f => f.chave);
+                else if (NUCLEO.includes(existente.sigla) && existente.vista !== 'figura') desenho = existente.vista;
+                else if (existente.vista === 'cabecalho') sel = ['_cab'];
+            }
             const m = modal(`
-                <h2>${existente ? 'Trocar vista do resultado' : 'Inserir resultado de teste'}</h2>
-                <p>Os números vêm do banco. Escolha o teste, o desenho e as opções; a prévia mostra como fica.</p>
-                <div class="ed-res-grade">
+                <h2>${existente ? 'Trocar o resultado' : 'Inserir resultado de teste'}</h2>
+                <p>Escolha o teste e clique nas partes da <b>tela de correção</b> que devem ir para o laudo. Pode marcar várias; elas entram na ordem da tela.</p>
+                <div class="ed-res-grade ed-res-fig">
                     <div class="ed-res-op">
                         <label>Teste<select id="er-sigla">${disponiveis.map(s => `<option ${s === atual.sigla ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
-                        <label>Desenho<select id="er-vista"></select></label>
-                        <label id="er-indice-l">Índice<select id="er-indice">${['ICV', 'IOP', 'IMO', 'IVP'].map(k => `<option>${k}</option>`).join('')}</select></label>
-                        <label id="er-fator-l">Fator<select id="er-fator"><option value="">Todos</option>${['N', 'E', 'S', 'R', 'A'].map(k => `<option value="${k}">${C().FATORES_BFP[k]}</option>`).join('')}</select></label>
+                        <div class="ed-partes" id="er-partes"></div>
+                        <div id="er-desenho-l" class="ed-res-desenho">
+                            <label>Ou um desenho do modelo do laudo<select id="er-vista"></select></label>
+                            <label id="er-indice-l">Índice<select id="er-indice">${['ICV', 'IOP', 'IMO', 'IVP'].map(k => `<option>${k}</option>`).join('')}</select></label>
+                            <label id="er-fator-l">Fator<select id="er-fator"><option value="">Todos</option>${['N', 'E', 'S', 'R', 'A'].map(k => `<option value="${k}">${C().FATORES_BFP[k]}</option>`).join('')}</select></label>
+                            <label class="chk" id="er-semcab-l"><input type="checkbox" id="er-semcab"> Sem a faixa azul do teste</label>
+                        </div>
                         <label>Largura<select id="er-largura"><option value="inteira">Inteira</option><option value="metade">Metade (dois lado a lado)</option></select></label>
-                        <label class="chk"><input type="checkbox" id="er-semcab"> Sem a faixa azul do teste</label>
                         <label>Legenda (opcional)<input id="er-legenda" type="text"></label>
                     </div>
                     <div class="ed-res-previa imp" id="er-previa"></div>
                 </div>
-                <div class="lo-modal-acoes"><button class="btn btn-secondary" data-fechar>Cancelar</button><button class="btn btn-primary" id="er-ok">${existente ? 'Aplicar' : 'Inserir'}</button></div>`, 'largo');
+                <div class="lo-modal-acoes"><button class="btn btn-secondary" data-fechar>Cancelar</button><button class="btn btn-primary" id="er-ok">${existente ? 'Aplicar' : 'Inserir'}</button></div>`, 'largo ed-res-modal');
             const $ = id => m.querySelector('#' + id);
-            const NOMES = { indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes', intervalos: 'Intervalos de confiança', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', cabecalho: 'Só o cabeçalho', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas', regua: 'Régua de gravidade', subescalas: 'Subescalas' };
-            function encherVistas() {
+            const NOMES = { indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes', intervalos: 'Intervalos de confiança', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', cabecalho: 'Só o cabeçalho', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas' };
+            let trazendo = false;
+            function encherPartes() {
                 const sig = $('er-sigla').value;
-                const R = (st.banco.resultados || {})[sig];
-                const temDados = !!(R && !R.erro);
-                const vs = temDados ? C().vistasDe(sig).filter(v => v !== 'figura') : ['cabecalho'];
-                const F = (st.doc.figuras || {})[sig];
-                const figs = F ? (F.blocos || []) : [];
-                const temCabFig = figs.some(f => f.chave === 'cabecalho');
-                const atualV = atual.vista === 'figura' ? 'fig:' + ((atual.opcoes || {}).figura || '') : atual.vista;
-                const opt = (v, rot) => `<option value="${esc(v)}" ${v === atualV ? 'selected' : ''}>${esc(rot)}</option>`;
-                // sempre há um "Só o cabeçalho": o da tela de correção quando foi capturado, senão o desenhado aqui
-                const topo = temCabFig ? '' : opt('cabecalho', 'Só o cabeçalho');
-                const vsD = temCabFig ? vs : vs.filter(v => v !== 'cabecalho');
-                const gDesenho = vsD.length ? `<optgroup label="Desenho do Laudo Online">${vsD.map(v => opt(v, v === 'cabecalho' ? 'Só o cabeçalho (desenho)' : (NOMES[v] || v))).join('')}</optgroup>` : '';
-                const gFigura = figs.length ? `<optgroup label="Igual à tela de correção">${figs.map(f => opt('fig:' + f.chave, f.chave === 'cabecalho' ? 'Só o cabeçalho' : f.titulo)).join('')}</optgroup>` : '';
-                // escalas e demais testes: a figura da tela de correção vem primeiro
-                $('er-vista').innerHTML = topo + (C().SIGLAS_DO_CORTEX.includes(sig) ? gDesenho + gFigura : gFigura + gDesenho);
-                if (!$('er-vista').value && $('er-vista').options.length) $('er-vista').selectedIndex = 0;
+                const figs = figurasDoTeste(sig);
+                const urls = st.urlsFig || {};
+                const item = (ch, tit, img) => `<button type="button" class="ed-parte${sel.includes(ch) ? ' sel' : ''}" data-ch="${esc(ch)}" aria-pressed="${sel.includes(ch)}">
+                    ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ed-parte-sem">${esc(sig)}</span>`}<span class="ed-parte-t">${esc(tit)}</span><i class="ed-parte-n"></i></button>`;
+                let h = '';
+                if (figs.length) {
+                    h = figs.map(f => item(f.chave, f.chave === 'cabecalho' ? 'Só o cabeçalho' : f.titulo, urls[f.arquivo])).join('');
+                    if (!figs.some(f => f.chave === 'cabecalho')) h = item('_cab', 'Só o cabeçalho', null) + h;
+                    h += `<p class="ed-partes-nota">Tela de correção trazida em ${esc(new Date(window.LaudoGraf.figurasDaSigla(sig).capturado_em || Date.now()).toLocaleDateString('pt-BR'))}. <button type="button" class="ed-link" id="er-trazer">📷 Trazer de novo</button></p>`;
+                } else {
+                    h = item('_cab', 'Só o cabeçalho', null) + `<div class="ed-partes-vazio">As tabelas e gráficos da tela de correção deste teste ainda não foram trazidos.<button type="button" class="btn btn-primary" id="er-trazer">📷 Trazer da tela de correção</button></div>`;
+                }
+                $('er-partes').innerHTML = `<p class="ed-partes-tit">Partes da tela de correção</p><div class="ed-partes-grade">${h}</div>`;
+                numerar();
+                const vs = NUCLEO.includes(sig) && res[sig] && !res[sig].erro ? C().vistasDe(sig).filter(v => v !== 'figura') : [];
+                $('er-desenho-l').hidden = !vs.length;
+                $('er-vista').innerHTML = `<option value="">—</option>` + vs.map(v => `<option value="${esc(v)}" ${v === desenho ? 'selected' : ''}>${esc(NOMES[v] || v)}</option>`).join('');
+                const bt = $('er-trazer');
+                if (bt) bt.addEventListener('click', trazer);
+            }
+            function numerar() {
+                const ordem = ordenados();
+                m.querySelectorAll('.ed-parte').forEach(b => {
+                    const k = ordem.indexOf(b.dataset.ch);
+                    b.classList.toggle('sel', k >= 0); b.setAttribute('aria-pressed', String(k >= 0));
+                    b.querySelector('.ed-parte-n').textContent = k >= 0 && ordem.length > 1 ? String(k + 1) : (k >= 0 ? '✓' : '');
+                });
+            }
+            function ordenados() {
+                const chaves = ['_cab'].concat(figurasDoTeste($('er-sigla').value).map(f => f.chave));
+                return chaves.filter(ch => sel.includes(ch));
+            }
+            async function trazer() {
+                if (trazendo) return;
+                if (!pg.capturarFigurasDe) { toast('Use 📷 Figuras dos testes no topo da página.', 'info'); return; }
+                trazendo = true;
+                const sig = $('er-sigla').value;
+                const bt = $('er-trazer'); bt.disabled = true; bt.textContent = 'Abrindo a tela de correção…';
+                $('er-ok').disabled = true;
+                try {
+                    const r = await pg.capturarFigurasDe(sig);
+                    if (r.erroGravar) toast('Não consegui gravar: ' + r.erroGravar, 'danger');
+                    else if (r.erros && r.erros[sig]) toast(`${sig}: ${r.erros[sig]}`, 'danger');
+                    else toast(`${sig}: partes da tela de correção trazidas.`, 'success');
+                } finally {
+                    trazendo = false; $('er-ok').disabled = false;
+                    if (document.body.contains(m) && $('er-sigla').value === sig) { encherPartes(); previa(); }
+                }
             }
             function ler() {
                 atual.sigla = $('er-sigla').value;
-                const vv = $('er-vista').value || '';
-                atual.vista = vv.startsWith('fig:') ? 'figura' : vv;
                 const op = {};
-                if (vv.startsWith('fig:')) op.figura = vv.slice(4);
-                if (atual.vista === 'indice') op.indice = $('er-indice').value;
-                if (atual.vista === 'facetas' && $('er-fator').value) op.fator = $('er-fator').value;
+                const ordem = ordenados().filter(ch => ch !== '_cab');
+                if (ordem.length) { atual.vista = 'figura'; op.figuras = ordem; }
+                else if (sel.includes('_cab')) atual.vista = 'cabecalho';
+                else if (desenho) {
+                    atual.vista = desenho;
+                    if (desenho === 'indice') op.indice = $('er-indice').value;
+                    if (desenho === 'facetas' && $('er-fator').value) op.fator = $('er-fator').value;
+                    if ($('er-semcab').checked) op.sem_cabecalho = true;
+                } else atual.vista = '';
                 if ($('er-largura').value === 'metade') op.largura = 'metade';
-                if ($('er-semcab').checked) op.sem_cabecalho = true;
                 if ($('er-legenda').value.trim()) op.legenda = $('er-legenda').value.trim();
                 const resto = Object.assign({}, atual.opcoes); ['indice', 'fator', 'largura', 'sem_cabecalho', 'legenda', 'figura', 'figuras'].forEach(k => delete resto[k]);
                 atual.opcoes = Object.assign(resto, op);
             }
             function previa() {
                 ler();
-                $('er-indice-l').hidden = atual.vista !== 'indice';
-                $('er-fator-l').hidden = atual.vista !== 'facetas';
-                $('er-previa').innerHTML = window.LaudoGraf.render(atual, st.banco, { glossario: st.glossario });
+                $('er-indice-l').hidden = desenho !== 'indice';
+                $('er-fator-l').hidden = desenho !== 'facetas';
+                $('er-semcab-l').hidden = !desenho;
+                $('er-ok').disabled = trazendo || !atual.vista;
+                $('er-previa').innerHTML = atual.vista ? window.LaudoGraf.render(atual, st.banco, { glossario: st.glossario })
+                    : '<p class="ed-previa-vazia">Clique nas partes da tela de correção que quer no laudo.</p>';
             }
-            encherVistas();
+            encherPartes();
             if (atual.opcoes.indice) $('er-indice').value = atual.opcoes.indice;
             if (atual.opcoes.fator) $('er-fator').value = atual.opcoes.fator;
             if (atual.opcoes.largura === 'metade') $('er-largura').value = 'metade';
             $('er-semcab').checked = !!atual.opcoes.sem_cabecalho;
             $('er-legenda').value = atual.opcoes.legenda || '';
-            $('er-sigla').addEventListener('change', () => { atual.vista = ''; atual.opcoes = {}; encherVistas(); previa(); });
-            ['er-vista', 'er-indice', 'er-fator', 'er-largura', 'er-semcab'].forEach(id => $(id).addEventListener('change', previa));
+            $('er-sigla').addEventListener('change', () => { sel = []; desenho = ''; atual.opcoes = {}; encherPartes(); previa(); });
+            $('er-partes').addEventListener('click', ev => {
+                const b = ev.target.closest('.ed-parte'); if (!b) return;
+                const ch = b.dataset.ch;
+                if (ch === '_cab') sel = sel.includes('_cab') ? [] : ['_cab'];          // cabeçalho desenhado vai sozinho
+                else { sel = sel.filter(x => x !== '_cab'); sel = sel.includes(ch) ? sel.filter(x => x !== ch) : sel.concat(ch); }
+                desenho = ''; $('er-vista').value = '';
+                numerar(); previa();
+            });
+            $('er-vista').addEventListener('change', () => { desenho = $('er-vista').value; if (desenho) { sel = []; numerar(); } previa(); });
+            ['er-indice', 'er-fator', 'er-largura', 'er-semcab'].forEach(id => $(id).addEventListener('change', previa));
             $('er-legenda').addEventListener('input', previa);
             previa();
             $('er-ok').addEventListener('click', () => {
-                ler(); m.remove();
+                ler(); if (!atual.vista) return;
+                m.remove();
                 if (existente) {
                     const r = achar(existente.id);
                     const antes = C().clonar(r.b);

@@ -159,7 +159,7 @@
         if (!editavel()) return null;
         if (!st.editor || st.editor._laudo !== st.laudo.id) {
             st.editor = window.LaudoEditor.criar({
-                estado: st, render, toast,
+                estado: st, render, toast, capturarFigurasDe,
                 conteudoLeitura: (b, ctx, sec) => conteudo(b, ctx, sec),
                 aposGravar: () => {
                     reconferir();
@@ -1107,6 +1107,34 @@
         return lista;
     }
 
+    // Abre as telas de correção, fotografa as partes e grava em doc.figuras.
+    // Usado pelo botão 📷 e pelo editor ("Trazer da tela de correção").
+    async function capturarFiguras(alvo, aoProgresso) {
+        if (st.editor && st.editor.tem()) await st.editor.gravar();
+        const r = await window.LaudoFiguras.capturar({ client: sb(), pacienteId: st.pacienteId, laudoId: st.laudo.id, aplicacoes: alvo, aoProgresso });
+        const novas = Object.keys(r.figuras);
+        if (novas.length) {
+            const antes = Object.keys(st.doc.figuras || {});
+            st.doc.figuras = Object.assign({}, st.doc.figuras || {}, r.figuras);
+            const { data, error } = await sb().rpc('laudo_online_salvar', {
+                p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc,
+                p_eventos: [{ acao: 'editar', bloco_id: null, antes: { figuras: antes }, depois: { figuras_capturadas: novas } }]
+            });
+            if (error || !data || !data.ok) return { novas: [], erros: r.erros, erroGravar: (data && data.mensagem) || (error && error.message) || 'erro ao gravar' };
+            st.laudo.revisao = data.revisao;
+            st.laudo.documento = st.doc;
+            window.CortexAudit && window.CortexAudit.log('edicao', 'laudos_online', st.laudo.id, { pacienteId: st.pacienteId, detalhes: { evento: 'figuras', testes: novas } });
+            await assinarFiguras();
+            st.ctxImp = null; st.impressao = null;
+        }
+        return { novas, erros: r.erros };
+    }
+    async function capturarFigurasDe(sigla) {
+        const alvo = aplicacoesComTela().filter(a => a.sigla === sigla);
+        if (!alvo.length) return { novas: [], erros: { [sigla]: 'este teste não tem tela de correção com laudo' } };
+        return capturarFiguras(alvo);
+    }
+
     function abrirFiguras(aposImportar) {
         if (!editavel() || document.querySelector('.lo-modal')) return;
         const lista = aplicacoesComTela();
@@ -1141,35 +1169,18 @@
             const alvo = lista.filter(a => ids.includes(a.id));
             if (!alvo.length) { toast('Marque ao menos um teste.', 'info'); return; }
             rodando = true; ok.disabled = true; $('#lo-fig-fechar').disabled = true; ok.textContent = 'Capturando…';
-            if (st.editor && st.editor.tem()) await st.editor.gravar();
-            const r = await window.LaudoFiguras.capturar({
-                client: sb(), pacienteId: st.pacienteId, laudoId: st.laudo.id, aplicacoes: alvo,
-                aoProgresso: (i, n, sigla, msg) => {
-                    const a = alvo.find(x => x.sigla === sigla);
-                    const el = a && m.querySelector(`[data-fig-est="${a.id}"]`);
-                    if (el) el.textContent = msg;
-                    $('#lo-fig-res').innerHTML = `<p class="lo-painel-sub">${i} de ${n} testes…</p>`;
-                }
+            const r = await capturarFiguras(alvo, (i, n, sigla, msg) => {
+                const a = alvo.find(x => x.sigla === sigla);
+                const el = a && m.querySelector(`[data-fig-est="${a.id}"]`);
+                if (el) el.textContent = msg;
+                $('#lo-fig-res').innerHTML = `<p class="lo-painel-sub">${i} de ${n} testes…</p>`;
             });
-            const novas = Object.keys(r.figuras);
-            if (novas.length) {
-                const antes = Object.keys(st.doc.figuras || {});
-                st.doc.figuras = Object.assign({}, st.doc.figuras || {}, r.figuras);
-                const { data, error } = await sb().rpc('laudo_online_salvar', {
-                    p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc,
-                    p_eventos: [{ acao: 'editar', bloco_id: null, antes: { figuras: antes }, depois: { figuras_capturadas: novas } }]
-                });
-                if (error || !data || !data.ok) {
-                    $('#lo-fig-res').innerHTML = `<p class="lo-imp-erro">As figuras foram tiradas, mas não consegui gravar no laudo: ${esc((data && data.mensagem) || (error && error.message) || '')}</p>`;
-                    rodando = false; $('#lo-fig-fechar').disabled = false; ok.textContent = 'Tentar de novo'; ok.disabled = false;
-                    return;
-                }
-                st.laudo.revisao = data.revisao;
-                st.laudo.documento = st.doc;
-                window.CortexAudit && window.CortexAudit.log('edicao', 'laudos_online', st.laudo.id, { pacienteId: st.pacienteId, detalhes: { evento: 'figuras', testes: novas } });
-                await assinarFiguras();
-                st.ctxImp = null; st.impressao = null;
+            if (r.erroGravar) {
+                $('#lo-fig-res').innerHTML = `<p class="lo-imp-erro">As figuras foram tiradas, mas não consegui gravar no laudo: ${esc(r.erroGravar)}</p>`;
+                rodando = false; $('#lo-fig-fechar').disabled = false; ok.textContent = 'Tentar de novo'; ok.disabled = false;
+                return;
             }
+            const novas = r.novas;
             const errs = Object.keys(r.erros);
             rodando = false;
             m.remove();

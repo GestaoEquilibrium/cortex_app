@@ -433,7 +433,7 @@
     }
     function cabecalhoSimples(sig, banco) {
         const d = ((banco || {}).resultados || {})[sig];
-        if (d && !d.erro) return null;                       // com números, o cabeçalho completo do teste
+        if (C().SIGLAS_DO_CORTEX.includes(sig) && d && !d.erro) return null;   // WAIS/WISC/RAVLT/FDT/BFP: cabeçalho do modelo
         const a = aplicacaoDe(sig, banco);
         if (!a) return null;
         return cabecalho({ titulo: sig, sub: [a.nome && a.nome !== sig ? a.nome : null], rot: '', valor: '' });
@@ -443,6 +443,9 @@
         const sig = b.sigla;
         if (figurasDe(b)) return null;
         if (b.vista === 'cabecalho' && cabecalhoSimples(sig, banco)) return null;
+        // Escalas e demais testes: só as partes da tela de correção (sem desenho próprio).
+        if (!C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo' && (aplicacaoDe(sig, banco) || ((banco || {}).resultados || {})[sig]))
+            return `${sig}: as tabelas e gráficos da tela de correção ainda não foram trazidos (📷 Figuras dos testes)`;
         if (b.vista === 'figura') return `${sig}: figura da tela de correção ainda não capturada`;
         if (!C().vistasDe(sig).includes(b.vista)) return `${sig}: vista "${b.vista}" ainda não construída`;
         const d = ((banco || {}).resultados || {})[sig];
@@ -475,6 +478,8 @@
             const cs = cabecalhoSimples(sig, banco);
             if (cs) return `<div class="resultado" data-sigla="${esc(sig)}" data-vista="cabecalho" data-origem="${extra.congelado ? 'snapshot' : 'banco'}">${cs}${op.legenda ? `<p class="cx-leg">${esc(op.legenda)}</p>` : ''}</div>`;
         }
+        if (!C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo' && (d || aplicacaoDe(sig, banco)))
+            return aviso(`${esc(sig)}: as tabelas e gráficos da tela de correção ainda não foram trazidos. Use <b>📷 Figuras dos testes</b> no topo da página.`, sig);
         if (!C().SIGLAS_DO_CORTEX.includes(sig) && !d) return aviso(esc(indisponivel(b, banco) || `${sig}: sem dados`) + '.', sig);
         if (!d) return aviso(`${esc(sig)}: teste ainda não corrigido no CORTEX para este paciente.`, sig);
         if (d.erro) return aviso(`${esc(sig)}: ${esc(d.erro)}.`, sig);

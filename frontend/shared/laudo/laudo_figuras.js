@@ -58,6 +58,11 @@
                 const laudo = d.querySelector('.laudo, .laudo-header');
                 const erro = d.querySelector('#erro:not([hidden]), .erro-estado, .laudo-erro');
                 if (erro && erro.offsetParent !== null && !laudo) throw new Error((erro.textContent || 'erro na tela de correção').trim().slice(0, 140));
+                // telas que mostram o erro só como texto ("Erro: Norma … não cadastrada")
+                if (!laudo && Date.now() - t0 > 5000 && d.body) {
+                    const m = /Erro:?\s*([^\n]{3,140})/.exec(d.body.innerText || '');
+                    if (m) throw new Error('a tela de correção deu erro: ' + m[1].trim());
+                }
                 if (laudo && w.html2canvas) {
                     const n = d.querySelectorAll('.cortex-copyable').length;
                     if (n === ultimoN) estavel++; else { estavel = 0; ultimoN = n; }
@@ -107,6 +112,11 @@
     }
 
     async function capturarUma(o, apl) {
+        // teste sem tela de correção no CORTEX (ex.: aplicado fora): avisa logo, sem esperar
+        try {
+            const h = await fetch(urlDa(apl.sigla, apl.id).replace(/\?.*$/, ''), { method: 'HEAD', cache: 'no-store' });
+            if (h.status === 404) throw new Error('este teste não tem tela de correção no CORTEX');
+        } catch (e) { if (/não tem tela/.test(e.message)) throw e; }
         const f = await abrirQuadro(urlDa(apl.sigla, apl.id));
         try {
             await esperarTela(f, 25000);
@@ -159,6 +169,17 @@
                 if (corpo) alvos.push({ el: corpo, chave: 'b01', titulo: 'Resultado completo', tipo: 'quadro', classe: 'resultado-completo' });
             }
             if (!alvos.length) throw new Error('a tela não tem cabeçalho nem blocos de laudo');
+            // Partes com o mesmo título (ex.: um cartão por escala): acrescenta o nome do próprio cartão.
+            const vezes = {};
+            alvos.forEach(x => { vezes[x.titulo] = (vezes[x.titulo] || 0) + 1; });
+            const contagem = {};
+            alvos.forEach(x => {
+                if (x.chave === 'cabecalho' || vezes[x.titulo] < 2) return;
+                contagem[x.titulo] = (contagem[x.titulo] || 0) + 1;
+                const h = x.el.querySelector('h1, h2, h3, h4, h5, [class*="titulo"], [class*="nome"], [class*="-header"], [class*="label"], strong');
+                const proprio = h ? (h.textContent || '').trim().split('\n')[0].replace(/\s+/g, ' ').slice(0, 50) : '';
+                x.titulo = `${x.titulo} — ${proprio && proprio.toLowerCase() !== x.titulo.toLowerCase() ? proprio : contagem[x.titulo]}`;
+            });
 
             const blocos = [], falhas = [];
             for (const a of alvos) {

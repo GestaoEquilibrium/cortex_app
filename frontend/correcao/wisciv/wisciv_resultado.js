@@ -550,9 +550,10 @@
                 if (errInvoke) {
                     // Tenta extrair mensagem do response body
                     let msg = errInvoke.message || 'erro desconhecido';
-                    if (errInvoke.context?.body) {
+                    // errInvoke.context é a Response da função: lê a mensagem real do erro
+                    if (errInvoke.context && typeof errInvoke.context.text === 'function') {
                         try {
-                            const j = JSON.parse(await errInvoke.context.body.text());
+                            const j = JSON.parse(await errInvoke.context.text());
                             if (j.error) msg = j.error;
                         } catch (_) { /* ignora */ }
                     }

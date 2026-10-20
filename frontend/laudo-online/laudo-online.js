@@ -36,7 +36,9 @@
         perfil: null, admClin: false,
         banco: null, laudos: [], laudo: null, doc: null,
         glossario: {}, validacao: null, historico: [],
-        importacao: null
+        importacao: null,
+        visao: params.get('visao') === 'impressao' ? 'impressao' : 'editor',
+        impressao: null          // { paginas, folhas } depois de desenhar
     };
 
     // ── Início ────────────────────────────────────────────────────────────────
@@ -86,6 +88,7 @@
         if (!data) throw new Error('Laudo não encontrado ou sem permissão para abrir.');
         st.laudo = data;
         st.laudoId = data.id;
+        st.ctxImp = null; st.impressao = null;
         st.doc = data.status === 'em_construcao' || !data.snapshot ? data.documento : (data.snapshot.documento || data.documento);
         reconferir();
         st.historico = [];
@@ -144,8 +147,8 @@
             <span class="lo-status ${stCls}">${esc(stTxt)}</span>
             ${versoes}
             <nav class="lo-visoes" role="tablist" aria-label="Visões do laudo">
-                <button role="tab" aria-selected="true">Editor</button>
-                <button role="tab" aria-selected="false" disabled title="Chega na sprint LO-2">Impressão</button>
+                <button role="tab" data-visao="editor" aria-selected="${st.visao === 'editor'}" ${l ? '' : 'disabled'}>Editor</button>
+                <button role="tab" data-visao="impressao" aria-selected="${st.visao === 'impressao'}" ${l ? '' : 'disabled'}>Impressão</button>
                 <button role="tab" aria-selected="false" disabled title="Chega na sprint LO-5">Online</button>
             </nav>
             <div class="lo-acoes">
@@ -164,6 +167,7 @@
             return vazio('🔒', 'Nenhum Laudo Online finalizado',
                 'Laudos em construção só o admin clínico abre. Quando o laudo for finalizado, ele aparece aqui para toda a equipe.');
         }
+        if (st.visao === 'impressao') return impressaoHtml();
         const ro = st.laudo.status !== 'em_construcao'
             ? '<div class="lo-faixa ok">Laudo finalizado. Mudanças agora só em uma nova versão.</div>'
             : '<div class="lo-faixa">Modo leitura. A edição dos blocos chega na sprint LO-3.</div>';
@@ -269,7 +273,7 @@
             case 'referencias': return `<div class="lo-refs">${(b.itens || []).map(x => `<p>${I(x, ctx)}</p>`).join('')}</div>`;
             case 'tabela': return `<table class="lo-tab"><thead><tr>${(b.cabecalho || []).map(h => `<th>${I(h, ctx)}</th>`).join('')}</tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map(cel => celula(cel, ctx)).join('')}</tr>`).join('')}</tbody></table>${b.nota ? `<p class="lo-nota">${I(b.nota, ctx)}</p>` : ''}`;
             case 'imagem': return `<div class="lo-auto">🖼 Imagem <code>${esc(b.arquivo || '')}</code>${b.legenda ? ` — ${I(b.legenda, ctx)}` : ''}</div>`;
-            case 'resultado': return resultado(b);
+            case 'resultado': return `<div class="imp lo-imp-res">${window.LaudoGraf.render(b, st.banco, { glossario: st.glossario, congelado: !!st.congelado })}</div>`;
             case 'cracha': return `
                 <div class="lo-cracha">
                     <div><p class="nome">${esc(p.nome_completo || '')}</p>
@@ -297,59 +301,190 @@
         return `<div class="lo-desc"><b>Bloco não reconhecido</b> (${esc(b.tipo)}). O conteúdo está guardado e aparece aqui sem formatação:<pre>${esc(JSON.stringify(b, null, 2))}</pre></div>`;
     }
 
-    // ── Resultado (prévia com números do banco; desenho completo no LO-2) ─────
-    function resultado(b) {
-        const sig = b.sigla, vista = b.vista, op = b.opcoes || {};
-        const r = (st.banco.resultados || {})[sig];
-        const cab = `<div class="lo-res-cab"><b>${esc(sig)}</b><span>${esc(vista)}${op.indice ? ' · ' + esc(op.indice) : ''}</span><em>do banco</em></div>`;
-        if (!C().vistasDe(sig).includes(vista)) return `<div class="lo-res aviso">${cab}<p>Componente ainda não construído: vista "${esc(vista)}".</p></div>`;
-        if (!C().SIGLAS_DO_CORTEX.includes(sig)) return `<div class="lo-res info">${cab}<p>Escala online: o desenho com dados do banco chega na sprint LO-6.</p></div>`;
-        if (!r) return `<div class="lo-res aviso">${cab}<p>Teste ainda não corrigido no CORTEX para este paciente.</p></div>`;
-        let corpo = '';
-        if (vista === 'resumo') {
-            const rs = window.LaudoDados.resumo(sig, st.banco);
-            corpo = rs ? `<p class="lo-res-obs">${esc(rs.principal)} <b>${esc(rs.valor)}</b> ${selo(rs.classificacao)}</p>` : '';
-        } else if (sig === 'WAIS-III' || sig === 'WISC-IV') corpo = resWechsler(r, vista, op);
-        else if (sig === 'RAVLT' || sig === 'FDT') corpo = resMedidas(r, vista);
-        else if (sig === 'BFP') corpo = resBfp(r, vista, op);
-        const ap = r._aplicacao || {};
-        return `<div class="lo-res">${cab}${corpo}<p class="lo-res-rod">Aplicação de ${esc(C().dataBR(ap.data_aplicacao) || '—')}${r.calculado_em ? ` · calculado em ${esc(C().dataBR(r.calculado_em))}` : ''} · desenho final na impressão (LO-2)</p></div>`;
+    // ── Visão Impressão (LO-2) ────────────────────────────────────────────────
+    function trocarVisao(v) {
+        if (!st.laudo || v === st.visao) return;
+        st.visao = v;
+        try { history.replaceState(null, '', `?paciente=${st.pacienteId}&laudo=${st.laudo.id}${v === 'impressao' ? '&visao=impressao' : ''}`); } catch (e) { /* ok */ }
+        render();
     }
 
-    function selo(txt) { return `<span class="lo-selo cl-${C().faixa(txt) || 'med'}">${esc(txt || '—')}</span>`; }
+    function impressaoHtml() {
+        const enviado = st.laudo.laudo_paciente_id
+            ? '<span class="lo-imp-ok">PDF desta versão já enviado para a aba Laudo</span>' : '';
+        return `
+        <div class="lo-imp-barra">
+            <div class="lo-imp-info"><b id="lo-imp-pags">Paginando…</b><span>Folhas A4 iguais ao PDF. Os números vêm do banco.</span>${enviado}</div>
+            <div class="lo-imp-acoes">
+                ${st.admClin ? '<button class="btn btn-secondary" id="lo-enviar-assinatura">✍️ Enviar para assinatura</button>' : ''}
+                <button class="btn btn-primary" id="lo-gerar-pdf">🖨 Gerar PDF</button>
+            </div>
+        </div>
+        <div class="lo-imp-aviso" id="lo-imp-aviso" hidden></div>
+        <div id="lo-folhas" class="lo-folhas" aria-label="Folhas do laudo"></div>`;
+    }
 
-    function resWechsler(r, vista, op) {
-        const comp = r.compostos || {};
-        const linha = k => { const c = comp[k]; if (!c) return ''; return `<tr><td class="esq">${esc(C().NOMES_INDICE[k] || k)} <small>${esc(k === 'QI_TOTAL' ? 'QIT' : k)}</small></td><td><b>${esc(c.composto)}</b></td><td>${esc(c.percentil != null ? c.percentil : '')}</td><td>${c.ic95 ? esc(c.ic95.join('–')) : ''}</td><td>${selo(c.classificacao)}</td></tr>`; };
-        const tab = ks => `<table class="lo-tab mini"><thead><tr><th>Índice</th><th>Composto</th><th>Percentil</th><th>IC 95%</th><th>Classificação</th></tr></thead><tbody>${ks.map(linha).join('')}</tbody></table>`;
-        const icg = r._icg && r._icg.composto != null ? `<tr><td class="esq">Índice de Capacidade Geral <small>ICG</small></td><td><b>${esc(r._icg.composto)}</b></td><td>${esc(r._icg.percentil || '')}</td><td>${r._icg.ic95 ? esc(r._icg.ic95.join('–')) : ''}</td><td>${selo(r._icg.classificacao)}</td></tr>` : '';
-        const interp = r._interpretacao;
-        const aviso = interp ? `<p class="lo-res-obs">Amplitude entre índices: <b>${esc(interp.amplitude)}</b> pontos — QIT ${interp.qitInterpretavel ? 'interpretável' : '<b>não interpretável</b> (regra dos 23); leitura pelo ICG'}.</p>` : '';
-        if (vista === 'indice') return tab([op.indice || 'ICV']);
-        if (vista === 'cabecalho') return `<p class="lo-res-obs">Faixa normativa ${esc(r.faixa_norma || '—')} · idade ${esc(r.idade_anos != null ? r.idade_anos + ' anos' : '—')}</p>${tab(['QI_TOTAL'])}`;
-        if (vista === 'qit_icg') return `<table class="lo-tab mini"><thead><tr><th>Índice</th><th>Composto</th><th>Percentil</th><th>IC 95%</th><th>Classificação</th></tr></thead><tbody>${linha('QI_TOTAL')}${icg}</tbody></table>${aviso}`;
-        if (vista === 'intervalos') return tab(['ICV', 'IOP', 'IMO', 'IVP', 'QI_TOTAL']);
-        if (vista === 'discrepancias') return `<table class="lo-tab mini"><thead><tr><th>Par</th><th>Diferença</th><th>Valor crítico</th><th>Significativa</th></tr></thead><tbody>${(r.discrepancias || []).map(d => `<tr><td class="esq">${esc(d.par)}</td><td>${esc(d.diff)}</td><td>${esc(d.vc != null ? d.vc : '')}</td><td>${d.sig ? 'Sim' : 'Não'}</td></tr>`).join('')}</tbody></table>`;
-        if (vista === 'perfil_subtestes' || vista === 'tabela_subtestes') {
-            const pond = r.ponderados || {};
-            return `<div class="lo-chips">${Object.keys(pond).filter(k => pond[k] != null).map(k => `<span><b>${esc(k)}</b> ${esc(pond[k])}</span>`).join('')}</div>`;
+    async function contextoImpressao() {
+        if (st.ctxImp) return st.ctxImp;
+        const ctx = { banco: st.banco, glossario: st.glossario, congelado: false, imagens: {} };
+        // QR "Acompanhe este paciente": o mesmo token do prontuário (só admin gera)
+        if (st.perfil === 'admin_clinico' || st.perfil === 'admin_gestor') {
+            try {
+                const { data, error } = await sb().rpc('qr_prontuario_token', { p_paciente_id: st.pacienteId });
+                if (!error && data) ctx.linkProntuario = 'https://cortexneuro.com.br/e/?t=' + encodeURIComponent(data);
+            } catch (e) { console.warn('[impressão] QR', e); }
         }
-        return tab(['QI_TOTAL']);
+        // Assinatura de quem assina (o admin clínico logado)
+        try {
+            const prof = await sb().from('profissionais').select('assinatura_url').eq('id', (window.cortexProfissional || {}).id).maybeSingle();
+            const caminho = prof && prof.data && prof.data.assinatura_url;
+            if (caminho) {
+                const { data } = await sb().storage.from('profissionais-assinaturas').createSignedUrl(caminho, 900);
+                ctx.assinaturaImg = (data && data.signedUrl) || null;
+            }
+        } catch (e) { console.warn('[impressão] assinatura', e); }
+        // Imagens inseridas no laudo (bucket laudos-midia)
+        const arqs = [];
+        C().cadaBloco(st.doc, b => { if (b.tipo === 'imagem' && b.arquivo) arqs.push(b.arquivo); });
+        for (const a of arqs) {
+            try { const { data } = await sb().storage.from('laudos-midia').createSignedUrl(a, 900); if (data) ctx.imagens[a] = data.signedUrl; } catch (e) { /* segue sem */ }
+        }
+        st.ctxImp = ctx;
+        return ctx;
     }
 
-    function resMedidas(r, vista) {
-        const ms = r.medidas || [];
-        const pct = m => m.pctLabel != null ? m.pctLabel : (m.pct != null ? m.pct : '');
-        const lista = vista === 'resumo' ? ms.filter(m => m.key === 'Total' || m.key === 'CI') : ms;
-        return `<table class="lo-tab mini"><thead><tr><th>Medida</th><th>Bruto</th><th>Percentil</th><th>Classificação</th></tr></thead><tbody>${lista.map(m => `
-            <tr><td class="esq">${esc(m.label || m.key)}</td><td><b>${esc(m.raw)}</b></td><td>${esc(pct(m))}</td><td>${selo((m.classificacao || {}).label)}</td></tr>`).join('')}</tbody></table>`;
+    let desenhando = null;
+    async function desenharImpressao() {
+        const alvo = document.getElementById('lo-folhas');
+        if (!alvo) return;
+        const minha = desenhando = Symbol('d');
+        try {
+            const ctx = await contextoImpressao();
+            if (minha !== desenhando) return;
+            const r = await window.LaudoImpressao.desenhar(st.doc, alvo, ctx);
+            if (minha !== desenhando) return;
+            st.impressao = r;
+            const el = document.getElementById('lo-imp-pags');
+            if (el) el.textContent = `${r.paginas} página${r.paginas === 1 ? '' : 's'} + capa`;
+            const av = document.getElementById('lo-imp-aviso');
+            const avisos = [];
+            if (r.paginas > r.alvo) avisos.push(`O laudo passou de ${r.alvo} páginas (alvo do modelo). Isso não impede nada.`);
+            if (!ctx.linkProntuario) avisos.push('O QR "Acompanhe este paciente" sai em branco: só admin gera o token do prontuário.');
+            if (!ctx.assinaturaImg) avisos.push('Sem imagem de assinatura cadastrada: o rodapé mostra o nome. Cadastre em Configurações → Perfil.');
+            if (av) { av.hidden = !avisos.length; av.innerHTML = avisos.map(a => `<p>⚠️ ${esc(a)}</p>`).join(''); }
+        } catch (err) {
+            console.error('[impressão]', err);
+            alvo.innerHTML = `<div class="lo-desc"><b>Não consegui montar as folhas.</b> ${esc(err.message || '')}</div>`;
+        }
     }
 
-    function resBfp(r, vista, op) {
-        const pf = r.percentil_fatores || {}, cf = r.classificacao_fatores || {}, eb = r.eb_fatores || {};
-        const ks = op.fator ? [op.fator] : ['N', 'E', 'S', 'R', 'A'];
-        return `<table class="lo-tab mini"><thead><tr><th>Fator</th><th>Escore bruto</th><th>Percentil</th><th>Classificação</th></tr></thead><tbody>${ks.map(k => `
-            <tr><td class="esq">${esc(C().FATORES_BFP[k] || k)}</td><td>${esc(eb[k] != null ? eb[k] : '')}</td><td><b>${esc(pf[k] != null ? pf[k] : '')}</b></td><td>${selo(cf[k])}</td></tr>`).join('')}</tbody></table>`;
+    window.addEventListener('resize', () => {
+        const alvo = document.getElementById('lo-folhas');
+        if (alvo && window.LaudoImpressao) window.LaudoImpressao.escalar(alvo);
+    });
+
+    async function gerarPdf() {
+        if (!st.impressao) await desenharImpressao();
+        const origem = document.getElementById('lo-folhas');
+        if (!origem || !origem.querySelector('.folha')) { toast('As folhas ainda não ficaram prontas.', 'danger'); return; }
+        let box = document.getElementById('lo-print');
+        if (!box) { box = document.createElement('div'); box.id = 'lo-print'; box.className = 'imp'; document.body.appendChild(box); }
+        box.innerHTML = origem.innerHTML;
+        box.style.setProperty('--escala', '1');
+        const tituloAntes = document.title;
+        document.title = `Laudo Neuropsicológico - ${st.banco.paciente.nome_completo || ''} - v${st.laudo.versao}`;
+        document.body.classList.add('lo-imprimindo');
+        let terminou = false;
+        const fim = () => {
+            if (terminou) return; terminou = true;
+            document.body.classList.remove('lo-imprimindo');
+            box.innerHTML = '';
+            document.title = tituloAntes;
+            window.removeEventListener('afterprint', fim);
+            if (st.admClin) setTimeout(abrirEnvioAssinatura, 150);
+        };
+        window.addEventListener('afterprint', fim);
+        window.CortexAudit && window.CortexAudit.log('geracao_pdf', 'laudos_online', st.laudo.id, {
+            pacienteId: st.pacienteId, detalhes: { versao: st.laudo.versao, paginas: (st.impressao || {}).paginas }
+        });
+        await new Promise(r => setTimeout(r, 60));
+        window.print();
+        setTimeout(fim, 400);
+    }
+
+    function abrirEnvioAssinatura() {
+        if (!st.admClin || document.querySelector('.lo-modal')) return;
+        const ja = !!st.laudo.laudo_paciente_id;
+        const m = document.createElement('div');
+        m.className = 'lo-modal';
+        m.innerHTML = `
+            <div class="lo-modal-card" role="dialog" aria-modal="true" aria-labelledby="lo-ass-tit">
+                <h2 id="lo-ass-tit">Enviar para assinatura</h2>
+                <p>No diálogo de impressão, escolha <b>Salvar como PDF</b> e guarde o arquivo. Depois escolha aqui o PDF salvo: ele entra na aba Laudo como <b>Laudo Online v${esc(st.laudo.versao)}</b> e abre a janela de assinatura digital.</p>
+                ${ja ? '<p class="lo-imp-ok">Esta versão já tem um PDF enviado. Enviar de novo cria uma nova versão no histórico de PDFs.</p>' : ''}
+                <div class="lo-imp-linha">
+                    <label class="lo-btn sec"><input type="file" id="lo-ass-arq" accept="application/pdf" hidden>📎 Escolher PDF</label>
+                    <span id="lo-ass-nome" class="lo-imp-nome">Nenhum arquivo escolhido</span>
+                </div>
+                <div id="lo-ass-res" aria-live="polite"></div>
+                <div class="lo-modal-acoes">
+                    <button class="btn btn-secondary" id="lo-ass-cancelar">Agora não</button>
+                    <button class="btn btn-primary" id="lo-ass-enviar" disabled>Enviar e assinar</button>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+        const $ = id => m.querySelector('#' + id);
+        let arquivo = null;
+        $('lo-ass-cancelar').addEventListener('click', () => m.remove());
+        m.addEventListener('click', ev => { if (ev.target === m) m.remove(); });
+        $('lo-ass-arq').addEventListener('change', ev => {
+            const f = ev.target.files[0];
+            arquivo = null; $('lo-ass-enviar').disabled = true; $('lo-ass-res').innerHTML = '';
+            if (!f) return;
+            $('lo-ass-nome').textContent = f.name;
+            if (f.type !== 'application/pdf') { $('lo-ass-res').innerHTML = '<p class="lo-imp-erro">Escolha o arquivo PDF.</p>'; return; }
+            if (f.size > 20 * 1024 * 1024) { $('lo-ass-res').innerHTML = '<p class="lo-imp-erro">Arquivo maior que 20 MB.</p>'; return; }
+            arquivo = f; $('lo-ass-enviar').disabled = false;
+        });
+        $('lo-ass-enviar').addEventListener('click', async () => {
+            if (!arquivo) return;
+            const bt = $('lo-ass-enviar'); bt.disabled = true; bt.textContent = 'Enviando…';
+            try {
+                const r = await enviarPdf(arquivo);
+                m.remove();
+                toast('PDF guardado na aba Laudo. Abrindo a assinatura…', 'success');
+                if (window.CortexAssinatura && window.CortexAssinatura.abrir) {
+                    window.CortexAssinatura.abrir({
+                        tipo: 'laudo', id: r.id, bucket: 'laudos', path: r.path, titulo: `Laudo Online v${st.laudo.versao}`,
+                        onAssinado: () => toast('Laudo assinado. Ele já está na aba Laudo da pasta.', 'success')
+                    });
+                }
+            } catch (err) {
+                console.error('[assinatura]', err);
+                bt.disabled = false; bt.textContent = 'Enviar e assinar';
+                $('lo-ass-res').innerHTML = `<p class="lo-imp-erro">Não consegui enviar: ${esc(err.message || 'erro desconhecido')}</p>`;
+            }
+        });
+    }
+
+    async function enviarPdf(file) {
+        const path = `${st.pacienteId}/v${Date.now()}.pdf`;
+        const up = await sb().storage.from('laudos').upload(path, file, { contentType: 'application/pdf', upsert: false });
+        if (up.error) throw up.error;
+        const { data: { user } } = await sb().auth.getUser();
+        const ins = await sb().from('laudos_paciente').insert({
+            paciente_id: st.pacienteId, titulo: `Laudo Online v${st.laudo.versao}`,
+            arquivo_path: path, arquivo_nome_original: file.name, arquivo_tamanho_bytes: file.size,
+            ativo: true, created_by: (user && user.id) || null
+        }).select('id').single();
+        if (ins.error) throw ins.error;
+        const upd = await sb().from('laudos_online').update({ laudo_paciente_id: ins.data.id }).eq('id', st.laudo.id);
+        if (upd.error) console.warn('[assinatura] vínculo laudo_paciente_id:', upd.error.message);
+        else st.laudo.laudo_paciente_id = ins.data.id;
+        window.CortexAudit && await window.CortexAudit.log('criacao', 'laudos_paciente', ins.data.id, {
+            pacienteId: st.pacienteId, detalhes: { origem: 'laudo_online', laudo_online_id: st.laudo.id, versao: st.laudo.versao, tamanho: file.size }
+        });
+        return { id: ins.data.id, path };
     }
 
     // ── Painel de conferências ────────────────────────────────────────────────
@@ -385,9 +520,14 @@
         on('lo-importar', abrirImportar);
         on('lo-importar-2', abrirImportar);
         on('lo-descartar', descartar);
+        raiz.querySelectorAll('[data-visao]').forEach(bt => bt.addEventListener('click', () => trocarVisao(bt.dataset.visao)));
+        on('lo-gerar-pdf', gerarPdf);
+        on('lo-enviar-assinatura', abrirEnvioAssinatura);
+        if (st.visao === 'impressao' && st.laudo) desenharImpressao();
         on('lo-reconferir', async () => {
             try {
                 st.banco = await window.LaudoDados.carregar(st.pacienteId);
+                st.ctxImp = null; st.impressao = null;
                 reconferir(); render();
                 toast('Conferências refeitas com os dados atuais do banco.', 'success');
             } catch (e) { toast('Erro ao reconferir: ' + (e.message || ''), 'danger'); }

@@ -109,6 +109,7 @@
                     <h1>BPA-2</h1>
                     <p>${esc(p.nome_completo || '—')}${p.idade_humanizada ? ' · ' + esc(p.idade_humanizada) : ''}</p>
                 </div>
+                <a class="btn btn-secondary" href="bpa2_laudo.html?aplicacao_id=${encodeURIComponent(state.aplicacaoId)}" title="Pontos, percentil e classificação do manual, com tabelas e gráficos do laudo">📄 Laudo do BPA-2</a>
                 <button class="btn btn-primary" id="bpa2-salvar">💾 Salvar e corrigir</button>
             </div>
 

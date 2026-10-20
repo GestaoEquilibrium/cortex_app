@@ -21,7 +21,9 @@
     const LIMITE_BYTES = 4.6 * 1024 * 1024;
     const OVERRIDES = {            // mesmos desvios da convenção usados na bateria
         'SCARED-A': 'scared/scared_resultado.html',
-        'SCARED-H': 'scared/scared_resultado.html'
+        'SCARED-H': 'scared/scared_resultado.html',
+        'BPA-2': 'bpa2/bpa2_laudo.html',       // a tela do crivo não tem laudo; o laudo do BPA-2 é esta (LO-7)
+        'BPA2': 'bpa2/bpa2_laudo.html'
     };
     const BASE = (function () {
         const s = document.currentScript && document.currentScript.src;
@@ -58,6 +60,8 @@
                 const laudo = d.querySelector('.laudo, .laudo-header');
                 const erro = d.querySelector('#erro:not([hidden]), .erro-estado, .laudo-erro');
                 if (erro && erro.offsetParent !== null && !laudo) throw new Error((erro.textContent || 'erro na tela de correção').trim().slice(0, 140));
+                // telas de resultados lançados (LO-7) ainda sem números
+                if (!laudo && d.body && d.body.dataset.lancamentoPendente === '1') throw new Error('os resultados ainda não foram lançados na tela do teste (abra pela bateria e digite os números do relatório)');
                 // telas que mostram o erro só como texto ("Erro: Norma … não cadastrada")
                 if (!laudo && Date.now() - t0 > 5000 && d.body) {
                     const m = /Erro:?\s*([^\n]{3,140})/.exec(d.body.innerText || '');
@@ -74,6 +78,12 @@
         throw new Error('a tela de correção não terminou de abrir');
     }
 
+    // Texto do título de seção, sem a etiqueta numérica e sem a dica ao lado.
+    function textoTitulo(t) {
+        const c = t.cloneNode(true);
+        c.querySelectorAll('.laudo-secao-tag, .laudo-secao-hint').forEach(x => x.remove());
+        return (c.textContent || '').replace(/\s+/g, ' ').trim();
+    }
     // Título do bloco: o título da seção do laudo que vem antes dele.
     function tituloDe(el) {
         const proprio = el.querySelector('h2, h3, h4, [class*="-titulo"]');
@@ -81,15 +91,9 @@
         while (n && !n.classList.contains('laudo')) {
             let p = n.previousElementSibling;
             while (p) {
-                if (p.classList && p.classList.contains('laudo-secao-titulo')) {
-                    const tag = p.querySelector('.laudo-secao-tag');
-                    return (p.textContent || '').replace(tag ? tag.textContent : '', '').trim();
-                }
+                if (p.classList && p.classList.contains('laudo-secao-titulo')) return textoTitulo(p);
                 const dentro = p.querySelectorAll && p.querySelectorAll('.laudo-secao-titulo');
-                if (dentro && dentro.length) {
-                    const t = dentro[dentro.length - 1], tag = t.querySelector('.laudo-secao-tag');
-                    return (t.textContent || '').replace(tag ? tag.textContent : '', '').trim();
-                }
+                if (dentro && dentro.length) return textoTitulo(dentro[dentro.length - 1]);
                 p = p.previousElementSibling;
             }
             n = n.parentElement;
@@ -149,7 +153,7 @@
                     else if (grupo) grupo.els.push(el);
                 });
                 grupos.forEach((g, k) => {
-                    const nome = (g.titulo.textContent || '').replace((g.titulo.querySelector('.laudo-secao-tag') || {}).textContent || '', '').trim();
+                    const nome = textoTitulo(g.titulo);
                     if (/identifica/i.test(nome)) return;
                     const visiveis = g.els.filter(el => el.getBoundingClientRect().height > 4 && !el.matches('.laudo-identificacao, [class*="-identif"]'));
                     if (!visiveis.length || visiveis.some(el => el.matches('.cortex-copyable') || el.querySelector('.cortex-copyable'))) return;

@@ -1100,8 +1100,7 @@
     function aplicacoesComTela() {
         const vistas = new Set(), lista = [];
         (st.banco.aplicacoes || []).forEach(a => {      // a mais recente de cada teste, já corrigida
-            // BPA-2: a tela é só de marcação do crivo, não tem laudo para fotografar
-            if (!a.corrigida || vistas.has(a.sigla) || /^BPA-?2$/i.test(a.sigla)) return;
+            if (!a.corrigida || vistas.has(a.sigla)) return;
             vistas.add(a.sigla); lista.push({ id: a.id, sigla: a.sigla, nome: a.nome });
         });
         return lista;

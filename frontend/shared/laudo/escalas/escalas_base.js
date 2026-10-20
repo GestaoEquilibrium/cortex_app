@@ -70,7 +70,10 @@
         'SCARED': ['SCARED-A', 'SCARED-H'],
         'CARS-2': ['CARS2-ST', 'CARS2-HF'], 'CARS2': ['CARS2-ST', 'CARS2-HF'],
         'CARS-2-ST': ['CARS2-ST'], 'CARS-2-HF': ['CARS2-HF'],
-        'ETDAH-AD': ['ETDAH-AD'], 'QA16+': ['QA 16+'], 'QA-16+': ['QA 16+']
+        'ETDAH-AD': ['ETDAH-AD'], 'QA16+': ['QA 16+'], 'QA-16+': ['QA 16+'],
+        'RAADS-R-BR': ['RAADS-R'], 'RAADS-R BR': ['RAADS-R'],
+        'QIIAHSD': ['QIIAHSD-AD', 'QIIAHSD-AD-2F'], 'QIIAHSD-2F': ['QIIAHSD-AD-2F'],
+        'BAARS IV': ['BAARS-IV'], 'BAARS': ['BAARS-IV'], 'CAT Q': ['CAT-Q'], 'EQ15': ['EQ-15'], 'ASRS': ['ASRS-18']
     };
 
     // Utilidades para os leitores

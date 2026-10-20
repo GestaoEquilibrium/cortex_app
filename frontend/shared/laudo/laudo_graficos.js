@@ -373,6 +373,10 @@
     function figurasDaSigla(sig) {
         const F = FIG.figuras || {};
         if (F[sig]) return F[sig];
+        const eq = C().equivalente && C().equivalente(sig);
+        if (eq && F[eq.sigla]) return F[eq.sigla];
+        const apE = window.LaudoEscalas && (window.LaudoEscalas.APELIDOS[sig] || []).find(x => F[x]);
+        if (apE) return F[apE];
         const ap = (APELIDO_FIG[sig] || []).find(x => F[x]);
         return ap ? F[ap] : null;
     }
@@ -388,7 +392,13 @@
         }
         // Testes desenhados pelo próprio Laudo Online (WAIS, WISC, RAVLT, FDT, BFP) continuam vetoriais.
         if (C().SIGLAS_DO_CORTEX.includes(b.sigla)) return null;
-        const corpo = bs.filter(x => x.chave !== 'cabecalho');
+        let corpo = bs.filter(x => x.chave !== 'cabecalho');
+        // Sigla do Gerador que é parte de uma tela com vários testes (TEACO-2 dentro de TEACO/TEADI/TEALT)
+        const eq = C().equivalente && C().equivalente(b.sigla);
+        if (eq && eq.parte) {
+            const so = corpo.filter(x => new RegExp(eq.parte, 'i').test(x.titulo || ''));
+            if (so.length) return b.vista === 'cabecalho' ? [por('cabecalho')].filter(Boolean) : so;
+        }
         const achar = re => corpo.find(x => re.test(`${x.classe || ''} ${x.titulo || ''}`));
         let lista;
         switch (b.vista) {
@@ -428,7 +438,9 @@
     // Aplicação do teste (já corrigida) — serve para o "Só o cabeçalho" de qualquer teste,
     // mesmo sem leitura dos números no Laudo Online.
     function aplicacaoDe(sig, banco) {
-        const ap = ((banco || {}).aplicacoes || []).filter(a => a.sigla === sig);
+        const eq = C().equivalente && C().equivalente(sig);
+        const nomes = [sig].concat(eq ? [eq.sigla] : [], (window.LaudoEscalas && window.LaudoEscalas.APELIDOS[sig]) || []);
+        const ap = ((banco || {}).aplicacoes || []).filter(a => nomes.includes(a.sigla));
         return ap.find(a => a.corrigida) || ap[0] || null;
     }
     function cabecalhoSimples(sig, banco) {
@@ -439,13 +451,25 @@
         return cabecalho({ titulo: sig, sub: [a.nome && a.nome !== sig ? a.nome : null], rot: '', valor: '' });
     }
 
+    // Teste sem as partes da tela: diz o que falta fazer (lançar, corrigir ou trazer as figuras).
+    function motivoSemFigura(sig, banco) {
+        const d = ((banco || {}).resultados || {})[sig];
+        const a = aplicacaoDe(sig, banco);
+        if (!a && !d) return null;
+        if (a && !a.corrigida && !(d && !d.erro)) {
+            const lanca = C().equivalente(sig) || ['TDE-II', 'TAVIS-4', 'TEPIC-M-2', 'BDEFS', 'CPM-RAVEN', 'IHS-2', 'BETA-III', 'TEACO/TEADI/TEALT', 'TORRE DE LONDRES', 'BPA-2'].includes(a.sigla);
+            return lanca ? `${sig}: os resultados ainda não foram lançados no CORTEX — na bateria do paciente, abra o teste (📝 Aplicar / Corrigir), digite os números do relatório e depois use 📷 Figuras dos testes`
+                : `${sig}: o teste ainda não foi corrigido no CORTEX`;
+        }
+        return `${sig}: as tabelas e gráficos da tela de correção ainda não foram trazidos (📷 Figuras dos testes)`;
+    }
+
     function indisponivel(b, banco) {
         const sig = b.sigla;
         if (figurasDe(b)) return null;
         if (b.vista === 'cabecalho' && cabecalhoSimples(sig, banco)) return null;
         // Escalas e demais testes: só as partes da tela de correção (sem desenho próprio).
-        if (!C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo' && (aplicacaoDe(sig, banco) || ((banco || {}).resultados || {})[sig]))
-            return `${sig}: as tabelas e gráficos da tela de correção ainda não foram trazidos (📷 Figuras dos testes)`;
+        if (!C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo') { const m = motivoSemFigura(sig, banco); if (m) return m; }
         if (b.vista === 'figura') return `${sig}: figura da tela de correção ainda não capturada`;
         if (!C().vistasDe(sig).includes(b.vista)) return `${sig}: vista "${b.vista}" ainda não construída`;
         const d = ((banco || {}).resultados || {})[sig];
@@ -454,7 +478,7 @@
             if (d) return null;
             const E = window.LaudoEscalas;
             const conhecida = E && (E.leitor(sig) || (E.APELIDOS[sig] || []).some(x => E.leitor(x)));
-            return conhecida || !E ? `${sig}: escala não respondida ou não corrigida no CORTEX` : `${sig}: sem leitura do banco no Laudo Online (teste fora do CORTEX ou escala ainda não incluída)`;
+            return conhecida || !E ? `${sig}: escala não respondida ou não corrigida no CORTEX` : `${sig}: este teste não está na bateria do paciente no CORTEX — a tabela não sai; o texto do Gerador continua no laudo`;
         }
         if (!d) return `${sig}: teste não aplicado ou não corrigido no CORTEX`;
         return null;
@@ -478,8 +502,7 @@
             const cs = cabecalhoSimples(sig, banco);
             if (cs) return `<div class="resultado" data-sigla="${esc(sig)}" data-vista="cabecalho" data-origem="${extra.congelado ? 'snapshot' : 'banco'}">${cs}${op.legenda ? `<p class="cx-leg">${esc(op.legenda)}</p>` : ''}</div>`;
         }
-        if (!C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo' && (d || aplicacaoDe(sig, banco)))
-            return aviso(`${esc(sig)}: as tabelas e gráficos da tela de correção ainda não foram trazidos. Use <b>📷 Figuras dos testes</b> no topo da página.`, sig);
+        if (!C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo') { const m = motivoSemFigura(sig, banco); if (m) return aviso(esc(m) + '.', sig); }
         if (!C().SIGLAS_DO_CORTEX.includes(sig) && !d) return aviso(esc(indisponivel(b, banco) || `${sig}: sem dados`) + '.', sig);
         if (!d) return aviso(`${esc(sig)}: teste ainda não corrigido no CORTEX para este paciente.`, sig);
         if (d.erro) return aviso(`${esc(sig)}: ${esc(d.erro)}.`, sig);

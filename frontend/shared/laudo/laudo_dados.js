@@ -230,9 +230,22 @@
     }
 
     /** Valor do banco para uma chave da `conferencia` (Documento 1, §10). */
+    const FORMAS = { hetero: ['-HET', '-H'], het: ['-HET', '-H'], auto: ['-AUTO', '-A'], pre: ['-PRE'], escf: ['-ESC-F'], escm: ['-ESC-M'] };
     function valor(sigla, chave, banco) {
-        const r = ((banco || {}).resultados || {})[sigla];
+        const res = (banco || {}).resultados || {};
+        const r = res[sigla];
         if (!r) return undefined;
+        // "SRS-2 total_hetero" → SRS-2-HET; "SRS-2 total" → autorrelato quando houver as duas formas
+        const AP = window.LaudoEscalas && window.LaudoEscalas.APELIDOS[sigla];
+        if (r.apelido_de && AP && AP.length > 1) {
+            const m = /^(.*?)[_-](hetero|het|auto|pre|esc_?f|esc_?m)$/i.exec(chave);
+            const ok = s => res[s] && !res[s].erro;
+            let alvo = null, base = chave;
+            if (m) { base = m[1]; const suf = FORMAS[m[2].toLowerCase().replace('_', '')] || []; alvo = AP.find(s => ok(s) && suf.some(x => s.endsWith(x))); }
+            else alvo = AP.find(s => ok(s) && /-(AUTO|A)$/.test(s)) || r.apelido_de;
+            if (alvo && ok(alvo)) return valorEscala(res[alvo], base);
+            if (m) return undefined;
+        }
         if (sigla === 'WAIS-III' || sigla === 'WISC-IV') {
             if (chave === 'ICG') return r._icg && r._icg.composto != null ? r._icg.composto : undefined;
             if (chave === 'ICC') return r._icc && r._icc.composto != null ? r._icc.composto : undefined;

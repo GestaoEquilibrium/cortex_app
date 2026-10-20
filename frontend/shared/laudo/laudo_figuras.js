@@ -180,8 +180,10 @@
             alvos.forEach(x => {
                 if (x.chave === 'cabecalho' || vezes[x.titulo] < 2) return;
                 contagem[x.titulo] = (contagem[x.titulo] || 0) + 1;
-                const h = x.el.querySelector('h1, h2, h3, h4, h5, [class*="titulo"], [class*="nome"], [class*="-header"], [class*="label"], strong');
-                const proprio = h ? (h.textContent || '').trim().split('\n')[0].replace(/\s+/g, ' ').slice(0, 50) : '';
+                const gt = x.el.querySelector('[class*="grafico-tit"]');
+                const h = gt || (/(^|\s)\S*cards(\s|$)/.test(x.el.className || '') ? null : x.el.querySelector('h1, h2, h3, h4, h5, [class*="titulo"], [class*="nome"], [class*="-header"], [class*="label"], strong'));
+                let proprio = h ? (h.textContent || '').trim().split('\n')[0].replace(/\s+/g, ' ').slice(0, 50) : '';
+                if (!proprio && /cards/.test(x.el.className || '')) proprio = 'cartões';
                 x.titulo = `${x.titulo} — ${proprio && proprio.toLowerCase() !== x.titulo.toLowerCase() ? proprio : contagem[x.titulo]}`;
             });
 

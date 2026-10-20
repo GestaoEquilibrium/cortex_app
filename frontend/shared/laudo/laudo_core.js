@@ -47,6 +47,19 @@
         '_escala': ['cabecalho', 'cartao', 'regua', 'subescalas', 'tabela', 'resumo', 'figura']
     };
     const SIGLAS_DO_CORTEX = ['WAIS-III', 'WISC-IV', 'RAVLT', 'FDT', 'BFP'];
+    // Siglas que o Gerador escreve → teste do catálogo do CORTEX (telas de resultados lançados, LO-7).
+    // "parte" escolhe, entre as figuras da tela, as que são daquele teste (TEACO/TEADI/TEALT é uma tela só).
+    const EQUIVALENTES = {
+        'TEACO-2': { sigla: 'TEACO/TEADI/TEALT', parte: 'TEACO' }, 'TEACO': { sigla: 'TEACO/TEADI/TEALT', parte: 'TEACO' }, 'TEACO-FF': { sigla: 'TEACO/TEADI/TEALT', parte: 'TEACO' },
+        'TEADI-2': { sigla: 'TEACO/TEADI/TEALT', parte: 'TEADI' }, 'TEADI': { sigla: 'TEACO/TEADI/TEALT', parte: 'TEADI' },
+        'TEALT-2': { sigla: 'TEACO/TEADI/TEALT', parte: 'TEALT' }, 'TEALT': { sigla: 'TEACO/TEADI/TEALT', parte: 'TEALT' },
+        'TOL-BR': { sigla: 'TORRE DE LONDRES' }, 'TOL': { sigla: 'TORRE DE LONDRES' }, 'TORRE': { sigla: 'TORRE DE LONDRES' },
+        'CPM': { sigla: 'CPM-RAVEN' }, 'RAVEN': { sigla: 'CPM-RAVEN' }, 'CPM RAVEN': { sigla: 'CPM-RAVEN' },
+        'BETA III': { sigla: 'BETA-III' }, 'BETA-3': { sigla: 'BETA-III' }, 'TDE II': { sigla: 'TDE-II' }, 'TDE-2': { sigla: 'TDE-II' },
+        'TAVIS 4': { sigla: 'TAVIS-4' }, 'TEPIC-M': { sigla: 'TEPIC-M-2' }, 'TEPIC M 2': { sigla: 'TEPIC-M-2' }, 'IHS2': { sigla: 'IHS-2' }, 'IHS': { sigla: 'IHS-2' }
+    };
+    /** Teste do CORTEX que corresponde à sigla escrita pelo Gerador ({ sigla, parte } ou null). */
+    function equivalente(sig) { return EQUIVALENTES[sig] || EQUIVALENTES[String(sig || '').toUpperCase()] || null; }
     function vistasDe(sigla) { return VISTAS[sigla] || VISTAS._escala; }
 
     const NOMES_INDICE = {
@@ -318,7 +331,7 @@
         Object.keys(banco.resultados || {}).forEach(s => { if (!(banco.resultados[s] || {}).erro) corrigidas.add(s); });
         const AP = (window.LaudoEscalas && window.LaudoEscalas.APELIDOS) || {};
         Object.keys(AP).forEach(ap => { if (AP[ap].some(s => corrigidas.has(s))) corrigidas.add(ap); });
-        const faltam = inv.filter(sig => !corrigidas.has(sig));
+        const faltam = inv.filter(sig => !corrigidas.has(sig) && !(equivalente(sig) && corrigidas.has(equivalente(sig).sigla)));
         add('inventario', 'Testes', 'Inventário × testes corrigidos', faltam.length ? 'atencao' : 'ok',
             faltam.length ? `Sem aplicação corrigida no CORTEX: ${faltam.join(', ')}.` : `${inv.length} de ${inv.length} instrumentos corrigidos neste paciente.`, faltam);
 
@@ -328,7 +341,7 @@
         Object.keys(conf).forEach(sig => Object.keys(conf[sig] || {}).forEach(k => {
             // Escala sem leitor no Laudo Online (ou teste fora do CORTEX): só informação.
             const res = (banco.resultados || {})[sig];
-            const temLeitor = window.LaudoEscalas && (window.LaudoEscalas.leitor(sig) || (window.LaudoEscalas.APELIDOS[sig] || []).some(x => window.LaudoEscalas.leitor(x)));
+            const temLeitor = window.LaudoEscalas && (window.LaudoEscalas.leitor(sig) || (window.LaudoEscalas.APELIDOS[sig] || []).some(x => window.LaudoEscalas.leitor(x) && (banco.resultados || {})[x]));
             if (!SIGLAS_DO_CORTEX.includes(sig) && !res && !temLeitor) { adiadas.push(`${sig} ${k}`); return; }
             const v = window.LaudoDados ? window.LaudoDados.valor(sig, k, banco) : undefined;
             // escala lida, mas sem esse número (ex.: percentil que a tela não calcula): fica sem conferência
@@ -386,7 +399,7 @@
     }
 
     window.LaudoCore = {
-        FORMATO, VERSAO_ATUAL, SECOES, SECOES_DO_GERADOR, TIPOS, VISTAS, SIGLAS_DO_CORTEX, NOMES_INDICE, FATORES_BFP,
+        FORMATO, VERSAO_ATUAL, SECOES, SECOES_DO_GERADOR, TIPOS, VISTAS, SIGLAS_DO_CORTEX, EQUIVALENTES, equivalente, NOMES_INDICE, FATORES_BFP,
         esc, slug, aleatorio, clonar, faixa, idadeTexto, dataBR, dataExtenso, mesAno, iniciais, feminino, contexto,
         variaveis, inline, plano, textos, ancoraDoTitulo, garantirIds, completarBloco, converter1para2, lerPacote,
         cadaBloco, blocosDoTipo, vistasDe, validar

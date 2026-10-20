@@ -1,0 +1,27 @@
+/* Configurações · Glossário dos balões (Laudo Online, LO-5) */
+.glo-card { padding: 22px 24px; }
+.glo-topo { display: flex; gap: 16px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
+.glo-topo h2 { margin: 0 0 6px; font-size: 18px; }
+.glo-topo p { margin: 0; max-width: 720px; color: var(--color-text-muted, #64748B); line-height: 1.55; font-size: 13.5px; }
+.glo-topo code, .glo-item code { font-size: 12px; background: #F0EAFF; color: #6D28D9; padding: 1px 6px; border-radius: 6px; }
+.glo-busca { display: flex; align-items: center; gap: 12px; margin: 18px 0 12px; flex-wrap: wrap; }
+.glo-busca input { flex: 1; min-width: 220px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--color-border, #E2E8F0); font: inherit; }
+.glo-busca span { font-size: 12.5px; color: var(--color-text-muted, #64748B); }
+.glo-lista { display: grid; gap: 8px; }
+.glo-item { display: flex; gap: 14px; justify-content: space-between; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--color-border, #E2E8F0); border-radius: 12px; background: #fff; }
+.glo-item.inativo { opacity: .6; }
+.glo-item-txt { min-width: 0; }
+.glo-item-cab { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.glo-item b { display: block; font-size: 14px; }
+.glo-item p { margin: 3px 0 0; font-size: 13px; color: #475569; line-height: 1.5; }
+.glo-tag { font-size: 11px; font-weight: 700; color: #92400E; background: #FEF3C7; padding: 1px 8px; border-radius: 999px; }
+.glo-item-acoes { display: flex; gap: 6px; flex: none; }
+.glo-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: rgba(15, 23, 42, .5); }
+.glo-modal-card { width: min(560px, 100%); max-height: 92vh; overflow: auto; background: #fff; border-radius: 18px; padding: 20px 22px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.45); display: grid; gap: 12px; }
+.glo-modal-card h3 { margin: 0; font-size: 18px; }
+.glo-modal-card label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: #334155; }
+.glo-modal-card input:not([type=checkbox]), .glo-modal-card textarea { font: 400 14px/1.5 Inter, sans-serif; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--color-border, #E2E8F0); width: 100%; box-sizing: border-box; }
+.glo-modal-card input:disabled { background: #F1F5F9; color: #64748B; }
+.glo-modal-card small { font-weight: 400; color: #64748B; font-size: 12px; }
+.glo-modal-card .glo-check { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.glo-modal-acoes { display: flex; justify-content: flex-end; gap: 8px; }

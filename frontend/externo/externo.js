@@ -758,7 +758,17 @@
                 return verLista();
             }
             state.paciente = r;
-            state.aba = (r.evolucoes || []).length || !(r.laudos || []).length ? 'evolucoes' : 'laudos';
+            // Laudo Online (LO-5): páginas liberadas pela clínica. Se a ação
+            // ainda não existir na função, a lista fica vazia — nunca quebra.
+            r.laudos_online = [];
+            if ((r.escopo || []).indexOf('laudos') >= 0) {
+                try {
+                    const lo = await chamar('laudos_online', { sessao: state.sessao, paciente_id: pacienteId });
+                    if (lo && lo.ok) r.laudos_online = lo.laudos || [];
+                } catch (e) { /* segue sem */ }
+            }
+            const temLaudo = (r.laudos || []).length || r.laudos_online.length;
+            state.aba = (r.evolucoes || []).length || !temLaudo ? 'evolucoes' : 'laudos';
             pintarProntuario();
         } catch (err) {
             console.error('[externo] prontuario:', err);
@@ -794,7 +804,7 @@
 
             <div class="ea-abas">
                 ${temEvo ? `<button class="ea-aba ${state.aba === 'evolucoes' ? 'ativa' : ''}" data-aba="evolucoes">Evoluções (${(d.evolucoes || []).length})</button>` : ''}
-                ${temLau ? `<button class="ea-aba ${state.aba === 'laudos' ? 'ativa' : ''}" data-aba="laudos">Laudos (${(d.laudos || []).length})</button>` : ''}
+                ${temLau ? `<button class="ea-aba ${state.aba === 'laudos' ? 'ativa' : ''}" data-aba="laudos">Laudos (${(d.laudos || []).length + (d.laudos_online || []).length})</button>` : ''}
                 ${d.resultados_pendentes ? `<button class="ea-aba" data-aba="resultados">Testes</button>` : ''}
             </div>
 
@@ -823,6 +833,19 @@
 
         if (state.aba === 'laudos') {
             const ls = d.laudos || [];
+            const lo = d.laudos_online || [];
+            const online = lo.length ? `<div class="ea-lista-simples ea-lo">
+                ${lo.map(l => `
+                    <div class="ea-linha">
+                        <div>
+                            <strong>Laudo online${l.errata ? ' · errata' : ''}</strong>
+                            <div class="ea-sub">versão ${esc(String(l.versao || 1))} · liberado em ${dataBR(l.liberado_em)}</div>
+                            <div class="ea-sub">Página interativa com os resultados, gráficos e explicações.</div>
+                        </div>
+                        <a class="btn btn-primary btn-sm" href="laudo.html?id=${encodeURIComponent(l.id)}">Abrir página</a>
+                    </div>`).join('')}
+            </div>` : '';
+            if (!ls.length && online) return online;
             if (!ls.length) {
                 return `<div class="empty-state">
                             <div class="empty-state-icon">📄</div>
@@ -831,7 +854,7 @@
                                 paciente, ele aparece aqui.</div>
                         </div>`;
             }
-            return `<div class="ea-lista-simples">
+            return online + `<div class="ea-lista-simples">
                 ${ls.map(l => `
                     <div class="ea-linha">
                         <div>

@@ -6,8 +6,8 @@
      - LO-2: impressão A4, PDF e assinatura;
      - LO-3: editor, lixeira e reimportação;
      - LO-4: finalizar com confirmações, congelar números (snapshot), status,
-       nova versão e errata.
-   A página online (LO-5) entra na próxima sprint.
+       nova versão e errata;
+     - LO-5: página online (online.html) e Liberar online para portal e externo.
    URL: laudo-online.html?paciente=<uuid>[&laudo=<uuid>][&importar=1]
    ============================================================================ */
 (function () {
@@ -195,7 +195,7 @@
             <nav class="lo-visoes" role="tablist" aria-label="Visões do laudo">
                 <button role="tab" data-visao="editor" aria-selected="${st.visao === 'editor'}" ${l ? '' : 'disabled'}>Editor</button>
                 <button role="tab" data-visao="impressao" aria-selected="${st.visao === 'impressao'}" ${l ? '' : 'disabled'}>Impressão</button>
-                <button role="tab" aria-selected="false" disabled title="Chega na sprint LO-5">Online</button>
+                <button role="tab" data-visao="online" aria-selected="false" ${l ? '' : 'disabled'} title="A página interativa, como o paciente e o médico veem">Online ↗</button>
             </nav>
             <div class="lo-acoes">
                 ${editavel() ? editor().statusHtml() : ''}
@@ -367,6 +367,7 @@
     async function trocarVisao(v) {
         if (!st.laudo || v === st.visao) return;
         if (st.editor && st.editor.tem()) await st.editor.gravar();
+        if (v === 'online') { location.href = `online.html?paciente=${encodeURIComponent(st.pacienteId)}&laudo=${encodeURIComponent(st.laudo.id)}`; return; }
         st.visao = v;
         try { history.replaceState(null, '', `?paciente=${st.pacienteId}&laudo=${st.laudo.id}${v === 'impressao' ? '&visao=impressao' : ''}`); } catch (e) { /* ok */ }
         render();
@@ -774,6 +775,7 @@
         on('lo-finalizar', abrirFinalizar);
         on('lo-finalizar-2', abrirFinalizar);
         on('lo-nova-versao', abrirNovaVersao);
+        on('lo-liberar', liberarOnline);
         raiz.querySelectorAll('[data-status]').forEach(bt => bt.addEventListener('click', () => mudarStatus(bt.dataset.status)));
         const sel = raiz.querySelector('#lo-versao');
         if (sel) sel.addEventListener('change', () => abrirLaudo(sel.value).catch(e => toast(e.message, 'danger')));
@@ -951,6 +953,9 @@
         const out = [];
         if (l.status === 'pronto_para_devolutiva') out.push('<button class="lo-btn" data-status="devolutiva_realizada" title="A devolutiva desta versão foi feita">✓ Devolutiva feita</button>');
         if (l.status === 'devolutiva_realizada' || l.status === 'errata') out.push('<button class="lo-btn" data-status="entregue" title="O laudo assinado foi entregue">📦 Entregue</button>');
+        out.push(l.online_liberado_em
+            ? '<button class="lo-btn lo-btn-lib on" id="lo-liberar" title="O paciente vê no portal e o médico externo com acesso aprovado vê no prontuário. Clique para desligar.">🌐 Online liberado</button>'
+            : '<button class="lo-btn lo-btn-lib" id="lo-liberar" title="Mostra a página online no portal do paciente e para o médico externo com acesso aprovado">🌐 Liberar online</button>');
         if (!st.laudos.some(v => v.status === 'em_construcao')) out.push('<button class="lo-btn prim" id="lo-nova-versao" title="Cria uma versão nova, em construção, a partir desta">＋ Nova versão</button>');
         return out.join('');
     }
@@ -975,6 +980,31 @@
                 await carregarTudo();
                 render();
                 toast(para === 'entregue' ? 'Laudo marcado como entregue.' : 'Devolutiva marcada como feita.', 'success');
+            }
+        });
+    }
+
+    // Liberar online (LO-5): portal do paciente e médico externo com escopo `laudos`.
+    function liberarOnline() {
+        const l = st.laudo;
+        if (!st.admClin || !finalizado()) return;
+        const ligar = !l.online_liberado_em;
+        window.CortexConfirm.mostrar({
+            icone: '🌐',
+            titulo: ligar ? `Liberar a página online da v${l.versao}?` : `Tirar a página online da v${l.versao} do ar?`,
+            texto: ligar
+                ? 'O paciente passa a ver a página no portal, e o médico externo com acesso aprovado (escopo Laudos) vê no prontuário. Notas internas e pendências não aparecem; as anotações (💬) aparecem para todos.'
+                : 'O paciente e o médico externo deixam de ver a página online desta versão. O PDF assinado continua como está.',
+            btnSim: ligar ? 'Sim, liberar' : 'Sim, tirar do ar', btnNao: 'Cancelar', btnSimDanger: !ligar,
+            onSim: async () => {
+                const { data, error } = await sb().rpc('laudo_online_liberar', { p_id: l.id, p_liberar: ligar });
+                if (error || !data || !data.ok) { toast('Não consegui: ' + ((data && data.mensagem) || (error && error.message) || ''), 'danger'); return; }
+                window.CortexAudit && await window.CortexAudit.log('edicao', 'laudos_online', l.id, {
+                    pacienteId: st.pacienteId, detalhes: { evento: 'liberar_online', versao: l.versao, liberado: ligar }
+                });
+                await carregarTudo();
+                render();
+                toast(ligar ? 'Página online liberada no portal e para o médico externo.' : 'Página online tirada do ar.', 'success');
             }
         });
     }

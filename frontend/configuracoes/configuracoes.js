@@ -65,6 +65,12 @@
             if (tabB) tabB.style.display = '';
         }
 
+        // Glossário dos balões do Laudo Online: só admin clínico (quem edita laudo).
+        if (perfil === 'admin_clinico') {
+            const tabG = document.getElementById('tab-glossario');
+            if (tabG) tabG.style.display = '';
+        }
+
         // Bind das abas
         document.querySelectorAll('.cfg-tab').forEach(btn => {
             btn.addEventListener('click', () => trocarAba(btn.dataset.tab));
@@ -129,6 +135,18 @@
                 await window.CortexBateriasAdmin.carregar();
                 cont.innerHTML = window.CortexBateriasAdmin.render();
                 window.CortexBateriasAdmin.bind();
+            } else if (aba === 'glossario') {
+                if (state.profissional?.perfil !== 'admin_clinico') {
+                    cont.innerHTML = `<div class="cfg-erro">Acesso restrito ao Admin Clínico.</div>`;
+                    return;
+                }
+                if (!window.CortexGlossarioAdmin) {
+                    cont.innerHTML = `<div class="cfg-erro">Módulo do glossário não carregou. Recarregue a página.</div>`;
+                    return;
+                }
+                await window.CortexGlossarioAdmin.carregar();
+                cont.innerHTML = window.CortexGlossarioAdmin.render();
+                window.CortexGlossarioAdmin.bind();
             } else if (aba === 'permissoes') {
                 if (state.profissional?.perfil !== 'admin_clinico') {
                     cont.innerHTML = `<div class="cfg-erro">Acesso restrito ao Admin Clínico.</div>`;

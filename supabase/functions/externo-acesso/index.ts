@@ -15,6 +15,8 @@
 //   solicitar    { sessao, token, mensagem? }     → pede aquele prontuário
 //   prontuario   { sessao, paciente_id }          → evoluções e laudos liberados
 //   laudo        { sessao, laudo_id }             → URL assinada de 2 min
+//   laudos_online { sessao, paciente_id }         → laudos online liberados (LO-5)
+//   laudo_online  { sessao, laudo_id }            → página online do laudo (snapshot)
 //   chat_listar  { sessao, depois? }              → conversa com a clínica
 //   chat_enviar  { sessao, texto }                → manda mensagem à clínica
 //   logout       { sessao }
@@ -224,6 +226,51 @@ Deno.serve(async (req) => {
 
                 const url = await assinarArquivo(r.bucket, r.path);
                 return json({ ok: true, url, nome: r.nome, assinado: r.assinado });
+            }
+
+            // Laudo Online (LO-5): lista dos liberados para este paciente.
+            case "laudos_online": {
+                const sessao = str(corpo.sessao, 120);
+                const paciente = str(corpo.paciente_id, 64);
+                if (!sessao) return json({ ok: false, erro: "sessao_invalida" });
+                if (!paciente) return json({ ok: false, erro: "paciente_ausente" }, 400);
+                return json(await rpc("externo_laudos_online", {
+                    p_sessao: sessao,
+                    p_paciente_id: paciente,
+                }));
+            }
+
+            // Laudo Online (LO-5): a página. O snapshot já vem sem notas
+            // internas. Imagens do laudo e foto do paciente saem como links
+            // assinados de 10 minutos.
+            case "laudo_online": {
+                const sessao = str(corpo.sessao, 120);
+                const laudo = str(corpo.laudo_id, 64);
+                if (!sessao) return json({ ok: false, erro: "sessao_invalida" });
+                if (!laudo) return json({ ok: false, erro: "laudo_ausente" }, 400);
+
+                const r = await rpc("externo_laudo_online", {
+                    p_sessao: sessao,
+                    p_laudo_id: laudo,
+                });
+                if (!r?.ok) return json(r);
+
+                const imagens: Record<string, string> = {};
+                const arquivos: string[] = [];
+                for (const s of (r.snapshot?.documento?.secoes || [])) {
+                    for (const b of (s?.blocos || [])) {
+                        if (b?.tipo === "imagem" && typeof b.arquivo === "string" && b.arquivo) arquivos.push(b.arquivo);
+                    }
+                }
+                for (const a of arquivos.slice(0, 40)) {
+                    try { imagens[a] = await assinarArquivo("laudos-midia", a, 600); } catch (_) { /* segue sem */ }
+                }
+                let foto: string | null = null;
+                const fotoPath = r.snapshot?.dados?.paciente?.foto_url;
+                if (typeof fotoPath === "string" && fotoPath && !/^https?:/i.test(fotoPath)) {
+                    try { foto = await assinarArquivo("pacientes-fotos", fotoPath, 600); } catch (_) { foto = null; }
+                }
+                return json({ ...r, imagens, foto });
             }
 
             case "logout": {

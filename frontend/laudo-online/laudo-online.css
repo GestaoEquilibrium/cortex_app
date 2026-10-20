@@ -267,3 +267,6 @@
     content: "RASCUNHO"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-35deg);
     font: 800 120px/1 Inter, Arial, sans-serif; letter-spacing: .08em; color: rgba(124, 77, 255, .10); pointer-events: none; z-index: 5; white-space: nowrap;
 }
+
+/* LO-5 · Liberar online */
+.lo-btn-lib.on { background: rgba(34, 197, 94, .18); border-color: rgba(34, 197, 94, .5); color: #BBF7D0; }

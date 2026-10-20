@@ -33,6 +33,7 @@
         instrumentos: null,
         agendamentos: null,
         laudos: null,
+        laudosOnline: [],       // LO-5: páginas online liberadas
         carregado: false
     };
 
@@ -174,6 +175,12 @@
     }
 
     async function carregarLaudos() {
+        // LO-5: páginas online liberadas. Se a função ainda não existir no
+        // banco, a lista fica vazia e o resto do portal segue normal.
+        try {
+            const { data, error } = await client.rpc('portal_meus_laudos_online');
+            state.laudosOnline = error ? [] : (data || []);
+        } catch (e) { state.laudosOnline = []; }
         try {
             const { data, error } = await client.rpc('portal_meus_laudos');
             if (error) throw error;
@@ -182,6 +189,7 @@
             renderListaLaudos(state.laudos);
         } catch (err) {
             console.error('Erro laudos:', err);
+            renderListaLaudos([]);
         }
     }
 
@@ -262,7 +270,9 @@
 
         // ─── Atalho Laudos ───────────────────────────────────────────────
         const descLaudos = document.getElementById('atalho-laudos-desc');
-        if (laudos.length === 0) {
+        if (laudos.length === 0 && (state.laudosOnline || []).length) {
+            descLaudos.textContent = 'Seu laudo online está disponível';
+        } else if (laudos.length === 0) {
             descLaudos.textContent = 'Aguardando liberação da equipe';
         } else {
             descLaudos.textContent = laudos.length === 1
@@ -431,6 +441,28 @@
     function renderListaLaudos(laudos) {
         const bloco = document.getElementById('lista-laudos-bloco');
         const vazio = document.getElementById('laudos-vazio');
+
+        const online = state.laudosOnline || [];
+        const blocoOn = document.getElementById('lista-online-bloco');
+        if (blocoOn) {
+            blocoOn.style.display = online.length ? 'block' : 'none';
+            document.getElementById('lista-online').innerHTML = online.map(l => `
+                <div class="app-item">
+                    <div class="app-item-info">
+                        <div class="app-item-titulo">Laudo Neuropsicológico online${l.versao > 1 ? ` · v${l.versao}` : ''}${l.errata ? ' · errata' : ''}</div>
+                        <div class="app-item-desc">A versão interativa do laudo, com gráficos e explicações.</div>
+                        <div class="app-item-meta"><span class="app-item-data">Liberado em ${formatarDataCurta(l.liberado_em)}</span></div>
+                    </div>
+                    <div class="app-item-acao">
+                        <a class="btn-acao" style="text-decoration:none" href="./laudo-online.html?id=${encodeURIComponent(l.id)}"><i class="ti ti-sparkles"></i> Abrir</a>
+                    </div>
+                </div>`).join('');
+        }
+        if (!laudos.length && online.length) {
+            bloco.style.display = 'none';
+            vazio.style.display = 'none';
+            return;
+        }
 
         if (laudos.length > 0) {
             document.getElementById('num-laudos-disp').textContent = `(${laudos.length})`;

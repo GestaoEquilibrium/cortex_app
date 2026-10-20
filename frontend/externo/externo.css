@@ -370,3 +370,7 @@ body:not(.tem-shell) .sidebar-backdrop { display: none !important; }
     .ea-msg { max-width: 88%; }
     .ea-chat-msgs { padding: 14px 12px 8px; }
 }
+
+/* Laudo Online (LO-5) */
+.ea-lo { margin-bottom: 14px; }
+.ea-lo .ea-linha { border-left: 3px solid #7C4DFF; }

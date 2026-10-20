@@ -27,7 +27,8 @@
     const C = () => window.LaudoCore, G = () => window.LaudoGraf;
     const esc = s => C().esc(s);
     const reduz = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const pilula = rot => `<span class="p-pilula ${({ sup: 'sup', med: 'med', mi: 'mi', inf: 'inf' })[C().faixa(rot)] || 'neu'}">${esc(rot)}</span>`;
+    const TOM_PILULA = { ok: 'sup', leve: 'mi', mod: 'mi', grave: 'inf', neutro: 'neu' };
+    const pilula = (rot, t) => `<span class="p-pilula ${(t && TOM_PILULA[t]) || ({ sup: 'sup', med: 'med', mi: 'mi', inf: 'inf' })[C().faixa(rot)] || 'neu'}">${esc(rot)}</span>`;
 
     // Capítulos (Documento 1, §9.2). A seção vai para o capítulo de SECOES[n][2],
     // ou para secoes[].capitulo_online quando o laudo define outro.
@@ -325,14 +326,14 @@
 
     const VISTAS_VITRINE_FORA = /^(cabecalho|tabela|tabela_subtestes|resumo|indice|qit_icg)$/;
     function expo(gr) {
-        const R = O.banco.resultados || {}, d = R[gr.sigla], info = INSTRUMENTOS[gr.sigla] || {};
+        const R = O.banco.resultados || {}, d = R[gr.sigla], info = Object.assign({ dominio: O.dominios[gr.sigla] }, INSTRUMENTOS[gr.sigla] || {});
         const dest = G().destaque(gr.sigla, d);
         const meta = gr.blocos.find(b => b.tipo === 'meta');
         const ehW = gr.sigla === 'WAIS-III' || gr.sigla === 'WISC-IV';
         const usados = new Set(meta ? [meta] : []);
         const destHtml = dest ? `<div class="p-dest"><small>${esc(dest.rotulo || 'Resultado')}</small>
             <b>${typeof dest.valor === 'number' ? `<span data-contar="${dest.valor}">${dest.valor}</span>` : esc(dest.valor)}</b>
-            ${dest.classe ? pilula(dest.classe) : ''}${dest.sub ? `<p>${esc(dest.sub)}</p>` : ''}${meta ? `<p class="p-dest-meta">${I(meta.texto)}</p>` : ''}</div>` : '';
+            ${dest.classe ? pilula(dest.classe, dest.tom) : ''}${dest.sub ? `<p>${esc(dest.sub)}</p>` : ''}${meta ? `<p class="p-dest-meta">${I(meta.texto)}</p>` : ''}</div>` : '';
         let corpo = '';
         if (ehW && d) {
             const idx = []; let cur = null;
@@ -584,6 +585,8 @@
             return nome ? Object.assign({}, c, { tit: nome }) : c;
         }).filter(c => porCap[c.id]);
 
+        O.dominios = {};
+        (O.doc.secoes || []).forEach(s => (s.blocos || []).forEach(b => { if (b.tipo === 'tabela_instrumentos') (b.linhas || []).forEach(l => { if (l.sigla && l.dominio) O.dominios[l.sigla] = l.dominio; }); }));
         const A = gruposAchados(porCap.achados ? porCap.achados.blocos : []);
         O.expos = {};
         A.grupos.forEach(g => { if (g.sigla && !O.expos[g.sigla]) O.expos[g.sigla] = g.id; });

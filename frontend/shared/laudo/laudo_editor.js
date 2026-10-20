@@ -224,6 +224,7 @@
             const editado = o && mudou(b, o);
             const tags = [];
             if (b.exibir === 'impressao') tags.push('<em class="lo-tag">só impressão</em>');
+            if (b.tipo === 'tabela' && b.sigla) tags.push('<em class="lo-tag" title="Teste corrigido fora do CORTEX: os números são os do Gerador">números do Gerador · sem conferência</em>');
             if (b.exibir === 'online') tags.push('<em class="lo-tag">só online</em>');
             if (b.oculto) tags.push('<em class="lo-tag">oculto</em>');
             if (b.quebra_antes) tags.push('<em class="lo-tag azul">página nova antes</em>');
@@ -694,7 +695,11 @@
 
         // ── resultado: escolher teste e vista, com prévia ─────────────────────
         function escolherResultado(existente, aoInserir) {
-            const disponiveis = Object.keys(st.banco.resultados || {}).filter(s => C().SIGLAS_DO_CORTEX.includes(s));
+            // testes do CORTEX e escalas com leitura (LO-6); apelidos ("SRS-2") ficam de fora para não repetir
+            const disponiveis = Object.keys(st.banco.resultados || {}).filter(s => {
+                const r = st.banco.resultados[s];
+                return C().SIGLAS_DO_CORTEX.includes(s) || (r && r.tipo === 'escala' && !r.erro && !r.apelido_de);
+            });
             if (!disponiveis.length) { toast('Nenhum teste corrigido no CORTEX para este paciente.', 'info'); return; }
             const atual = existente ? C().clonar(existente) : novoBloco('resultado', { sigla: disponiveis[0], vista: C().vistasDe(disponiveis[0])[0], opcoes: {} });
             atual.opcoes = atual.opcoes || {};
@@ -715,7 +720,7 @@
                 </div>
                 <div class="lo-modal-acoes"><button class="btn btn-secondary" data-fechar>Cancelar</button><button class="btn btn-primary" id="er-ok">${existente ? 'Aplicar' : 'Inserir'}</button></div>`, 'largo');
             const $ = id => m.querySelector('#' + id);
-            const NOMES = { cabecalho: 'Cabeçalho do teste', indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes', intervalos: 'Intervalos de confiança', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas' };
+            const NOMES = { cabecalho: 'Cabeçalho do teste', indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes', intervalos: 'Intervalos de confiança', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas', regua: 'Régua de gravidade', subescalas: 'Subescalas' };
             function encherVistas() {
                 const vs = C().vistasDe($('er-sigla').value);
                 $('er-vista').innerHTML = vs.map(v => `<option value="${v}" ${v === atual.vista ? 'selected' : ''}>${NOMES[v] || v}</option>`).join('');

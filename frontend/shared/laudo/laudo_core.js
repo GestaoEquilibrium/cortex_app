@@ -314,6 +314,9 @@
         // Inventário × testes corrigidos
         const inv = doc.inventario || [];
         const corrigidas = new Set((banco.aplicacoes || []).filter(a => a.corrigida).map(a => a.sigla));
+        Object.keys(banco.resultados || {}).forEach(s => { if (!(banco.resultados[s] || {}).erro) corrigidas.add(s); });
+        const AP = (window.LaudoEscalas && window.LaudoEscalas.APELIDOS) || {};
+        Object.keys(AP).forEach(ap => { if (AP[ap].some(s => corrigidas.has(s))) corrigidas.add(ap); });
         const faltam = inv.filter(sig => !corrigidas.has(sig));
         add('inventario', 'Testes', 'Inventário × testes corrigidos', faltam.length ? 'atencao' : 'ok',
             faltam.length ? `Sem aplicação corrigida no CORTEX: ${faltam.join(', ')}.` : `${inv.length} de ${inv.length} instrumentos corrigidos neste paciente.`, faltam);
@@ -322,18 +325,22 @@
         const conf = doc.conferencia || {};
         let total = 0; const div = []; const adiadas = [];
         Object.keys(conf).forEach(sig => Object.keys(conf[sig] || {}).forEach(k => {
-            // Escalas online ganham leitura do banco no LO-6; até lá ficam como informação.
-            if (!SIGLAS_DO_CORTEX.includes(sig)) { adiadas.push(`${sig} ${k}`); return; }
-            total++;
+            // Escala sem leitor no Laudo Online (ou teste fora do CORTEX): só informação.
+            const res = (banco.resultados || {})[sig];
+            const temLeitor = window.LaudoEscalas && (window.LaudoEscalas.leitor(sig) || (window.LaudoEscalas.APELIDOS[sig] || []).some(x => window.LaudoEscalas.leitor(x)));
+            if (!SIGLAS_DO_CORTEX.includes(sig) && !res && !temLeitor) { adiadas.push(`${sig} ${k}`); return; }
             const v = window.LaudoDados ? window.LaudoDados.valor(sig, k, banco) : undefined;
+            // escala lida, mas sem esse número (ex.: percentil que a tela não calcula): fica sem conferência
+            if (res && res.tipo === 'escala' && v === undefined) { adiadas.push(`${sig} ${k}`); return; }
+            total++;
             if (v === undefined || v === null || Number(v) !== Number(conf[sig][k])) div.push({ sigla: sig, chave: k, pacote: conf[sig][k], banco: v == null ? null : v });
         }));
         add('conferencia', 'Testes', 'Números do texto × banco', div.length ? 'importante' : (total ? 'ok' : 'atencao'),
             div.length ? div.map(d => `${d.sigla} ${d.chave}: texto diz ${d.pacote}, banco tem ${d.banco == null ? '—' : d.banco}`).join(' · ')
-                : (total ? `${total} de ${total} números conferem com o banco.` : 'O pacote não trouxe números de WAIS, WISC, RAVLT, FDT ou BFP para conferir.'), div);
+                : (total ? `${total} de ${total} números conferem com o banco.` : 'O pacote não trouxe números de testes corrigidos no CORTEX para conferir.'), div);
         if (adiadas.length)
-            add('conferencia_escalas', 'Testes', 'Números de escalas online', 'info',
-                `Ainda não conferidos com o banco (entram com as escalas, no LO-6): ${adiadas.join(', ')}.`, adiadas);
+            add('conferencia_escalas', 'Testes', 'Números sem conferência', 'info',
+                `Testes fora do CORTEX ou escalas ainda sem leitura no Laudo Online; o número fica como o Gerador escreveu: ${adiadas.join(', ')}.`, adiadas);
 
         // Pendências
         const pend = [];

@@ -272,6 +272,7 @@
         try { html = conteudo(b, ctx, sec); } catch (e) { console.warn('[bloco]', b, e); html = desconhecido(b); }
         const tags = [];
         if (b.exibir === 'impressao') tags.push('<em class="lo-tag">só impressão</em>');
+            if (b.tipo === 'tabela' && b.sigla) tags.push('<em class="lo-tag" title="Teste corrigido fora do CORTEX: os números são os do Gerador">números do Gerador · sem conferência</em>');
         if (b.exibir === 'online') tags.push('<em class="lo-tag">só online</em>');
         if (b.oculto) tags.push('<em class="lo-tag">oculto</em>');
         if (b.quebra_antes) tags.push('<em class="lo-tag">nova página antes</em>');

@@ -215,6 +215,26 @@
 .imp .cx-tb-lin span:not(:first-child) { text-align: center; }
 .imp .cx-tb-sep { padding: 5px 12px; font-size: 7.6px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #1E3A5F; background: #F1F5F9; }
 
+
+/* ── escalas online (LO-6): régua por zonas, subescalas e selo ─────────── */
+.imp .cx-rz { padding: 4px 4px 2px; }
+.imp .cx-rz + .cx-rz { margin-top: 10px; border-top: 1px dashed #E2E8F0; padding-top: 10px; }
+.imp .cx-rz-t { position: relative; display: flex; height: 12px; border-radius: 99px; overflow: visible; margin: 14px 0 0; }
+.imp .cx-rz-z { height: 100%; }
+.imp .cx-rz-z:first-child { border-radius: 99px 0 0 99px; } .imp .cx-rz-z:last-of-type { border-radius: 0 99px 99px 0; }
+.imp .rz-ok { background: #BBF7D0; } .imp .rz-leve { background: #FDE68A; } .imp .rz-mod { background: #FDBA74; } .imp .rz-grave { background: #FCA5A5; } .imp .rz-n, .imp .rz-neutro { background: #E2E8F0; }
+.imp .cx-rz-m { position: absolute; top: 50%; transform: translate(-50%, -50%); min-width: 24px; height: 24px; padding: 0 5px; border-radius: 99px; background: #1E3A5F; color: #fff; font-size: 9.5px; font-weight: 800; display: grid; place-items: center; box-shadow: 0 0 0 3px #fff; }
+.imp .cx-rz-esc { position: relative; height: 14px; margin-top: 6px; font-size: 8.5px; color: #64748B; }
+.imp .cx-rz-esc span { position: absolute; transform: translateX(-50%); }
+.imp .cx-rz-leg { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; margin-top: 4px; font-size: 8.4px; color: #475569; }
+.imp .cx-rz-leg i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.imp .cx-esc-cl { display: flex; align-items: center; gap: 10px; margin: 8px 0 0; }
+.imp .cx-esc-cl .selo { font-size: 9.5px; padding: 3px 10px; }
+.imp .cx-ind { font-style: normal !important; color: #1E3A5F !important; font-weight: 600; margin: 0 !important; }
+.imp .cx-fd-p small { color: #94A3B8; font-size: 8px; margin-left: 1px; }
+.imp .b-n { background: #94A3B8; }
+.imp .cx-fdc .cx-fd { height: auto; min-height: 21px; padding: 2px 0; }
+
 @media print {
     @page { size: A4; margin: 0; }
     .folhas { display: block; padding: 0; }

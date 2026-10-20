@@ -290,6 +290,76 @@
         return null;
     }
 
+    // ── ESCALAS ONLINE (LO-6) ─────────────────────────────────────────────────
+    // Desenho comum a todas as escalas, a partir do resumo do leitor
+    // (shared/laudo/escalas/). Mesmas cores das telas de correção.
+    const TOM_CLS = { ok: 'ok', leve: 'mi', mod: 'l', grave: 'eb', neutro: 'n' };
+    const seloTom = (rot, t) => `<span class="selo selo-${TOM_CLS[t] || tom(rot)}">${esc(rot || '—')}</span>`;
+    const pct = (v, min, max) => Math.max(0, Math.min(100, ((v - min) / Math.max(1e-9, max - min)) * 100));
+
+    function reguaEscala(r, titulo) {
+        if (!r || !Array.isArray(r.zonas) || !r.zonas.length) return '';
+        const min = r.min != null ? r.min : 0, max = r.max != null ? r.max : r.zonas[r.zonas.length - 1].ate;
+        // limites inteiros: a fronteira fica entre "até 12" e "a partir de 13", e a marca mostra o 13 (como nas telas)
+        const inteiro = r.zonas.every(z => Number.isInteger(z.ate)) && Number.isInteger(min) && Number.isInteger(max);
+        const fronteira = z => inteiro ? z.ate + 0.5 : z.ate;
+        const rotuloFronteira = z => inteiro ? z.ate + 1 : z.ate;
+        let ini = min;
+        const zonas = r.zonas.map((z, i) => {
+            const fim = i === r.zonas.length - 1 ? max : Math.min(max, fronteira(z));
+            const w = pct(fim, min, max) - pct(ini, min, max);
+            const h = `<span class="cx-rz-z rz-${esc(z.tom || 'n')}" style="width:${w.toFixed(2)}%" title="${esc(z.rotulo || '')}"></span>`;
+            ini = fim; return h;
+        }).join('');
+        const v = r.valor;
+        const marca = v != null ? `<span class="cx-rz-m" style="left:${pct(v, min, max).toFixed(2)}%">${esc(num(v))}</span>` : '';
+        const legenda = r.zonas.map(z => `<span><i class="rz-${esc(z.tom || 'n')}"></i>${esc(z.rotulo || '')}</span>`).join('');
+        const marcas = [[min, min]].concat(r.zonas.slice(0, -1).filter(z => fronteira(z) > min && fronteira(z) < max).map(z => [fronteira(z), rotuloFronteira(z)])).concat([[max, max]]);
+        return `<div class="cx-rz">${titulo ? `<p class="cx-regua-tit">${esc(titulo)}</p>` : ''}
+            <div class="cx-rz-t">${zonas}${marca}</div>
+            <div class="cx-rz-esc">${marcas.map(m => `<span style="left:${pct(m[0], min, max).toFixed(2)}%">${esc(num(m[1]))}</span>`).join('')}</div>
+            <div class="cx-rz-leg">${legenda}</div></div>`;
+    }
+
+    function linhasSub(R) {
+        const rg = R.regua;   // escalas em T (sem máximo por subescala) usam a faixa da régua principal
+        return (R.subescalas || []).map(sb => {
+            const lo = sb.max ? 0 : (rg ? rg.min : 0), hi = sb.max || (rg ? rg.max : null);
+            const w = hi != null && sb.valor != null ? pct(sb.valor, lo, hi) : 0;
+            return `<div class="cx-fd"${pop(sb.nome, `${sb.valor}${sb.max ? ' de ' + sb.max : ''} · ${sb.classificacao || ''}`)}><span class="cx-fd-n">${esc(sb.nome)}</span>
+                <span class="cx-fd-t">${hi != null ? `<i class="cx-fd-b b-${TOM_CLS[sb.tom] || 'n'} anim-x" style="width:${w.toFixed(1)}%"></i>` : ''}</span>
+                <span class="cx-fd-p">${esc(num(sb.valor))}${sb.max ? `<small>/${esc(sb.max)}</small>` : ''}</span>${seloTom(sb.classificacao, sb.tom)}</div>`;
+        }).join('');
+    }
+
+    function escala(b, d, sig) {
+        const R = d.resumo || {}, P = R.principal, op = b.opcoes || {};
+        const valorCab = P ? `${esc(num(P.valor))}${P.max ? `<small>/${esc(P.max)}</small>` : ''}` : '';
+        const cab = () => cabecalho({
+            supra: 'Escala', titulo: R.sigla || sig, sub: [R.nome, R.respondente ? 'Respondente: ' + R.respondente : null, R.norma],
+            rot: P ? P.rotulo : '', valor: valorCab, nota: P ? P.classificacao : ''
+        });
+        const ind = R.indicacao ? `<p class="cx-leg cima cx-ind">${esc(R.indicacao)}</p>` : '';
+        const subs = (R.subescalas || []).length ? `<div class="cx-card cx-fdc">${linhasSub(R)}</div>` : '';
+        const reguas = () => {
+            if (R.regua) return `<div class="cx-card cx-regua">${reguaEscala(R.regua, R.regua.rotulo || (P && P.rotulo))}</div>`;
+            const rs = (R.subescalas || []).filter(sb => sb.zonas && sb.zonas.length)
+                .map(sb => reguaEscala({ min: 0, max: sb.max, valor: sb.valor, zonas: sb.zonas }, `${sb.nome}${sb.classificacao ? ' · ' + sb.classificacao : ''}`)).join('');
+            return rs ? `<div class="cx-card cx-regua">${rs}</div>` : '';
+        };
+        if (b.vista === 'cartao') return `${op.sem_cabecalho ? '' : cab()}${P && P.classificacao ? `<div class="cx-esc-cl">${seloTom(P.classificacao, P.tom)}${ind}</div>` : ind}${reguas()}${subs}`;
+        if (b.vista === 'regua') return reguas() || subs;
+        if (b.vista === 'subescalas') return subs || reguas();
+        if (b.vista === 'tabela') {
+            const lin = [];
+            if (P) lin.push(`<div class="cx-tb-lin"><span class="forte">${esc(P.rotulo)}</span><span>${esc(num(P.valor))}</span><span>${esc(P.max != null ? P.max : '—')}</span><span>${seloTom(P.classificacao, P.tom)}</span></div>`);
+            (R.subescalas || []).forEach(sb => lin.push(`<div class="cx-tb-lin"><span>${esc(sb.nome)}${sb.extra ? ` <small>${esc(sb.extra)}</small>` : ''}</span><span>${esc(num(sb.valor))}</span><span>${esc(sb.max != null ? sb.max : '—')}</span><span>${seloTom(sb.classificacao, sb.tom)}</span></div>`));
+            (R.linhas || []).forEach(l => lin.push(`<div class="cx-tb-lin"><span>${esc(l[0])}</span><span>${esc(l[1])}</span><span></span><span></span></div>`));
+            return `<div class="cx-card cx-tb cx-tb4"><div class="cx-tb-cab"><span>Medida</span><span>Escore</span><span>Máximo</span><span>Classificação</span></div>${lin.join('')}</div>${ind}`;
+        }
+        return null;
+    }
+
     // ── Resumo (qualquer teste) ───────────────────────────────────────────────
     function resumo(sig, d) {
         const r = window.LaudoDados.resumo(sig, { resultados: { [sig]: d } });
@@ -305,8 +375,15 @@
     function indisponivel(b, banco) {
         const sig = b.sigla;
         if (!C().vistasDe(sig).includes(b.vista)) return `${sig}: vista "${b.vista}" ainda não construída`;
-        if (!C().SIGLAS_DO_CORTEX.includes(sig)) return `${sig}: escala online (desenho na etapa LO-6)`;
-        if (!(((banco || {}).resultados || {})[sig])) return `${sig}: teste não aplicado ou não corrigido no CORTEX`;
+        const d = ((banco || {}).resultados || {})[sig];
+        if (!C().SIGLAS_DO_CORTEX.includes(sig)) {
+            if (d && d.erro) return `${sig}: ${d.erro}`;
+            if (d) return null;
+            const E = window.LaudoEscalas;
+            const conhecida = E && (E.leitor(sig) || (E.APELIDOS[sig] || []).some(x => E.leitor(x)));
+            return conhecida || !E ? `${sig}: escala não respondida ou não corrigida no CORTEX` : `${sig}: sem leitura do banco no Laudo Online (teste fora do CORTEX ou escala ainda não incluída)`;
+        }
+        if (!d) return `${sig}: teste não aplicado ou não corrigido no CORTEX`;
         return null;
     }
 
@@ -320,11 +397,13 @@
         extra = extra || {};
         const sig = b.sigla, op = b.opcoes || {};
         if (!C().vistasDe(sig).includes(b.vista)) return aviso(`${esc(sig)}: componente ainda não construído (vista "${esc(b.vista)}").`, sig);
-        if (!C().SIGLAS_DO_CORTEX.includes(sig)) return aviso(`${esc(sig)}: o desenho das escalas online com dados do banco chega na etapa LO-6.`, sig);
         const d = ((banco || {}).resultados || {})[sig];
+        if (!C().SIGLAS_DO_CORTEX.includes(sig) && !d) return aviso(esc(indisponivel(b, banco) || `${sig}: sem dados`) + '.', sig);
         if (!d) return aviso(`${esc(sig)}: teste ainda não corrigido no CORTEX para este paciente.`, sig);
+        if (d.erro) return aviso(`${esc(sig)}: ${esc(d.erro)}.`, sig);
         let h = null;
         if (b.vista === 'resumo') h = resumo(sig, d);
+        else if (d.tipo === 'escala') h = escala(b, d, sig);
         else if (sig === 'WAIS-III' || sig === 'WISC-IV') h = wechsler(b, d, sig);
         else if (sig === 'RAVLT') h = ravlt(b, d);
         else if (sig === 'FDT') h = fdt(b, d);
@@ -338,6 +417,12 @@
     /** Número-destaque de cada instrumento (página online, LO-5). */
     function destaque(sigla, d) {
         if (!d) return null;
+        if (d.tipo === 'escala') {
+            const R = d.resumo || {};
+            if (R.principal) return { valor: R.principal.valor, rotulo: R.principal.rotulo, sub: R.indicacao || R.nome || '', classe: R.principal.classificacao, tom: R.principal.tom };
+            const s0 = (R.subescalas || []).slice().sort((a, b) => ({ grave: 3, mod: 2, leve: 1 }[b.tom] || 0) - ({ grave: 3, mod: 2, leve: 1 }[a.tom] || 0))[0];
+            return s0 ? { valor: s0.valor, rotulo: s0.nome, sub: R.indicacao || R.nome || '', classe: s0.classificacao, tom: s0.tom } : null;
+        }
         if (sigla === 'WAIS-III' || sigla === 'WISC-IV') {
             const c = d.compostos || {}, g = icgDe(d), interp = d._interpretacao;
             if (interp && interp.qitInterpretavel === false && g) return { valor: g.composto, rotulo: 'ICG', sub: `Capacidade geral · QIT não interpretável (amplitude ${interp.amplitude})`, classe: g.classificacao || classComp(g.composto) };

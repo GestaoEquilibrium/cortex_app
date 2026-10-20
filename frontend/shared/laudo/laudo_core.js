@@ -152,7 +152,15 @@
     /** Colunas pintadas pela classificação: as escolhidas, ou as de título classificação/faixa/resultado. */
     function colunasColoridas(b) {
         if (Array.isArray(b.colorir)) return b.colorir;
-        return (b.cabecalho || []).map((h, k) => /classifica|faixa|resultado|interpreta/i.test(String(h)) ? k : -1).filter(k => k >= 0);
+        // padrão: pinta a coluna pelo título (Classificação, Faixa, Resultado, Interpretação…) ou,
+        // com outro título, quando a maioria das células é uma classificação (Superior, Médio, Inferior…)
+        const linhas = b.linhas || [];
+        return (b.cabecalho || []).map((h, k) => {
+            if (/classifica|faixa|resultado|interpreta|desempenho|n[ií]vel/i.test(String(h))) return k;
+            const vals = linhas.map(l => lerCelula((l || [])[k]).texto.trim()).filter(Boolean);
+            const ok = vals.filter(v => v.length <= 40 && faixa(v)).length;
+            return vals.length && ok / vals.length >= 0.6 ? k : -1;
+        }).filter(k => k >= 0);
     }
     /** { fundo, selo, css, texto } de uma célula (k = índice da coluna). */
     function celulaTabela(b, txt, k) {

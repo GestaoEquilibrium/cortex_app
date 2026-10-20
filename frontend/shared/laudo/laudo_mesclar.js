@@ -142,5 +142,104 @@
         return doc;
     }
 
-    window.LaudoMesclar = { montar, intro3, normativas };
+    // ── Comparação de conteúdo (sem layout e sem marcas internas) ────────────
+    const CHAVES_LAYOUT = ['id', 'origem', 'exibir', 'oculto', 'quebra_antes', 'manter_com_proximo', 'complementos', 'nota_interna'];
+    function conteudo(b) {
+        if (!b) return null;
+        const o = {};
+        Object.keys(b).sort().forEach(k => { if (!CHAVES_LAYOUT.includes(k) && k[0] !== '_') o[k] = b[k]; });
+        return JSON.stringify(o);
+    }
+    function mudou(a, b) { return conteudo(a) !== conteudo(b); }
+
+    function indexar(doc) {
+        const m = {};
+        (doc.secoes || []).forEach(s => (s.blocos || []).forEach((b, i) => { m[b.id] = { b, sec: s, i }; }));
+        return m;
+    }
+
+    /**
+     * Reimportação de um pacote revisado (Documento 1, §8.3).
+     *   atual    → documento com as edições de quem revisa
+     *   original → documento_original (baseline da última importação)
+     * Devolve { doc, original, resumo } — `original` é a nova baseline.
+     */
+    function reimportar(entrada) {
+        const core = C();
+        const doc = core.clonar(entrada.atual);
+        const orig = indexar(entrada.original || { secoes: [] });
+        const novoDoc = montar({ modelo: entrada.modelo, pacote: entrada.pacote, banco: entrada.banco });
+        const novo = indexar(novoDoc);
+        const agora = new Date().toISOString();
+        const resumo = { substituidos: [], conflitos: [], removidos: [], mantidos_fora: [], novos: [] };
+        doc.lixeira = doc.lixeira || [];
+        const naLixeira = new Set(doc.lixeira.map(x => x.bloco && x.bloco.id));
+
+        // 1. Blocos do Gerador que já existem no laudo
+        (doc.secoes || []).forEach(sec => {
+            for (let i = 0; i < (sec.blocos || []).length; i++) {
+                const b = sec.blocos[i];
+                if (b.origem !== 'gerador') continue;
+                const o = orig[b.id] ? orig[b.id].b : null;
+                const n = novo[b.id] ? novo[b.id].b : null;
+                const editado = o ? mudou(b, o) : true;
+                if (n) {
+                    const geradorMudou = o ? mudou(n, o) : mudou(n, b);
+                    if (!editado) {
+                        if (geradorMudou) {
+                            const layout = {}; CHAVES_LAYOUT.forEach(k => { if (k in b) layout[k] = b[k]; });
+                            sec.blocos[i] = Object.assign(core.clonar(n), layout);
+                            resumo.substituidos.push(b.id);
+                        }
+                    } else if (geradorMudou && mudou(n, b)) {
+                        b._conflito = { novo: core.clonar(n), em: agora };
+                        resumo.conflitos.push(b.id);
+                    }
+                } else if (!editado) {
+                    doc.lixeira.push({ bloco: b, secao_id: sec.id, posicao: i, apagado_em: agora, motivo: 'saiu_do_pacote' });
+                    sec.blocos.splice(i, 1); i--;
+                    resumo.removidos.push(b.id);
+                } else {
+                    b._fora_do_pacote = true;
+                    resumo.mantidos_fora.push(b.id);
+                }
+            }
+        });
+
+        // 2. Blocos novos do pacote: entram logo após o bloco que vinha antes deles no pacote
+        const atualIdx = () => indexar(doc);
+        (novoDoc.secoes || []).forEach(ns => {
+            (ns.blocos || []).forEach((nb, k) => {
+                if (nb.origem !== 'gerador') return;
+                let idx = atualIdx();
+                if (idx[nb.id] || naLixeira.has(nb.id)) return;
+                let sec = (doc.secoes || []).find(s => s.id === ns.id || s.n === ns.n);
+                if (!sec) {
+                    sec = { id: ns.id, n: ns.n, titulo: ns.titulo, oculta: false, quebra_antes: false, capitulo_online: ns.capitulo_online, blocos: [] };
+                    doc.secoes.push(sec);
+                }
+                let pos = -1;
+                for (let j = k - 1; j >= 0; j--) {
+                    const ant = ns.blocos[j];
+                    if (idx[ant.id] && idx[ant.id].sec === sec) { pos = idx[ant.id].i + 1; break; }
+                }
+                if (pos < 0) {
+                    const primeiroGerador = sec.blocos.findIndex(b => b.origem === 'gerador');
+                    pos = primeiroGerador >= 0 ? primeiroGerador : sec.blocos.length;
+                }
+                sec.blocos.splice(pos, 0, core.clonar(nb));
+                resumo.novos.push(nb.id);
+            });
+        });
+
+        // 3. Dados gerais do pacote novo
+        doc.inventario = novoDoc.inventario;
+        doc.conferencia = novoDoc.conferencia;
+        doc.meta = Object.assign({}, doc.meta || {}, novoDoc.meta || {});
+        doc.origem = Object.assign({}, doc.origem || {}, { motor: (novoDoc.origem || {}).motor, gerado_em: (novoDoc.origem || {}).gerado_em, reimportado_em: agora });
+        core.garantirIds(doc);
+        return { doc, original: novoDoc, resumo };
+    }
+
+    window.LaudoMesclar = { montar, intro3, normativas, reimportar, conteudo, mudou, CHAVES_LAYOUT };
 })();

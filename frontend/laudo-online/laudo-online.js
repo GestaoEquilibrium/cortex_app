@@ -83,6 +83,7 @@
     }
 
     async function abrirLaudo(id, semRender) {
+        if (st.editor && st.editor.tem()) await st.editor.gravar();
         const { data, error } = await sb().from('laudos_online').select('*').eq('id', id).maybeSingle();
         if (error) throw error;
         if (!data) throw new Error('Laudo não encontrado ou sem permissão para abrir.');
@@ -109,6 +110,24 @@
         let pacote = null;
         if (st.laudo && st.laudo.pacote_original) { const r = C().lerPacote(st.laudo.pacote_original); pacote = r.pacote || null; }
         st.validacao = C().validar(st.doc, st.banco, { pacote: pacote || st.doc });
+    }
+
+    function editavel() { return st.admClin && st.laudo && st.laudo.status === 'em_construcao' && !!window.LaudoEditor; }
+    function editor() {
+        if (!editavel()) return null;
+        if (!st.editor || st.editor._laudo !== st.laudo.id) {
+            st.editor = window.LaudoEditor.criar({
+                estado: st, render, toast,
+                conteudoLeitura: (b, ctx, sec) => conteudo(b, ctx, sec),
+                aposGravar: () => {
+                    reconferir();
+                    const p = document.querySelector('.lo-painel');
+                    if (p) { p.innerHTML = painel(); ligarPainel(p); }
+                }
+            });
+            st.editor._laudo = st.laudo.id;
+        }
+        return st.editor;
     }
 
     function podeImportar() {
@@ -152,7 +171,9 @@
                 <button role="tab" aria-selected="false" disabled title="Chega na sprint LO-5">Online</button>
             </nav>
             <div class="lo-acoes">
+                ${editavel() ? editor().statusHtml() : ''}
                 ${l ? '<button class="lo-btn" id="lo-reconferir" title="Lê os resultados do banco de novo e refaz as conferências">↻ Reconferir</button>' : ''}
+                ${editavel() ? '<button class="lo-btn" id="lo-reimportar" title="Trazer uma versão revisada do pacote do Gerador sem perder suas edições">⟳ Reimportar</button>' : ''}
                 ${l && l.status === 'em_construcao' && st.admClin ? '<button class="lo-btn" id="lo-descartar" title="Apaga esta versão em construção para importar de novo">🗑 Descartar</button>' : ''}
                 ${podeImportar() ? '<button class="lo-btn prim" id="lo-importar">⤓ Importar pacote</button>' : ''}
             </div>
@@ -168,9 +189,19 @@
                 'Laudos em construção só o admin clínico abre. Quando o laudo for finalizado, ele aparece aqui para toda a equipe.');
         }
         if (st.visao === 'impressao') return impressaoHtml();
+        if (editavel()) {
+            const e = editor();
+            return `
+            <div class="lo-grade">
+                <aside class="lo-arvore" aria-label="Seções do laudo">${e.arvoreHtml()}</aside>
+                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco para mover, ocultar, apagar e mais opções; use o <b>+</b> entre blocos para inserir. A gravação é automática.</div>
+                    <article class="lo-papel ed-papel" lang="pt-BR">${e.documentoHtml()}</article></section>
+                <aside class="lo-painel" aria-label="Conferências">${painel()}</aside>
+            </div>`;
+        }
         const ro = st.laudo.status !== 'em_construcao'
             ? '<div class="lo-faixa ok">Laudo finalizado. Mudanças agora só em uma nova versão.</div>'
-            : '<div class="lo-faixa">Modo leitura. A edição dos blocos chega na sprint LO-3.</div>';
+            : '<div class="lo-faixa">Modo leitura: só o admin clínico edita o laudo em construção.</div>';
         return `
         <div class="lo-grade">
             <aside class="lo-arvore" aria-label="Seções do laudo">${arvore()}</aside>
@@ -302,8 +333,9 @@
     }
 
     // ── Visão Impressão (LO-2) ────────────────────────────────────────────────
-    function trocarVisao(v) {
+    async function trocarVisao(v) {
         if (!st.laudo || v === st.visao) return;
+        if (st.editor && st.editor.tem()) await st.editor.gravar();
         st.visao = v;
         try { history.replaceState(null, '', `?paciente=${st.pacienteId}&laudo=${st.laudo.id}${v === 'impressao' ? '&visao=impressao' : ''}`); } catch (e) { /* ok */ }
         render();
@@ -449,6 +481,7 @@
 
     async function ajustar(acao, el) {
         if (ajustando || !podeAjustar()) return;
+        if (st.editor && st.editor.tem()) await st.editor.gravar();
         const copia = JSON.stringify(st.doc);
         const eventos = [];
         const ehTitulo = !!el.dataset.tituloSecao;
@@ -631,7 +664,8 @@
             <p class="lo-painel-sub">Dados do banco lidos às ${esc(quando)}. Avisos não impedem nada; você decide na finalização.</p>
             <div class="lo-checks">${v.checks.map(chk).join('')}</div>
             ${v.pendencias && v.pendencias.length ? `<h3>Pendências</h3><ul class="lo-pends">${v.pendencias.map(x => `<li${x.bloco ? ` data-ir-bloco="${esc(x.bloco)}"` : ''}><span>Seção ${esc(x.secao)}</span>${esc(x.texto)}</li>`).join('')}</ul>` : ''}
-            ${hist}`;
+            ${hist}
+            ${editavel() ? editor().lixeiraHtml() : ''}`;
     }
     function chk(c) {
         const n = NIVEL[c.nivel] || NIVEL.info;
@@ -665,14 +699,21 @@
         raiz.querySelectorAll('[data-ir]').forEach(a => a.addEventListener('click', ev => {
             ev.preventDefault(); const el = document.getElementById('sec-' + a.dataset.ir); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }));
-        raiz.querySelectorAll('[data-ir-bloco]').forEach(li => li.addEventListener('click', () => {
-            const el = document.getElementById('b-' + li.dataset.irBloco);
-            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('piscar'); setTimeout(() => el.classList.remove('piscar'), 1600); }
-        }));
+        on('lo-reimportar', () => abrirImportar(true));
+        const p = raiz.querySelector('.lo-painel'); if (p) ligarPainel(p, true);
+        if (editavel() && st.visao === 'editor') editor().ligar(raiz);
         raiz.querySelectorAll('.lo-termo').forEach(t => {
             t.addEventListener('click', () => balao(t));
             t.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); balao(t); } });
         });
+    }
+
+    function ligarPainel(p, primeiraVez) {
+        p.querySelectorAll('[data-ir-bloco]').forEach(li => li.addEventListener('click', () => {
+            const el = document.getElementById('b-' + li.dataset.irBloco);
+            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('piscar'); setTimeout(() => el.classList.remove('piscar'), 1600); }
+        }));
+        if (!primeiraVez && editavel()) editor().ligarLixeira(p);
     }
 
     function balao(el) {
@@ -719,15 +760,18 @@
     }
 
     // ── Importar pacote ───────────────────────────────────────────────────────
-    function abrirImportar() {
-        if (!podeImportar()) { toast('Já existe um Laudo Online em construção para este paciente.', 'info'); return; }
+    function abrirImportar(reimportar) {
+        reimportar = reimportar === true;
+        if (!reimportar && !podeImportar()) { toast('Já existe um Laudo Online em construção para este paciente.', 'info'); return; }
+        if (reimportar && !editavel()) return;
         st.importacao = null;
+        st.reimportando = reimportar;
         const m = document.createElement('div');
         m.className = 'lo-modal';
         m.innerHTML = `
             <div class="lo-modal-card" role="dialog" aria-modal="true" aria-labelledby="lo-imp-tit">
-                <h2 id="lo-imp-tit">Importar pacote do Gerador</h2>
-                <p>Cole o conteúdo do arquivo <code>.cortex.json</code> ou escolha o arquivo. O código do paciente no pacote precisa ser <b>${esc(st.banco.paciente.codigo || '—')}</b>.</p>
+                <h2 id="lo-imp-tit">${reimportar ? 'Reimportar pacote revisado' : 'Importar pacote do Gerador'}</h2>
+                <p>Cole o conteúdo do arquivo <code>.cortex.json</code> ou escolha o arquivo. O código do paciente no pacote precisa ser <b>${esc(st.banco.paciente.codigo || '—')}</b>.${reimportar ? ' Trechos que você editou ficam como estão; o que o Gerador mudou neles aparece para você decidir.' : ''}</p>
                 <textarea id="lo-imp-txt" spellcheck="false" placeholder='{ "formato": "cortex-laudo", "versao_formato": "2.0", ... }'></textarea>
                 <div class="lo-imp-linha">
                     <label class="lo-btn sec"><input type="file" id="lo-imp-arq" accept=".json,application/json" hidden>📎 Escolher arquivo</label>
@@ -737,7 +781,7 @@
                 <div id="lo-imp-res" aria-live="polite"></div>
                 <div class="lo-modal-acoes">
                     <button class="btn btn-secondary" id="lo-imp-cancelar">Cancelar</button>
-                    <button class="btn btn-primary" id="lo-imp-montar" disabled>Montar laudo</button>
+                    <button class="btn btn-primary" id="lo-imp-montar" disabled>${reimportar ? 'Reimportar' : 'Montar laudo'}</button>
                 </div>
             </div>`;
         document.body.appendChild(m);
@@ -753,7 +797,7 @@
         });
         $('lo-imp-conferir').addEventListener('click', () => conferirImportacao(m));
         $('lo-imp-txt').addEventListener('input', () => { $('lo-imp-montar').disabled = true; });
-        $('lo-imp-montar').addEventListener('click', () => montarEGravar(m));
+        $('lo-imp-montar').addEventListener('click', () => reimportar ? reimportarPacote(m) : montarEGravar(m));
         $('lo-imp-txt').focus();
     }
 
@@ -827,6 +871,57 @@
             console.error('[importar]', err);
             btn.disabled = false; btn.textContent = 'Montar laudo';
             m.querySelector('#lo-imp-res').insertAdjacentHTML('afterbegin', `<p class="lo-imp-erro">Não consegui montar: ${esc(err.message || 'erro desconhecido')}</p>`);
+        }
+    }
+
+    async function reimportarPacote(m) {
+        const imp = st.importacao;
+        if (!imp || imp.validacao.bloqueios.length) return;
+        const btn = m.querySelector('#lo-imp-montar');
+        btn.disabled = true; btn.textContent = 'Reimportando…';
+        try {
+            const e = editor();
+            if (e.tem()) await e.gravar();
+            const modelo = await obterModelo();
+            const r = window.LaudoMesclar.reimportar({ atual: st.doc, original: st.laudo.documento_original, pacote: imp.pacote, modelo, banco: st.banco });
+            const up = await sb().from('laudos_online').update({ documento_original: r.original }).eq('id', st.laudo.id);
+            if (up.error) throw up.error;
+            st.laudo.documento_original = r.original;
+            const atual = st.doc;
+            Object.keys(atual).forEach(k => { delete atual[k]; });
+            Object.assign(atual, r.doc);
+            const rs = r.resumo;
+            const { data, error } = await sb().rpc('laudo_online_salvar', {
+                p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc,
+                p_eventos: [{ acao: 'reimportar', bloco_id: null, depois: Object.assign({ motor: (imp.pacote.origem || {}).motor || null }, rs) }]
+            });
+            if (error) throw error;
+            if (!data || !data.ok) throw new Error((data && data.mensagem) || 'Não consegui gravar.');
+            st.laudo.revisao = data.revisao;
+            m.remove();
+            reconferir(); render();
+            const linhas = [
+                [rs.substituidos.length, 'trecho(s) atualizado(s) com a versão nova (você não tinha mexido)'],
+                [rs.novos.length, 'trecho(s) novo(s) inserido(s)'],
+                [rs.removidos.length, 'trecho(s) que saíram do pacote foram para a lixeira'],
+                [rs.conflitos.length, 'trecho(s) que você editou e o Gerador também mudou — marcados em amarelo para você decidir'],
+                [rs.mantidos_fora.length, 'trecho(s) que você editou e saíram do pacote — ficaram, marcados']
+            ].filter(x => x[0]);
+            const md = document.createElement('div');
+            md.className = 'lo-modal';
+            md.innerHTML = `<div class="lo-modal-card" role="dialog" aria-modal="true"><h2>Reimportação feita</h2>
+                ${linhas.length ? `<ul class="ed-resumo">${linhas.map(x => `<li><b>${x[0]}</b> ${esc(x[1])}</li>`).join('')}</ul>` : '<p>Nada mudou: o pacote é igual ao que já estava no laudo.</p>'}
+                <div class="lo-modal-acoes"><button class="btn btn-primary" data-ok>Ver o laudo</button></div></div>`;
+            document.body.appendChild(md);
+            md.querySelector('[data-ok]').addEventListener('click', () => {
+                md.remove();
+                const alvo = document.querySelector('.tem-conflito, .ed-bloco .ed-conflito');
+                if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        } catch (err) {
+            console.error('[reimportar]', err);
+            btn.disabled = false; btn.textContent = 'Reimportar';
+            m.querySelector('#lo-imp-res').insertAdjacentHTML('afterbegin', `<p class="lo-imp-erro">Não consegui reimportar: ${esc(err.message || 'erro desconhecido')}</p>`);
         }
     }
 

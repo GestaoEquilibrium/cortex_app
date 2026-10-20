@@ -143,7 +143,7 @@
     }
 
     // ── Comparação de conteúdo (sem layout e sem marcas internas) ────────────
-    const CHAVES_LAYOUT = ['id', 'origem', 'exibir', 'oculto', 'quebra_antes', 'manter_com_proximo', 'complementos', 'nota_interna'];
+    const CHAVES_LAYOUT = ['id', 'origem', 'exibir', 'oculto', 'quebra_antes', 'manter_com_proximo', 'dividir_tabela', 'complementos', 'nota_interna'];
     function conteudo(b) {
         if (!b) return null;
         const o = {};

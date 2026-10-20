@@ -9,7 +9,8 @@
    fechamento com convite.
    Pagina sozinho: mede cada pedaço numa folha invisível da mesma largura;
    respeita quebra_antes, quebra_pagina e manter_com_proximo; parágrafo que
-   não cabe é dividido entre frases; título nunca fica sozinho no pé.
+   não cabe é dividido entre frases; tabela com dividir_tabela é dividida entre
+   linhas (cabeçalho repetido); título nunca fica sozinho no pé.
    A tela mostra exatamente o que sai no "Salvar como PDF" do navegador.
    Expõe: window.LaudoImpressao.desenhar(doc, alvo, ctx) → Promise<{ paginas }>
    ============================================================================ */
@@ -41,6 +42,14 @@
         const I = t => C().inline(t, pac, { impressao: true });
         let blocoAtual = null, secaoAtual = null;
         const add = (html, o) => out.push(Object.assign({ html, manter: false, dividir: false, quebra: false, bloco: blocoAtual, secaoId: secaoAtual }, o || {}));
+        // Tabela automática: com "Dividir tabela entre páginas" ligado, as linhas que não cabem
+        // seguem na folha seguinte com o cabeçalho da tabela repetido (sem buraco em branco).
+        const addTab = (b, abre, linhas, depois, o) => {
+            const tab = { abre, linhas, fecha: '</tbody></table>', depois: depois || '' };
+            const html = abre + linhas.join('') + tab.fecha + tab.depois;
+            if (b.dividir_tabela && linhas.length > 1) add(html, Object.assign(o, { dividir: true, tab }));
+            else add(html, o);
+        };
         ctx.omitidos = [];
         const textos = doc.textos || {};
         const resp = textos.responsavel || window.LaudoModeloPadrao.RESP;
@@ -86,7 +95,7 @@
                             linhas = [['Data de nascimento', esc(C().dataBR(pac.paciente.data_nascimento))]].concat(linhas)
                                 .concat([['Profissional Responsável', esc(`${resp} — Neuropsicólogo — ${registro}`)]]);
                         }
-                        add(`<table class="i-campos"><tbody>${linhas.map(l => `<tr><th scope="row">${l[0]}</th><td>${l[1]}</td></tr>`).join('')}</tbody></table>`, o); break;
+                        addTab(b, '<table class="i-campos"><tbody>', linhas.map(l => `<tr><th scope="row">${l[0]}</th><td>${l[1]}</td></tr>`), '', o); break;
                     }
                     case 'cracha': {
                         const p = pac.paciente;
@@ -98,11 +107,13 @@
                             <div><p class="i-chips"><span>CFP 06/2019</span><span>LGPD</span><span class="v">Acesso auditado</span></p><p class="i-qrtit">Acompanhe este paciente</p><p class="i-qrtxt">${esc(b.texto || '')}</p></div></div>`, o); break;
                     case 'tabela_instrumentos': {
                         const marca = { complementar: '†', sem_peso: '‡' };
-                        add(`<table class="i-tab i-instr"><thead><tr><th>Instrumento</th><th>Domínio Avaliado</th></tr></thead><tbody>${(b.linhas || []).map(l => `<tr><td class="n">${esc(l.nome || l.sigla)}${marca[l.status] ? ' ' + marca[l.status] : ''}</td><td class="d">${esc(l.dominio || '')}</td></tr>`).join('')}</tbody></table>`, o); break;
+                        addTab(b, '<table class="i-tab i-instr"><thead><tr><th>Instrumento</th><th>Domínio Avaliado</th></tr></thead><tbody>',
+                            (b.linhas || []).map(l => `<tr><td class="n">${esc(l.nome || l.sigla)}${marca[l.status] ? ' ' + marca[l.status] : ''}</td><td class="d">${esc(l.dominio || '')}</td></tr>`), '', o); break;
                     }
                     case 'classificacao_qi':
-                        add(`<table class="i-tab i-qi"><thead><tr><th>% Pop.</th><th>Percentil (PC)</th><th>QI / Escore</th><th>Classificação Científica</th><th>Interpretação Clínica</th></tr></thead><tbody>${(b.linhas || []).map(f => { const t = C().faixa(f[3]) || 'med'; return `<tr><td>${esc(f[0])}</td><td>${esc(f[1])}</td><td>${esc(f[2])}</td><td class="cl cl-${t}">${esc(f[3])}</td><td class="cl cl-${t}">${esc(f[4])}</td></tr>`; }).join('')}</tbody></table>
-                            <div class="i-leg4"><span class="cl-sup">■ Superior</span><span class="cl-med">■ Médio</span><span class="cl-mi">■ Médio Inferior</span><span class="cl-inf">■ Inferior</span></div>
+                        addTab(b, '<table class="i-tab i-qi"><thead><tr><th>% Pop.</th><th>Percentil (PC)</th><th>QI / Escore</th><th>Classificação Científica</th><th>Interpretação Clínica</th></tr></thead><tbody>',
+                            (b.linhas || []).map(f => { const t = C().faixa(f[3]) || 'med'; return `<tr><td>${esc(f[0])}</td><td>${esc(f[1])}</td><td>${esc(f[2])}</td><td class="cl cl-${t}">${esc(f[3])}</td><td class="cl cl-${t}">${esc(f[4])}</td></tr>`; }),
+                            `<div class="i-leg4"><span class="cl-sup">■ Superior</span><span class="cl-med">■ Médio</span><span class="cl-mi">■ Médio Inferior</span><span class="cl-inf">■ Inferior</span></div>
                             <p class="i-nota">OBS. Legenda de classificação nas tabelas: para facilitar a compreensão, os resultados são sinalizados por cores.</p>`, o); break;
                     case 'resultado': {
                         // Resultado sem dado no banco (teste não aplicado ou não corrigido) não vai para o PDF.
@@ -128,7 +139,8 @@
                             if (mm) { t = mm[1] === 'neutro' ? null : mm[1]; x = x.slice(mm[0].length); } else if (pintar) t = C().faixa(x);
                             return `<td${t ? ` class="cl cl-${t}"` : ''}>${I(x)}</td>`;
                         };
-                        add(`<table class="i-tab">${larg}<thead><tr>${cab.map(h => `<th>${I(h)}</th>`).join('')}</tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map((c, k) => cel(c, colorir.includes(k))).join('')}</tr>`).join('')}</tbody></table>${b.nota ? `<p class="i-nota">${I(b.nota)}</p>` : ''}`, o);
+                        addTab(b, `<table class="i-tab">${larg}<thead><tr>${cab.map(h => `<th>${I(h)}</th>`).join('')}</tr></thead><tbody>`,
+                            (b.linhas || []).map(l => `<tr>${l.map((c, k) => cel(c, colorir.includes(k))).join('')}</tr>`), b.nota ? `<p class="i-nota">${I(b.nota)}</p>` : '', o);
                         break;
                     }
                     case 'fidedignidade':
@@ -142,7 +154,8 @@
                     case 'afastada': add(`<p class="i-p"><b>${I(b.condicao)} — afastada.</b> ${I(b.motivo)}${b.fonte ? ` Fonte: ${I(b.fonte)}.` : ''}</p>`, Object.assign(o, { dividir: true })); break;
                     case 'mapa': {
                         const st = { preservado: 'ok', atencao: 'at', comprometido: 'cr' };
-                        add(`<table class="i-tab i-mapa"><thead><tr><th>Status</th><th>Domínio</th><th>Desempenho</th><th>Instrumentos Principais</th></tr></thead><tbody>${(b.linhas || []).map(l => `<tr class="m-${st[l.status] || 'at'}"><td><span class="m-dot"></span></td><td><b>${I(l.dominio)}</b></td><td>${I(l.desempenho)}</td><td class="m-ins">${I(l.instrumentos)}</td></tr>`).join('')}</tbody></table>`, o); break;
+                        addTab(b, '<table class="i-tab i-mapa"><thead><tr><th>Status</th><th>Domínio</th><th>Desempenho</th><th>Instrumentos Principais</th></tr></thead><tbody>',
+                            (b.linhas || []).map(l => `<tr class="m-${st[l.status] || 'at'}"><td><span class="m-dot"></span></td><td><b>${I(l.dominio)}</b></td><td>${I(l.desempenho)}</td><td class="m-ins">${I(l.instrumentos)}</td></tr>`), '', o); break;
                     }
                     case 'referencias': (b.itens || []).forEach((r, k) => add(`<p class="i-ref">${I(r)}</p>`, k === 0 ? o : {})); break;
                     case 'imagem': {
@@ -196,6 +209,16 @@
         return [`<p class="${m[1]} cont-a">${fs.slice(0, best).join(' ')}</p>`, `<p class="${m[1]} cont-b">${fs.slice(best).join(' ')}</p>`];
     }
 
+    // Tabela: quantas linhas cabem (no mínimo 1); o resto vira um pedaço novo com o cabeçalho repetido.
+    function partirTab(tab, cabe) {
+        const L = tab.linhas;
+        let lo = 1, hi = L.length - 1, best = 0;
+        while (lo <= hi) { const k = (lo + hi) >> 1; if (cabe(tab.abre + L.slice(0, k).join('') + tab.fecha)) { best = k; lo = k + 1; } else hi = k - 1; }
+        if (!best) return null;
+        const resto = { abre: tab.abre, linhas: L.slice(best), fecha: tab.fecha, depois: tab.depois };
+        return [tab.abre + L.slice(0, best).join('') + tab.fecha, resto.abre + resto.linhas.join('') + resto.fecha + resto.depois, resto];
+    }
+
     // ── paginação ─────────────────────────────────────────────────────────────
     function paginar(ps, medidor) {
         const alt = html => { medidor.innerHTML = `<div class="ck">${html}</div>`; return medidor.firstChild.getBoundingClientRect().height; };
@@ -212,15 +235,20 @@
             if (p.manter && !(fila[i - 1] && fila[i - 1].manter && !fila[i - 1].vazio)) {
                 let j = i, juntos = 0;
                 while (j < fila.length && fila[j].manter && !fila[j].vazio) { juntos += fila[j].h; j++; }
-                if (j < fila.length && !fila[j].vazio && !fila[j].quebra) juntos += fila[j].dividir ? Math.min(fila[j].h, 70) : fila[j].h;
+                if (j < fila.length && !fila[j].vazio && !fila[j].quebra) juntos += fila[j].dividir ? Math.min(fila[j].h, fila[j].tab ? 90 : 70) : fila[j].h;
                 if (usado + juntos > CORPO_H && atual.length && juntos <= CORPO_H) nova();
             }
             if (usado + p.h <= CORPO_H) { atual.push(emb(p, p.html)); usado += p.h; continue; }
-            if (p.dividir && CORPO_H - usado > 60) {
+            if (p.tab && CORPO_H - usado > 60) {
+                const sobra = CORPO_H - usado;
+                const r = partirTab(p.tab, h => alt(h) <= sobra);
+                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: r[2].linhas.length > 1, tab: r[2].linhas.length > 1 ? r[2] : null, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId }); continue; }
+            } else if (p.dividir && CORPO_H - usado > 60) {
                 const sobra = CORPO_H - usado;
                 const r = partirP(p.html, h => alt(h) <= sobra);
                 if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: true, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId }); continue; }
             }
+            if (p.tab && atual.length) { nova(); i--; continue; }   // folha nova e tenta dividir de novo nela
             nova();
             atual.push(emb(p, p.html)); usado += p.h;
         }

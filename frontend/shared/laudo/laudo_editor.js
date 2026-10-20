@@ -229,6 +229,7 @@
             if (b.oculto) tags.push('<em class="lo-tag">oculto</em>');
             if (b.quebra_antes) tags.push('<em class="lo-tag azul">página nova antes</em>');
             if (b.manter_com_proximo && b.tipo !== 'titulo') tags.push('<em class="lo-tag">junto do próximo</em>');
+            if (b.dividir_tabela) tags.push('<em class="lo-tag">divide entre páginas</em>');
             if (editado) tags.push('<em class="lo-tag roxo">editado</em>');
             const conflito = b._conflito ? `
                 <div class="ed-conflito"><b>O Gerador mudou este trecho na reimportação.</b> A sua versão continua aqui.
@@ -629,6 +630,7 @@
             itens.push('<hr>');
             itens.push(`<button data-m="quebra">${b.quebra_antes ? '✓ ' : ''}Página nova antes</button>`);
             itens.push(`<button data-m="manter">${b.manter_com_proximo ? '✓ ' : ''}Manter junto do próximo</button>`);
+            if (['tabela', 'tabela_instrumentos', 'classificacao_qi', 'mapa', 'campos'].includes(b.tipo)) itens.push(`<button data-m="dividir_tabela" title="O que não couber continua na folha seguinte, com o cabeçalho repetido">${b.dividir_tabela ? '✓ ' : ''}Dividir a tabela entre páginas</button>`);
             if (b.tipo === 'resultado') itens.push('<button data-m="vista">Trocar vista / opções do gráfico</button>');
             itens.push('<hr>');
             itens.push(`<button data-m="complementos">💬 Anotações do online (${(b.complementos || []).length})</button>`);
@@ -637,6 +639,7 @@
             popMenu(botao, itens.join(''), m => {
                 if (m.startsWith('exibir:')) { b.exibir = m.split(':')[1]; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { exibir: b.exibir } }); }
                 else if (m === 'quebra') { b.quebra_antes = !b.quebra_antes; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { quebra_antes: b.quebra_antes } }); }
+                else if (m === 'dividir_tabela') { if (b.dividir_tabela) delete b.dividir_tabela; else b.dividir_tabela = true; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { dividir_tabela: !!b.dividir_tabela } }); }
                 else if (m === 'manter') { b.manter_com_proximo = !b.manter_com_proximo; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { manter_com_proximo: b.manter_com_proximo } }); }
                 else if (m === 'vista') escolherResultado(b);
                 else if (m === 'complementos') editarComplementos(b);
@@ -648,7 +651,7 @@
         function restaurarBloco(id) {
             const r = achar(id), o = original(id); if (!r || !o) return;
             const antes = r.b;
-            const layout = {}; ['oculto', 'quebra_antes', 'manter_com_proximo', 'exibir', 'complementos', 'nota_interna'].forEach(k => { if (k in antes) layout[k] = antes[k]; });
+            const layout = {}; ['oculto', 'quebra_antes', 'manter_com_proximo', 'dividir_tabela', 'exibir', 'complementos', 'nota_interna'].forEach(k => { if (k in antes) layout[k] = antes[k]; });
             r.sec.blocos[r.i] = Object.assign(C().clonar(o), layout);
             delete ed.edicoes[id];
             mudouEstrutura({ acao: 'restaurar', bloco_id: id, antes });
@@ -702,6 +705,11 @@
             });
             // testes com figuras capturadas da tela de correção (inclusive os sem leitura de números)
             Object.keys(st.doc.figuras || {}).forEach(s => { if (!disponiveis.includes(s)) disponiveis.push(s); });
+            // todo teste corrigido no CORTEX entra, nem que seja só com o cabeçalho
+            (st.banco.aplicacoes || []).forEach(a => {
+                const r = (st.banco.resultados || {})[a.sigla];
+                if (a.corrigida && !disponiveis.includes(a.sigla) && !(r && r.apelido_de)) disponiveis.push(a.sigla);
+            });
             if (!disponiveis.length) { toast('Nenhum teste corrigido no CORTEX para este paciente.', 'info'); return; }
             const atual = existente ? C().clonar(existente) : novoBloco('resultado', { sigla: disponiveis[0], vista: C().vistasDe(disponiveis[0])[0], opcoes: {} });
             atual.opcoes = atual.opcoes || {};
@@ -725,16 +733,21 @@
             const NOMES = { indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes', intervalos: 'Intervalos de confiança', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', cabecalho: 'Só o cabeçalho', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas', regua: 'Régua de gravidade', subescalas: 'Subescalas' };
             function encherVistas() {
                 const sig = $('er-sigla').value;
-                const temDados = !!(st.banco.resultados || {})[sig];
-                const vs = temDados ? C().vistasDe(sig).filter(v => v !== 'figura') : [];
+                const R = (st.banco.resultados || {})[sig];
+                const temDados = !!(R && !R.erro);
+                const vs = temDados ? C().vistasDe(sig).filter(v => v !== 'figura') : ['cabecalho'];
                 const F = (st.doc.figuras || {})[sig];
                 const figs = F ? (F.blocos || []) : [];
+                const temCabFig = figs.some(f => f.chave === 'cabecalho');
                 const atualV = atual.vista === 'figura' ? 'fig:' + ((atual.opcoes || {}).figura || '') : atual.vista;
                 const opt = (v, rot) => `<option value="${esc(v)}" ${v === atualV ? 'selected' : ''}>${esc(rot)}</option>`;
-                const gDesenho = vs.length ? `<optgroup label="Desenho do Laudo Online">${vs.map(v => opt(v, v === 'cabecalho' ? 'Só o cabeçalho (desenho)' : (NOMES[v] || v))).join('')}</optgroup>` : '';
+                // sempre há um "Só o cabeçalho": o da tela de correção quando foi capturado, senão o desenhado aqui
+                const topo = temCabFig ? '' : opt('cabecalho', 'Só o cabeçalho');
+                const vsD = temCabFig ? vs : vs.filter(v => v !== 'cabecalho');
+                const gDesenho = vsD.length ? `<optgroup label="Desenho do Laudo Online">${vsD.map(v => opt(v, v === 'cabecalho' ? 'Só o cabeçalho (desenho)' : (NOMES[v] || v))).join('')}</optgroup>` : '';
                 const gFigura = figs.length ? `<optgroup label="Igual à tela de correção">${figs.map(f => opt('fig:' + f.chave, f.chave === 'cabecalho' ? 'Só o cabeçalho' : f.titulo)).join('')}</optgroup>` : '';
                 // escalas e demais testes: a figura da tela de correção vem primeiro
-                $('er-vista').innerHTML = C().SIGLAS_DO_CORTEX.includes(sig) ? gDesenho + gFigura : gFigura + gDesenho;
+                $('er-vista').innerHTML = topo + (C().SIGLAS_DO_CORTEX.includes(sig) ? gDesenho + gFigura : gFigura + gDesenho);
                 if (!$('er-vista').value && $('er-vista').options.length) $('er-vista').selectedIndex = 0;
             }
             function ler() {
@@ -1023,7 +1036,7 @@
             if (escolha === 'ver') { verMudancas(b, b._conflito.novo, ['O Gerador mudou este trecho', 'Riscado = a sua versão. Sublinhado = a versão nova do Gerador.']); return; }
             if (escolha === 'meu') { delete b._conflito; mudouEstrutura({ acao: 'aceitar', bloco_id: id, depois: { conflito: 'manter_meu' } }); return; }
             if (escolha === 'novo') {
-                const layout = {}; ['oculto', 'quebra_antes', 'manter_com_proximo', 'exibir', 'complementos', 'nota_interna'].forEach(k => { if (k in b) layout[k] = b[k]; });
+                const layout = {}; ['oculto', 'quebra_antes', 'manter_com_proximo', 'dividir_tabela', 'exibir', 'complementos', 'nota_interna'].forEach(k => { if (k in b) layout[k] = b[k]; });
                 const antes = C().clonar(b);
                 r.sec.blocos[r.i] = Object.assign(C().clonar(b._conflito.novo), layout);
                 mudouEstrutura({ acao: 'aceitar', bloco_id: id, antes, depois: { conflito: 'usar_novo' } });

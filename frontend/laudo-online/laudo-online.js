@@ -497,6 +497,9 @@
     }
 
     let barraAjuste = null, ajustando = false;
+    // tabelas montadas pelo laudo (não os resultados dos testes) que podem continuar na folha seguinte
+    const TABELAS_AUTO = ['tabela', 'tabela_instrumentos', 'classificacao_qi', 'mapa', 'campos'];
+
     function ligarAjustes(alvo) {
         if (!barraAjuste) {
             barraAjuste = document.createElement('div');
@@ -518,7 +521,7 @@
     function mostrarAjuste(el) {
         if (ajustando) return;
         const ehTitulo = !!el.dataset.tituloSecao;
-        let temEspacoAcima = false, temPagina = false;
+        let temEspacoAcima = false, temPagina = false, tabela = null;
         if (ehTitulo) {
             const sec = (st.doc.secoes || []).find(x => x.id === el.dataset.secao);
             temPagina = !!(sec && sec.quebra_antes);
@@ -529,13 +532,15 @@
             const r = acharBloco(el.dataset.bloco);
             if (!r || r.b.tipo === 'espaco') { barraAjuste.hidden = true; return; }
             temPagina = !!r.b.quebra_antes;
+            if (TABELAS_AUTO.includes(r.b.tipo) && (r.b.tipo === 'campos' || (r.b.linhas || []).length > 1)) tabela = !!r.b.dividir_tabela;
             const a = anteriorVisivel(r.sec, r.i);
             temEspacoAcima = !!(a && a.b.tipo === 'espaco');
         }
         barraAjuste.innerHTML = `
             <button data-ajuste="espaco" title="Empurra este trecho para baixo, como dar Enter">↵ Espaço</button>
             ${temEspacoAcima ? '<button data-ajuste="tirar_espaco" title="Tira um espaço acima deste trecho">⌫ Tirar espaço</button>' : ''}
-            <button data-ajuste="pagina" class="${temPagina ? 'ativo' : ''}" title="${temPagina ? 'Tira a página nova antes deste trecho' : 'Começa uma folha nova a partir deste trecho'}">${temPagina ? '✕ Tirar página nova' : '⤓ Página nova aqui'}</button>`;
+            <button data-ajuste="pagina" class="${temPagina ? 'ativo' : ''}" title="${temPagina ? 'Tira a página nova antes deste trecho' : 'Começa uma folha nova a partir deste trecho'}">${temPagina ? '✕ Tirar página nova' : '⤓ Página nova aqui'}</button>
+            ${tabela === null ? '' : `<button data-ajuste="dividir_tabela" class="${tabela ? 'ativo' : ''}" title="${tabela ? 'A tabela volta a ficar inteira numa folha só' : 'O que não couber continua na folha seguinte, com o cabeçalho da tabela repetido'}">${tabela ? '✕ Não dividir a tabela' : '✂ Dividir a tabela entre páginas'}</button>`}`;
         barraAjuste._alvo = el;
         const r = el.getBoundingClientRect();
         barraAjuste.hidden = false;
@@ -567,7 +572,11 @@
         } else {
             const r = acharBloco(el.dataset.bloco);
             if (!r) return;
-            if (acao === 'pagina') {
+            if (acao === 'dividir_tabela') {
+                const antes = !!r.b.dividir_tabela;
+                if (antes) delete r.b.dividir_tabela; else r.b.dividir_tabela = true;
+                eventos.push({ acao: 'editar', bloco_id: r.b.id, antes: { dividir_tabela: antes }, depois: { dividir_tabela: !antes } });
+            } else if (acao === 'pagina') {
                 r.b.quebra_antes = !r.b.quebra_antes;
                 eventos.push({ acao: 'editar', bloco_id: r.b.id, antes: { quebra_antes: !r.b.quebra_antes }, depois: { quebra_antes: r.b.quebra_antes } });
             } else if (acao === 'espaco') {
@@ -1091,7 +1100,8 @@
     function aplicacoesComTela() {
         const vistas = new Set(), lista = [];
         (st.banco.aplicacoes || []).forEach(a => {      // a mais recente de cada teste, já corrigida
-            if (!a.corrigida || vistas.has(a.sigla)) return;
+            // BPA-2: a tela é só de marcação do crivo, não tem laudo para fotografar
+            if (!a.corrigida || vistas.has(a.sigla) || /^BPA-?2$/i.test(a.sigla)) return;
             vistas.add(a.sigla); lista.push({ id: a.id, sigla: a.sigla, nome: a.nome });
         });
         return lista;

@@ -39,7 +39,9 @@
         const out = [];
         const pac = ctx.pac;
         const I = t => C().inline(t, pac, { impressao: true });
-        const add = (html, o) => out.push(Object.assign({ html, manter: false, dividir: false, quebra: false }, o || {}));
+        let blocoAtual = null, secaoAtual = null;
+        const add = (html, o) => out.push(Object.assign({ html, manter: false, dividir: false, quebra: false, bloco: blocoAtual, secaoId: secaoAtual }, o || {}));
+        ctx.omitidos = [];
         const textos = doc.textos || {};
         const resp = textos.responsavel || window.LaudoModeloPadrao.RESP;
         const registro = textos.registro || window.LaudoModeloPadrao.CRP;
@@ -47,10 +49,12 @@
         (doc.secoes || []).forEach((sec, si) => {
             if (sec.oculta) return;
             const blocos = (sec.blocos || []).filter(visivelNaImpressao);
+            blocoAtual = null; secaoAtual = sec.id;
             add(`<h2 class="i-h2" id="i-sec-${esc(sec.id)}">${esc(sec.n)}. ${esc(sec.titulo)}</h2>`,
                 { manter: true, secao: sec.n, quebra: !!sec.quebra_antes || si === 0 });
             for (let i = 0; i < blocos.length; i++) {
                 const b = blocos[i];
+                blocoAtual = b.id;
                 const o = { quebra: !!b.quebra_antes, manter: !!b.manter_com_proximo };
                 switch (b.tipo) {
                     case 'titulo':
@@ -101,9 +105,12 @@
                             <div class="i-leg4"><span class="cl-sup">■ Superior</span><span class="cl-med">■ Médio</span><span class="cl-mi">■ Médio Inferior</span><span class="cl-inf">■ Inferior</span></div>
                             <p class="i-nota">OBS. Legenda de classificação nas tabelas: para facilitar a compreensão, os resultados são sinalizados por cores.</p>`, o); break;
                     case 'resultado': {
+                        // Resultado sem dado no banco (teste não aplicado ou não corrigido) não vai para o PDF.
+                        const falta = G().indisponivel(b, ctx.banco);
+                        if (falta) { ctx.omitidos.push(falta); break; }
                         // Dois resultados seguidos com largura "metade" saem lado a lado.
                         const prox = blocos[i + 1];
-                        if ((b.opcoes || {}).largura === 'metade' && prox && prox.tipo === 'resultado' && (prox.opcoes || {}).largura === 'metade' && !prox.quebra_antes) {
+                        if ((b.opcoes || {}).largura === 'metade' && prox && prox.tipo === 'resultado' && (prox.opcoes || {}).largura === 'metade' && !prox.quebra_antes && !G().indisponivel(prox, ctx.banco)) {
                             add(`<div class="i-par"><div>${G().render(b, ctx.banco, ctx)}</div><div>${G().render(prox, ctx.banco, ctx)}</div></div>`, o);
                             i++;
                         } else {
@@ -194,6 +201,7 @@
         const alt = html => { medidor.innerHTML = `<div class="ck">${html}</div>`; return medidor.firstChild.getBoundingClientRect().height; };
         const pags = []; let atual = [], usado = 0;
         const nova = () => { if (atual.length) pags.push(atual); atual = []; usado = 0; };
+        const emb = (p, html) => `<div class="i-ck" data-bloco="${esc(p.bloco || '')}" data-secao="${esc(p.secaoId || '')}"${p.secao ? ' data-titulo-secao="1"' : ''}>${html}</div>`;
         const fila = ps.map(p => Object.assign({}, p, { h: p.vazio ? 0 : alt(p.html) }));
         for (let i = 0; i < fila.length; i++) {
             const p = fila[i];
@@ -207,14 +215,14 @@
                 if (j < fila.length && !fila[j].vazio && !fila[j].quebra) juntos += fila[j].dividir ? Math.min(fila[j].h, 70) : fila[j].h;
                 if (usado + juntos > CORPO_H && atual.length && juntos <= CORPO_H) nova();
             }
-            if (usado + p.h <= CORPO_H) { atual.push(p.html); usado += p.h; continue; }
+            if (usado + p.h <= CORPO_H) { atual.push(emb(p, p.html)); usado += p.h; continue; }
             if (p.dividir && CORPO_H - usado > 60) {
                 const sobra = CORPO_H - usado;
                 const r = partirP(p.html, h => alt(h) <= sobra);
-                if (r) { atual.push(r[0]); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: true, h: alt(r[1]) }); continue; }
+                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: true, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId }); continue; }
             }
             nova();
-            atual.push(p.html); usado += p.h;
+            atual.push(emb(p, p.html)); usado += p.h;
         }
         if (atual.length) pags.push(atual);
         return pags;
@@ -293,7 +301,7 @@
         alvo.innerHTML = `<div class="folhas">${folhas.map(f => `<div class="folha-quadro">${f}</div>`).join('')}</div>`;
         escalar(alvo);
         await carregarImagens(alvo);
-        return { paginas: pags.length, folhas: folhas.length, alvo: Number(imp.alvo_paginas || 25) };
+        return { paginas: pags.length, folhas: folhas.length, alvo: Number(imp.alvo_paginas || 25), omitidos: Array.from(new Set(ctx.omitidos || [])) };
     }
 
     window.LaudoImpressao = { desenhar, escalar, qrSVG, A4, BASE, pedacos };

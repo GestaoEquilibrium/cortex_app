@@ -213,6 +213,14 @@
 .lo-imp-aviso { margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; font-size: 13px; }
 .lo-imp-aviso p { margin: 2px 0; }
 .lo-folhas { max-width: 820px; margin: 0 auto; }
+.lo-imp-dica { flex-basis: 100%; font-size: 12px !important; color: #6D28D9 !important; }
+.lo-folhas .i-ck { position: relative; border-radius: 3px; transition: box-shadow .15s, background .15s; }
+.lo-folhas .i-ck:hover { box-shadow: 0 0 0 2px rgba(124, 77, 255, .35); background: rgba(124, 77, 255, .03); }
+.lo-ajuste { position: absolute; z-index: 70; display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: #141F3C; box-shadow: 0 10px 24px -10px rgba(0,0,0,.5); }
+.lo-ajuste button { border: 0; border-radius: 7px; padding: 5px 9px; font: 600 12px Inter, sans-serif; color: #fff; background: rgba(255,255,255,.1); cursor: pointer; white-space: nowrap; }
+.lo-ajuste button:hover { background: linear-gradient(135deg, #2F6FED, #7C4DFF); }
+.lo-ajuste button.ativo { background: #F59E0B; color: #141F3C; }
+@media print { .lo-ajuste { display: none !important; } }
 
 @media (max-width: 1280px) {
     .lo-grade { grid-template-columns: 200px minmax(0, 1fr); }

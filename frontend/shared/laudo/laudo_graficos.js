@@ -301,6 +301,15 @@
         return `<div class="i-alerta cx-aviso" data-sigla="${esc(sig || '')}">⚠️ ${txt}</div>`;
     }
 
+    /** Motivo de um resultado não poder ser desenhado (null = pode). */
+    function indisponivel(b, banco) {
+        const sig = b.sigla;
+        if (!C().vistasDe(sig).includes(b.vista)) return `${sig}: vista "${b.vista}" ainda não construída`;
+        if (!C().SIGLAS_DO_CORTEX.includes(sig)) return `${sig}: escala online (desenho na etapa LO-6)`;
+        if (!(((banco || {}).resultados || {})[sig])) return `${sig}: teste não aplicado ou não corrigido no CORTEX`;
+        return null;
+    }
+
     /**
      * Desenha um bloco `resultado`.
      * @param b      bloco { sigla, vista, opcoes }
@@ -338,5 +347,5 @@
         return r ? { valor: r.valor, rotulo: r.principal, sub: '', classe: r.classificacao } : null;
     }
 
-    window.LaudoGraf = { render, destaque, selo, tom, classComp, classPond, SUBTESTES, FACETAS, NOME_IDX };
+    window.LaudoGraf = { render, indisponivel, destaque, selo, tom, classComp, classPond, SUBTESTES, FACETAS, NOME_IDX };
 })();

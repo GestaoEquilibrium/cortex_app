@@ -314,7 +314,8 @@
             ? '<span class="lo-imp-ok">PDF desta versão já enviado para a aba Laudo</span>' : '';
         return `
         <div class="lo-imp-barra">
-            <div class="lo-imp-info"><b id="lo-imp-pags">Paginando…</b><span>Folhas A4 iguais ao PDF. Os números vêm do banco.</span>${enviado}</div>
+            <div class="lo-imp-info"><b id="lo-imp-pags">Paginando…</b><span>Folhas A4 iguais ao PDF. Os números vêm do banco.</span>${enviado}
+                ${podeAjustar() ? '<span class="lo-imp-dica">Para ajustar as páginas, passe o mouse num trecho da folha: <b>↵ Espaço</b> empurra para baixo e <b>Página nova</b> começa outra folha.</span>' : ''}</div>
             <div class="lo-imp-acoes">
                 ${st.admClin ? '<button class="btn btn-secondary" id="lo-enviar-assinatura">✍️ Enviar para assinatura</button>' : ''}
                 <button class="btn btn-primary" id="lo-gerar-pdf">🖨 Gerar PDF</button>
@@ -369,12 +370,139 @@
             const av = document.getElementById('lo-imp-aviso');
             const avisos = [];
             if (r.paginas > r.alvo) avisos.push(`O laudo passou de ${r.alvo} páginas (alvo do modelo). Isso não impede nada.`);
+            if (r.omitidos && r.omitidos.length) avisos.push(`Não saem no PDF: ${r.omitidos.join('; ')}.`);
             if (!ctx.linkProntuario) avisos.push('O QR "Acompanhe este paciente" sai em branco: só admin gera o token do prontuário.');
             if (!ctx.assinaturaImg) avisos.push('Sem imagem de assinatura cadastrada: o rodapé mostra o nome. Cadastre em Configurações → Perfil.');
             if (av) { av.hidden = !avisos.length; av.innerHTML = avisos.map(a => `<p>⚠️ ${esc(a)}</p>`).join(''); }
+            if (podeAjustar()) ligarAjustes(alvo);
         } catch (err) {
             console.error('[impressão]', err);
             alvo.innerHTML = `<div class="lo-desc"><b>Não consegui montar as folhas.</b> ${esc(err.message || '')}</div>`;
+        }
+    }
+
+    // ── Ajuste de páginas direto na folha (↵ Espaço / Página nova) ────────────
+    function podeAjustar() { return st.admClin && st.laudo && st.laudo.status === 'em_construcao'; }
+
+    function acharBloco(id) {
+        for (const sec of (st.doc.secoes || [])) {
+            const i = (sec.blocos || []).findIndex(b => b.id === id);
+            if (i >= 0) return { sec, i, b: sec.blocos[i] };
+        }
+        return null;
+    }
+    function anteriorVisivel(sec, i) {
+        for (let k = i - 1; k >= 0; k--) { const b = sec.blocos[k]; if (b && !b.oculto && b.exibir !== 'online') return { b, k }; }
+        return null;
+    }
+    function novoEspaco() {
+        return C().completarBloco({ id: 'u.' + C().aleatorio(8), tipo: 'espaco', altura: 'm', origem: 'manual' }, 'manual');
+    }
+
+    let barraAjuste = null, ajustando = false;
+    function ligarAjustes(alvo) {
+        if (!barraAjuste) {
+            barraAjuste = document.createElement('div');
+            barraAjuste.className = 'lo-ajuste';
+            barraAjuste.hidden = true;
+            document.body.appendChild(barraAjuste);
+            barraAjuste.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck')) barraAjuste.hidden = true; });
+            barraAjuste.addEventListener('click', ev => {
+                const bt = ev.target.closest('button[data-ajuste]');
+                if (bt && barraAjuste._alvo) ajustar(bt.dataset.ajuste, barraAjuste._alvo);
+            });
+        }
+        alvo.querySelectorAll('.i-ck').forEach(el => {
+            el.addEventListener('mouseenter', () => mostrarAjuste(el));
+        });
+        alvo.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !barraAjuste.contains(ev.relatedTarget)) barraAjuste.hidden = true; });
+    }
+
+    function mostrarAjuste(el) {
+        if (ajustando) return;
+        const ehTitulo = !!el.dataset.tituloSecao;
+        let temEspacoAcima = false, temPagina = false;
+        if (ehTitulo) {
+            const sec = (st.doc.secoes || []).find(x => x.id === el.dataset.secao);
+            temPagina = !!(sec && sec.quebra_antes);
+            const idx = st.doc.secoes.indexOf(sec), ant = idx > 0 ? st.doc.secoes[idx - 1] : null;
+            const ult = ant && ant.blocos && ant.blocos[ant.blocos.length - 1];
+            temEspacoAcima = !!(ult && ult.tipo === 'espaco');
+        } else {
+            const r = acharBloco(el.dataset.bloco);
+            if (!r || r.b.tipo === 'espaco') { barraAjuste.hidden = true; return; }
+            temPagina = !!r.b.quebra_antes;
+            const a = anteriorVisivel(r.sec, r.i);
+            temEspacoAcima = !!(a && a.b.tipo === 'espaco');
+        }
+        barraAjuste.innerHTML = `
+            <button data-ajuste="espaco" title="Empurra este trecho para baixo, como dar Enter">↵ Espaço</button>
+            ${temEspacoAcima ? '<button data-ajuste="tirar_espaco" title="Tira um espaço acima deste trecho">⌫ Tirar espaço</button>' : ''}
+            <button data-ajuste="pagina" class="${temPagina ? 'ativo' : ''}" title="${temPagina ? 'Tira a página nova antes deste trecho' : 'Começa uma folha nova a partir deste trecho'}">${temPagina ? '✕ Tirar página nova' : '⤓ Página nova aqui'}</button>`;
+        barraAjuste._alvo = el;
+        const r = el.getBoundingClientRect();
+        barraAjuste.hidden = false;
+        // dentro do próprio trecho, no canto de cima à direita: o mouse vai do texto à barra sem sair dele
+        barraAjuste.style.top = (window.scrollY + r.top + 2) + 'px';
+        barraAjuste.style.left = (window.scrollX + Math.max(8, r.right - barraAjuste.offsetWidth - 2)) + 'px';
+    }
+
+    async function ajustar(acao, el) {
+        if (ajustando || !podeAjustar()) return;
+        const copia = JSON.stringify(st.doc);
+        const eventos = [];
+        const ehTitulo = !!el.dataset.tituloSecao;
+        if (ehTitulo) {
+            const secs = st.doc.secoes, sec = secs.find(x => x.id === el.dataset.secao);
+            if (!sec) return;
+            const ant = secs[secs.indexOf(sec) - 1];
+            if (acao === 'pagina') {
+                sec.quebra_antes = !sec.quebra_antes;
+                eventos.push({ acao: 'editar', bloco_id: sec.id, antes: { quebra_antes: !sec.quebra_antes }, depois: { quebra_antes: sec.quebra_antes } });
+            } else if (acao === 'espaco' && ant) {
+                const novo = novoEspaco(); ant.blocos.push(novo);
+                eventos.push({ acao: 'inserir', bloco_id: novo.id, depois: { tipo: 'espaco', antes_de: sec.id } });
+            } else if (acao === 'tirar_espaco' && ant && ant.blocos.length && ant.blocos[ant.blocos.length - 1].tipo === 'espaco') {
+                const tirado = ant.blocos.pop();
+                eventos.push({ acao: 'apagar', bloco_id: tirado.id, antes: tirado });
+            }
+        } else {
+            const r = acharBloco(el.dataset.bloco);
+            if (!r) return;
+            if (acao === 'pagina') {
+                r.b.quebra_antes = !r.b.quebra_antes;
+                eventos.push({ acao: 'editar', bloco_id: r.b.id, antes: { quebra_antes: !r.b.quebra_antes }, depois: { quebra_antes: r.b.quebra_antes } });
+            } else if (acao === 'espaco') {
+                const novo = novoEspaco(); r.sec.blocos.splice(r.i, 0, novo);
+                eventos.push({ acao: 'inserir', bloco_id: novo.id, depois: { tipo: 'espaco', antes_de: r.b.id } });
+            } else if (acao === 'tirar_espaco') {
+                const a = anteriorVisivel(r.sec, r.i);
+                if (a && a.b.tipo === 'espaco') { r.sec.blocos.splice(a.k, 1); eventos.push({ acao: 'apagar', bloco_id: a.b.id, antes: a.b }); }
+            }
+        }
+        if (!eventos.length) return;
+        ajustando = true;
+        barraAjuste.hidden = true;
+        const y = window.scrollY;
+        try {
+            const { data, error } = await sb().rpc('laudo_online_salvar', { p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc, p_eventos: eventos });
+            if (error) throw error;
+            if (!data || !data.ok) {
+                st.doc = JSON.parse(copia); st.laudo.documento = st.doc;
+                toast((data && data.mensagem) || 'Não consegui gravar.', 'danger');
+                if (data && data.erro === 'revisao') setTimeout(() => location.reload(), 1500);
+                return;
+            }
+            st.laudo.revisao = data.revisao;
+            st.laudo.documento = st.doc;
+            st.impressao = null;
+            await desenharImpressao();
+            window.scrollTo(0, y);
+        } catch (err) {
+            st.doc = JSON.parse(copia); st.laudo.documento = st.doc;
+            toast('Não consegui gravar o ajuste: ' + (err.message || ''), 'danger');
+        } finally {
+            ajustando = false;
         }
     }
 

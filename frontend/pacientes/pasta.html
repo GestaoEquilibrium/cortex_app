@@ -1076,8 +1076,10 @@
             if (error) throw error;
 
             laudosCache = data || [];
-            container.innerHTML = renderLaudo(laudosCache);
+            const online = await carregarLaudoOnlineResumo();
+            container.innerHTML = renderLaudo(laudosCache, online);
             bindLaudoUpload();
+            bindLaudoOnline(online);
         } catch (err) {
             console.error('[laudo] erro ao carregar:', err);
             container.innerHTML = `
@@ -1090,12 +1092,97 @@
         }
     }
 
-    function renderLaudo(laudos) {
+    // ── Laudo Online (LO-1): código do paciente + versões ──────────────────
+    // Se o SQL do LO-1 ainda não rodou, a parte online simplesmente não aparece.
+    async function carregarLaudoOnlineResumo() {
+        try {
+            const [pac, lo] = await Promise.all([
+                window.cortexClient.from('pacientes').select('codigo').eq('id', pacienteId).maybeSingle(),
+                window.cortexClient.from('laudos_online')
+                    .select('id, versao, status, errata, created_at, finalizado_em, online_liberado_em, finalizador:finalizado_por(nome_completo)')
+                    .eq('paciente_id', pacienteId).order('versao', { ascending: false })
+            ]);
+            if (pac.error) throw pac.error;
+            return { codigo: (pac.data || {}).codigo || null, versoes: lo.error ? [] : (lo.data || []), ok: true };
+        } catch (err) {
+            console.warn('[laudo online] indisponível:', err.message || err);
+            return { ok: false, codigo: null, versoes: [] };
+        }
+    }
+
+    const LO_STATUS = {
+        em_construcao: ['Em construção', 'amb'], aguardando_revisao_supervisor: ['Em revisão', 'amb'],
+        pronto_para_devolutiva: ['Finalizado', 'ok'], devolutiva_realizada: ['Devolutiva feita', 'ok'],
+        entregue: ['Entregue', 'ok'], errata: ['Errata', 'roxo']
+    };
+
+    function renderLaudoOnline(online) {
+        if (!online || !online.ok) return '';
+        const ehClinico = window.cortexProfissional?.perfil === 'admin_clinico';
+        const temConstrucao = online.versoes.some(v => v.status === 'em_construcao');
+        const url = (extra) => `../laudo-online/laudo-online.html?paciente=${encodeURIComponent(pacienteId)}${extra || ''}`;
+        const linhas = online.versoes.map(v => {
+            const [txt, cls] = LO_STATUS[v.status] || [v.status, 'amb'];
+            const quando = v.finalizado_em ? `Finalizado em ${formatarDataHora(v.finalizado_em)}${v.finalizador?.nome_completo ? ' · ' + escapeHtml(v.finalizador.nome_completo) : ''}`
+                : `Importado em ${formatarDataHora(v.created_at)}`;
+            return `
+                <div class="lo-pasta-versao">
+                    <span class="lo-pasta-v">v${v.versao}</span>
+                    <div class="lo-pasta-info">
+                        <span class="lo-pasta-status ${cls}">${escapeHtml(txt)}</span>
+                        ${v.online_liberado_em ? '<span class="lo-pasta-status azul">Online liberado</span>' : ''}
+                        <small>${quando}</small>
+                    </div>
+                    <a class="btn btn-secondary btn-sm" href="${url('&laudo=' + v.id)}">Abrir</a>
+                </div>`;
+        }).join('');
+        return `
+            <div class="lo-pasta">
+                <div class="lo-pasta-codigo">
+                    <div>
+                        <small>Código do paciente</small>
+                        <strong id="lo-pasta-codigo">${escapeHtml(online.codigo || '—')}</strong>
+                        <p>Cole este código na conversa do Gerador de Laudos junto com os PDFs.</p>
+                    </div>
+                    ${online.codigo ? '<button class="btn btn-secondary btn-sm" id="lo-pasta-copiar" title="Copiar o código">📋 Copiar</button>' : ''}
+                </div>
+                <div class="lo-pasta-online">
+                    <div class="lo-pasta-online-topo">
+                        <div>
+                            <h3>Laudo Online</h3>
+                            <p>Laudo montado no CORTEX a partir do pacote do Gerador, com os resultados do banco.</p>
+                        </div>
+                        ${ehClinico && !temConstrucao ? `<a class="btn btn-primary btn-sm" href="${url('&importar=1')}">⤓ Importar pacote</a>` : ''}
+                    </div>
+                    ${linhas || `<p class="lo-pasta-vazio">${ehClinico ? 'Nenhum Laudo Online ainda. Importe o pacote .cortex.json do Gerador para começar.' : 'Nenhum Laudo Online finalizado para este paciente.'}</p>`}
+                </div>
+            </div>`;
+    }
+
+    function bindLaudoOnline(online) {
+        const btn = document.getElementById('lo-pasta-copiar');
+        if (!btn || !online?.codigo) return;
+        btn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(online.codigo);
+                window.CortexUI.toast(`Código ${online.codigo} copiado.`, 'success');
+            } catch (e) {
+                const el = document.getElementById('lo-pasta-codigo');
+                const r = document.createRange(); r.selectNodeContents(el);
+                const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+                window.CortexUI.toast('Selecionei o código. Use Ctrl+C para copiar.', 'info');
+            }
+        });
+    }
+
+    function renderLaudo(laudos, online) {
         const ativo = laudos.find(l => l.ativo) || laudos[0] || null;
         const historicas = laudos.filter(l => !ativo || l.id !== ativo.id);
 
         return `
             <div class="laudo-page">
+
+                ${renderLaudoOnline(online)}
 
                 <!-- Topo: upload + título -->
                 <div class="laudo-topo">

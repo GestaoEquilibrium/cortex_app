@@ -368,7 +368,7 @@
                 </div>`;
             case 'acompanhe': return `<div class="lo-qr"><div class="lo-qr-q">QR</div><div><b>ACOMPANHE ESTE PACIENTE</b><p>${esc(b.texto || '')}</p></div></div>`;
             case 'convite': return `<div class="lo-qr"><div class="lo-qr-q">QR</div><div><b>Sua opinião faz a diferença!</b><p>${esc(b.texto || '')}</p></div></div>`;
-            case 'classificacao_qi': return `<table class="lo-tab"><thead><tr><th>%</th><th>Percentil</th><th>Escore</th><th>Classificação</th><th>Interpretação</th></tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map((x, i) => `<td${i === 3 ? ` class="cl cl-${C().faixa(x) || 'med'}"` : ''}>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+            case 'classificacao_qi': return `${C().QI_ABRE}${(b.linhas || []).map(C().qiLinha).join('')}</tbody></table>`;
             case 'local_data': return `<p class="lo-p">${esc(b.cidade || 'Uberlândia — MG')}, ${esc(C().dataExtenso((st.doc.meta || {}).data_emissao || new Date().toISOString().slice(0, 10)))}.</p>`;
             case 'assinatura': return `<div class="lo-assin"><i></i><p>${esc(b.nome || '')}</p><small>${esc(b.registro || '')}</small></div>`;
             case 'quebra_pagina': return '<div class="lo-quebra">quebra de página</div>';

@@ -165,6 +165,14 @@
         return { fundo: f, selo: !!f && b.estilo_classif === 'selo', css, texto: c.texto, bg: c.bg };
     }
 
+    // ── Classificação Geral de QI no padrão das Ferramentas de Laudo (linha inteira colorida) ──
+    const QI_TONS = { sup: 'verde', med: 'azul', mi: 'ambar', inf: 'vermelho' };
+    const QI_ABRE = '<table class="qi2"><thead><tr><th>% Pop.</th><th>Percentil</th><th>QI / Escore</th><th>Classificação Científica</th><th>Interpretação Clínica</th></tr></thead><tbody>';
+    function qiLinha(f) {
+        const tom = QI_TONS[faixa(f[3])] || 'azul';
+        return `<tr class="qi2-${tom}">${[0, 1, 2, 3, 4].map(i => `<td${i === 2 || i === 3 ? ' class="forte"' : ''}>${esc(f[i] == null ? '' : f[i])}</td>`).join('')}</tr>`;
+    }
+
     function idadeTexto(nasc, ref) {
         if (!nasc) return '[[idade a confirmar]]';
         const [y, m, d] = String(nasc).slice(0, 10).split('-').map(Number);
@@ -486,7 +494,7 @@
     }
 
     window.LaudoCore = {
-        FORMATO, VERSAO_ATUAL, SECOES, SECOES_DO_GERADOR, TIPOS, VISTAS, SIGLAS_DO_CORTEX, EQUIVALENTES, equivalente, LANCADOS, siglaNoCortex, modeloLancado, CORES_TEXTO, CORES_PADRAO, corCss, lerCelula, escreverCelula, colunasColoridas, celulaTabela, NOMES_INDICE, FATORES_BFP,
+        FORMATO, VERSAO_ATUAL, SECOES, SECOES_DO_GERADOR, TIPOS, VISTAS, SIGLAS_DO_CORTEX, EQUIVALENTES, equivalente, LANCADOS, siglaNoCortex, modeloLancado, QI_ABRE, qiLinha, CORES_TEXTO, CORES_PADRAO, corCss, lerCelula, escreverCelula, colunasColoridas, celulaTabela, NOMES_INDICE, FATORES_BFP,
         esc, slug, aleatorio, clonar, faixa, idadeTexto, dataBR, dataExtenso, mesAno, iniciais, feminino, contexto,
         variaveis, inline, plano, textos, ancoraDoTitulo, garantirIds, completarBloco, converter1para2, lerPacote,
         cadaBloco, blocosDoTipo, vistasDe, validar

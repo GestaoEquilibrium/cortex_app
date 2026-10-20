@@ -111,10 +111,9 @@
                             (b.linhas || []).map(l => `<tr><td class="n">${esc(l.nome || l.sigla)}${marca[l.status] ? ' ' + marca[l.status] : ''}</td><td class="d">${esc(l.dominio || '')}</td></tr>`), '', o); break;
                     }
                     case 'classificacao_qi':
-                        addTab(b, '<table class="i-tab i-qi"><thead><tr><th>% Pop.</th><th>Percentil (PC)</th><th>QI / Escore</th><th>Classificação Científica</th><th>Interpretação Clínica</th></tr></thead><tbody>',
-                            (b.linhas || []).map(f => { const t = C().faixa(f[3]) || 'med'; return `<tr><td>${esc(f[0])}</td><td>${esc(f[1])}</td><td>${esc(f[2])}</td><td class="cl cl-${t}">${esc(f[3])}</td><td class="cl cl-${t}">${esc(f[4])}</td></tr>`; }),
-                            `<div class="i-leg4"><span class="cl-sup">■ Superior</span><span class="cl-med">■ Médio</span><span class="cl-mi">■ Médio Inferior</span><span class="cl-inf">■ Inferior</span></div>
-                            <p class="i-nota">OBS. Legenda de classificação nas tabelas: para facilitar a compreensão, os resultados são sinalizados por cores.</p>`, o); break;
+                        // mesmo desenho da tabela pronta das Ferramentas de Laudo
+                        addTab(b, C().QI_ABRE, (b.linhas || []).map(C().qiLinha),
+                            `<p class="i-nota">OBS. Legenda de classificação nas tabelas: para facilitar a compreensão, os resultados são sinalizados por cores.</p>`, o); break;
                     case 'resultado': {
                         // Resultado sem dado no banco (teste não aplicado ou não corrigido) não vai para o PDF.
                         const falta = G().indisponivel(b, ctx.banco);

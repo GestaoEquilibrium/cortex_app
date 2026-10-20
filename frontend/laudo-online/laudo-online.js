@@ -1284,6 +1284,67 @@
         return ins.data;
     }
 
+    // ── Resultados dos testes de fora (pacote.lancados → resultados_lancados) ──
+    const CAMPOS_LANC = ['nome', 'bruto', 'pontos', 'acertos', 'erros', 'omissoes', 'valor', 'ponderado', 'escore', 'intervalo', 'percentil', 'classificacao', 'padronizado', 'z', 'achado'];
+    const CTX_LANC = ['norma', 'respondente', 'forma', 'versao', 'ano_escolar', 'sessoes'];
+    function camposLanc(o) {
+        const r = {};
+        CAMPOS_LANC.forEach(k => { if (o && o[k] !== undefined && o[k] !== null && o[k] !== '') r[k] = o[k]; });
+        return r;
+    }
+    async function lancarDoPacote(pacote) {
+        const L = pacote && pacote.lancados;
+        if (!L || typeof L !== 'object') return null;
+        const grupos = {};
+        const naBateria = (st.banco.aplicacoes || []).map(a => a.sigla);
+        Object.keys(L).forEach(sig => {
+            // sigla do Gerador → sigla do catálogo (igual, equivalente ou "SON-R 6-40" ↔ "SON-R")
+            const x = L[sig] || {}, eq = C().equivalente(sig), alvo = C().siglaNoCortex(sig, naBateria) || (eq ? eq.sigla : sig);
+            const g = grupos[alvo] = grupos[alvo] || { medidas: {}, contexto: {}, de: [] };
+            g.de.push(sig);
+            if (x.medidas && typeof x.medidas === 'object') Object.keys(x.medidas).forEach(k => { g.medidas[k] = Object.assign(g.medidas[k] || {}, camposLanc(x.medidas[k])); });
+            if (eq && eq.parte) { const cp = camposLanc(x); if (Object.keys(cp).length) { const k = eq.parte.toLowerCase(); g.medidas[k] = Object.assign(g.medidas[k] || {}, cp); } }
+            CTX_LANC.forEach(k => { if (x[k]) g.contexto[k] = String(x[k]); });
+            if (x.contexto && typeof x.contexto === 'object') Object.assign(g.contexto, x.contexto);
+            if (x.observacoes) g.observacoes = String(x.observacoes);
+        });
+        const out = { feitos: [], semBateria: [], erros: [] };
+        for (const alvo of Object.keys(grupos)) {
+            const g = grupos[alvo];
+            const apl = (st.banco.aplicacoes || []).filter(a => a.sigla === alvo);
+            const a = apl.find(x => x.corrigida) || apl[apl.length - 1];
+            if (!a) { out.semBateria.push(...g.de); continue; }
+            try {
+                const ex = await sb().from('resultados_lancados').select('dados').eq('aplicacao_id', a.id).maybeSingle();
+                if (ex.error) throw ex.error;
+                const d = (ex.data && ex.data.dados) || { versao: 1, medidas: {}, contexto: {} };
+                d.medidas = d.medidas || {}; d.contexto = d.contexto || {};
+                Object.keys(g.medidas).forEach(k => { d.medidas[k] = Object.assign(d.medidas[k] || {}, g.medidas[k]); });
+                Object.assign(d.contexto, g.contexto);
+                if (g.observacoes && !d.observacoes) d.observacoes = g.observacoes;
+                d.origem = 'gerador';
+                const up = await sb().from('resultados_lancados').upsert({ aplicacao_id: a.id, dados: d, updated_at: new Date().toISOString() }, { onConflict: 'aplicacao_id' });
+                if (up.error) throw up.error;
+                if (!['corrigido', 'integrado_laudo'].includes(a.status)) {
+                    const us = await sb().from('aplicacoes_instrumento').update({ status: 'corrigido', data_conclusao: a.data_conclusao || new Date().toISOString() }).eq('id', a.id);
+                    if (us.error) throw us.error;
+                }
+                out.feitos.push(alvo);
+            } catch (e) {
+                console.warn('[lancados]', alvo, e);
+                out.erros.push(`${alvo} (${e.message || e})`);
+            }
+        }
+        if (out.feitos.length) window.CortexAudit && window.CortexAudit.log('edicao', 'resultados_lancados', null, { pacienteId: st.pacienteId, detalhes: { evento: 'lancados_do_gerador', testes: out.feitos } });
+        return out;
+    }
+    function avisarLancados(r) {
+        if (!r) return;
+        if (r.feitos.length) toast(`Resultados preenchidos a partir do Gerador: ${r.feitos.join(', ')}.`, 'success');
+        if (r.semBateria.length) toast(`Não estão na bateria do paciente (as tabelas não saem): ${r.semBateria.join(', ')}.`, 'warning');
+        if (r.erros.length) toast(`Não consegui gravar os resultados de: ${r.erros.join('; ')}`, 'danger');
+    }
+
     async function montarEGravar(m) {
         const imp = st.importacao;
         if (!imp || imp.validacao.bloqueios.length) return;
@@ -1316,6 +1377,7 @@
             m.remove();
             toast('Laudo montado. Veja as conferências do pacote com o banco.', 'success');
             st.laudoId = data.id;
+            avisarLancados(await lancarDoPacote(imp.pacote));
             await carregarTudo();
             render();
             if (window.LaudoFiguras) setTimeout(() => abrirFiguras(true), 300);
@@ -1351,6 +1413,9 @@
             if (!data || !data.ok) throw new Error((data && data.mensagem) || 'Não consegui gravar.');
             st.laudo.revisao = data.revisao;
             m.remove();
+            const lr = await lancarDoPacote(imp.pacote);
+            if (lr && lr.feitos.length) await carregarTudo();
+            avisarLancados(lr);
             reconferir(); render();
             const linhas = [
                 [rs.substituidos.length, 'trecho(s) atualizado(s) com a versão nova (você não tinha mexido)'],

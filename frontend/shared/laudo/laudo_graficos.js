@@ -375,6 +375,8 @@
         if (F[sig]) return F[sig];
         const eq = C().equivalente && C().equivalente(sig);
         if (eq && F[eq.sigla]) return F[eq.sigla];
+        const vizinha = C().siglaNoCortex && C().modeloLancado && C().modeloLancado(sig) && C().siglaNoCortex(sig, Object.keys(F));
+        if (vizinha) return F[vizinha];
         const apE = window.LaudoEscalas && (window.LaudoEscalas.APELIDOS[sig] || []).find(x => F[x]);
         if (apE) return F[apE];
         const ap = (APELIDO_FIG[sig] || []).find(x => F[x]);
@@ -440,7 +442,10 @@
     function aplicacaoDe(sig, banco) {
         const eq = C().equivalente && C().equivalente(sig);
         const nomes = [sig].concat(eq ? [eq.sigla] : [], (window.LaudoEscalas && window.LaudoEscalas.APELIDOS[sig]) || []);
-        const ap = ((banco || {}).aplicacoes || []).filter(a => nomes.includes(a.sigla));
+        const todas = (banco || {}).aplicacoes || [];
+        // teste de fora com nome um pouco diferente no catálogo (ex.: "SON-R 6-40" ↔ "SON-R")
+        if (C().modeloLancado && C().modeloLancado(sig)) { const v = C().siglaNoCortex(sig, todas.map(a => a.sigla)); if (v) nomes.push(v); }
+        const ap = todas.filter(a => nomes.includes(a.sigla));
         return ap.find(a => a.corrigida) || ap[0] || null;
     }
     function cabecalhoSimples(sig, banco) {
@@ -457,8 +462,8 @@
         const a = aplicacaoDe(sig, banco);
         if (!a && !d) return null;
         if (a && !a.corrigida && !(d && !d.erro)) {
-            const lanca = C().equivalente(sig) || ['TDE-II', 'TAVIS-4', 'TEPIC-M-2', 'BDEFS', 'CPM-RAVEN', 'IHS-2', 'BETA-III', 'TEACO/TEADI/TEALT', 'TORRE DE LONDRES', 'BPA-2'].includes(a.sigla);
-            return lanca ? `${sig}: os resultados ainda não foram lançados no CORTEX — na bateria do paciente, abra o teste (📝 Aplicar / Corrigir), digite os números do relatório e depois use 📷 Figuras dos testes`
+            const lanca = C().equivalente(sig) || (C().LANCADOS || {})[a.sigla];
+            return lanca ? `${sig}: os resultados ainda não estão no CORTEX — mande-os no pacote do Gerador ("lancados") ou abra o teste na bateria (📝 Aplicar / Corrigir); depois use 📷 Figuras dos testes`
                 : `${sig}: o teste ainda não foi corrigido no CORTEX`;
         }
         return `${sig}: as tabelas e gráficos da tela de correção ainda não foram trazidos (📷 Figuras dos testes)`;

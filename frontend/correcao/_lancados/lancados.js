@@ -41,6 +41,9 @@
         ponderado: { r: 'Ponderado', tipo: 'numero' },
         escore: { r: 'Escore', tipo: 'numero' },
         intervalo: { r: 'IC 95%', tipo: 'texto' },
+        padronizado: { r: 'Escore padronizado', tipo: 'numero' },
+        z: { r: 'Escore Z', tipo: 'numero' },
+        achado: { r: 'Achado', tipo: 'area' },
         percentil: { r: 'Percentil', tipo: 'texto' },
         classificacao: { r: 'Classificação', tipo: 'classif' }
     };
@@ -169,17 +172,24 @@
                 <div class="lc-comp-leg"><span><i class="ac"></i>Acertos</span><span><i class="er"></i>Erros</span><span><i class="om"></i>Omissões</span></div></div>`;
         },
         /** Perfil de escores ponderados (média 10, DP 3), faixa média 8–12. */
-        ponderados(o) {
+        /** Perfil de pontos numa escala (min..max) com a faixa média sombreada. */
+        pontos(o) {
+            const min = o.min, max = o.max, f = o.faixa || [min, max], pos = v => ((Math.max(min, Math.min(max, v)) - min) / (max - min) * 100);
+            const tomAuto = v => v < f[0] ? (v < f[0] - (f[1] - f[0]) / 2 ? 'grave' : 'alerta') : v > f[1] ? 'acima' : 'dentro';
             const linhas = o.itens.map(i => {
                 const v = numero(i.valor);
-                return `<div class="lc-pond-linha"><div class="lc-perfil-rot">${esc(i.rot)}</div>
-                    <div class="lc-pond-trilho"><div class="lc-pond-media"></div>${Array.from({ length: 19 }, (_, k) => `<i style="left:${(k / 18 * 100).toFixed(2)}%"></i>`).join('')}
-                        ${v == null ? '' : `<div class="lc-pond-ponto lc-f-${tomDe(i.classif) === 'nulo' ? (v < 8 ? (v < 5 ? 'grave' : 'alerta') : v > 12 ? 'acima' : 'dentro') : tomDe(i.classif)}" style="left:${((Math.max(1, Math.min(19, v)) - 1) / 18 * 100).toFixed(2)}%">${esc(num(v))}</div>`}</div></div>`;
+                const tom = tomDe(i.classif) === 'nulo' ? (v == null ? 'nulo' : tomAuto(v)) : tomDe(i.classif);
+                return `<div class="lc-pond-linha${o.chips ? ' com-chip' : ''}"><div class="lc-perfil-rot">${i.cor ? `<span class="lc-dot" style="background:${i.cor}"></span>` : ''}${esc(i.rot)}</div>
+                    <div class="lc-pond-trilho"><div class="lc-pond-media" style="left:${pos(f[0]).toFixed(2)}%;width:${(pos(f[1]) - pos(f[0])).toFixed(2)}%"></div>${(o.marcas || []).map(m => `<i style="left:${pos(m).toFixed(2)}%"></i>`).join('')}
+                        ${o.centro != null ? `<div class="lc-pond-centro" style="left:${pos(o.centro).toFixed(2)}%"></div>` : ''}
+                        ${v == null ? '' : `<div class="lc-pond-ponto lc-f-${tom}" style="left:${pos(v).toFixed(2)}%">${esc(num(v))}</div>`}</div>${o.chips ? `<div class="lc-pond-cl">${chip(i.classif)}</div>` : ''}</div>`;
             }).join('');
             return `<div class="lc-grafico-pond"><div class="lc-grafico-tit">${esc(o.tit)}</div>${linhas}
-                <div class="lc-pond-eixo"><span></span><div>${[1, 4, 7, 10, 13, 16, 19].map(p => `<i style="left:${((p - 1) / 18 * 100).toFixed(2)}%">${p}</i>`).join('')}</div></div>
-                <div class="lc-legenda"><span class="lc-leg-media"></span> faixa média dos ponderados (8 a 12)</div></div>`;
+                <div class="lc-pond-eixo${o.chips ? ' com-chip' : ''}"><span></span><div>${(o.marcas || []).map(p => `<i style="left:${pos(p).toFixed(2)}%">${p}</i>`).join('')}</div>${o.chips ? '<span></span>' : ''}</div>
+                <div class="lc-legenda"><span class="lc-leg-media"></span> ${esc(o.legenda || `faixa média (${f[0]} a ${f[1]})`)}</div></div>`;
         },
+        padronizados(o) { return H.pontos(Object.assign({ min: 40, max: 160, faixa: [85, 115], centro: 100, chips: true, marcas: [40, 55, 70, 85, 100, 115, 130, 145, 160], legenda: 'faixa média (85 a 115) · linha = média 100' }, o)); },
+        ponderados(o) { return H.pontos(Object.assign({ min: 1, max: 19, faixa: [8, 12], marcas: [1, 4, 7, 10, 13, 16, 19], legenda: 'faixa média dos ponderados (8 a 12)' }, o)); },
         /** Curva normal com a posição do escore (QI: média 100, DP 15). */
         curva(o) {
             const W = 640, Hh = 190, base = 150, m = o.media || 100, dp = o.dp || 15;
@@ -196,7 +206,8 @@
         },
         /** Tabela no padrão das telas: cabeçalho azul-marinho e classificação em selo. */
         tabela(o) {
-            const cols = o.cols;
+            // coluna sem nenhum valor lançado não aparece
+            const cols = o.cols.filter(k => k.k === 'rot' || o.linhas.some(l => !l.grupo && !vazio(l[k.k])));
             // linha sem nenhum número lançado não entra (o relatório não trouxe essa medida)
             const linhasOk = o.linhas.filter(l => l.grupo || cols.some(k => k.k !== 'rot' && !vazio(l[k.k])));
             const corpo = linhasOk.filter((l, i) => !l.grupo || (linhasOk[i + 1] && !linhasOk[i + 1].grupo)).map(l => {
@@ -205,7 +216,8 @@
                     const v = l[k.k];
                     if (k.k === 'classificacao') return `<td class="ctr">${chip(v)}</td>`;
                     if (k.k === 'percentil') return `<td class="ctr">${esc(percentilTxt(v))}</td>`;
-                    return `<td class="${k.ctr ? 'ctr' : ''}">${k.k === 'rot' ? esc(v) : esc(num(v))}</td>`;
+                    if (k.dec != null && numero(v) != null) return `<td class="ctr">${esc(numero(v).toFixed(k.dec).replace('.', ',').replace(/^-/, '−'))}</td>`;
+                    return `<td class="${k.ctr ? 'ctr' : ''}${k.texto ? ' txt' : ''}">${k.k === 'rot' || numero(v) == null ? esc(vazio(v) ? '—' : v) : esc(num(v))}</td>`;
                 }).join('')}</tr>`;
             }).join('');
             return `<div class="lc-tabela-resultados"><table><thead><tr>${cols.map(k => `<th class="${k.ctr ? 'ctr' : ''}">${esc(k.r)}</th>`).join('')}</tr></thead><tbody>${corpo}</tbody></table>
@@ -270,6 +282,7 @@
                         <div class="lc-med-campos">${m.campos.map(k => {
                             const C = CAMPOS[k] || { r: k, tipo: 'texto' };
                             const val = fixo[k] != null ? fixo[k] : (v[k] == null ? '' : v[k]);
+                            if (C.tipo === 'area') return `<label class="lc-mini area"><span>${esc((m.rotulos || {})[k] || C.r)}</span><textarea data-med="${m.cod}" data-campo="${k}" rows="2">${esc(val)}</textarea></label>`;
                             return `<label class="lc-mini${C.tipo === 'classif' ? ' largo' : ''}"><span>${esc((m.rotulos || {})[k] || C.r)}${m.max && (k === 'bruto' || k === 'pontos' || k === 'valor') ? ` <em>/${m.max}</em>` : ''}</span>
                                 <input data-med="${m.cod}" data-campo="${k}" value="${esc(val)}" ${fixo[k] != null ? 'disabled title="Valor que já está no CORTEX"' : ''}
                                     ${C.tipo === 'numero' ? 'inputmode="decimal"' : ''} ${C.tipo === 'classif' ? 'list="lc-classifs"' : ''} placeholder="${k === 'percentil' ? 'ex.: 35' : ''}"></label>`;
@@ -278,8 +291,8 @@
             </div>`).join('');
         el().innerHTML = `
             <div class="lc-form-entrada">
-                <div class="lc-aviso info"><strong>${esc(def.titulo)} — lançar os resultados.</strong> Digite os números do relatório de correção do teste
-                    (plataforma da editora ou correção manual). O CORTEX não recalcula: ele organiza e desenha o laudo no padrão das telas de correção,
+                <div class="lc-aviso info"><strong>${esc(def.titulo)} — resultados.</strong> Quando o laudo é importado do Gerador, estes números já chegam preenchidos.
+                    Aqui você confere, corrige ou digita o que faltar, a partir do relatório de correção do teste. O CORTEX não recalcula: ele organiza e desenha o laudo no padrão das telas de correção,
                     pronto para o 📷/📋 e para o Laudo Online. Deixe em branco o que o relatório não trouxer.</div>
                 ${ctx ? `<div class="lc-cab">${ctx}</div>` : ''}
                 <div class="lc-subs">${grupos}</div>
@@ -383,8 +396,8 @@
                 </div>
                 ${secoes.map(s => sec(s.titulo, s.hint) + s.html).join('')}
                 ${d.observacoes ? sec('Observações do profissional') + H.texto(String(d.observacoes).split(/\n{2,}/)) : ''}
-                <div class="lc-nota"><strong>Nota técnica:</strong> ${esc(def.sobre || '')} Os resultados desta página foram lançados pelo(a) profissional
-                    a partir do relatório de correção do teste; o CORTEX não recalcula nem altera os valores, apenas os organiza e representa graficamente.
+                <div class="lc-nota"><strong>Nota técnica:</strong> ${esc(def.sobre || '')} Os resultados desta página vêm do relatório de correção do teste
+                    (enviados pelo Gerador de Laudos ou digitados pelo profissional); o CORTEX não recalcula nem altera os valores, apenas os organiza e representa graficamente.
                     Percentis e classificações seguem a norma indicada no relatório original.</div>
             </div>
             <div class="laudo-rodape">

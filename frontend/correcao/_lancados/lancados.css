@@ -35,6 +35,9 @@
 .lc-mini em { font-style: normal; color: #94A3B8; font-weight: 500; }
 .lc-mini input { padding: 7px 9px; font-size: 14px; font-weight: 700; text-align: center; }
 .lc-mini.largo input { text-align: left; font-weight: 600; font-size: 13px; }
+.lc-mini.area { width: 100%; }
+.lc-mini.area textarea { padding: 8px 10px; border: 1px solid #CBD5E1; border-radius: 9px; font: 500 13px/1.45 inherit; font-family: inherit; color: #0c1f3f; resize: vertical; }
+.lc-tabela-resultados td.txt { text-align: left; line-height: 1.45; }
 .lc-mini input:disabled { background: #F1F5F9; color: #475569; }
 .lc-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 26px; }
 
@@ -124,12 +127,15 @@
 .lc-pond-linha { display: grid; grid-template-columns: 200px 1fr; gap: 11px; align-items: center; padding: 8px 0; }
 .lc-pond-trilho { position: relative; height: 22px; margin: 0 14px; border-radius: 11px; background: #fff; border: 1px solid #CBD5E1; }
 .lc-pond-trilho i { position: absolute; top: 4px; bottom: 4px; border-left: 1px solid #EEF2F7; }
-.lc-pond-media { position: absolute; top: 0; bottom: 0; left: calc(7 / 18 * 100%); width: calc(4 / 18 * 100%); background: #DBEAFE; }
+.lc-pond-media { position: absolute; top: 0; bottom: 0; background: #DBEAFE; }
 .lc-pond-ponto {
     position: absolute; top: -8px; width: 36px; height: 36px; margin-left: -18px; border-radius: 50%;
     background: var(--tf); border: 3px solid #fff; box-shadow: 0 2px 7px rgba(15,23,42,.28);
     display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 12.5px; z-index: 2;
 }
+.lc-pond-linha.com-chip, .lc-pond-eixo.com-chip { grid-template-columns: 200px 1fr 150px; }
+.lc-pond-cl { text-align: left; }
+.lc-pond-centro { position: absolute; top: -3px; bottom: -3px; border-left: 2px solid #334155; opacity: .5; }
 .lc-pond-eixo { display: grid; grid-template-columns: 200px 1fr; gap: 11px; }
 .lc-pond-eixo > div { position: relative; height: 16px; margin: 0 14px; }
 .lc-pond-eixo i { position: absolute; transform: translateX(-50%); font-style: normal; font-size: 10px; font-weight: 600; color: #94A3B8; }
@@ -161,4 +167,6 @@
     .lc-perfil-linha, .lc-perfil-eixo { grid-template-columns: 110px 1fr 46px; }
     .lc-perfil-cl, .lc-perfil-eixo > span:last-child { display: none; }
     .lc-perfil-linha.valor, .lc-comp-linha, .lc-pond-linha, .lc-pond-eixo { grid-template-columns: 110px 1fr; }
+    .lc-pond-linha.com-chip, .lc-pond-eixo.com-chip { grid-template-columns: 110px 1fr 96px; }
 }
+.lc-tabela-resultados td.ctr { white-space: nowrap; }

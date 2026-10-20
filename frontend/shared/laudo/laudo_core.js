@@ -56,8 +56,39 @@
         'TOL-BR': { sigla: 'TORRE DE LONDRES' }, 'TOL': { sigla: 'TORRE DE LONDRES' }, 'TORRE': { sigla: 'TORRE DE LONDRES' },
         'CPM': { sigla: 'CPM-RAVEN' }, 'RAVEN': { sigla: 'CPM-RAVEN' }, 'CPM RAVEN': { sigla: 'CPM-RAVEN' },
         'BETA III': { sigla: 'BETA-III' }, 'BETA-3': { sigla: 'BETA-III' }, 'TDE II': { sigla: 'TDE-II' }, 'TDE-2': { sigla: 'TDE-II' },
-        'TAVIS 4': { sigla: 'TAVIS-4' }, 'TEPIC-M': { sigla: 'TEPIC-M-2' }, 'TEPIC M 2': { sigla: 'TEPIC-M-2' }, 'IHS2': { sigla: 'IHS-2' }, 'IHS': { sigla: 'IHS-2' }
+        'TAVIS 4': { sigla: 'TAVIS-4' }, 'BPA2': { sigla: 'BPA-2' }, 'PROTEA-R': { sigla: 'PROTEA-R-NV' }, 'PROTEA': { sigla: 'PROTEA-R-NV' }, 'TEPIC-M': { sigla: 'TEPIC-M-2' }, 'TEPIC M 2': { sigla: 'TEPIC-M-2' }, 'IHS2': { sigla: 'IHS-2' }, 'IHS': { sigla: 'IHS-2' }
     };
+    // Testes corrigidos fora do CORTEX: o Gerador manda os números em "lancados" e o CORTEX
+    // preenche a tela do teste sozinho (LO-7). Códigos das medidas de cada tela.
+    const LANCADOS = {
+        'BETA-III': ['rm', 'cod', 'qi'],
+        'BPA-2': ['AC', 'AD', 'AA', 'AG'],
+        'TAVIS-4': ['t1', 't2', 't3'].flatMap(t => ['acertos', 'omissoes', 'acao', 'tr'].map(m => `${t}_${m}`)),
+        'TEPIC-M-2': ['total'],
+        'TORRE DE LONDRES': ['planejamento'],
+        'TEACO/TEADI/TEALT': ['teaco', 'teadi', 'tealt'],
+        'TDE-II': ['escrita', 'aritmetica', 'leitura'],
+        'CPM-RAVEN': ['a', 'ab', 'b', 'total'],
+        'IHS-2': ['total', 'f1', 'f2', 'f3', 'f4', 'f5'],
+        'BDEFS': ['tempo', 'organizacao', 'autocontrole', 'motivacao', 'emocoes', 'total', 'sintomas', 'tdah'],
+        'IDADI': ['cognitivo', 'socioemocional', 'receptiva', 'expressiva', 'motora_ampla', 'motora_fina', 'adaptativo'],
+        'PROTEA-R-NV': ['interesse', 'respostas', 'interacao', 'brincadeira', 'motora', 'repetitivos'],
+        'SON-R': ['categorias', 'mosaicos', 'analogias', 'padroes', 'situacoes', 'raciocinio', 'execucao', 'qi']
+    };
+    const slugSig = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    /** Sigla do CORTEX, entre `disponiveis`, para a sigla escrita pelo Gerador: igual, equivalente
+     *  ou com o mesmo começo (ex.: "SON-R 6-40" ↔ "SON-R"). */
+    function siglaNoCortex(sig, disponiveis) {
+        const lista = Array.from(disponiveis || []);
+        if (lista.includes(sig)) return sig;
+        const eq = equivalente(sig);
+        if (eq && lista.includes(eq.sigla)) return eq.sigla;
+        const a = slugSig(eq ? eq.sigla : sig);
+        if (a.length < 4) return null;
+        return lista.find(x => { const b = slugSig(x); return b.length >= 4 && (a.startsWith(b) || b.startsWith(a)); }) || null;
+    }
+    /** Códigos das medidas da tela de resultados lançados desse teste (ou null). */
+    function modeloLancado(sigla) { const k = siglaNoCortex(sigla, Object.keys(LANCADOS)); return k ? LANCADOS[k] : null; }
     /** Teste do CORTEX que corresponde à sigla escrita pelo Gerador ({ sigla, parte } ou null). */
     function equivalente(sig) { return EQUIVALENTES[sig] || EQUIVALENTES[String(sig || '').toUpperCase()] || null; }
     function vistasDe(sigla) { return VISTAS[sigla] || VISTAS._escala; }
@@ -331,7 +362,7 @@
         Object.keys(banco.resultados || {}).forEach(s => { if (!(banco.resultados[s] || {}).erro) corrigidas.add(s); });
         const AP = (window.LaudoEscalas && window.LaudoEscalas.APELIDOS) || {};
         Object.keys(AP).forEach(ap => { if (AP[ap].some(s => corrigidas.has(s))) corrigidas.add(ap); });
-        const faltam = inv.filter(sig => !corrigidas.has(sig) && !(equivalente(sig) && corrigidas.has(equivalente(sig).sigla)));
+        const faltam = inv.filter(sig => !corrigidas.has(sig) && !siglaNoCortex(sig, corrigidas));
         add('inventario', 'Testes', 'Inventário × testes corrigidos', faltam.length ? 'atencao' : 'ok',
             faltam.length ? `Sem aplicação corrigida no CORTEX: ${faltam.join(', ')}.` : `${inv.length} de ${inv.length} instrumentos corrigidos neste paciente.`, faltam);
 
@@ -355,6 +386,21 @@
         if (adiadas.length)
             add('conferencia_escalas', 'Testes', 'Números sem conferência', 'info',
                 `Testes fora do CORTEX ou escalas ainda sem leitura no Laudo Online; o número fica como o Gerador escreveu: ${adiadas.join(', ')}.`, adiadas);
+
+        // Resultados de testes de fora que o pacote traz (preenchem as telas dos testes)
+        const lanc = pacoteBruto.lancados && typeof pacoteBruto.lancados === 'object' ? Object.keys(pacoteBruto.lancados) : [];
+        if (lanc.length) {
+            const naBateria = (banco.aplicacoes || []).map(a => a.sigla);
+            const fora = lanc.filter(s => !siglaNoCortex(s, naBateria));
+            const semTela = lanc.filter(s => !modeloLancado(s));
+            const codigos = [];
+            lanc.forEach(s => { const m = (pacoteBruto.lancados[s] || {}).medidas, ok = modeloLancado(s); if (m && ok) Object.keys(m).filter(k => !ok.includes(k)).forEach(k => codigos.push(`${s}.${k}`)); });
+            add('lancados', 'Testes', 'Resultados dos testes de fora', fora.length || semTela.length || codigos.length ? 'atencao' : 'ok',
+                [`O pacote traz os resultados de ${lanc.join(', ')}; ao montar, o CORTEX preenche a tela de cada teste.`,
+                    fora.length ? `Não estão na bateria do paciente (inclua para gerar as tabelas): ${fora.join(', ')}.` : '',
+                    semTela.length ? `Sem tela de resultados no CORTEX: ${semTela.join(', ')}.` : '',
+                    codigos.length ? `Códigos de medida que a tela não conhece (ficam de fora): ${codigos.join(', ')}.` : ''].filter(Boolean).join(' '), fora);
+        }
 
         // Pendências
         const pend = [];
@@ -399,7 +445,7 @@
     }
 
     window.LaudoCore = {
-        FORMATO, VERSAO_ATUAL, SECOES, SECOES_DO_GERADOR, TIPOS, VISTAS, SIGLAS_DO_CORTEX, EQUIVALENTES, equivalente, NOMES_INDICE, FATORES_BFP,
+        FORMATO, VERSAO_ATUAL, SECOES, SECOES_DO_GERADOR, TIPOS, VISTAS, SIGLAS_DO_CORTEX, EQUIVALENTES, equivalente, LANCADOS, siglaNoCortex, modeloLancado, NOMES_INDICE, FATORES_BFP,
         esc, slug, aleatorio, clonar, faixa, idadeTexto, dataBR, dataExtenso, mesAno, iniciais, feminino, contexto,
         variaveis, inline, plano, textos, ancoraDoTitulo, garantirIds, completarBloco, converter1para2, lerPacote,
         cadaBloco, blocosDoTipo, vistasDe, validar

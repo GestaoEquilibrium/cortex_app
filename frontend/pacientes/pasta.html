@@ -293,6 +293,7 @@
     let checklistInfo = null;
     let bateriaInfo = null;
     let ehAdmin = false;          // Sprint 8: controla botão Designar
+    let ehAdminClinico = false;   // LO-0: só o admin clínico apaga laudo
     let podeEditar = true;        // Sprint 78: controla edição da pasta (admin+aplicador)
     let aplicadorAtivo = null;    // Sprint 8: vínculo paciente↔aplicador atual
     let respostasRemotas = [];    // Sprint 56: anamneses_tokens_publicos pendentes
@@ -318,6 +319,7 @@
         // Sprint 8: detecta admin pra mostrar botão Designar
         const perfil = window.cortexProfissional?.perfil;
         ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
+        ehAdminClinico = (perfil === 'admin_clinico');
 
         // Sprint 78: corretor/estagiário abrem a pasta em modo somente leitura
         podeEditar = !window.CortexPerfil || window.CortexPerfil.podeEditarPasta();
@@ -1110,9 +1112,9 @@
                                 title="QR para colar no laudo: o profissional de fora escaneia e pede acesso">
                             🔗 QR do prontuário
                         </button>` : ''}
-                        <button class="btn btn-primary" id="btn-laudo-upload">
+                        ${ehAdmin ? `<button class="btn btn-primary" id="btn-laudo-upload">
                             📤 Enviar laudo (PDF)
-                        </button>
+                        </button>` : ''}
                     </div>
                 </div>
 
@@ -1121,7 +1123,7 @@
                     <div class="laudo-empty">
                         <div class="laudo-empty-icon">📄</div>
                         <h4>Nenhum laudo enviado ainda</h4>
-                        <p>Clique em "Enviar laudo" para fazer upload do primeiro PDF.</p>
+                        <p>${ehAdmin ? 'Clique em "Enviar laudo" para fazer upload do primeiro PDF.' : 'O laudo aparece aqui quando a coordenação enviar.'}</p>
                     </div>
                 `}
 
@@ -1177,9 +1179,9 @@
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">
                             ⬇ Baixar
                         </button>
-                        <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
+                        ${ehAdminClinico ? `<button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
                             🗑 Remover
-                        </button>
+                        </button>` : ''}
                     </div>
                 </div>
                 <div class="laudo-versao-atual-viewer" id="laudo-viewer-${laudo.id}"></div>
@@ -1208,12 +1210,12 @@
                     <button class="btn btn-ghost btn-sm" onclick="window.CortexLaudo.baixar('${laudo.id}')">
                         ⬇ Baixar
                     </button>
-                    <button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.definirAtual('${laudo.id}')">
+                    ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexLaudo.definirAtual('${laudo.id}')">
                         ⭐ Definir como atual
-                    </button>
-                    <button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
+                    </button>` : ''}
+                    ${ehAdminClinico ? `<button class="btn btn-ghost btn-sm" style="color: var(--color-danger-text);" onclick="window.CortexLaudo.remover('${laudo.id}')">
                         🗑
-                    </button>
+                    </button>` : ''}
                 </div>
             </div>
         `;

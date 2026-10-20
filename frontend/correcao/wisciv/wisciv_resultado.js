@@ -1162,7 +1162,9 @@
             const c = r.compostos?.[k]?.composto;
             if (c != null) compostos[ESCALAS_SIGLA[k] || k] = c;
         });
-        const interp = window.CortexICG.avaliarInterpretabilidade(compostos, 'IRP');
+        // Os compostos vêm com a chave IOP (ESCALAS_SIGLA). Com 'IRP' a diferença
+        // ICV × perceptual nunca era calculada e o alerta de validade do ICG não aparecia.
+        const interp = window.CortexICG.avaliarInterpretabilidade(compostos, 'IOP');
 
         // Sem os 6 core não há ICG. Dizer o que falta é mais útil que sumir.
         if (icg.incompleto) {

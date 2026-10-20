@@ -204,6 +204,49 @@ function computeScores(respostas: Record<number, number>, sexo: string | null): 
 // Handler HTTP
 // ────────────────────────────────────────────────────────────────────────────
 
+// ────────────────────────────────────────────────────────────────────────────
+// Segurança (sprint LO-0): só profissional ativo com acesso ao paciente
+// ────────────────────────────────────────────────────────────────────────────
+// Antes, qualquer um com a chave pública conseguia chamar esta função e
+// gravar resultado. Agora o token do usuário é conferido e o perfil precisa
+// ter acesso ao paciente da aplicação — a mesma regra das tabelas:
+//   admin_clinico, admin_gestor e corretor → qualquer paciente
+//   neuropsicologo_aplicador               → paciente vinculado a ele
+//   estagiario                             → paciente do supervisor
+// deno-lint-ignore no-explicit-any
+async function autorizarCalculo(supabase: any, req: Request, pacienteId: string): Promise<void> {
+    const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+    if (!token) throw new Error("Sessão ausente. Entre de novo no sistema.");
+    const { data: u } = await supabase.auth.getUser(token);
+    const user = u?.user;
+    if (!user) throw new Error("Sessão inválida. Entre de novo no sistema.");
+
+    const { data: prof } = await supabase.from("profissionais")
+        .select("id, perfil").eq("auth_user_id", user.id).eq("ativo", true).maybeSingle();
+    if (!prof) throw new Error("Profissional não encontrado ou inativo.");
+
+    if (["admin_clinico", "admin_gestor", "corretor"].includes(prof.perfil)) return;
+
+    if (prof.perfil === "neuropsicologo_aplicador") {
+        const { data: v } = await supabase.from("vinculos_paciente_aplicador")
+            .select("id").eq("paciente_id", pacienteId).eq("aplicador_id", prof.id).eq("ativo", true).limit(1);
+        if (v && v.length) return;
+    }
+
+    if (prof.perfil === "estagiario") {
+        const { data: sup } = await supabase.from("vinculos_profissional_supervisor")
+            .select("supervisor_id").eq("estagiario_id", prof.id).eq("ativo", true);
+        const ids = (sup || []).map((s: { supervisor_id: string }) => s.supervisor_id);
+        if (ids.length) {
+            const { data: v } = await supabase.from("vinculos_paciente_aplicador")
+                .select("id").eq("paciente_id", pacienteId).in("aplicador_id", ids).eq("ativo", true).limit(1);
+            if (v && v.length) return;
+        }
+    }
+
+    throw new Error("Sem permissão para corrigir testes deste paciente.");
+}
+
 serve(async (req) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
@@ -247,6 +290,9 @@ serve(async (req) => {
             .eq("id", aplicacao_id)
             .single();
         if (errAp) throw new Error(`Aplicação não encontrada: ${errAp.message}`);
+
+        // Sprint LO-0: confere quem está pedindo antes de ler ou gravar qualquer dado
+        await autorizarCalculo(supabase, req, aplicacao.paciente_id);
 
         const { data: inst } = await supabase
             .from("instrumentos_catalogo")

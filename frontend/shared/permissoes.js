@@ -22,7 +22,7 @@
 //   Cadastrar pac.    |    ✅    |    ✅    |    ✅     |    ❌    |    ❌
 //   Checklist (marcar)|    ✅    |    ✅    |    ✅     |    ❌    |    ❌
 //   Checklist (faixa) |    ✅    |    ✅    |    ❌     |    ❌    |    ❌
-//   Correção          |    ✅    |    ✅    |    ✅     |    ✅    |    ❌
+//   Correção          |    ✅    |    ✅    |    ✅     |    ✅    |    ✅  (estagiário corrige — decisão de Wess, out/2026)
 //   Anamnese (editar) |    ✅    |    ✅    |    ✅     |    ❌    |    ❌
 //   Designar aplicador|    ✅    |    ✅    |    ❌     |    ❌    |    ❌
 //   Relatórios        |    ✅    |    ✅    |    ❌     |    ❌    |    ❌
@@ -59,7 +59,7 @@ window.CortexPerfil = (function () {
     // Checklist — alterar faixa (override manual): só admin
     function podeAlterarFaixaChecklist() { return isAdmin(); }
 
-    // Correção: todos menos estagiário
+    // Correção: todos os perfis, inclusive estagiário (decisão de Wess, out/2026)
     function podeCorrigir() {
         const p = perfilAtual();
         return p === 'admin_clinico' || p === 'admin_gestor'

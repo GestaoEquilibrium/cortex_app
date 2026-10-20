@@ -356,7 +356,7 @@
                 }).join('')}</tbody></table>`;
             }
             case 'referencias': return `<div class="lo-refs">${(b.itens || []).map(x => `<p>${I(x, ctx)}</p>`).join('')}</div>`;
-            case 'tabela': return `<table class="lo-tab"><thead><tr>${(b.cabecalho || []).map(h => `<th>${I(h, ctx)}</th>`).join('')}</tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map(cel => celula(cel, ctx)).join('')}</tr>`).join('')}</tbody></table>${b.nota ? `<p class="lo-nota">${I(b.nota, ctx)}</p>` : ''}`;
+            case 'tabela': return `<table class="lo-tab"><thead><tr>${(b.cabecalho || []).map(h => `<th>${I(h, ctx)}</th>`).join('')}</tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map((cel, k) => celula(cel, ctx, b, k)).join('')}</tr>`).join('')}</tbody></table>${b.nota ? `<p class="lo-nota">${I(b.nota, ctx)}</p>` : ''}`;
             case 'imagem': return `<div class="lo-auto">🖼 Imagem <code>${esc(b.arquivo || '')}</code>${b.legenda ? ` — ${I(b.legenda, ctx)}` : ''}</div>`;
             case 'resultado': return `<div class="imp lo-imp-res">${window.LaudoGraf.render(b, st.banco, { glossario: glossario(), congelado: !!st.congelado })}</div>`;
             case 'cracha': return `
@@ -377,9 +377,10 @@
         }
     }
 
-    function celula(cel, ctx) {
-        const m = /^\{(sup|med|mi|inf|neutro)\}\s*/.exec(String(cel || ''));
-        return m ? `<td class="cl cl-${m[1]}">${I(String(cel).slice(m[0].length), ctx)}</td>` : `<td>${I(cel, ctx)}</td>`;
+    function celula(cel, ctx, b, k) {
+        const c = C().celulaTabela(b || {}, cel, k), st = c.css ? ` style="${c.css}"` : '';
+        if (c.selo) return `<td><span class="cl-selo cl-${c.fundo}"${st}>${I(c.texto, ctx)}</span></td>`;
+        return `<td${c.fundo ? ` class="cl cl-${c.fundo}"` : ''}${st}>${I(c.texto, ctx)}</td>`;
     }
 
     function desconhecido(b) {

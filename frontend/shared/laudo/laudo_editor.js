@@ -27,7 +27,7 @@
     ];
     const INSERIR = [
         ['paragrafo', '¶', 'Texto'], ['titulo', 'T', 'Título'], ['lista', '☰', 'Lista'], ['tabela', '▦', 'Tabela'],
-        ['caixa', '▭', 'Caixa'], ['alerta', '⚠', 'Alerta'], ['resultado', '📊', 'Resultado de teste'], ['imagem', '🖼', 'Imagem'],
+        ['caixa', '▭', 'Caixa'], ['alerta', '⚠', 'Alerta'], ['resultado', '📊', 'Resultado de teste'], ['imagem', '🖼', 'Imagem / print de outro teste'],
         ['quebra_pagina', '⤓', 'Quebra de página'], ['espaco', '↕', 'Espaço'], ['padrao', '📄', 'Texto padrão do modelo']
     ];
     const ONDE = { ambos: 'Impressão e online', impressao: 'Só na impressão', online: 'Só no online' };
@@ -691,7 +691,7 @@
                 case 'quebra_pagina': colocar(novoBloco('quebra_pagina', { exibir: 'impressao' })); break;
                 case 'espaco': colocar(novoBloco('espaco', { altura: 'm' })); break;
                 case 'resultado': escolherResultado(null, b => colocar(b)); break;
-                case 'imagem': escolherImagem(b => colocar(b)); break;
+                case 'imagem': inserirImagens(bs => bs.slice().reverse().forEach(b => colocar(b))); break;
                 case 'padrao': escolherPadrao(b => colocar(b)); break;
             }
         }
@@ -852,6 +852,71 @@
         }
 
         // ── imagem ────────────────────────────────────────────────────────────
+        // Várias imagens de fora (prints de outros testes, fotos): colar com Ctrl+V, arrastar ou escolher.
+        function inserirImagens(aoInserir) {
+            const lista = [];   // { arquivo: File, url, legenda }
+            const m = modal(`
+                <h2>Imagens de fora</h2>
+                <p>Prints de outros testes (TAVIS-4, plataformas das editoras…), fotos de provas ou desenhos. <b>Cole com Ctrl+V</b>, arraste os arquivos para cá ou escolha no computador. PNG, JPG ou WEBP de até 5 MB cada; ficam guardadas no laudo, com acesso restrito.</p>
+                <div class="ed-img-zona" id="ei-zona" tabindex="0">
+                    <b>📋 Cole aqui (Ctrl+V)</b><span>ou arraste as imagens</span>
+                    <label class="lo-btn sec"><input type="file" id="ei-arqs" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>📎 Escolher no computador</label>
+                </div>
+                <div class="ed-img-lista" id="ei-lista"></div>
+                <label class="ed-campo">Largura<select id="ei-larg"><option value="inteira">Inteira</option><option value="metade">Metade</option><option value="terco">Um terço</option></select></label>
+                <div id="ei-res"></div>
+                <div class="lo-modal-acoes"><button class="btn btn-secondary" data-fechar>Cancelar</button><button class="btn btn-primary" id="ei-ok" disabled>Inserir</button></div>`, 'largo');
+            const $ = id => m.querySelector('#' + id);
+            function desenhar() {
+                $('ei-lista').innerHTML = lista.map((x, k) => `<div class="ed-img-item"><img src="${x.url}" alt=""><div><input data-leg="${k}" type="text" placeholder="Legenda (opcional) — ex.: TAVIS-4, Tarefa 2 — Alternada" value="${esc(x.legenda)}"><small>${esc(x.arquivo.name || 'imagem colada')} · ${(x.arquivo.size / 1024).toFixed(0)} KB</small></div><button type="button" class="ed-x" data-tirar="${k}" title="Tirar">✕</button></div>`).join('');
+                $('ei-ok').disabled = !lista.length;
+                $('ei-ok').textContent = lista.length > 1 ? `Inserir ${lista.length} imagens` : 'Inserir';
+            }
+            function adicionar(files) {
+                const erros = [];
+                [...files].forEach(f => {
+                    if (!/^image\//.test(f.type)) return erros.push(`${f.name || 'arquivo'}: não é imagem`);
+                    if (f.size > 5 * 1024 * 1024) return erros.push(`${f.name || 'imagem'}: maior que 5 MB`);
+                    lista.push({ arquivo: f, url: URL.createObjectURL(f), legenda: '' });
+                });
+                $('ei-res').innerHTML = erros.length ? `<p class="lo-imp-erro">${esc(erros.join(' · '))}</p>` : '';
+                desenhar();
+            }
+            const colar = ev => { const fs = [...((ev.clipboardData || {}).files || [])]; if (fs.length) { ev.preventDefault(); adicionar(fs); } };
+            document.addEventListener('paste', colar);
+            const fechou = new MutationObserver(() => { if (!document.body.contains(m)) { document.removeEventListener('paste', colar); fechou.disconnect(); } });
+            fechou.observe(document.body, { childList: true });
+            $('ei-arqs').addEventListener('change', ev => adicionar(ev.target.files));
+            const zona = $('ei-zona');
+            zona.addEventListener('dragover', ev => { ev.preventDefault(); zona.classList.add('sobre'); });
+            zona.addEventListener('dragleave', () => zona.classList.remove('sobre'));
+            zona.addEventListener('drop', ev => { ev.preventDefault(); zona.classList.remove('sobre'); adicionar(ev.dataTransfer.files); });
+            zona.focus();
+            $('ei-lista').addEventListener('input', ev => { const k = ev.target.dataset.leg; if (k != null) lista[Number(k)].legenda = ev.target.value; });
+            $('ei-lista').addEventListener('click', ev => { const k = ev.target.dataset.tirar; if (k != null) { lista.splice(Number(k), 1); desenhar(); } });
+            $('ei-ok').addEventListener('click', async () => {
+                const bt = $('ei-ok'); bt.disabled = true;
+                const blocos = [];
+                try {
+                    for (let k = 0; k < lista.length; k++) {
+                        bt.textContent = `Enviando ${k + 1} de ${lista.length}…`;
+                        const x = lista[k], tipo = x.arquivo.type || 'image/png';
+                        const ext = ((x.arquivo.name || '').split('.').pop() || tipo.split('/')[1] || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+                        const caminho = `${st.pacienteId}/${st.laudo.id}/${C().aleatorio(10)}.${ext}`;
+                        const up = await sb().storage.from('laudos-midia').upload(caminho, x.arquivo, { contentType: tipo, upsert: false });
+                        if (up.error) throw up.error;
+                        blocos.push(novoBloco('imagem', { arquivo: caminho, legenda: x.legenda.trim() || null, largura: $('ei-larg').value }));
+                    }
+                    m.remove();
+                    aoInserir(blocos);
+                } catch (err) {
+                    bt.disabled = false; bt.textContent = 'Tentar de novo';
+                    $('ei-res').innerHTML = `<p class="lo-imp-erro">Não consegui enviar: ${esc(err.message || '')}</p>`;
+                    if (blocos.length) { m.remove(); aoInserir(blocos); toast(`${blocos.length} imagem(ns) entraram; as outras falharam.`, 'warning'); }
+                }
+            });
+        }
+
         function escolherImagem(aoInserir, existente) {
             const m = modal(`
                 <h2>${existente ? 'Imagem' : 'Inserir imagem'}</h2>
@@ -1017,7 +1082,11 @@
                     { k: 'status', rotulo: 'Status', tipo: 'select', opcoes: [['preservado', '🟢 Preservado'], ['atencao', '🟡 Atenção'], ['comprometido', '🔴 Comprometido']] },
                     { k: 'dominio', rotulo: 'Domínio' }, { k: 'desempenho', rotulo: 'Desempenho', tipo: 'area' }, { k: 'instrumentos', rotulo: 'Instrumentos' }, { k: 'ancora', rotulo: 'Âncora' }] }],
                     { linhas: b.linhas || [] }, (x, v) => { x.linhas = v.linhas.map(l => Object.assign(l, { ancora: l.ancora || null })); }, { largo: true });
-                case 'tabela': return editarTabela(b, nb => aplicarForm(id, x => { x.cabecalho = nb.cabecalho; x.linhas = nb.linhas; x.nota = nb.nota; }));
+                case 'tabela': return editarTabela(C().clonar(b), nb => aplicarForm(id, x => {
+                    x.cabecalho = nb.cabecalho; x.linhas = nb.linhas; x.nota = nb.nota;
+                    if (nb.colorir) x.colorir = nb.colorir; else delete x.colorir;
+                    if (nb.estilo_classif) x.estilo_classif = nb.estilo_classif; else delete x.estilo_classif;
+                }));
                 case 'referencias': return F('Referências', [{ k: 'itens', rotulo: 'Uma referência por linha (APA)', tipo: 'area', linhas: 12, ajuda: MARC }], { itens: linhasTxt(b.itens) }, (x, v) => { x.itens = txtLinhas(v.itens); }, { largo: true });
                 case 'resultado': return escolherResultado(b);
                 case 'imagem': return escolherImagem(null, b);
@@ -1031,18 +1100,101 @@
         }
 
         function editarTabela(b, aoAplicar) {
-            const txt = [(b.cabecalho || []).join(' | ')].concat((b.linhas || []).map(l => l.join(' | '))).join('\n');
-            abrirForm({
-                titulo: 'Tabela', largo: true,
-                texto: 'Primeira linha = cabeçalho. Uma linha por linha da tabela, colunas separadas por | . Para colorir uma célula, comece com {sup}, {med}, {mi} ou {inf}.',
-                campos: [{ k: 'grade', rotulo: 'Tabela', tipo: 'area', linhas: 10 }, { k: 'nota', rotulo: 'Nota abaixo da tabela (opcional)' }],
-                valores: { grade: txt, nota: b.nota || '' },
-                aoSalvar: v => {
-                    const linhas = v.grade.split('\n').map(l => l.trim()).filter(Boolean).map(l => l.split('|').map(c => c.trim()));
-                    const n = Math.max(...linhas.map(l => l.length));
-                    const norm = linhas.map(l => l.concat(Array(n - l.length).fill('')));
-                    aoAplicar(Object.assign(b, { cabecalho: norm[0] || [], linhas: norm.slice(1), nota: v.nota.trim() || null }));
+            // Grade editável: cada célula guarda o texto e as marcas de cor ({sup}, {cor:vermelho}, {b}…).
+            const cab = (b.cabecalho || []).slice();
+            let grade = (b.linhas || []).map(l => l.map(c => C().lerCelula(c)));
+            const ncol = () => Math.max(cab.length, ...grade.map(l => l.length), 1);
+            const igualar = () => { const n = ncol(); while (cab.length < n) cab.push(''); grade.forEach(l => { while (l.length < n) l.push(C().lerCelula('')); }); };
+            igualar(); if (!grade.length) grade.push(cab.map(() => C().lerCelula('')));
+            let colorir = Array.isArray(b.colorir) ? b.colorir.slice() : null;      // null = automático pelo título da coluna
+            let estilo = b.estilo_classif || 'fundo';
+            let foco = null;                                                         // [linha, coluna] da célula selecionada
+            const CORES = [['', 'Padrão', '#0F172A'], ['verde', 'Verde', '#15803D'], ['azul', 'Azul', '#1D4ED8'], ['ambar', 'Amarelo', '#A16207'], ['laranja', 'Laranja', '#C2410C'], ['vermelho', 'Vermelho', '#B91C1C'], ['roxo', 'Roxo', '#6D28D9'], ['cinza', 'Cinza', '#64748B']];
+            const FUNDOS = [['', 'Automático'], ['sup', 'Superior'], ['med', 'Médio'], ['mi', 'Médio inferior'], ['inf', 'Inferior'], ['neutro', 'Sem cor']];
+            const m = modal(`
+                <h2>Tabela</h2>
+                <p>Clique numa célula e use as cores abaixo. A coluna de classificação pode ser pintada sozinha, igual às tabelas dos testes do CORTEX.</p>
+                <div class="ed-tab-barra">
+                    <div><span>Cor do texto</span>${CORES.map(c => `<button type="button" class="ed-cor" data-cor="${c[0]}" title="${c[1]}" style="--c:${c[2]}">A</button>`).join('')}
+                        <button type="button" class="ed-cor neg" data-neg="1" title="Negrito"><b>N</b></button></div>
+                    <div><span>Fundo da célula</span>${FUNDOS.map(f => `<button type="button" class="ed-fundo ${f[0] ? 'cl-' + f[0] : 'auto'}" data-fundo="${f[0]}">${f[1]}</button>`).join('')}</div>
+                </div>
+                <div class="ed-tab-wrap"><table class="ed-tab-grade" id="et-grade"></table></div>
+                <div class="ed-tab-acoes"><button type="button" class="lo-btn sec" id="et-lin">+ Linha</button><button type="button" class="lo-btn sec" id="et-col">+ Coluna</button></div>
+                <div class="ed-tab-op">
+                    <div><b>Classificação colorida</b> — colunas pintadas pelo texto (Superior, Médio, Inferior…):<div id="et-cols"></div></div>
+                    <label>Estilo<select id="et-estilo"><option value="fundo">Célula colorida (como no laudo)</option><option value="selo">Selo arredondado</option></select></label>
+                </div>
+                <label class="ed-campo">Nota abaixo da tabela (opcional)<input id="et-nota" type="text" value="${esc(b.nota || '')}"></label>
+                <p class="ed-tab-tit">Prévia</p><div class="imp ed-tab-previa" id="et-previa"></div>
+                <div class="lo-modal-acoes"><button class="btn btn-secondary" data-fechar>Cancelar</button><button class="btn btn-primary" id="et-ok">Aplicar</button></div>`, 'largo ed-tab-modal');
+            const $ = id => m.querySelector('#' + id);
+            const blocoAtual = () => ({ cabecalho: cab.slice(), linhas: grade.map(l => l.map(C().escreverCelula)), colorir: colorir === null ? undefined : colorir.slice(), estilo_classif: estilo === 'fundo' ? undefined : estilo, nota: $('et-nota').value.trim() || null });
+            const autoCols = () => C().colunasColoridas({ cabecalho: cab });
+            const colsAtivas = () => colorir === null ? autoCols() : colorir;
+            function desenharGrade() {
+                const n = ncol(), ativas = colsAtivas();
+                $('et-grade').innerHTML = `<thead><tr>${cab.map((h, k) => `<th><input data-h="${k}" value="${esc(h)}" placeholder="Coluna ${k + 1}"><button type="button" class="ed-x" data-xcol="${k}" title="Tirar esta coluna">✕</button></th>`).join('')}<th></th></tr></thead>
+                    <tbody>${grade.map((l, r) => `<tr>${l.map((c, k) => {
+                        const cel = C().celulaTabela({ cabecalho: cab, colorir: ativas }, C().escreverCelula(c), k);
+                        const sel = foco && foco[0] === r && foco[1] === k;
+                        return `<td class="${cel.fundo ? 'cl-' + cel.fundo : ''}${sel ? ' sel' : ''}"><input data-r="${r}" data-k="${k}" value="${esc(c.texto)}" style="${cel.css}"></td>`;
+                    }).join('')}<td><button type="button" class="ed-x" data-xlin="${r}" title="Tirar esta linha">✕</button></td></tr>`).join('')}</tbody>`;
+                $('et-cols').innerHTML = cab.map((h, k) => `<label class="chk"><input type="checkbox" data-cc="${k}" ${ativas.includes(k) ? 'checked' : ''}> ${esc(h || 'Coluna ' + (k + 1))}</label>`).join('') || '<em>—</em>';
+                if (n === 0) return;
+            }
+            function previa() {
+                const t = blocoAtual();
+                $('et-previa').innerHTML = `<table class="i-tab"><thead><tr>${t.cabecalho.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.linhas.map(l => `<tr>${l.map((x, k) => {
+                    const c = C().celulaTabela(t, x, k), st = c.css ? ` style="${c.css}"` : '';
+                    return c.selo ? `<td><span class="cl-selo cl-${c.fundo}"${st}>${esc(c.texto)}</span></td>` : `<td${c.fundo ? ` class="cl cl-${c.fundo}"` : ''}${st}>${esc(c.texto)}</td>`;
+                }).join('')}</tr>`).join('')}</tbody></table>${t.nota ? `<p class="i-nota">${esc(t.nota)}</p>` : ''}`;
+            }
+            const tudo = () => { desenharGrade(); previa(); };
+            $('et-estilo').value = estilo;
+            tudo();
+            m.addEventListener('focusin', ev => {
+                const i = ev.target.closest('input[data-r]'); if (!i) return;
+                foco = [Number(i.dataset.r), Number(i.dataset.k)];
+                m.querySelectorAll('#et-grade td.sel').forEach(td => td.classList.remove('sel'));
+                i.parentElement.classList.add('sel');
+            });
+            m.addEventListener('input', ev => {
+                const i = ev.target;
+                if (i.dataset.h != null) { cab[Number(i.dataset.h)] = i.value; if (colorir === null) { const a = autoCols(); m.querySelectorAll('[data-cc]').forEach(x => { x.checked = a.includes(Number(x.dataset.cc)); }); } previa(); return; }
+                if (i.dataset.r != null) {
+                    grade[Number(i.dataset.r)][Number(i.dataset.k)].texto = i.value;
+                    const c = C().celulaTabela({ cabecalho: cab, colorir: colsAtivas() }, C().escreverCelula(grade[Number(i.dataset.r)][Number(i.dataset.k)]), Number(i.dataset.k));
+                    i.parentElement.className = (c.fundo ? 'cl-' + c.fundo : '') + ' sel';
+                    previa(); return;
                 }
+                if (i.id === 'et-nota') previa();
+            });
+            m.addEventListener('change', ev => {
+                const i = ev.target;
+                if (i.dataset.cc != null) { colorir = [...m.querySelectorAll('[data-cc]:checked')].map(x => Number(x.dataset.cc)); tudo(); }
+                if (i.id === 'et-estilo') { estilo = i.value; previa(); }
+            });
+            m.addEventListener('mousedown', ev => { if (ev.target.closest('.ed-cor, .ed-fundo')) ev.preventDefault(); });   // não tira o foco da célula
+            m.addEventListener('click', ev => {
+                const t = ev.target.closest('button'); if (!t) return;
+                if (t.dataset.xcol != null) { if (cab.length <= 1) return; const k = Number(t.dataset.xcol); cab.splice(k, 1); grade.forEach(l => l.splice(k, 1)); if (colorir) colorir = colorir.filter(x => x !== k).map(x => x > k ? x - 1 : x); foco = null; tudo(); return; }
+                if (t.dataset.xlin != null) { if (grade.length <= 1) return; grade.splice(Number(t.dataset.xlin), 1); foco = null; tudo(); return; }
+                if (t.id === 'et-lin') { grade.push(cab.map(() => C().lerCelula(''))); tudo(); return; }
+                if (t.id === 'et-col') { cab.push(''); grade.forEach(l => l.push(C().lerCelula(''))); tudo(); return; }
+                if (!foco) { if (t.closest('.ed-tab-barra')) toast('Clique primeiro numa célula da tabela.', 'info'); return; }
+                const c = grade[foco[0]][foco[1]];
+                if (t.dataset.cor != null) c.cor = t.dataset.cor || null;
+                else if (t.dataset.neg) c.negrito = !c.negrito;
+                else if (t.dataset.fundo != null) c.fundo = t.dataset.fundo || null;
+                else return;
+                const f = foco; tudo();
+                const inp = m.querySelector(`input[data-r="${f[0]}"][data-k="${f[1]}"]`); if (inp) inp.focus();
+            });
+            $('et-ok').addEventListener('click', () => {
+                const t = blocoAtual();
+                m.remove();
+                aoAplicar(Object.assign(b, t, { colorir: t.colorir, estilo_classif: t.estilo_classif }));
             });
         }
 

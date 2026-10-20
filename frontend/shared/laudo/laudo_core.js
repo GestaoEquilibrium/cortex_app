@@ -124,6 +124,42 @@
         if (/m[ée]di[oa]|típico|normal|negativo/.test(t)) return 'med';
         return null;
     }
+    // ── Células de tabela: cor de fundo pela classificação, cor do texto e negrito ──
+    // Marcas no começo do texto da célula: {sup} {med} {mi} {inf} (fundo), {neutro} (sem cor
+    // mesmo na coluna de classificação), {cor:verde|azul|ambar|laranja|vermelho|roxo|cinza} e {b}.
+    const CORES_TEXTO = { verde: '#15803D', azul: '#1D4ED8', ambar: '#A16207', laranja: '#C2410C', vermelho: '#B91C1C', roxo: '#6D28D9', cinza: '#64748B' };
+    function lerCelula(txt) {
+        let s = String(txt == null ? '' : txt);
+        const o = { fundo: null, cor: null, negrito: false };
+        for (;;) {
+            const m = /^\{(sup|med|mi|inf|neutro|b|cor:[a-z]+)\}\s*/.exec(s);
+            if (!m) break;
+            if (m[1] === 'b') o.negrito = true;
+            else if (m[1].startsWith('cor:')) o.cor = CORES_TEXTO[m[1].slice(4)] ? m[1].slice(4) : null;
+            else o.fundo = m[1];
+            s = s.slice(m[0].length);
+        }
+        o.texto = s;
+        return o;
+    }
+    function escreverCelula(o) {
+        return `${o.fundo ? `{${o.fundo}}` : ''}${o.cor ? `{cor:${o.cor}}` : ''}${o.negrito ? '{b}' : ''}${o.texto || ''}`;
+    }
+    /** Colunas pintadas pela classificação: as escolhidas, ou as de título classificação/faixa/resultado. */
+    function colunasColoridas(b) {
+        if (Array.isArray(b.colorir)) return b.colorir;
+        return (b.cabecalho || []).map((h, k) => /classifica|faixa|resultado|interpreta/i.test(String(h)) ? k : -1).filter(k => k >= 0);
+    }
+    /** { fundo, selo, css, texto } de uma célula (k = índice da coluna). */
+    function celulaTabela(b, txt, k) {
+        const c = lerCelula(txt);
+        let f = c.fundo;
+        if (f === 'neutro') f = null;
+        else if (!f && colunasColoridas(b).includes(k)) f = faixa(c.texto);
+        const css = [c.cor ? `color:${CORES_TEXTO[c.cor]}` : '', c.negrito ? 'font-weight:700' : ''].filter(Boolean).join(';');
+        return { fundo: f, selo: !!f && b.estilo_classif === 'selo', css, texto: c.texto };
+    }
+
     function idadeTexto(nasc, ref) {
         if (!nasc) return '[[idade a confirmar]]';
         const [y, m, d] = String(nasc).slice(0, 10).split('-').map(Number);
@@ -445,7 +481,7 @@
     }
 
     window.LaudoCore = {
-        FORMATO, VERSAO_ATUAL, SECOES, SECOES_DO_GERADOR, TIPOS, VISTAS, SIGLAS_DO_CORTEX, EQUIVALENTES, equivalente, LANCADOS, siglaNoCortex, modeloLancado, NOMES_INDICE, FATORES_BFP,
+        FORMATO, VERSAO_ATUAL, SECOES, SECOES_DO_GERADOR, TIPOS, VISTAS, SIGLAS_DO_CORTEX, EQUIVALENTES, equivalente, LANCADOS, siglaNoCortex, modeloLancado, CORES_TEXTO, lerCelula, escreverCelula, colunasColoridas, celulaTabela, NOMES_INDICE, FATORES_BFP,
         esc, slug, aleatorio, clonar, faixa, idadeTexto, dataBR, dataExtenso, mesAno, iniciais, feminino, contexto,
         variaveis, inline, plano, textos, ancoraDoTitulo, garantirIds, completarBloco, converter1para2, lerPacote,
         cadaBloco, blocosDoTipo, vistasDe, validar

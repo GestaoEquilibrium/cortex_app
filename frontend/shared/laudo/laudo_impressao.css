@@ -279,3 +279,6 @@
     #lo-print .folha { transform: none !important; box-shadow: none !important; }
     .imp * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* classificação em selo (tabelas do Gerador, LO-7) */
+.imp .cl-selo { display: inline-block; padding: 2px 10px; border-radius: 14px; font-weight: 700; font-style: italic; white-space: nowrap; }

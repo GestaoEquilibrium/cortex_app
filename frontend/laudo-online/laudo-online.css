@@ -277,3 +277,6 @@
 .lo-fig-item input { accent-color: #7C4DFF; width: 16px; height: 16px; margin-top: 2px; }
 .lo-fig-item b { display: block; font-size: 13.5px; }
 .lo-fig-item em { display: block; font-style: normal; font-size: 12px; color: #64748B; overflow-wrap: anywhere; }
+
+/* classificação em selo (tabelas do Gerador, LO-7) */
+.cl-selo { display: inline-block; padding: 2px 10px; border-radius: 14px; font-weight: 700; font-style: italic; white-space: nowrap; }

@@ -131,16 +131,15 @@
                     }
                     case 'tabela': {
                         const cab = b.cabecalho || [];
-                        const colorir = Array.isArray(b.colorir) ? b.colorir : cab.map((h, k) => /classifica|faixa|resultado/i.test(h) ? k : -1).filter(k => k >= 0);
                         const larg = Array.isArray(b.larguras) ? `<colgroup>${b.larguras.map(w => `<col style="width:${esc(w)}">`).join('')}</colgroup>` : '';
-                        const cel = (txt, pintar) => {
-                            const mm = /^\{(sup|med|mi|inf|neutro)\}\s*/.exec(String(txt || ''));
-                            let t = null, x = String(txt || '');
-                            if (mm) { t = mm[1] === 'neutro' ? null : mm[1]; x = x.slice(mm[0].length); } else if (pintar) t = C().faixa(x);
-                            return `<td${t ? ` class="cl cl-${t}"` : ''}>${I(x)}</td>`;
+                        // cor de fundo pela classificação, selo, cor do texto e negrito (LaudoCore.celulaTabela)
+                        const cel = (txt, k) => {
+                            const c = C().celulaTabela(b, txt, k), st = c.css ? ` style="${c.css}"` : '';
+                            if (c.selo) return `<td><span class="cl-selo cl-${c.fundo}"${st}>${I(c.texto)}</span></td>`;
+                            return `<td${c.fundo ? ` class="cl cl-${c.fundo}"` : ''}${st}>${I(c.texto)}</td>`;
                         };
                         addTab(b, `<table class="i-tab">${larg}<thead><tr>${cab.map(h => `<th>${I(h)}</th>`).join('')}</tr></thead><tbody>`,
-                            (b.linhas || []).map(l => `<tr>${l.map((c, k) => cel(c, colorir.includes(k))).join('')}</tr>`), b.nota ? `<p class="i-nota">${I(b.nota)}</p>` : '', o);
+                            (b.linhas || []).map(l => `<tr>${l.map((c, k) => cel(c, k)).join('')}</tr>`), b.nota ? `<p class="i-nota">${I(b.nota)}</p>` : '', o);
                         break;
                     }
                     case 'fidedignidade':

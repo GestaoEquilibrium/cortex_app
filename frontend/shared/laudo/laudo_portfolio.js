@@ -127,7 +127,7 @@
             case 'mapa': return mapa(b);
             case 'referencias': return (b.itens || []).length ? `<details class="p-det"><summary>${b.chave === 'normativas' ? 'Referências normativas' : 'Referências bibliográficas'}</summary><div class="p-det-corpo p-refs">${b.itens.map(r => `<p>${I(r)}</p>`).join('')}</div></details>` : '';
             case 'resultado': return resultado(b);
-            case 'tabela': return `<div class="p-tabela-w"><table class="p-tabela"><thead><tr>${(b.cabecalho || []).map(x => `<th>${I(x)}</th>`).join('')}</tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map(celula).join('')}</tr>`).join('')}</tbody></table></div>${b.nota ? `<p class="p-nota">${I(b.nota)}</p>` : ''}`;
+            case 'tabela': return `<div class="p-tabela-w"><table class="p-tabela"><thead><tr>${(b.cabecalho || []).map(x => `<th>${I(x)}</th>`).join('')}</tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map((cel, k) => celula(cel, b, k)).join('')}</tr>`).join('')}</tbody></table></div>${b.nota ? `<p class="p-nota">${I(b.nota)}</p>` : ''}`;
             case 'imagem': {
                 const url = (O.imagens || {})[b.arquivo];
                 if (!url) return O.publico ? '' : `<p class="p-nota">Imagem <code>${esc(b.arquivo || '')}</code> não carregou.</p>`;
@@ -151,9 +151,14 @@
             default: return '';
         }
     }
-    function celula(cel) {
-        const m = /^\{(sup|med|mi|inf|neutro)\}\s*/.exec(String(cel || ''));
-        return m ? `<td>${pilula(String(cel).slice(m[0].length))}</td>` : `<td>${I(cel)}</td>`;
+    // na página online a classificação vira pílula; cor do texto e negrito valem igual à impressão
+    function celula(cel, b, k) {
+        const c = C().celulaTabela(b || {}, cel, k);
+        if (c.fundo) return `<td><span class="p-pilula ${c.fundo}">${I(c.texto)}</span></td>`;
+        // fundo escuro: os mesmos tons, mais claros
+        const CLARAS = { verde: '#86EFAC', azul: '#93C5FD', ambar: '#FCD34D', laranja: '#FDBA74', vermelho: '#FCA5A5', roxo: '#C4B5FD', cinza: '#CBD5E1' };
+        const L = C().lerCelula(cel), css = [L.cor ? `color:${CLARAS[L.cor]}` : '', L.negrito ? 'font-weight:700' : ''].filter(Boolean).join(';');
+        return `<td${css ? ` style="${css}"` : ''}>${I(c.texto)}</td>`;
     }
     function logo() { return ((window.LaudoImpressao && window.LaudoImpressao.BASE) || '../shared/laudo/') + 'img/logo.png'; }
 

@@ -489,3 +489,8 @@ html.p-pagina, html.p-pagina body { margin: 0; background: #060B18; min-height: 
 .port .p-graf .imp .cx-fdc .cx-fd { min-height: 32px; }
 .port .p-graf .imp .cx-fig img { border-radius: 14px; background: #fff; }
 .port .p-graf .imp .cx-fig-vazia { background: rgba(148, 178, 230, .08); border-color: var(--borda); color: var(--apagado); border-radius: 14px; }
+
+/* LO-8: todos os textos justificados, inclusive dentro dos cards */
+.port p, .port li, .port blockquote, .p-gaveta p, .p-gaveta li, .p-balao p { text-align: justify; text-justify: inter-word; -webkit-hyphens: auto; hyphens: auto; }
+.port .p-rodape p, .port .p-graf .imp .cx-leg { text-align: center; }
+.port .p-graf .imp .cx-leg.cima { text-align: left; }

@@ -469,7 +469,28 @@
         return `${sig}: as tabelas e gráficos da tela de correção ainda não foram trazidos (📷 Figuras dos testes)`;
     }
 
-    function indisponivel(b, banco) {
+    // Página online: nada de imagens das telas de correção — tudo desenhado com os
+    // resultados. Um bloco "figura" vira o desenho completo do teste; só o cabeçalho sai.
+    function paraOnline(b) {
+        if (b.vista !== 'figura') return b;
+        const fs = [].concat((b.opcoes || {}).figuras || (b.opcoes || {}).figura || []);
+        if (fs.length && fs.every(f => /cabecalho/.test(String(f)))) return null;
+        const sig = b.sigla;
+        const v = sig === 'WAIS-III' || sig === 'WISC-IV' ? 'perfil_subtestes' : 'cartao';
+        return Object.assign({}, b, { vista: v, opcoes: Object.assign({}, b.opcoes, { figura: undefined, figuras: undefined }) });
+    }
+
+    function indisponivel(b, banco, extra) {
+        if (extra && extra.online) {
+            const bo = paraOnline(b);
+            if (!bo) return 'só o cabeçalho (no online o título do teste já aparece)';
+            b = bo;
+            const sig = b.sigla, d = ((banco || {}).resultados || {})[sig];
+            if (!C().vistasDe(sig).includes(b.vista)) return `${sig}: vista "${b.vista}" ainda não construída`;
+            if (!d) return `${sig}: sem resultados no CORTEX para desenhar`;
+            if (d.erro) return `${sig}: ${d.erro}`;
+            return null;
+        }
         const sig = b.sigla;
         if (figurasDe(b)) return null;
         if (b.vista === 'cabecalho' && cabecalhoSimples(sig, banco)) return null;
@@ -497,8 +518,14 @@
      */
     function render(b, banco, extra) {
         extra = extra || {};
+        if (extra.online) {
+            b = paraOnline(b);
+            if (!b) return '';
+            const m = indisponivel(b, banco, extra);
+            if (m) return aviso(esc(m) + '.', b.sigla);
+        }
         const sig = b.sigla, op = b.opcoes || {};
-        const figs = figurasDe(b);
+        const figs = extra.online ? null : figurasDe(b);
         if (figs) return figurasHtml(b, figs);
         if (b.vista === 'figura') return aviso(`${esc(sig)}: figura da tela de correção ainda não capturada. Use 📷 Figuras dos testes.`, sig);
         if (!C().vistasDe(sig).includes(b.vista)) return aviso(`${esc(sig)}: componente ainda não construído (vista "${esc(b.vista)}").`, sig);
@@ -507,7 +534,7 @@
             const cs = cabecalhoSimples(sig, banco);
             if (cs) return `<div class="resultado" data-sigla="${esc(sig)}" data-vista="cabecalho" data-origem="${extra.congelado ? 'snapshot' : 'banco'}">${cs}${op.legenda ? `<p class="cx-leg">${esc(op.legenda)}</p>` : ''}</div>`;
         }
-        if (!C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo') { const m = motivoSemFigura(sig, banco); if (m) return aviso(esc(m) + '.', sig); }
+        if (!extra.online && !C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo') { const m = motivoSemFigura(sig, banco); if (m) return aviso(esc(m) + '.', sig); }
         if (!C().SIGLAS_DO_CORTEX.includes(sig) && !d) return aviso(esc(indisponivel(b, banco) || `${sig}: sem dados`) + '.', sig);
         if (!d) return aviso(`${esc(sig)}: teste ainda não corrigido no CORTEX para este paciente.`, sig);
         if (d.erro) return aviso(`${esc(sig)}: ${esc(d.erro)}.`, sig);
@@ -542,5 +569,5 @@
         return r ? { valor: r.valor, rotulo: r.principal, sub: '', classe: r.classificacao } : null;
     }
 
-    window.LaudoGraf = { render, indisponivel, destaque, usarFiguras, figurasDaSigla, figurasDe, selo, tom, classComp, classPond, SUBTESTES, FACETAS, NOME_IDX };
+    window.LaudoGraf = { render, indisponivel, paraOnline, destaque, usarFiguras, figurasDaSigla, figurasDe, selo, tom, classComp, classPond, SUBTESTES, FACETAS, NOME_IDX };
 })();

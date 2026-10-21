@@ -203,11 +203,29 @@
         }).join('')}</div>`;
     }
 
+    // Online: tudo desenhado com os resultados, sem imagens das telas de correção (LO-8).
+    const ON = { online: true };
+    // vários blocos do mesmo teste (partes da tela) viram um desenho só
+    function semRepetir(bs) {
+        const vistos = new Set();
+        const on = b => (G().paraOnline ? G().paraOnline(b) : b);
+        const R = O.banco.resultados || {};
+        // numa escala, o desenho completo (cartão) já tem a régua e as subescalas
+        const comCartao = new Set(bs.map(on).filter(x => x && x.vista === 'cartao' && R[x.sigla] && R[x.sigla].tipo === 'escala').map(x => x.sigla));
+        return bs.filter(b => {
+            const bo = on(b);
+            if (!bo) return false;
+            if (comCartao.has(bo.sigla) && (bo.vista === 'regua' || bo.vista === 'subescalas')) return false;
+            const k = bo.sigla + '|' + bo.vista;
+            if (vistos.has(k)) return false;
+            vistos.add(k); return true;
+        });
+    }
     // Resultado dentro do texto: desenhado pelo mesmo componente da impressão.
     function resultado(b) {
-        const motivo = G().indisponivel(b, O.banco);
+        const motivo = G().indisponivel(b, O.banco, ON);
         if (motivo) return O.publico ? '' : `<p class="p-nota">${esc(motivo)}.</p>`;
-        return `<div class="p-graf"><div class="imp">${G().render(b, O.banco, { glossario: O.glossario, congelado: O.congelado })}</div></div>`;
+        return `<div class="p-graf"><div class="imp">${G().render(b, O.banco, { glossario: O.glossario, congelado: O.congelado, online: true })}</div></div>`;
     }
 
     // ── curva das faixas de QI (Seção 4) ─────────────────────────────────────
@@ -360,7 +378,8 @@
             }).join('');
             const fid = gr.blocos.find(b => b.tipo === 'fidedignidade');
             if (fid) usados.add(fid);
-            const graf = gr.blocos.filter(b => b.tipo === 'resultado' && visivel(b) && (b.vista === 'intervalos' || b.vista === 'perfil_subtestes') && !G().indisponivel(b, O.banco));
+            const vistaW = b => { const bo = G().paraOnline ? G().paraOnline(b) : b; return bo ? bo.vista : ''; };
+            const graf = semRepetir(gr.blocos.filter(b => b.tipo === 'resultado' && visivel(b) && (vistaW(b) === 'intervalos' || vistaW(b) === 'perfil_subtestes') && !G().indisponivel(b, O.banco, ON)));
             graf.forEach(b => usados.add(b));
             gr.blocos.filter(b => b.tipo === 'resultado' || (b.tipo === 'titulo' && Number(b.nivel) === 4 && !idx.some(x => x.h4 === b && x.res))).forEach(b => usados.add(b));
             const resto = gr.blocos.filter(b => !usados.has(b) && visivel(b));
@@ -368,12 +387,12 @@
                 ${cards ? `<div class="p-idx-grade">${cards}</div>` : ''}
                 ${graf.length ? `<div class="p-graf-lista">${graf.map(b => resultado(b)).join('')}</div>` : ''}`;
         } else {
-            const graf = gr.blocos.filter(b => b.tipo === 'resultado' && visivel(b) && !VISTAS_VITRINE_FORA.test(b.vista));
+            const graf = semRepetir(gr.blocos.filter(b => b.tipo === 'resultado' && visivel(b) && !VISTAS_VITRINE_FORA.test(b.vista) && !G().indisponivel(b, O.banco, ON)));
             const textos = gr.blocos.filter(b => b.tipo !== 'resultado' && b !== meta && visivel(b));
             const grafHtml = graf.map(b => resultado(b)).join('');
             corpo = `<div class="p-expo-grade ${destHtml ? '' : 'sem-dest'}">${destHtml}<div class="p-textos">${textos.map(b => conteudo(b, {}) + compl(b)).join('')}</div></div>${grafHtml ? `<div class="p-graf-lista">${grafHtml}</div>` : ''}`;
         }
-        const temGaveta = gr.blocos.some(b => b.tipo === 'resultado' && b.exibir !== 'impressao' && !b.oculto && !G().indisponivel(b, O.banco));
+        const temGaveta = gr.blocos.some(b => b.tipo === 'resultado' && b.exibir !== 'impressao' && !b.oculto && !G().indisponivel(b, O.banco, ON));
         return `<article class="p-vidro p-expo rv" id="${gr.id}"><div class="p-expo-cab"><div><small>${esc(gr.num)}${info.dominio ? ` · ${esc(info.dominio)}` : ''}</small><h3>${esc(gr.sigla)}<span>${esc(gr.nome)}</span></h3></div>
             ${temGaveta ? `<button class="p-btn" type="button" data-gaveta="${gr.id}">Ver dados completos</button>` : ''}</div>${corpo}</article>`;
     }
@@ -381,8 +400,9 @@
     // Gaveta: todos os blocos da subseção, no visual claro das telas de correção.
     function gavetaHtml(gr) {
         const info = INSTRUMENTOS[gr.sigla] || {};
-        const conteudoG = gr.blocos.filter(b => !b.oculto && b.exibir !== 'impressao').map(b => {
-            if (b.tipo === 'resultado') return G().indisponivel(b, O.banco) ? '' : `<div class="p-gav-res">${G().render(b, O.banco, { glossario: O.glossario, congelado: O.congelado })}</div>`;
+        const dosRes = semRepetir(gr.blocos.filter(b => b.tipo === 'resultado' && !b.oculto && b.exibir !== 'impressao'));
+        const conteudoG = gr.blocos.filter(b => !b.oculto && b.exibir !== 'impressao' && (b.tipo !== 'resultado' || dosRes.includes(b))).map(b => {
+            if (b.tipo === 'resultado') return G().indisponivel(b, O.banco, ON) ? '' : `<div class="p-gav-res">${G().render(b, O.banco, { glossario: O.glossario, congelado: O.congelado, online: true })}</div>`;
             if (b.tipo === 'titulo') return `<h4 class="i-h4">${I(semNumero(b.texto))}</h4>`;
             if (b.tipo === 'paragrafo') return `<p class="i-p">${I(b.texto)}</p>`;
             if (b.tipo === 'nota') return `<p class="i-nota">${I(b.texto)}</p>`;

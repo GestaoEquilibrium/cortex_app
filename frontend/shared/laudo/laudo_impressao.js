@@ -222,8 +222,8 @@
         const alt = html => { medidor.innerHTML = `<div class="ck">${html}</div>`; return medidor.firstChild.getBoundingClientRect().height; };
         const pags = []; let atual = [], usado = 0;
         // meta: o que começa cada pedaço (para o editor marcar onde a página quebra)
-        const metas = []; let metaAtual = [];
-        const nova = () => { if (atual.length) { pags.push(atual); metas.push(metaAtual); } atual = []; metaAtual = []; usado = 0; };
+        const metas = [], usos = []; let metaAtual = [];
+        const nova = () => { if (atual.length) { pags.push(atual); metas.push(metaAtual); usos.push(usado); } atual = []; metaAtual = []; usado = 0; };
         const emb = (p, html) => {
             metaAtual.push({ bloco: p.bloco || null, secao: p.secaoId || null, titulo: !!p.secao, cont: !!p.cont });
             return `<div class="i-ck" data-bloco="${esc(p.bloco || '')}" data-secao="${esc(p.secaoId || '')}"${p.secao ? ' data-titulo-secao="1"' : ''}>${html}</div>`;
@@ -255,8 +255,8 @@
             nova();
             atual.push(emb(p, p.html)); usado += p.h;
         }
-        if (atual.length) { pags.push(atual); metas.push(metaAtual); }
-        pags.meta = metas;
+        if (atual.length) { pags.push(atual); metas.push(metaAtual); usos.push(usado); }
+        pags.meta = metas; pags.usado = usos;
         return pags;
     }
 
@@ -333,7 +333,10 @@
         ctx = Object.assign({}, ctx);
         const pags = await paginarDoc(doc, ctx);
         const imp = ((doc.layout || {}).impressao) || {};
-        return { paginas: pags.length, inicio: Number(imp.numerar_desde || 1), meta: pags.meta || [], alvo: Number(imp.alvo_paginas || 25) };
+        const textos = doc.textos || {};
+        const resp = textos.responsavel || window.LaudoModeloPadrao.RESP, registro = textos.registro || window.LaudoModeloPadrao.CRP;
+        return { paginas: pags.length, inicio: Number(imp.numerar_desde || 1), meta: pags.meta || [], usado: pags.usado || [], alvo: Number(imp.alvo_paginas || 25),
+            altura: CORPO_H, cabecalho: ctx.cabecalho, rodape: `${resp} - Neuropsicólogo - ${registro}`, capa: imp.capa !== false };
     }
 
     async function desenhar(doc, alvo, ctx) {

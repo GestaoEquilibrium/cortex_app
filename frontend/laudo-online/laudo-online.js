@@ -215,7 +215,10 @@
         const raiz = document.getElementById('lo-raiz');
         raiz.innerHTML = `${cabecalho()}<div class="lo-corpo">${corpo()}</div>`;
         ligarEventos(raiz);
-        if (st.visao === 'editor' && editavel()) agendarPaginas(300);
+        if (st.visao === 'editor' && editavel()) {
+            if (st.mapaPag && st.mapaPag._laudo === (st.laudo && st.laudo.id)) { try { aplicarMapa(st.mapaPag); } catch (e) { /* refaz já */ } }
+            agendarPaginas(300);
+        }
     }
 
     // ── Quebras de página dentro do editor ────────────────────────────────────
@@ -234,46 +237,84 @@
         let m;
         try { m = await window.LaudoImpressao.mapa(st.doc, await contextoImpressao()); } catch (e) { console.warn('[páginas no editor]', e); return; }
         if (minha !== contaPaginas || st.visao !== 'editor') return;
+        m._laudo = st.laudo.id;
+        st.mapaPag = m;
+        aplicarMapa(m);
+    }
+    // Desenha as folhas com a última conta (também logo depois de redesenhar, para a tela não pular).
+    function aplicarMapa(m) {
         const papel = document.querySelector('.ed-papel');
-        if (!papel) return;
-        papel.querySelectorAll('.ed-pagq, .ed-pagq-meio').forEach(x => x.remove());
+        if (!papel || !m) return;
+        papel.querySelectorAll('.ed-corte, .ed-pagq-meio, .ed-folha-topo, .ed-folha-fim').forEach(x => x.remove());
+        papel.classList.add('ed-folhas');
         const alvoDe = c => c.titulo ? document.getElementById('sec-' + c.secao)
             : (c.bloco ? papel.querySelector(`.ed-bloco[data-bloco="${CSS.escape(c.bloco)}"]`) : null);
+        const dado = x => `data-pq-bloco="${esc(x.bloco || '')}" data-pq-secao="${esc(x.secao || '')}" data-pq-titulo="${x.titulo ? 1 : ''}"`;
+        const cab = `<div class="ed-fc-cab">${esc(m.cabecalho || '')}</div>`;
+        const rod = n => `<div class="ed-fc-rod">${esc(m.rodape || '')} | Página ${n}</div>`;
+        // folha 1: cabeçalho no alto do papel
+        const topo = document.createElement('div');
+        topo.className = 'ed-folha-topo'; topo.contentEditable = 'false';
+        topo.innerHTML = `${m.capa ? '<div class="ed-fc-capa">A capa vem antes desta folha no PDF</div>' : ''}${cab}<div class="ed-fc-rot"><b>Página ${m.inicio}</b></div>`;
+        papel.insertBefore(topo, papel.firstChild);
+        // cortes entre as folhas: sobra da folha + rodapé + vão + cabeçalho da seguinte
+        const cortes = [];
         m.meta.forEach((pg, i) => {
+            if (i === 0) return;
             const n = i + m.inicio;
             const k = pg.findIndex(c => alvoDe(c)); if (k < 0) return;
             const c = pg[k], el = alvoDe(c);
-            const ant = i > 0 ? m.meta[i - 1].slice().reverse().find(x => alvoDe(x) && !(x.bloco && x.bloco === c.bloco)) : null;
+            const ant = m.meta[i - 1].slice().reverse().find(x => alvoDe(x) && !(x.bloco && x.bloco === c.bloco));
             const forcada = c.titulo ? !!((st.doc.secoes || []).find(x => x.id === c.secao) || {}).quebra_antes : !!((acharBloco(c.bloco) || {}).b || {}).quebra_antes;
-            const dado = x => `data-bloco="${esc(x.bloco || '')}" data-secao="${esc(x.secao || '')}" data-titulo="${x.titulo ? 1 : ''}"`;
+            const corte = document.createElement('div');
+            corte.className = 'ed-corte'; corte.contentEditable = 'false'; corte.dataset.pag = String(n);
+            let rotulo, acoes;
             if (c.cont && !c.titulo) {
                 const r = acharBloco(c.bloco), tabela = r && /^(tabela|tabela_instrumentos|classificacao_qi|mapa|campos)$/.test(r.b.tipo);
-                const tag = document.createElement('div');
-                tag.className = 'ed-pagq-meio'; tag.contentEditable = 'false';
-                tag.innerHTML = `<span>↳ A página ${n} começa no meio deste ${tabela ? 'quadro' : 'trecho'}</span>
-                    <button type="button" data-pq="pagina" ${dado(c)} title="O ${tabela ? 'quadro' : 'trecho'} inteiro vai para a página ${n}">⤓ Levar inteiro para a página ${n}</button>
+                rotulo = `<b>Página ${n}</b> <em>continua o ${tabela ? 'quadro' : 'trecho'} de cima</em>`;
+                acoes = `<button type="button" data-pq="pagina" ${dado(c)} title="O ${tabela ? 'quadro' : 'trecho'} inteiro vai para a página ${n}">⤓ Levar o ${tabela ? 'quadro' : 'trecho'} inteiro para esta página</button>
                     ${tabela && r.b.dividir_tabela ? `<button type="button" data-pq="dividir_tabela" ${dado(c)} title="A tabela volta a ficar inteira numa folha só">✕ Não dividir</button>` : ''}`;
-                el.appendChild(tag);
-                return;
+            } else {
+                rotulo = `<b>Página ${n}</b>${forcada ? ' <em>página nova marcada</em>' : ''}`;
+                acoes = `${ant ? `<button type="button" data-pq="pagina" ${dado(ant)} title="O último trecho da página ${n - 1} passa a começar a página ${n}">⤓ Trazer o trecho de cima para esta página</button>` : ''}
+                    ${forcada ? `<button type="button" data-pq="pagina" ${dado(c)} title="Tira a página nova marcada aqui">✕ Tirar a página nova</button>` : `<button type="button" data-pq="espaco" ${dado(c)} title="Dá espaço antes deste trecho (empurra para baixo)">↵ Espaço antes</button>`}`;
             }
-            const mk = document.createElement('div');
-            mk.className = 'ed-pagq' + (i === 0 ? ' primeira' : ''); mk.contentEditable = 'false';
-            mk.innerHTML = `<span class="ed-pagq-l">${i === 0 ? '' : `Fim da página ${n - 1} · `}<b>Página ${n}</b>${forcada ? ' <em>página nova marcada</em>' : ''}</span>
-                ${i > 0 ? `<span class="ed-pagq-acoes">
-                    ${ant ? `<button type="button" data-pq="pagina" ${dado(ant)} title="O último trecho da página ${n - 1} passa a começar a página ${n}">⤓ Trazer o trecho de cima para esta página</button>` : ''}
-                    ${forcada ? `<button type="button" data-pq="pagina" ${dado(c)} title="Tira a página nova marcada aqui">✕ Tirar a página nova</button>` : `<button type="button" data-pq="espaco" ${dado(c)} title="Dá espaço antes deste trecho (empurra para baixo)">↵ Espaço antes</button>`}
-                </span>` : ''}`;
-            el.parentNode.insertBefore(mk, el);
+            corte.innerHTML = `<div class="ed-fc-sobra"></div>${rod(n - 1)}<div class="ed-fc-vao"></div>${cab}<div class="ed-fc-rot"><span>${rotulo}</span><span class="ed-fc-acoes">${acoes}</span></div>`;
+            if (c.cont && !c.titulo) el.parentNode.insertBefore(corte, el.nextSibling); else el.parentNode.insertBefore(corte, el);
+            cortes.push({ corte, i });
         });
+        // fim da última folha
+        const fim = document.createElement('div');
+        fim.className = 'ed-folha-fim'; fim.contentEditable = 'false';
+        fim.innerHTML = `<div class="ed-fc-sobra"></div>${rod(m.meta.length - 1 + m.inicio)}`;
+        papel.appendChild(fim);
+        // cortes ocupam a largura toda do papel
+        const pr = papel.getBoundingClientRect();
+        papel.querySelectorAll('.ed-corte, .ed-folha-topo, .ed-folha-fim').forEach(x => {
+            const er = x.parentNode.getBoundingClientRect();
+            x.style.marginLeft = (pr.left - er.left) + 'px'; x.style.marginRight = (er.right - pr.right) + 'px';
+        });
+        // sobra de cada folha: a mesma proporção de espaço vazio que a folha do PDF terá
+        const marcos = [topo].concat(cortes.map(x => x.corte)).concat([fim]);
+        for (let i = 0; i < marcos.length - 1; i++) {
+            const ini = marcos[i], prox = marcos[i + 1];
+            const y0 = ini.getBoundingClientRect().bottom;
+            const sobraEl = prox.querySelector('.ed-fc-sobra');
+            const y1 = sobraEl.getBoundingClientRect().top;
+            const hEd = Math.max(1, y1 - y0);
+            const usado = m.usado[i] || m.altura;
+            const falta = Math.max(0, Math.min(1400, hEd * (m.altura / Math.max(usado, 1)) - hEd));
+            sobraEl.style.height = Math.round(falta) + 'px';
+        }
         const info = document.getElementById('ed-pags');
         if (info) info.textContent = `${m.paginas} página${m.paginas === 1 ? '' : 's'} + capa${m.paginas > m.alvo ? ` (alvo do modelo: ${m.alvo})` : ''}`;
         if (!papel._pagqLigado) {
             papel._pagqLigado = true;
             papel.addEventListener('click', ev => {
-                const bt = ev.target.closest('.ed-pagq button[data-pq], .ed-pagq-meio button[data-pq]');
+                const bt = ev.target.closest('.ed-corte button[data-pq]');
                 if (!bt) return;
                 ev.preventDefault(); ev.stopPropagation();
-                ajustar(bt.dataset.pq, { dataset: { bloco: bt.dataset.bloco, secao: bt.dataset.secao, tituloSecao: bt.dataset.titulo } });
+                ajustar(bt.dataset.pq, { dataset: { bloco: bt.dataset.pqBloco, secao: bt.dataset.pqSecao, tituloSecao: bt.dataset.pqTitulo } });
             }, true);
         }
     }
@@ -334,7 +375,7 @@
             return `
             <div class="lo-grade">
                 <aside class="lo-arvore" aria-label="Seções do laudo">${e.arvoreHtml()}</aside>
-                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco para mover, ocultar, apagar e mais opções; use o <b>+</b> entre blocos para inserir. A gravação é automática. As linhas <b>Página N</b> mostram onde cada folha do PDF começa. <span class="ed-pags" id="ed-pags"></span></div>
+                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco para mover, ocultar, apagar e mais opções; use o <b>+</b> entre blocos para inserir. A gravação é automática. O papel aparece separado em folhas como no PDF. <span class="ed-pags" id="ed-pags"></span></div>
                     <article class="lo-papel ed-papel" lang="pt-BR">${e.documentoHtml()}</article></section>
                 <aside class="lo-painel" aria-label="Conferências">${painel()}</aside>
             </div>`;

@@ -82,6 +82,7 @@ window.CortexExternosAdmin = (function () {
         const ativos = state.acessos.filter(a => diasRestantes(a.expira_em) > 0).length;
         const vencidos = state.acessos.length - ativos;
         const aguardando = pendentesCadastro().length + state.solicitacoes.length;
+        try { window.dispatchEvent(new CustomEvent('cortex:externos-mudou', { detail: { aguardando } })); } catch (e) { /* ok */ }
 
         return `
             <div class="ext-intro">

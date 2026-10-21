@@ -248,3 +248,15 @@
     }
     .chat-convite-btns { flex-direction: row; width: 100%; justify-content: flex-end; }
 }
+
+/* ── Pedidos de acesso externo (item Configurações), igual ao das mensagens ── */
+#cfg-externos-badge { animation: chat-badge-pulsa .45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@media (min-width: 769px) {
+.sidebar.collapsed .nav-item #cfg-externos-badge:not([hidden]) {
+    display: block; position: absolute; top: 7px; right: 7px;
+    min-width: 9px; height: 9px; padding: 0; border-radius: 50%;
+    font-size: 0; line-height: 0; box-shadow: 0 0 0 2px var(--navy);
+}
+}
+.cfg-tab .cfg-tab-badge { display: inline-block; background: var(--accent-blue, #2F6FED); color: #fff; }
+.cfg-tab .cfg-tab-badge[hidden] { display: none; }

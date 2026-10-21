@@ -116,6 +116,7 @@ window.CortexSidebar = (function() {
             label: 'Configurações',
             href: '../configuracoes/configuracoes.html',
             clinicoOnly: true,
+            badge: 'cfg-externos-badge',
             icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
         }
     ];
@@ -269,7 +270,7 @@ window.CortexSidebar = (function() {
             if (!document.querySelector('link[data-cortex-chat-css]')) {
                 await carregarAsset('link', {
                     rel: 'stylesheet',
-                    href: base + 'chat_badge.css?v=2',
+                    href: base + 'chat_badge.css?v=3',
                     'data-cortex-chat-css': '1'
                 });
             }
@@ -522,6 +523,56 @@ window.CortexSidebar = (function() {
 
         // sprint_chat — contador de mensagens (idem)
         iniciarChatBadge();
+
+        // pedidos de acesso externo aguardando (só quem autoriza: admin clínico)
+        if (ehClinico) iniciarBadgeExternos();
+    }
+
+    // ── Bolinha de pedidos de acesso externo (cadastros + pedidos de prontuário) ──
+    let externosTimer = null, externosLigado = false;
+    function pintarExternos(n) {
+        const txt = n > 99 ? '99+' : String(n);
+        const b = document.getElementById('cfg-externos-badge');
+        if (b) { b.textContent = txt; b.hidden = !n; b.title = n ? `${n} pedido(s) de acesso externo aguardando você` : ''; }
+        // o item leva direto para a aba Acesso externo quando há pedidos
+        document.querySelectorAll('[data-nav="configuracoes"]').forEach(a => {
+            const base = (a.getAttribute('href') || '').split('?')[0];
+            if (base) a.setAttribute('href', n ? base + '?aba=externos' : base);
+            if (a.classList.contains('tabbar-item')) a.classList.toggle('tem-badge', n > 0);
+        });
+        // e a própria aba, dentro de Configurações
+        const aba = document.getElementById('tab-externos');
+        if (aba) {
+            let bb = aba.querySelector('.cfg-tab-badge');
+            if (!bb) { bb = document.createElement('span'); bb.className = 'sidebar-badge cfg-tab-badge'; bb.style.cssText = 'margin-left:6px;position:static;'; aba.appendChild(bb); }
+            bb.textContent = txt; bb.hidden = !n;
+        }
+    }
+    async function contarExternos() {
+        const c = window.cortexClient;
+        if (!c || !document.getElementById('cfg-externos-badge')) return;
+        try {
+            const [cad, ped] = await Promise.all([
+                c.from('usuarios_externos').select('id', { count: 'exact', head: true }).eq('situacao', 'pendente'),
+                c.from('solicitacoes_acesso_externo').select('id', { count: 'exact', head: true }).eq('situacao', 'pendente')
+            ]);
+            pintarExternos((cad && !cad.error ? cad.count || 0 : 0) + (ped && !ped.error ? ped.count || 0 : 0));
+        } catch (err) {
+            console.warn('[sidebar] pedidos de acesso externo:', err.message || err);
+        }
+    }
+    function iniciarBadgeExternos() {
+        contarExternos();
+        if (externosLigado) return;
+        externosLigado = true;
+        clearInterval(externosTimer);
+        externosTimer = setInterval(() => { if (!document.hidden) contarExternos(); }, 60000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) contarExternos(); });
+        // a tela de Acesso externo avisa quando autoriza ou recusa
+        window.addEventListener('cortex:externos-mudou', ev => {
+            const n = ev && ev.detail && typeof ev.detail.aguardando === 'number' ? ev.detail.aguardando : null;
+            if (n == null) contarExternos(); else pintarExternos(n);
+        });
     }
 
     function setupEventos() {

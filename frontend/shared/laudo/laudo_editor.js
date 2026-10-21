@@ -12,6 +12,7 @@
      - seções: mover, ocultar, renomear, renumerar, acrescentar;
      - gravação automática 1,5 s depois da última mudança, com revisão;
      - conflitos da reimportação: manter o meu / usar o novo / ver diferença.
+     - ao vivo (LO-8): mudanças de outra pessoa entram sozinhas (laudo_aovivo.js).
    Expõe: window.LaudoEditor.criar(pagina) → editor
    ============================================================================ */
 (function () {
@@ -38,7 +39,10 @@
         const toast = pg.toast;
         const ed = {
             pendente: false, gravando: false, timer: null, eventos: [], edicoes: {},
-            status: 'salvo', erro: null, urlsImg: {}, modeloCache: null
+            status: 'salvo', erro: null, urlsImg: {}, modeloCache: null,
+            // ao vivo (LO-8): base = último documento em comum com o banco
+            base: JSON.parse(JSON.stringify(st.doc || {})), digitouEm: 0, vivo: null, outros: [],
+            sincronizando: false, deNovo: false, timerSync: null, conflitos: 0, avisouEm: 0, morto: false
         };
 
         // ── utilidades de documento ───────────────────────────────────────────
@@ -122,19 +126,29 @@
             });
             const eventos = ed.eventos.slice(); const edicoes = ed.edicoes;
             ed.eventos = []; ed.edicoes = {}; ed.pendente = false; ed.gravando = true; ed.status = 'gravando'; atualizarStatus();
+            const enviado = JSON.parse(JSON.stringify(doc()));
+            let juntar = false;
             try {
                 const { data, error } = await sb().rpc('laudo_online_salvar', {
-                    p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: doc(), p_eventos: eventos
+                    p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: enviado, p_eventos: eventos
                 });
                 if (error) throw error;
                 if (!data || !data.ok) {
-                    ed.status = 'conflito'; ed.erro = (data && data.mensagem) || 'Não consegui gravar.';
                     ed.eventos = eventos.concat(ed.eventos); Object.assign(ed.edicoes, edicoes); ed.pendente = true;
+                    // outra pessoa gravou antes: junta as duas versões e grava de novo, sem recarregar
+                    if (data && data.erro === 'revisao' && window.LaudoAoVivo && ++ed.conflitos <= 5) {
+                        ed.status = 'juntando'; juntar = true;
+                    } else {
+                        ed.status = 'conflito'; ed.erro = (data && data.mensagem) || 'Não consegui gravar.';
+                    }
                     atualizarStatus();
                     return;
                 }
+                ed.conflitos = 0;
                 st.laudo.revisao = data.revisao;
                 st.laudo.documento = doc();
+                ed.base = enviado;
+                if (ed.vivo) ed.vivo.avisar(data.revisao);
                 ed.status = ed.pendente ? 'pendente' : 'salvo'; ed.erro = null;
                 st.impressao = null;
                 if (pg.aposGravar) pg.aposGravar();
@@ -146,21 +160,28 @@
             } finally {
                 ed.gravando = false;
                 atualizarStatus();
-                if (ed.pendente && ed.status === 'pendente') agendar();
+                if (juntar) sincronizar({ conflito: true });
+                else if (ed.pendente && ed.status === 'pendente') agendar();
             }
         }
         function statusHtml() {
             const t = {
                 salvo: ['ok', '✓ Salvo'], pendente: ['amb', '● Alterações não salvas'], gravando: ['amb', '↻ Salvando…'],
-                erro: ['err', '⚠ Não salvou — tentando de novo'], conflito: ['err', '⚠ Alterado em outra janela']
+                erro: ['err', '⚠ Não salvou — tentando de novo'], conflito: ['err', '⚠ Alterado em outra janela'],
+                juntando: ['amb', '↻ Juntando com as mudanças de outra pessoa…']
             }[ed.status] || ['ok', ''];
-            return `<span class="ed-status ${t[0]}" id="ed-status" title="${esc(ed.erro || '')}">${t[1]}${ed.status === 'conflito' ? ' <button class="ed-link" id="ed-recarregar">Recarregar</button>' : ''}</span>`;
+            const outros = ed.outros || [];
+            const nomes = outros.map(p => p.mesmaPessoa ? 'você (outra janela)' : String(p.nome || 'Alguém').split(' ')[0]);
+            const juntos = outros.length
+                ? `<span class="ed-juntos" title="Também com este laudo aberto: ${esc(outros.map(p => p.mesmaPessoa ? 'você, em outra janela' : p.nome).join(', '))}. As mudanças aparecem sozinhas nas duas telas.">👥 ${esc(nomes.slice(0, 2).join(', '))}${nomes.length > 2 ? ' +' + (nomes.length - 2) : ''}</span>`
+                : '';
+            return `<span class="ed-status ${t[0]}" id="ed-status" title="${esc(ed.erro || '')}">${t[1]}${ed.status === 'conflito' ? ' <button class="ed-link" id="ed-recarregar">Recarregar</button>' : ''}${juntos}</span>`;
         }
         function atualizarStatus() {
             const el = document.getElementById('ed-status');
             if (el) { el.outerHTML = statusHtml(); const b = document.getElementById('ed-recarregar'); if (b) b.addEventListener('click', () => location.reload()); }
         }
-        window.addEventListener('beforeunload', ev => { if (ed.pendente || ed.gravando) { gravar(); ev.preventDefault(); ev.returnValue = ''; } });
+        window.addEventListener('beforeunload', ev => { if (!ed.morto && (ed.pendente || ed.gravando)) { gravar(); ev.preventDefault(); ev.returnValue = ''; } });
 
         function mudouEstrutura(ev, manterFoco) {
             if (ev) registrar(ev);
@@ -169,6 +190,130 @@
             window.scrollTo(0, y);
             if (manterFoco) focar(manterFoco.id, manterFoco.inicio);
         }
+
+        // ── ao vivo (LO-8): mudanças de outra pessoa entram sem recarregar ──────
+        const J = x => JSON.stringify(x);
+        function conectarAoVivo() {
+            if (ed.vivo || !window.LaudoAoVivo || !st.laudo) return;
+            const eu = window.cortexProfissional || {};
+            ed.vivo = window.LaudoAoVivo.conectar({
+                client: sb(), laudoId: st.laudo.id,
+                eu: { id: eu.id || null, nome: eu.nome_completo || eu.email || 'Alguém' },
+                revisao: () => st.laudo.revisao,
+                aoMudarRemoto: info => { if (info && info.nome) ed.ultimoNome = info.nome; sincronizar({ status: info && info.status }); },
+                aoPresenca: lista => { ed.outros = lista; atualizarStatus(); }
+            });
+        }
+        function desligar() {
+            ed.morto = true;
+            clearTimeout(ed.timer); clearTimeout(ed.timerSync);
+            if (ed.vivo) ed.vivo.desligar();
+            ed.vivo = null;
+        }
+        function depoisSync(ms) { clearTimeout(ed.timerSync); ed.timerSync = setTimeout(() => sincronizar(ed.optsSync || {}), ms); }
+        function ocupado() {
+            if (document.querySelector('.lo-modal, .cortex-confirm-overlay')) return 'janela aberta';
+            if (document.querySelector('.ed-bloco.arrastando, .ed-bloco.dragging')) return 'arrastando';
+            const a = document.activeElement;
+            if (a && a.closest && a.closest('.ed-txt') && Date.now() - ed.digitouEm < 2000) return 'digitando';
+            return '';
+        }
+        // guarda e devolve o cursor no mesmo campo e na mesma letra
+        function guardarCursor() {
+            const a = document.activeElement;
+            const el = a && a.closest && a.closest('.ed-txt'); if (!el) return null;
+            const bl = el.closest('.ed-bloco'); if (!bl) return null;
+            const sel = window.getSelection(); let pos = null;
+            if (sel.rangeCount && el.contains(sel.anchorNode)) {
+                const r = document.createRange(); r.selectNodeContents(el); r.setEnd(sel.anchorNode, sel.anchorOffset);
+                pos = r.toString().length;
+            }
+            return { id: bl.dataset.bloco, campo: el.dataset.campo, i: el.dataset.i, pos };
+        }
+        function devolverCursor(c) {
+            if (!c) return;
+            const sel = `#b-${CSS.escape(c.id)} .ed-txt[data-campo="${c.campo}"]` + (c.i != null ? `[data-i="${c.i}"]` : '');
+            const el = document.querySelector(sel); if (!el) return;
+            el.focus();
+            const s = window.getSelection(); const r = document.createRange();
+            let falta = c.pos == null ? Infinity : c.pos, feito = false;
+            const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+            while (w.nextNode()) {
+                const n = w.currentNode;
+                if (falta <= n.nodeValue.length) { r.setStart(n, falta); feito = true; break; }
+                falta -= n.nodeValue.length;
+            }
+            if (!feito) { r.selectNodeContents(el); r.collapse(false); } else r.collapse(true);
+            s.removeAllRanges(); s.addRange(r);
+        }
+        // Busca o documento do banco e junta com o desta tela.
+        // opts.conflito: veio de uma gravação recusada; opts.semGravar: quem chamou grava depois.
+        async function sincronizar(opts) {
+            opts = opts || {};
+            if (ed.morto || !st.laudo) return false;
+            if (ed.sincronizando) { ed.deNovo = true; ed.optsSync = Object.assign({}, ed.optsSync, opts); return false; }
+            if (!opts.semGravar && (ed.gravando || ocupado())) { ed.optsSync = Object.assign({}, ed.optsSync, opts); depoisSync(1200); return false; }
+            ed.optsSync = null;
+            ed.sincronizando = true;
+            let aplicou = false;
+            try {
+                const { data, error } = await sb().from('laudos_online').select('revisao, status, documento').eq('id', st.laudo.id).maybeSingle();
+                if (error || !data) throw error || new Error('laudo sumiu');
+                if (data.status !== 'em_construcao') {
+                    toast('Este laudo foi finalizado em outra tela. Abrindo a versão finalizada…');
+                    desligar();
+                    if (pg.recarregarLaudo) pg.recarregarLaudo(); else location.reload();
+                    return false;
+                }
+                if (Number(data.revisao) <= Number(st.laudo.revisao)) { if (opts.conflito) { ed.status = 'pendente'; agendar(); } return false; }
+                if (!opts.semGravar && (ed.gravando || ocupado())) { ed.optsSync = opts; depoisSync(1200); return false; }
+                const remoto = data.documento || {};
+                const local = doc();
+                const temLocal = J(local) !== J(ed.base);
+                const m = temLocal ? window.LaudoAoVivo.mesclar(ed.base, local, remoto) : { doc: JSON.parse(J(remoto)), mudancas: { mesmos: [] } };
+                const figurasMudaram = J((local || {}).figuras || {}) !== J(m.doc.figuras || {});
+                const cursor = guardarCursor();
+                // troca o conteúdo no mesmo objeto (outras partes da página guardam a referência)
+                Object.keys(local).forEach(k => { delete local[k]; });
+                Object.assign(local, m.doc);
+                ed.base = JSON.parse(J(remoto));
+                st.laudo.revisao = data.revisao;
+                st.laudo.documento = local;
+                st.impressao = null; st.ctxImp = null;
+                Object.keys(ed.edicoes).forEach(id => { if (!achar(id)) delete ed.edicoes[id]; });
+                const aindaTem = J(local) !== J(ed.base);
+                if (!aindaTem && !ed.eventos.length) { ed.pendente = false; ed.status = 'salvo'; }
+                if (pg.aoRemoto) { try { await pg.aoRemoto({ figurasMudaram }); } catch (e) { console.warn('[ao vivo]', e); } }
+                if (!opts.semGravar) {
+                    const y = window.scrollY;
+                    pg.render();
+                    window.scrollTo(0, y);
+                    devolverCursor(cursor);
+                    if (Date.now() - ed.avisouEm > 20000) {
+                        ed.avisouEm = Date.now();
+                        toast(`Laudo atualizado com as mudanças de ${ed.ultimoNome ? String(ed.ultimoNome).split(' ')[0] : 'outra pessoa'}.`);
+                    }
+                    if (m.mudancas.mesmos.length) toast('Vocês dois mexeram no mesmo trecho ao mesmo tempo; ficou a sua versão. Confira se quiser.', 'warning');
+                    if (aindaTem || ed.eventos.length || Object.keys(ed.edicoes).length) agendar();
+                    else atualizarStatus();
+                }
+                aplicou = true;
+            } catch (err) {
+                console.warn('[ao vivo] sincronizar', err);
+                if (opts.conflito) { ed.status = 'erro'; ed.erro = 'Não consegui juntar com as mudanças de outra pessoa.'; atualizarStatus(); clearTimeout(ed.timer); ed.timer = setTimeout(gravar, 5000); }
+            } finally {
+                ed.sincronizando = false;
+                if (ed.deNovo) { ed.deNovo = false; const o = ed.optsSync || {}; ed.optsSync = null; setTimeout(() => sincronizar(o), 50); }
+            }
+            return aplicou;
+        }
+        // depois que a página gravou sozinha (figuras, ajustes, reimportação)
+        function marcarSalvo(revisao) {
+            if (revisao != null) st.laudo.revisao = revisao;
+            ed.base = JSON.parse(J(doc()));
+            if (ed.vivo) ed.vivo.avisar(st.laudo.revisao);
+        }
+        conectarAoVivo();
 
         // ── documento editável ────────────────────────────────────────────────
         function documentoHtml() {
@@ -313,6 +458,7 @@
                 const bl = el.closest('.ed-bloco'); if (!bl) return;
                 const r = achar(bl.dataset.bloco); if (!r) return;
                 if (!(r.b.id in ed.edicoes)) ed.edicoes[r.b.id] = textoAtual(r.b);
+                ed.digitouEm = Date.now();
                 aplicarCampo(r.b, el, bl);
                 agendar();
             });
@@ -1325,7 +1471,8 @@
         return {
             documentoHtml, arvoreHtml, lixeiraHtml, statusHtml, ligar, ligarLixeira, gravar,
             tem: () => ed.pendente || ed.gravando,
-            reimportado: () => mudouEstrutura(null)
+            reimportado: () => mudouEstrutura(null),
+            sincronizar, marcarSalvo, desligar
         };
     }
 

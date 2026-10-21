@@ -91,6 +91,7 @@
 
     async function abrirLaudo(id, semRender) {
         if (st.editor && st.editor.tem()) await st.editor.gravar();
+        if (st.editor) { st.editor.desligar(); st.editor = null; }   // o editor novo começa do documento recém-lido
         const { data, error } = await sb().from('laudos_online').select('*').eq('id', id).maybeSingle();
         if (error) throw error;
         if (!data) throw new Error('Laudo não encontrado ou sem permissão para abrir.');
@@ -161,6 +162,12 @@
             st.editor = window.LaudoEditor.criar({
                 estado: st, render, toast, capturarFigurasDe,
                 conteudoLeitura: (b, ctx, sec) => conteudo(b, ctx, sec),
+                // LO-8: outra pessoa gravou e o documento desta tela foi atualizado
+                aoRemoto: async ({ figurasMudaram }) => { if (figurasMudaram) await assinarFiguras(); reconferir(); },
+                recarregarLaudo: async () => {
+                    st.editor = null;
+                    try { await carregarTudo(); render(); } catch (e) { location.reload(); }
+                },
                 aposGravar: () => {
                     reconferir();
                     const p = document.querySelector('.lo-painel');
@@ -170,6 +177,22 @@
             st.editor._laudo = st.laudo.id;
         }
         return st.editor;
+    }
+
+    // Gravações feitas pela própria página (ajustes da impressão, figuras, reimportação).
+    // Se outra pessoa gravou antes, junta as duas versões e tenta de novo (LO-8).
+    async function salvarDoc(eventos) {
+        let juntou = false;
+        for (let t = 0; t < 5; t++) {
+            const { data, error } = await sb().rpc('laudo_online_salvar', { p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc, p_eventos: eventos });
+            if (error || !data || data.ok || data.erro !== 'revisao' || !st.editor) {
+                if (!error && data && data.ok) { st.laudo.revisao = data.revisao; if (st.editor) st.editor.marcarSalvo(data.revisao); }
+                return { data, error, juntou };
+            }
+            const ok = await st.editor.sincronizar({ semGravar: true });
+            if (ok) juntou = true; else await new Promise(r => setTimeout(r, 400));
+        }
+        return { data: { ok: false, mensagem: 'Outra pessoa está gravando muito neste laudo agora. Tente de novo em instantes.' }, error: null, juntou };
     }
 
     function finalizado() { return !!(st.laudo && st.laudo.status !== 'em_construcao'); }
@@ -593,12 +616,12 @@
         barraAjuste.hidden = true;
         const y = window.scrollY;
         try {
-            const { data, error } = await sb().rpc('laudo_online_salvar', { p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc, p_eventos: eventos });
+            const { data, error, juntou } = await salvarDoc(eventos);
             if (error) throw error;
             if (!data || !data.ok) {
-                st.doc = JSON.parse(copia); st.laudo.documento = st.doc;
+                if (!juntou) { st.doc = JSON.parse(copia); st.laudo.documento = st.doc; }
                 toast((data && data.mensagem) || 'Não consegui gravar.', 'danger');
-                if (data && data.erro === 'revisao') setTimeout(() => location.reload(), 1500);
+                if (juntou) { st.impressao = null; render(); }
                 return;
             }
             st.laudo.revisao = data.revisao;
@@ -1116,10 +1139,7 @@
         if (novas.length) {
             const antes = Object.keys(st.doc.figuras || {});
             st.doc.figuras = Object.assign({}, st.doc.figuras || {}, r.figuras);
-            const { data, error } = await sb().rpc('laudo_online_salvar', {
-                p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc,
-                p_eventos: [{ acao: 'editar', bloco_id: null, antes: { figuras: antes }, depois: { figuras_capturadas: novas } }]
-            });
+            const { data, error } = await salvarDoc([{ acao: 'editar', bloco_id: null, antes: { figuras: antes }, depois: { figuras_capturadas: novas } }]);
             if (error || !data || !data.ok) return { novas: [], erros: r.erros, erroGravar: (data && data.mensagem) || (error && error.message) || 'erro ao gravar' };
             st.laudo.revisao = data.revisao;
             st.laudo.documento = st.doc;
@@ -1406,10 +1426,7 @@
             Object.keys(atual).forEach(k => { delete atual[k]; });
             Object.assign(atual, r.doc);
             const rs = r.resumo;
-            const { data, error } = await sb().rpc('laudo_online_salvar', {
-                p_id: st.laudo.id, p_revisao: st.laudo.revisao, p_documento: st.doc,
-                p_eventos: [{ acao: 'reimportar', bloco_id: null, depois: Object.assign({ motor: (imp.pacote.origem || {}).motor || null }, rs) }]
-            });
+            const { data, error } = await salvarDoc([{ acao: 'reimportar', bloco_id: null, depois: Object.assign({ motor: (imp.pacote.origem || {}).motor || null }, rs) }]);
             if (error) throw error;
             if (!data || !data.ok) throw new Error((data && data.mensagem) || 'Não consegui gravar.');
             st.laudo.revisao = data.revisao;

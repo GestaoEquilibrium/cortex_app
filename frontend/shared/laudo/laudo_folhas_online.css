@@ -1,0 +1,168 @@
+/* ============================================================================
+   CORTEX · Laudo Online — IMPRESSÃO DO ONLINE (frontend/shared/laudo/laudo_folhas_online.css)
+   Sprint LO-10: a página online em folhas A4, modelos escuro, claro e revista.
+   ============================================================================ */
+.port.flo { overflow: visible; background: transparent; padding: 24px; display: grid; gap: 24px; justify-content: center; }
+.flo-folha { width: 794px; height: 1123px; position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 46px 58px 30px; box-sizing: border-box; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+.flo-faixa { height: 16px; margin-bottom: 14px; font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; display: flex; align-items: center; }
+.flo-corpo { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 14px; }
+.flo-rod { display: flex; gap: 14px; align-items: center; margin-top: 12px; font-size: 9.5px; padding-top: 10px; }
+.flo-rod span:nth-child(2) { margin-left: auto; }
+.flo-rod b { min-width: 26px; height: 22px; border-radius: 99px; display: grid; place-items: center; font-size: 10px; }
+.flo-folha.capa .flo-faixa { visibility: hidden; }
+
+/* conteúdo do online, encolhido para o papel */
+.flo-folha .p-hero { padding: 0; }
+.flo-folha .port-larg { max-width: none; padding: 0; }
+.flo-folha .p-eyebrow { font-size: 10px; margin-bottom: 16px; }
+.flo-folha .p-nome { font-size: 50px; }
+.flo-folha .p-sub { font-size: 14px; margin-top: 12px; }
+.flo-folha .p-avatar { width: 112px; font-size: 38px; }
+.flo-folha .p-avatar::before { animation: none; }
+.flo-folha .p-pergunta { margin-top: 26px; padding: 16px 18px; backdrop-filter: none; }
+.flo-folha .p-pergunta p { font-size: 13.5px; }
+.flo-folha .p-numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.flo-folha .p-num b { font-size: 26px; }
+.flo-folha .p-num span { font-size: 11px; }
+.flo-folha .p-txt, .flo-folha p { font-size: 11.5px; line-height: 1.62; max-width: none; }
+.flo-folha .p-lede { font-size: 13.5px; line-height: 1.6; max-width: none; }
+.flo-folha h3 { font-size: 15px; }
+.flo-folha .p-expo-cab h3 { font-size: 26px; }
+.flo-folha .p-dest b { font-size: 46px; }
+.flo-folha .p-vidro, .flo-folha .p-expo { backdrop-filter: none !important; }
+.flo-folha .p-expo { padding: 20px 22px; }
+.flo-folha .p-expo-grade { gap: 18px; grid-template-columns: 190px minmax(0, 1fr); }
+.flo-folha .p-graf-lista, .flo-folha .p-idx-grade { gap: 10px; }
+.flo-capab { display: flex; gap: 16px; align-items: flex-end; padding-bottom: 12px; margin-bottom: 4px; }
+.flo-capn { font-family: var(--f-titulo); font-size: 58px; font-weight: 700; line-height: .8; letter-spacing: -.05em; }
+.flo-capab h2 { font-family: var(--f-titulo); font-size: 24px; margin: 0 0 4px; letter-spacing: -.02em; }
+.flo-capab small { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; }
+.flo-folha .p-trilho, .flo-folha .p-progresso { display: none; }
+.flo-folha .p-mapa svg { max-height: 330px; }
+
+/* ── 1. ESCURO: a página online como ela é, em folhas ── */
+.flo-escuro .flo-folha { background: radial-gradient(700px 420px at 90% -5%, rgba(76,141,246,.22), transparent 60%), radial-gradient(600px 400px at -10% 105%, rgba(139,108,255,.16), transparent 60%), #060B18; color: var(--texto); }
+.flo-escuro .flo-faixa { color: var(--turquesa); border-bottom: 1px solid var(--borda); padding-bottom: 10px; height: 26px; }
+.flo-escuro .flo-rod { color: var(--apagado); border-top: 1px solid var(--borda); }
+.flo-escuro .flo-rod b { background: linear-gradient(135deg, var(--turquesa), var(--azul)); color: #061020; }
+.flo-escuro .flo-capn { color: transparent; -webkit-text-stroke: 1.5px rgba(140,190,255,.6); }
+.flo-escuro .flo-capab { border-bottom: 1px solid var(--borda); }
+.flo-escuro .flo-capab small { color: var(--apagado); }
+.flo-escuro .flo-folha.capa .flo-corpo { justify-content: center; }
+
+/* ── 2 e 3. CLARO: mesmos blocos, papel branco e azuis da clínica ── */
+.flo-claro, .flo-revista {
+    --noite: #FFFFFF; --noite-2: #F4F7FC; --vidro: #F5F8FD; --vidro-forte: #FFFFFF;
+    --borda: #DCE4F0; --borda-forte: #C2CEE2; --texto: #13213F; --suave: #44546F; --apagado: #6B7A93;
+    --azul: #2E75B6; --turquesa: #1F7FA8; --violeta: #5B4BC4; --ambar: #C27C0E; --coral: #C2413B; --verde: #1E8E57;
+    color-scheme: light;
+}
+.flo-claro .flo-folha, .flo-revista .flo-folha { background: #fff; color: var(--texto); }
+.flo-claro .p-nome, .flo-revista .p-nome { background: none; color: #1F3864; -webkit-text-fill-color: #1F3864; }
+.flo-claro .p-eyebrow img, .flo-revista .p-eyebrow img { filter: none; }
+.flo-claro .p-txt, .flo-claro .p-lede, .flo-claro p, .flo-revista .p-txt, .flo-revista .p-lede, .flo-revista p { color: #263752 !important; }
+.flo-claro .p-txt strong, .flo-revista .p-txt strong, .flo-claro .p-lede strong, .flo-revista .p-lede strong { color: #1F3864; }
+.flo-claro .p-num, .flo-claro .p-idx, .flo-claro .p-ins, .flo-claro .p-dest, .flo-claro .p-vidro, .flo-claro .p-pergunta,
+.flo-revista .p-num, .flo-revista .p-idx, .flo-revista .p-ins, .flo-revista .p-dest, .flo-revista .p-vidro, .flo-revista .p-pergunta { background: #F5F8FD !important; border-color: #DCE4F0 !important; box-shadow: none !important; }
+.flo-claro .p-dest, .flo-revista .p-dest { background: linear-gradient(160deg, #1F3864, #2E75B6) !important; border: 0 !important; }
+.flo-claro .p-dest *, .flo-revista .p-dest * { color: #fff !important; }
+.flo-claro .p-dest p, .flo-revista .p-dest p { color: #DCE8F7 !important; }
+.flo-claro .p-expo h3, .flo-revista .p-expo h3, .flo-claro h3, .flo-revista h3, .flo-claro h4, .flo-revista h4 { color: #1F3864; }
+.flo-claro .p-expo-cab small, .flo-revista .p-expo-cab small { color: #2E75B6; }
+.flo-claro .flo-faixa { color: #2E75B6; border-bottom: 2px solid #2E75B6; padding-bottom: 8px; height: 26px; }
+.flo-claro .flo-rod, .flo-revista .flo-rod { color: #6B7A93; border-top: 1px solid #DCE4F0; }
+.flo-claro .flo-rod b, .flo-revista .flo-rod b { background: #1F3864; color: #fff; }
+.flo-claro .flo-capn { color: #2E75B6; }
+.flo-claro .flo-capab { border-bottom: 2px solid #DCE4F0; }
+.flo-claro .flo-capab h2, .flo-revista .flo-capab h2 { color: #1F3864; }
+.flo-claro .flo-capab small, .flo-revista .flo-capab small { color: #6B7A93; }
+.flo-claro .flo-folha.capa { background: linear-gradient(180deg, #F2F6FC 0, #fff 45%); }
+.flo-claro .flo-folha.capa::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 10px; background: linear-gradient(90deg, #1F3864, #2E75B6, #5CC9D3); }
+.flo-claro .flo-folha.capa .flo-corpo, .flo-revista .flo-folha.capa .flo-corpo { justify-content: center; }
+.flo-graf .imp .cx-card { margin-top: 0; }
+.flo-claro .p-avatar, .flo-revista .p-avatar { box-shadow: none; }
+
+/* ── 3. REVISTA: capa inteira azul, faixa lateral por capítulo ── */
+.flo-revista .flo-folha { padding-left: 92px; }
+.flo-revista .flo-folha::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 56px; background: linear-gradient(180deg, #1F3864, #2E75B6); }
+.flo-revista .flo-faixa { position: absolute; left: 0; top: 0; bottom: 0; width: 56px; height: auto; margin: 0; writing-mode: vertical-rl; transform: rotate(180deg); justify-content: center; color: #fff; font-size: 11px; letter-spacing: .3em; }
+.flo-revista .flo-folha.capa { padding: 0; background: linear-gradient(150deg, #1F3864 0, #1F4E79 45%, #2E75B6 100%); color: #fff; }
+.flo-revista .flo-folha.capa::before { display: none; }
+.flo-revista .flo-folha.capa .flo-corpo { padding: 70px 64px; }
+.flo-revista .flo-folha.capa .flo-rod { margin: 0 64px 30px; color: #BCD3EE; border-top-color: rgba(255,255,255,.25); }
+.flo-revista .flo-folha.capa .p-nome { color: #fff; -webkit-text-fill-color: #fff; font-size: 64px; }
+.flo-revista .flo-folha.capa .p-sub, .flo-revista .flo-folha.capa .p-sub b, .flo-revista .flo-folha.capa .p-eyebrow { color: #DCE8F7 !important; }
+.flo-revista .flo-folha.capa .p-eyebrow img { filter: brightness(0) invert(1); }
+.flo-revista .flo-folha.capa .p-pergunta, .flo-revista .flo-folha.capa .p-num { background: rgba(255,255,255,.1) !important; border-color: rgba(255,255,255,.25) !important; }
+.flo-revista .flo-folha.capa .p-pergunta p, .flo-revista .flo-folha.capa .p-pergunta small, .flo-revista .flo-folha.capa .p-num span { color: #E6EFFA !important; }
+.flo-revista .flo-folha.capa .p-num b { color: #fff; }
+.flo-revista .flo-folha.capa .p-num.al b { color: #FFD891; }
+.flo-revista .flo-capab { flex-direction: column; align-items: flex-start; gap: 6px; padding: 0 0 18px; margin-bottom: 8px; border-bottom: 3px solid #2E75B6; }
+.flo-revista .flo-capn { font-size: 96px; color: #E3ECF8; line-height: .75; }
+.flo-revista .flo-capab h2 { font-size: 32px; }
+
+/* claro: componentes do online que tinham cor de noite fixa */
+:is(.flo-claro, .flo-revista) :is(.p-campo, .p-ins, .p-sino-info, .p-mapa-card, .p-cod, .p-hip-col > div, .p-det, .p-passo, .p-alerta, .p-lista, .p-tabela-w, .p-marco, .p-callout, .p-fonte, .p-assin) { background: #F5F8FD !important; border-color: #DCE4F0 !important; color: #13213F !important; box-shadow: none !important; }
+:is(.flo-claro, .flo-revista) :is(.p-campo span, .p-ins b, .p-ins span, .p-sino-info b, .p-sino-info span, .p-tabela td, .p-assin .nome, .p-hip-col p, .p-passo p, .p-idx p, .p-mapa-card p, .p-callout p) { color: #263752 !important; }
+:is(.flo-claro, .flo-revista) .p-campo small, :is(.flo-claro, .flo-revista) .p-ins em { color: #2E75B6 !important; }
+:is(.flo-claro, .flo-revista) .p-chip { background: #E6F0FA; color: #1F4E79; border-color: #C6DAF0; }
+:is(.flo-claro, .flo-revista) .p-chip.v { background: #E3F5EC; color: #17663F; border-color: #BFE6D1; }
+:is(.flo-claro, .flo-revista) .p-pilula.sup { background: #E3F5EC; color: #17663F; } :is(.flo-claro, .flo-revista) .p-pilula.med { background: #E6F0FA; color: #1F4E79; }
+:is(.flo-claro, .flo-revista) .p-pilula.mi { background: #FDF1DC; color: #8A5A08; } :is(.flo-claro, .flo-revista) .p-pilula.inf { background: #FBE4E2; color: #9B2C26; } :is(.flo-claro, .flo-revista) .p-pilula.neu { background: #EEF2F7; color: #44546F; }
+:is(.flo-claro, .flo-revista) .p-alerta.verm { background: #FDF0EF !important; border-color: #F3C5C1 !important; }
+:is(.flo-claro, .flo-revista) .flo-graf .imp .cx-cab { display: none; }
+:is(.flo-claro, .flo-revista) .termo { color: #1F4E79; border-bottom-color: #8EB3DA; }
+:is(.flo-claro, .flo-revista) .p-mapa text, :is(.flo-claro, .flo-revista) .p-sino text { fill: #263752; }
+:is(.flo-claro, .flo-revista) .p-dest .p-pilula { background: rgba(255,255,255,.22) !important; color: #fff !important; }
+:is(.flo-claro, .flo-revista) .flo-capab { margin-top: 10px; }
+
+
+/* As folhas têm 794 px: no papel (e no PDF) as regras de celular do online não valem. */
+.port.flo .p-hero-grade { grid-template-columns: minmax(0, 1fr) auto; }
+.port.flo .p-avatar { order: 0; }
+.port.flo .flo-folha .p-expo-grade { grid-template-columns: 190px minmax(0, 1fr); }
+.port.flo .p-fim { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.port.flo .p-hip-col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.port.flo .p-idx-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.port.flo .p-review { grid-template-columns: auto 1fr; justify-items: stretch; }
+.port.flo .p-graf .imp .cx-sb { grid-template-columns: 38px 1fr 26px 120px; font-size: 12px; }
+.port.flo .p-graf .imp .cx-fd { grid-template-columns: 170px 1fr 52px 140px; }
+.port.flo .p-graf .imp .cx-ic-esc, .port.flo .p-graf .imp .cx-ic { grid-template-columns: 40px 1fr 120px; gap: 12px; }
+.port.flo .p-graf .imp .cx-tiles, .port.flo .flo-graf .imp .cx-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.port.flo .flo-graf .imp .cx-sb { grid-template-columns: 34px 1fr 22px 92px; font-size: 9.5px; }
+.port.flo .flo-graf .imp .cx-fd { grid-template-columns: 110px 1fr 40px 116px; }
+.port.flo .flo-graf .imp .cx-ic-esc, .port.flo .flo-graf .imp .cx-ic { grid-template-columns: 34px 1fr 96px; gap: 10px; }
+.port.flo .cx-fd .selo, .port.flo .cx-ic .selo { display: inline-block; }
+/* no papel: sem anel girando e nome em cor sólida (o PDF não desenha bem o degradê no texto) */
+.port.flo .p-avatar::before { display: none; }
+.port.flo .p-avatar { box-shadow: 0 0 0 3px rgba(92, 201, 211, .55); }
+.port.flo.flo-escuro .p-nome { background: none; color: #FFFFFF; -webkit-text-fill-color: #FFFFFF; }
+
+/* sem animação no papel */
+.flo *, .flo *::before, .flo *::after { transition: none !important; animation: none !important; }
+
+/* mapa de domínios no papel: todos os domínios em lista */
+.flo .flo-mapa { display: grid; gap: 6px; }
+.flo .flo-mapa-l { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--borda); }
+.flo .flo-mapa-l b { font-size: 12px; } .flo .flo-mapa-l p { grid-column: 1 / -1; margin: 0; font-size: 10.5px !important; }
+.flo .flo-mapa-st { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+.flo .st-ok .flo-mapa-st { background: rgba(76, 208, 138, .18); color: #3FBF7F; } .flo .st-at .flo-mapa-st { background: rgba(245, 181, 68, .2); color: #D99A20; } .flo .st-cr .flo-mapa-st { background: rgba(242, 112, 107, .2); color: #E0544E; }
+.flo .p-mapa { display: grid; grid-template-columns: 1fr; }
+.flo .p-mapa-info { display: block; }
+.flo .p-legenda { display: none; }
+/* rascunho */
+.flo-rascunho .flo-folha::after { content: "RASCUNHO"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-32deg); font: 800 120px Inter, sans-serif; letter-spacing: .08em; color: rgba(220, 38, 38, .1); pointer-events: none; z-index: 5; }
+/* na tela */
+.lo-folhas-on { overflow-x: auto; }
+.lo-folhas-on .port.flo { background: transparent; padding: 8px 0 40px; }
+/* impressão: só as folhas */
+#lo-print-on { display: none; }
+@media print {
+    body.lo-imprimindo-on > *:not(#lo-print-on) { display: none !important; }
+    body.lo-imprimindo-on { background: #fff !important; margin: 0 !important; }
+    body.lo-imprimindo-on #lo-print-on { display: block !important; }
+    #lo-print-on .port.flo { display: block; padding: 0; gap: 0; background: none; }
+    #lo-print-on .flo-folha { box-shadow: none; break-after: page; page-break-after: always; }
+    #lo-print-on .flo-folha:last-child { break-after: auto; page-break-after: auto; }
+    #lo-print-on * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

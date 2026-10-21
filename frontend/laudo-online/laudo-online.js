@@ -43,7 +43,8 @@
         urlsFig: {},             // links assinados das figuras das telas de correção (LO-6)
         glossario: {}, validacao: null, historico: [],
         importacao: null,
-        visao: params.get('visao') === 'impressao' ? 'impressao' : 'editor',
+        visao: ['impressao', 'folhas'].includes(params.get('visao')) ? params.get('visao') : 'editor',
+        modeloFolhas: (() => { try { return localStorage.getItem('cortex_lo_modelo_folhas') || 'claro'; } catch (e) { return 'claro'; } })(),
         impressao: null          // { paginas, folhas } depois de desenhar
     };
 
@@ -239,6 +240,7 @@
             <nav class="lo-visoes" role="tablist" aria-label="Visões do laudo">
                 <button role="tab" data-visao="editor" aria-selected="${st.visao === 'editor'}" ${l ? '' : 'disabled'}>Editor</button>
                 <button role="tab" data-visao="impressao" aria-selected="${st.visao === 'impressao'}" ${l ? '' : 'disabled'}>Impressão</button>
+                ${window.LaudoFolhasOnline ? `<button role="tab" data-visao="folhas" aria-selected="${st.visao === 'folhas'}" ${l ? '' : 'disabled'} title="A página online em folhas A4, para PDF">Impressão do online</button>` : ''}
                 <button role="tab" data-visao="online" aria-selected="false" ${l ? '' : 'disabled'} title="A página interativa, como o paciente e o médico veem">Online ↗</button>
             </nav>
             <div class="lo-acoes">
@@ -264,6 +266,7 @@
                 'Laudos em construção só o admin clínico abre. Quando o laudo for finalizado, ele aparece aqui para toda a equipe.');
         }
         if (st.visao === 'impressao') return impressaoHtml();
+        if (st.visao === 'folhas' && window.LaudoFolhasOnline) return folhasOnHtml();
         if (editavel()) {
             const e = editor();
             return `
@@ -416,7 +419,7 @@
         if (st.editor && st.editor.tem()) await st.editor.gravar();
         if (v === 'online') { location.href = `online.html?paciente=${encodeURIComponent(st.pacienteId)}&laudo=${encodeURIComponent(st.laudo.id)}`; return; }
         st.visao = v;
-        try { history.replaceState(null, '', `?paciente=${st.pacienteId}&laudo=${st.laudo.id}${v === 'impressao' ? '&visao=impressao' : ''}`); } catch (e) { /* ok */ }
+        try { history.replaceState(null, '', `?paciente=${st.pacienteId}&laudo=${st.laudo.id}${v !== 'editor' ? '&visao=' + v : ''}`); } catch (e) { /* ok */ }
         render();
     }
 
@@ -442,6 +445,67 @@
         </div>
         <div class="lo-imp-aviso" id="lo-imp-aviso" hidden></div>
         <div id="lo-folhas" class="lo-folhas" aria-label="Folhas do laudo"></div>`;
+    }
+
+    // ── Impressão do online (LO-10): a página online em folhas A4 ──────────────
+    function folhasOnHtml() {
+        const M = window.LaudoFolhasOnline.MODELOS;
+        const m = M[st.modeloFolhas] ? st.modeloFolhas : 'claro';
+        return `
+        <div class="lo-imp-barra">
+            <div class="lo-imp-info"><b id="lo-flo-pags">Montando…</b>
+                <span class="lo-flo-modelos" role="group" aria-label="Modelo">${Object.keys(M).map(k => `<button type="button" class="lo-flo-mod" data-flo-modelo="${k}" aria-pressed="${k === m}">${esc(M[k].nome)}</button>`).join('')}</span>
+                <span id="lo-flo-dica">${esc(M[m].dica)}</span>
+                ${rascunho() ? '<span class="lo-imp-dica">Rascunho: o PDF sai com a marca <b>RASCUNHO</b>.</span>' : ''}</div>
+            <div class="lo-imp-acoes"><button class="btn btn-primary" id="lo-flo-pdf">${rascunho() ? '🖨 PDF de rascunho' : '🖨 Gerar PDF'}</button></div>
+        </div>
+        <div id="lo-folhas-on" class="lo-folhas-on" aria-label="Folhas da página online"></div>`;
+    }
+    let desenhandoOn = null;
+    async function desenharFolhasOn() {
+        const alvo = document.getElementById('lo-folhas-on');
+        if (!alvo) return;
+        const minha = desenhandoOn = Symbol('on');
+        try {
+            const ctx = await contextoImpressao();
+            try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) { /* ok */ }
+            if (minha !== desenhandoOn) return;
+            const r = window.LaudoFolhasOnline.desenhar(alvo, {
+                modelo: st.modeloFolhas, rascunho: rascunho(),
+                portfolio: { doc: st.doc, banco: st.banco, glossario: glossario(), imagens: ctx.imagens || {}, publico: true }
+            });
+            st.folhasOn = r;
+            const el = document.getElementById('lo-flo-pags');
+            if (el) el.textContent = `${r.paginas} folha${r.paginas === 1 ? '' : 's'}`;
+        } catch (err) {
+            console.error('[impressão do online]', err);
+            alvo.innerHTML = `<div class="lo-faixa">Não consegui montar as folhas: ${esc(err.message || 'erro')}</div>`;
+        }
+    }
+    async function gerarPdfOnline() {
+        const origem = document.querySelector('#lo-folhas-on .flo');
+        if (!origem || !origem.querySelector('.flo-folha')) { toast('As folhas ainda não ficaram prontas.', 'danger'); return; }
+        let box = document.getElementById('lo-print-on');
+        if (!box) { box = document.createElement('div'); box.id = 'lo-print-on'; document.body.appendChild(box); }
+        box.innerHTML = origem.outerHTML;
+        const tituloAntes = document.title;
+        document.title = `Laudo Neuropsicológico - ${st.banco.paciente.nome_completo || ''} - v${st.laudo.versao}${rascunho() ? ' - RASCUNHO' : ''}`;
+        document.body.classList.add('lo-imprimindo-on');
+        let terminou = false;
+        const fim = () => {
+            if (terminou) return; terminou = true;
+            document.body.classList.remove('lo-imprimindo-on');
+            box.innerHTML = '';
+            document.title = tituloAntes;
+            window.removeEventListener('afterprint', fim);
+        };
+        window.addEventListener('afterprint', fim);
+        window.CortexAudit && window.CortexAudit.log('geracao_pdf', 'laudos_online', st.laudo.id, {
+            pacienteId: st.pacienteId, detalhes: { versao: st.laudo.versao, formato: 'online_em_folhas', modelo: st.modeloFolhas, paginas: (st.folhasOn || {}).paginas, rascunho: rascunho() }
+        });
+        await new Promise(r => setTimeout(r, 60));
+        window.print();
+        setTimeout(fim, 400);
     }
 
     async function contextoImpressao() {
@@ -814,6 +878,17 @@
         on('lo-gerar-pdf', gerarPdf);
         on('lo-enviar-assinatura', abrirEnvioAssinatura);
         if (st.visao === 'impressao' && st.laudo) desenharImpressao();
+        if (st.visao === 'folhas' && st.laudo) {
+            desenharFolhasOn();
+            raiz.querySelectorAll('[data-flo-modelo]').forEach(bt => bt.addEventListener('click', () => {
+                st.modeloFolhas = bt.dataset.floModelo;
+                try { localStorage.setItem('cortex_lo_modelo_folhas', st.modeloFolhas); } catch (e) { /* ok */ }
+                raiz.querySelectorAll('[data-flo-modelo]').forEach(x => x.setAttribute('aria-pressed', String(x === bt)));
+                const d = raiz.querySelector('#lo-flo-dica'); if (d) d.textContent = window.LaudoFolhasOnline.MODELOS[st.modeloFolhas].dica;
+                desenharFolhasOn();
+            }));
+            on('lo-flo-pdf', gerarPdfOnline);
+        }
         on('lo-reconferir', async () => {
             try {
                 st.bancoVivo = await window.LaudoDados.carregar(st.pacienteId);

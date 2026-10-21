@@ -295,3 +295,19 @@ table.qi2 tr.qi2-ambar td { background: rgba(239,159,39,.20); color: #854F0B; bo
 table.qi2 tr.qi2-vermelho td { background: rgba(226,75,74,.18); color: #A32D2D; border-bottom-color: rgba(226,75,74,.30); }
 table.qi2 tr.qi2-verde td.forte { color: #04342C; } table.qi2 tr.qi2-azul td.forte { color: #042C53; }
 table.qi2 tr.qi2-ambar td.forte { color: #633806; } table.qi2 tr.qi2-vermelho td.forte { color: #501313; }
+
+/* LO-12: tabelas dos testes (Gerador) no mesmo padrão das tabelas do sistema (QI, telas de correção) */
+.imp table.i-tabx { border-collapse: separate; border-spacing: 0; border: .6px solid #D9E1EC; border-radius: 12px; overflow: hidden; background: #fff;
+    font: 500 11.2px/1.35 Inter, system-ui, sans-serif; margin: 8px 0 12px; }
+.imp table.i-tabx th { background: #F3F6FA; color: #5B6B82; font: 700 9px/1.3 Inter, system-ui, sans-serif; font-style: normal; text-transform: uppercase; letter-spacing: .05em;
+    padding: 9px 10px; border-bottom: .6px solid #D9E1EC; text-align: center; vertical-align: bottom; }
+.imp table.i-tabx th:first-child { text-align: left; }
+.imp table.i-tabx td { padding: 7.5px 10px; border-bottom: .6px solid #EDF1F6; text-align: center; vertical-align: middle; }
+.imp table.i-tabx td:not(.cl) { color: #1E293B; }
+.imp table.i-tabx td:first-child { text-align: left; font-weight: 700; }
+.imp table.i-tabx td:first-child:not(.cl) { color: #1F3864; }
+.imp table.i-tabx tbody tr:nth-child(even) td:not(.cl) { background: #FAFBFD; }
+.imp table.i-tabx tbody tr:last-child td { border-bottom: 0; }
+.imp table.i-tabx td.cl { font-style: normal; font-weight: 700; }
+.imp table.i-tabx .cl-selo { font-style: normal; }
+.imp table.i-tabx + .i-nota { margin-top: -6px; }

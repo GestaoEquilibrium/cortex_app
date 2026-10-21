@@ -137,7 +137,7 @@
                             if (c.selo) return `<td><span class="cl-selo cl-${c.fundo}"${st}>${I(c.texto)}</span></td>`;
                             return `<td${c.fundo ? ` class="cl cl-${c.fundo}"` : ''}${st}>${I(c.texto)}</td>`;
                         };
-                        addTab(b, `<table class="i-tab">${larg}<thead><tr>${cab.map(h => `<th>${I(h)}</th>`).join('')}</tr></thead><tbody>`,
+                        addTab(b, `<table class="i-tab i-tabx">${larg}<thead><tr>${cab.map(h => `<th>${I(h)}</th>`).join('')}</tr></thead><tbody>`,
                             (b.linhas || []).map(l => `<tr>${l.map((c, k) => cel(c, k)).join('')}</tr>`), b.nota ? `<p class="i-nota">${I(b.nota)}</p>` : '', o);
                         break;
                     }

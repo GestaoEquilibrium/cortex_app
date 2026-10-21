@@ -173,6 +173,7 @@
                     reconferir();
                     const p = document.querySelector('.lo-painel');
                     if (p) { p.innerHTML = painel(); ligarPainel(p); }
+                    agendarPaginas();
                 }
             });
             st.editor._laudo = st.laudo.id;
@@ -214,6 +215,67 @@
         const raiz = document.getElementById('lo-raiz');
         raiz.innerHTML = `${cabecalho()}<div class="lo-corpo">${corpo()}</div>`;
         ligarEventos(raiz);
+        if (st.visao === 'editor' && editavel()) agendarPaginas(300);
+    }
+
+    // ── Quebras de página dentro do editor ────────────────────────────────────
+    // A mesma conta da Impressão roda por trás e o editor mostra onde cada folha
+    // começa, com os ajustes à mão (levar o trecho para a página seguinte etc.).
+    let timerPaginas = null, contaPaginas = 0;
+    function agendarPaginas(ms) {
+        clearTimeout(timerPaginas);
+        timerPaginas = setTimeout(marcarPaginas, ms == null ? 1500 : ms);
+    }
+    async function marcarPaginas() {
+        if (st.visao !== 'editor' || !editavel() || !window.LaudoImpressao || !window.LaudoImpressao.mapa) return;
+        const a = document.activeElement;
+        if (document.querySelector('.lo-modal') || (a && a.closest && a.closest('.ed-txt') && st.editor && st.editor.tem())) { agendarPaginas(1500); return; }
+        const minha = ++contaPaginas;
+        let m;
+        try { m = await window.LaudoImpressao.mapa(st.doc, await contextoImpressao()); } catch (e) { console.warn('[páginas no editor]', e); return; }
+        if (minha !== contaPaginas || st.visao !== 'editor') return;
+        const papel = document.querySelector('.ed-papel');
+        if (!papel) return;
+        papel.querySelectorAll('.ed-pagq, .ed-pagq-meio').forEach(x => x.remove());
+        const alvoDe = c => c.titulo ? document.getElementById('sec-' + c.secao)
+            : (c.bloco ? papel.querySelector(`.ed-bloco[data-bloco="${CSS.escape(c.bloco)}"]`) : null);
+        m.meta.forEach((pg, i) => {
+            const n = i + m.inicio;
+            const k = pg.findIndex(c => alvoDe(c)); if (k < 0) return;
+            const c = pg[k], el = alvoDe(c);
+            const ant = i > 0 ? m.meta[i - 1].slice().reverse().find(x => alvoDe(x) && !(x.bloco && x.bloco === c.bloco)) : null;
+            const forcada = c.titulo ? !!((st.doc.secoes || []).find(x => x.id === c.secao) || {}).quebra_antes : !!((acharBloco(c.bloco) || {}).b || {}).quebra_antes;
+            const dado = x => `data-bloco="${esc(x.bloco || '')}" data-secao="${esc(x.secao || '')}" data-titulo="${x.titulo ? 1 : ''}"`;
+            if (c.cont && !c.titulo) {
+                const r = acharBloco(c.bloco), tabela = r && /^(tabela|tabela_instrumentos|classificacao_qi|mapa|campos)$/.test(r.b.tipo);
+                const tag = document.createElement('div');
+                tag.className = 'ed-pagq-meio'; tag.contentEditable = 'false';
+                tag.innerHTML = `<span>↳ A página ${n} começa no meio deste ${tabela ? 'quadro' : 'trecho'}</span>
+                    <button type="button" data-pq="pagina" ${dado(c)} title="O ${tabela ? 'quadro' : 'trecho'} inteiro vai para a página ${n}">⤓ Levar inteiro para a página ${n}</button>
+                    ${tabela && r.b.dividir_tabela ? `<button type="button" data-pq="dividir_tabela" ${dado(c)} title="A tabela volta a ficar inteira numa folha só">✕ Não dividir</button>` : ''}`;
+                el.appendChild(tag);
+                return;
+            }
+            const mk = document.createElement('div');
+            mk.className = 'ed-pagq' + (i === 0 ? ' primeira' : ''); mk.contentEditable = 'false';
+            mk.innerHTML = `<span class="ed-pagq-l">${i === 0 ? '' : `Fim da página ${n - 1} · `}<b>Página ${n}</b>${forcada ? ' <em>página nova marcada</em>' : ''}</span>
+                ${i > 0 ? `<span class="ed-pagq-acoes">
+                    ${ant ? `<button type="button" data-pq="pagina" ${dado(ant)} title="O último trecho da página ${n - 1} passa a começar a página ${n}">⤓ Trazer o trecho de cima para esta página</button>` : ''}
+                    ${forcada ? `<button type="button" data-pq="pagina" ${dado(c)} title="Tira a página nova marcada aqui">✕ Tirar a página nova</button>` : `<button type="button" data-pq="espaco" ${dado(c)} title="Dá espaço antes deste trecho (empurra para baixo)">↵ Espaço antes</button>`}
+                </span>` : ''}`;
+            el.parentNode.insertBefore(mk, el);
+        });
+        const info = document.getElementById('ed-pags');
+        if (info) info.textContent = `${m.paginas} página${m.paginas === 1 ? '' : 's'} + capa${m.paginas > m.alvo ? ` (alvo do modelo: ${m.alvo})` : ''}`;
+        if (!papel._pagqLigado) {
+            papel._pagqLigado = true;
+            papel.addEventListener('click', ev => {
+                const bt = ev.target.closest('.ed-pagq button[data-pq], .ed-pagq-meio button[data-pq]');
+                if (!bt) return;
+                ev.preventDefault(); ev.stopPropagation();
+                ajustar(bt.dataset.pq, { dataset: { bloco: bt.dataset.bloco, secao: bt.dataset.secao, tituloSecao: bt.dataset.titulo } });
+            }, true);
+        }
     }
 
     function cabecalho() {
@@ -272,7 +334,7 @@
             return `
             <div class="lo-grade">
                 <aside class="lo-arvore" aria-label="Seções do laudo">${e.arvoreHtml()}</aside>
-                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco para mover, ocultar, apagar e mais opções; use o <b>+</b> entre blocos para inserir. A gravação é automática.</div>
+                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco para mover, ocultar, apagar e mais opções; use o <b>+</b> entre blocos para inserir. A gravação é automática. As linhas <b>Página N</b> mostram onde cada folha do PDF começa. <span class="ed-pags" id="ed-pags"></span></div>
                     <article class="lo-papel ed-papel" lang="pt-BR">${e.documentoHtml()}</article></section>
                 <aside class="lo-painel" aria-label="Conferências">${painel()}</aside>
             </div>`;
@@ -678,7 +740,7 @@
         }
         if (!eventos.length) return;
         ajustando = true;
-        barraAjuste.hidden = true;
+        if (barraAjuste) barraAjuste.hidden = true;
         const y = window.scrollY;
         try {
             const { data, error, juntou } = await salvarDoc(eventos);
@@ -692,7 +754,7 @@
             st.laudo.revisao = data.revisao;
             st.laudo.documento = st.doc;
             st.impressao = null;
-            await desenharImpressao();
+            if (st.visao === 'editor') render(); else await desenharImpressao();
             window.scrollTo(0, y);
         } catch (err) {
             st.doc = JSON.parse(copia); st.laudo.documento = st.doc;

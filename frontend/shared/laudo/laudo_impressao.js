@@ -221,8 +221,13 @@
     function paginar(ps, medidor) {
         const alt = html => { medidor.innerHTML = `<div class="ck">${html}</div>`; return medidor.firstChild.getBoundingClientRect().height; };
         const pags = []; let atual = [], usado = 0;
-        const nova = () => { if (atual.length) pags.push(atual); atual = []; usado = 0; };
-        const emb = (p, html) => `<div class="i-ck" data-bloco="${esc(p.bloco || '')}" data-secao="${esc(p.secaoId || '')}"${p.secao ? ' data-titulo-secao="1"' : ''}>${html}</div>`;
+        // meta: o que começa cada pedaço (para o editor marcar onde a página quebra)
+        const metas = []; let metaAtual = [];
+        const nova = () => { if (atual.length) { pags.push(atual); metas.push(metaAtual); } atual = []; metaAtual = []; usado = 0; };
+        const emb = (p, html) => {
+            metaAtual.push({ bloco: p.bloco || null, secao: p.secaoId || null, titulo: !!p.secao, cont: !!p.cont });
+            return `<div class="i-ck" data-bloco="${esc(p.bloco || '')}" data-secao="${esc(p.secaoId || '')}"${p.secao ? ' data-titulo-secao="1"' : ''}>${html}</div>`;
+        };
         const fila = ps.map(p => Object.assign({}, p, { h: p.vazio ? 0 : alt(p.html) }));
         for (let i = 0; i < fila.length; i++) {
             const p = fila[i];
@@ -240,17 +245,18 @@
             if (p.tab && CORPO_H - usado > 60) {
                 const sobra = CORPO_H - usado;
                 const r = partirTab(p.tab, h => alt(h) <= sobra);
-                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: r[2].linhas.length > 1, tab: r[2].linhas.length > 1 ? r[2] : null, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId }); continue; }
+                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: r[2].linhas.length > 1, tab: r[2].linhas.length > 1 ? r[2] : null, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId, cont: true }); continue; }
             } else if (p.dividir && CORPO_H - usado > 60) {
                 const sobra = CORPO_H - usado;
                 const r = partirP(p.html, h => alt(h) <= sobra);
-                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: true, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId }); continue; }
+                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: true, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId, cont: true }); continue; }
             }
             if (p.tab && atual.length) { nova(); i--; continue; }   // folha nova e tenta dividir de novo nela
             nova();
             atual.push(emb(p, p.html)); usado += p.h;
         }
-        if (atual.length) pags.push(atual);
+        if (atual.length) { pags.push(atual); metas.push(metaAtual); }
+        pags.meta = metas;
         return pags;
     }
 
@@ -303,8 +309,7 @@
      * Desenha o laudo em folhas A4 dentro de `alvo`.
      * ctx: { banco, glossario, congelado, linkProntuario, assinaturaImg, imagens }
      */
-    async function desenhar(doc, alvo, ctx) {
-        ctx = Object.assign({}, ctx);
+    async function paginarDoc(doc, ctx) {
         ctx.pac = C().contexto(ctx.banco, doc.meta);
         ctx.cabecalho = textoCabecalho(doc, ctx.pac);
         await carregarFontes();
@@ -320,6 +325,20 @@
         await carregarImagens(medidor);
         const pags = paginar(ps, medidor);
         medidor.innerHTML = '';
+        return pags;
+    }
+
+    /** Só a conta das páginas, sem desenhar: onde começa cada página (usado pelo editor). */
+    async function mapa(doc, ctx) {
+        ctx = Object.assign({}, ctx);
+        const pags = await paginarDoc(doc, ctx);
+        const imp = ((doc.layout || {}).impressao) || {};
+        return { paginas: pags.length, inicio: Number(imp.numerar_desde || 1), meta: pags.meta || [], alvo: Number(imp.alvo_paginas || 25) };
+    }
+
+    async function desenhar(doc, alvo, ctx) {
+        ctx = Object.assign({}, ctx);
+        const pags = await paginarDoc(doc, ctx);
         const imp = ((doc.layout || {}).impressao) || {};
         const inicio = Number(imp.numerar_desde || 1);
         const folhas = (imp.capa === false ? [] : [capa(doc)]).concat(pags.map((c, i) => folha(c, i + inicio, doc, ctx)));
@@ -330,5 +349,5 @@
         return { paginas: pags.length, folhas: folhas.length, alvo: Number(imp.alvo_paginas || 25), omitidos: Array.from(new Set(ctx.omitidos || [])) };
     }
 
-    window.LaudoImpressao = { desenhar, escalar, qrSVG, A4, BASE, pedacos };
+    window.LaudoImpressao = { desenhar, mapa, escalar, qrSVG, A4, BASE, pedacos };
 })();

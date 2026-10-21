@@ -470,10 +470,11 @@
             const ctx = await contextoImpressao();
             try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) { /* ok */ }
             if (minha !== desenhandoOn) return;
-            const r = window.LaudoFolhasOnline.desenhar(alvo, {
+            const r = await window.LaudoFolhasOnline.desenhar(alvo, {
                 modelo: st.modeloFolhas, rascunho: rascunho(),
                 portfolio: { doc: st.doc, banco: st.banco, glossario: glossario(), imagens: ctx.imagens || {}, publico: true }
             });
+            if (minha !== desenhandoOn) return;
             st.folhasOn = r;
             const el = document.getElementById('lo-flo-pags');
             if (el) el.textContent = `${r.paginas} folha${r.paginas === 1 ? '' : 's'}`;

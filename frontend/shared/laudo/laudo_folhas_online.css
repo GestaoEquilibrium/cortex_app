@@ -166,3 +166,10 @@
     #lo-print-on .flo-folha:last-child { break-after: auto; page-break-after: auto; }
     #lo-print-on * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* destaque + texto do teste: texto corre ao lado do cartão e continua na largura toda */
+.flo .flo-fluxo { display: block; }
+.flo .flo-fluxo::after { content: ""; display: block; clear: both; }
+.flo .flo-fluxo > .flo-flutua { float: left; width: 190px; margin: 0 18px 12px 0; }
+.flo .flo-fluxo > :not(.flo-flutua) { margin-top: 0; margin-bottom: 10px; }
+.flo .flo-fluxo > :not(.flo-flutua):last-child { margin-bottom: 0; }

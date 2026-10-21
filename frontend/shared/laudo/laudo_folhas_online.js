@@ -19,7 +19,18 @@
     };
     const esc = s => window.LaudoCore.esc(s);
 
-    function desenhar(alvo, o) {
+    // Fontes e imagens prontas antes de medir: senão o texto cresce depois e estoura a folha.
+    async function prontos(src) {
+        if (document.fonts && document.fonts.load) {
+            const fs = ['400 12px Inter', '500 12px Inter', '600 12px Inter', '700 12px Inter', '800 12px Inter',
+                '500 30px "Bricolage Grotesque"', '700 30px "Bricolage Grotesque"'];
+            await Promise.all(fs.map(f => document.fonts.load(f).catch(() => null)));
+            try { await document.fonts.ready; } catch (e) { /* ok */ }
+        }
+        await Promise.all([...src.querySelectorAll('img')].map(i => i.complete ? null : new Promise(r => { i.onload = i.onerror = r; setTimeout(r, 4000); })));
+    }
+
+    async function desenhar(alvo, o) {
         const modelo = MODELOS[o.modelo] ? o.modelo : 'claro';
         // 1) a página online, fora da tela
         const fonte = document.createElement('div');
@@ -29,6 +40,7 @@
         window.LaudoPortfolio.desenhar(fonte, Object.assign({ publico: true }, o.portfolio || {}));
         if (window.LaudoPortfolio.parar) window.LaudoPortfolio.parar();
         const src = fonte.querySelector('.port');
+        await prontos(src);
         const nome = ((src.querySelector('.p-nome') || {}).textContent || '').trim();
 
         // 2) folhas
@@ -50,23 +62,35 @@
         }
         const estoura = () => corpo.scrollHeight > corpo.clientHeight + 1;
         const vazio = () => !corpo.children.length;
+        // títulos não ficam sozinhos no pé da folha: vão junto para a próxima
+        const ehCab = el => !!el && el.nodeType === 1 && (el.classList.contains('flo-capab') || el.classList.contains('p-expo-cab') || /^H[1-4]$/.test(el.tagName)
+            || (el.classList.contains('flo-cont') && el.children.length > 0 && [...el.children].every(ehCab)));
+        function novaFolha() {
+            const leva = [];
+            while (corpo.children.length > 1 && ehCab(corpo.lastElementChild)) leva.unshift(corpo.removeChild(corpo.lastElementChild));
+            folha();
+            leva.forEach(x => corpo.appendChild(x));
+        }
         function por(el, prof) {
             corpo.appendChild(el); if (!estoura()) return;
             corpo.removeChild(el);
             const livre = corpo.clientHeight - usado();
-            const quebrar = el.children.length >= 2 && livre > corpo.clientHeight * 0.33 && prof < 3;
-            if (!vazio() && !quebrar) { folha(); corpo.appendChild(el); if (!estoura()) return; corpo.removeChild(el); }
+            const quebrar = el.children.length >= 2 && livre > corpo.clientHeight * 0.33 && prof < 4;
+            if (!vazio() && !quebrar) { novaFolha(); corpo.appendChild(el); if (!estoura()) return; corpo.removeChild(el); }
             const filhos = [...el.children];
-            if (filhos.length < 2 || prof > 3) { corpo.appendChild(el); folha(); return; }
+            if (filhos.length < 2 || prof > 4) { corpo.appendChild(el); folha(); return; }
             const nova = () => { const e = el.cloneNode(false); e.classList.add('flo-cont'); corpo.appendChild(e); return e; };
             let emb = nova();
             filhos.forEach(k => {
                 emb.appendChild(k);
                 if (!estoura()) return;
                 emb.removeChild(k);
-                if (!emb.children.length) corpo.removeChild(emb);
-                folha(); emb = nova(); emb.appendChild(k);
-                if (estoura()) { emb.removeChild(k); corpo.removeChild(emb); por(k, prof + 1); emb = nova(); }
+                const soCab = emb.children.length > 0 && [...emb.children].every(ehCab);
+                if (!emb.children.length || soCab) corpo.removeChild(emb);
+                novaFolha();
+                if (soCab) corpo.appendChild(emb); else emb = nova();
+                emb.appendChild(k);
+                if (estoura()) { emb.removeChild(k); if (!emb.children.length) corpo.removeChild(emb); por(k, prof + 1); emb = nova(); }
             });
             if (!emb.children.length) corpo.removeChild(emb);
         }
@@ -82,6 +106,18 @@
                 const rot = { ok: 'Preservado', at: 'Atenção', cr: 'Comprometido' };
                 const info = m.querySelector('.p-mapa-info');
                 if (info) info.innerHTML = `<div class="flo-mapa">${L.map(l => `<div class="flo-mapa-l st-${l.st}"><b>${esc(l.dominio)}</b><span class="flo-mapa-st">${rot[l.st] || ''}</span><p>${l.desempenho || ''}</p></div>`).join('')}</div>`;
+            });
+            // destaque + textos: no papel o texto corre ao lado do cartão e continua na largura toda
+            // (assim um teste longo quebra entre folhas sem virar uma coluna estreita)
+            const grades = [...c.querySelectorAll('.p-expo-grade')];
+            grades.forEach(g => {
+                const f = document.createElement('div'); f.className = 'flo-fluxo';
+                const tx = [...g.children].find(x => x.classList.contains('p-textos'));
+                [...g.children].forEach(x => {
+                    if (x === tx) [...tx.children].forEach(y => f.appendChild(y));
+                    else { if (x.classList.contains('p-dest')) x.classList.add('flo-flutua'); f.appendChild(x); }
+                });
+                g.replaceWith(f);
             });
             if (modelo !== 'escuro') c.querySelectorAll('.p-graf').forEach(x => { x.classList.remove('p-graf'); x.classList.add('flo-graf'); });
             return c;

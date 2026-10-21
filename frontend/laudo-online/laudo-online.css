@@ -301,10 +301,10 @@
 .ed-fc-rot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 6px 56px 0; font-size: 11.5px; }
 .ed-fc-rot b { color: #1F3864; }
 .ed-fc-rot em { font-style: normal; margin-left: 6px; padding: 1px 8px; border-radius: 99px; background: #E0EAF8; color: #1F4E79; font-size: 10.5px; }
-.ed-fc-acoes { display: inline-flex; gap: 6px; flex-wrap: wrap; opacity: .3; transition: opacity .15s; }
-.ed-corte:hover .ed-fc-acoes { opacity: 1; }
-.ed-corte button { border: 1px solid #CBD5E1; background: #fff; color: #1F3864; border-radius: 999px; padding: 3px 10px; font: 600 11px Inter, sans-serif; cursor: pointer; }
-.ed-corte button:hover { background: #1F3864; color: #fff; border-color: #1F3864; }
+
+
+
+
 @media (max-width: 760px) { .ed-fc-rot, .ed-fc-capa { padding-left: 18px; padding-right: 18px; } .ed-fc-cab, .ed-fc-rod { margin-left: 18px; margin-right: 18px; } .ed-folha-topo { margin-top: -22px; } .ed-folha-fim { margin-bottom: -30px; } }
 @media print { .ed-corte, .ed-folha-topo, .ed-folha-fim { display: none !important; } }
 

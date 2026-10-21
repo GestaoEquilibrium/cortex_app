@@ -209,3 +209,9 @@
 .ed-sellin:hover, .ed-selcol:hover { color: #7C4DFF; }
 .ed-tab-grade th { text-align: left; }
 .ed-tab-grade th input { display: inline-block; width: calc(100% - 44px); }
+
+/* desfazer / refazer ao lado do "Salvo" */
+.ed-desf { display: inline-flex; gap: 2px; margin-right: 6px; padding: 2px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); vertical-align: middle; }
+.ed-desf button { border: 0; width: 28px; height: 24px; border-radius: 999px; background: transparent; color: #fff; font: 700 15px/1 Inter, sans-serif; cursor: pointer; }
+.ed-desf button:hover:not(:disabled) { background: rgba(255,255,255,.18); }
+.ed-desf button:disabled { opacity: .35; cursor: default; }

@@ -249,7 +249,6 @@
         papel.classList.add('ed-folhas');
         const alvoDe = c => c.titulo ? document.getElementById('sec-' + c.secao)
             : (c.bloco ? papel.querySelector(`.ed-bloco[data-bloco="${CSS.escape(c.bloco)}"]`) : null);
-        const dado = x => `data-pq-bloco="${esc(x.bloco || '')}" data-pq-secao="${esc(x.secao || '')}" data-pq-titulo="${x.titulo ? 1 : ''}"`;
         const cab = `<div class="ed-fc-cab">${esc(m.cabecalho || '')}</div>`;
         const rod = n => `<div class="ed-fc-rod">${esc(m.rodape || '')} | Página ${n}</div>`;
         // folha 1: cabeçalho no alto do papel
@@ -264,22 +263,13 @@
             const n = i + m.inicio;
             const k = pg.findIndex(c => alvoDe(c)); if (k < 0) return;
             const c = pg[k], el = alvoDe(c);
-            const ant = m.meta[i - 1].slice().reverse().find(x => alvoDe(x) && !(x.bloco && x.bloco === c.bloco));
             const forcada = c.titulo ? !!((st.doc.secoes || []).find(x => x.id === c.secao) || {}).quebra_antes : !!((acharBloco(c.bloco) || {}).b || {}).quebra_antes;
             const corte = document.createElement('div');
             corte.className = 'ed-corte'; corte.contentEditable = 'false'; corte.dataset.pag = String(n);
-            let rotulo, acoes;
-            if (c.cont && !c.titulo) {
-                const r = acharBloco(c.bloco), tabela = r && /^(tabela|tabela_instrumentos|classificacao_qi|mapa|campos)$/.test(r.b.tipo);
-                rotulo = `<b>Página ${n}</b> <em>continua o ${tabela ? 'quadro' : 'trecho'} de cima</em>`;
-                acoes = `<button type="button" data-pq="pagina" ${dado(c)} title="O ${tabela ? 'quadro' : 'trecho'} inteiro vai para a página ${n}">⤓ Levar o ${tabela ? 'quadro' : 'trecho'} inteiro para esta página</button>
-                    ${tabela && r.b.dividir_tabela ? `<button type="button" data-pq="dividir_tabela" ${dado(c)} title="A tabela volta a ficar inteira numa folha só">✕ Não dividir</button>` : ''}`;
-            } else {
-                rotulo = `<b>Página ${n}</b>${forcada ? ' <em>página nova marcada</em>' : ''}`;
-                acoes = `${ant ? `<button type="button" data-pq="pagina" ${dado(ant)} title="O último trecho da página ${n - 1} passa a começar a página ${n}">⤓ Trazer o trecho de cima para esta página</button>` : ''}
-                    ${forcada ? `<button type="button" data-pq="pagina" ${dado(c)} title="Tira a página nova marcada aqui">✕ Tirar a página nova</button>` : `<button type="button" data-pq="espaco" ${dado(c)} title="Dá espaço antes deste trecho (empurra para baixo)">↵ Espaço antes</button>`}`;
-            }
-            corte.innerHTML = `<div class="ed-fc-sobra"></div>${rod(n - 1)}<div class="ed-fc-vao"></div>${cab}<div class="ed-fc-rot"><span>${rotulo}</span><span class="ed-fc-acoes">${acoes}</span></div>`;
+            const rotulo = c.cont && !c.titulo
+                ? `<b>Página ${n}</b> <em>continua o trecho de cima</em>`
+                : `<b>Página ${n}</b>${forcada ? ' <em>página nova marcada</em>' : ''}`;
+            corte.innerHTML = `<div class="ed-fc-sobra"></div>${rod(n - 1)}<div class="ed-fc-vao"></div>${cab}<div class="ed-fc-rot"><span>${rotulo}</span></div>`;
             if (c.cont && !c.titulo) el.parentNode.insertBefore(corte, el.nextSibling); else el.parentNode.insertBefore(corte, el);
             cortes.push({ corte, i });
         });
@@ -375,7 +365,7 @@
             return `
             <div class="lo-grade">
                 <aside class="lo-arvore" aria-label="Seções do laudo">${e.arvoreHtml()}</aside>
-                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco para mover, ocultar, apagar e mais opções; use o <b>+</b> entre blocos para inserir. A gravação é automática. O papel aparece separado em folhas como no PDF. <span class="ed-pags" id="ed-pags"></span></div>
+                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco: à direita ficam mover, ocultar e apagar; à esquerda, os ajustes de página (espaço e página nova), iguais aos da Impressão. Errou? <b>Ctrl+Z</b> desfaz e <b>Ctrl+Y</b> refaz. A gravação é automática. <span class="ed-pags" id="ed-pags"></span></div>
                     <article class="lo-papel ed-papel" lang="pt-BR">${e.documentoHtml()}</article></section>
                 <aside class="lo-painel" aria-label="Conferências">${painel()}</aside>
             </div>`;
@@ -698,7 +688,7 @@
             barraAjuste.className = 'lo-ajuste';
             barraAjuste.hidden = true;
             document.body.appendChild(barraAjuste);
-            barraAjuste.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck')) barraAjuste.hidden = true; });
+            barraAjuste.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck, .ed-bloco, .ed-h2')) barraAjuste.hidden = true; });
             barraAjuste.addEventListener('click', ev => {
                 const bt = ev.target.closest('button[data-ajuste]');
                 if (bt && barraAjuste._alvo) ajustar(bt.dataset.ajuste, barraAjuste._alvo);
@@ -710,7 +700,31 @@
         alvo.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !barraAjuste.contains(ev.relatedTarget)) barraAjuste.hidden = true; });
     }
 
-    function mostrarAjuste(el) {
+    // No editor: a mesma barra da Impressão (↵ Espaço · ⤓ Página nova aqui · ✂ Dividir a tabela),
+    // no canto de cima à esquerda do trecho (à direita fica a barra do editor).
+    function ligarAjustesEditor(raiz) {
+        const papel = raiz.querySelector('.ed-papel');
+        if (!papel || !podeAjustar()) return;
+        ligarAjustes(document.createElement('div'));   // cria a barra (sem folhas para ligar)
+        let atual = null;
+        const esconder = () => { if (barraAjuste) barraAjuste.hidden = true; atual = null; };
+        papel.addEventListener('mouseover', ev => {
+            if (ajustando || document.querySelector('.lo-modal')) return;
+            const h2 = ev.target.closest('.ed-h2');
+            const bl = h2 ? null : ev.target.closest('.ed-bloco');
+            const alvo = h2 || bl;
+            if (!alvo || alvo === atual) return;
+            atual = alvo;
+            if (h2) {
+                const sec = h2.closest('.ed-sec');
+                mostrarAjuste({ dataset: { tituloSecao: '1', secao: sec ? sec.dataset.secao : '' }, getBoundingClientRect: () => h2.getBoundingClientRect() }, true);
+            } else mostrarAjuste(bl, true);
+        });
+        papel.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !barraAjuste || !barraAjuste.contains(ev.relatedTarget)) esconder(); });
+        papel.addEventListener('keydown', esconder);
+    }
+
+    function mostrarAjuste(el, noEditor) {
         if (ajustando) return;
         const ehTitulo = !!el.dataset.tituloSecao;
         let temEspacoAcima = false, temPagina = false, tabela = null;
@@ -736,14 +750,22 @@
         barraAjuste._alvo = el;
         const r = el.getBoundingClientRect();
         barraAjuste.hidden = false;
-        // dentro do próprio trecho, no canto de cima à direita: o mouse vai do texto à barra sem sair dele
-        barraAjuste.style.top = (window.scrollY + r.top + 2) + 'px';
-        barraAjuste.style.left = (window.scrollX + Math.max(8, r.right - barraAjuste.offsetWidth - 2)) + 'px';
+        barraAjuste.classList.toggle('no-editor', !!noEditor);
+        if (noEditor) {
+            // em cima do trecho, à esquerda (a barra do editor fica à direita)
+            barraAjuste.style.top = (window.scrollY + r.top - 16) + 'px';
+            barraAjuste.style.left = (window.scrollX + r.left) + 'px';
+        } else {
+            // dentro do próprio trecho, no canto de cima à direita: o mouse vai do texto à barra sem sair dele
+            barraAjuste.style.top = (window.scrollY + r.top + 2) + 'px';
+            barraAjuste.style.left = (window.scrollX + Math.max(8, r.right - barraAjuste.offsetWidth - 2)) + 'px';
+        }
     }
 
     async function ajustar(acao, el) {
         if (ajustando || !podeAjustar()) return;
         if (st.editor && st.editor.tem()) await st.editor.gravar();
+        if (st.editor && st.editor.marco) st.editor.marco();
         const copia = JSON.stringify(st.doc);
         const eventos = [];
         const ehTitulo = !!el.dataset.tituloSecao;
@@ -780,6 +802,7 @@
             }
         }
         if (!eventos.length) return;
+        if (st.editor && st.editor.marco) st.editor.marco();   // o ajuste entra no Ctrl+Z
         ajustando = true;
         if (barraAjuste) barraAjuste.hidden = true;
         const y = window.scrollY;
@@ -1022,7 +1045,7 @@
         }));
         on('lo-reimportar', () => abrirImportar(true));
         const p = raiz.querySelector('.lo-painel'); if (p) ligarPainel(p, true);
-        if (editavel() && st.visao === 'editor') editor().ligar(raiz);
+        if (editavel() && st.visao === 'editor') { editor().ligar(raiz); ligarAjustesEditor(raiz); }
         raiz.querySelectorAll('.lo-termo').forEach(t => {
             t.addEventListener('click', () => balao(t));
             t.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); balao(t); } });

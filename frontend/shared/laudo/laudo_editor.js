@@ -42,7 +42,9 @@
             status: 'salvo', erro: null, urlsImg: {}, modeloCache: null,
             // ao vivo (LO-8): base = último documento em comum com o banco
             base: JSON.parse(JSON.stringify(st.doc || {})), digitouEm: 0, vivo: null, outros: [],
-            sincronizando: false, deNovo: false, timerSync: null, conflitos: 0, avisouEm: 0, morto: false
+            sincronizando: false, deNovo: false, timerSync: null, conflitos: 0, avisouEm: 0, morto: false,
+            // desfazer / refazer (Ctrl+Z, Ctrl+Y): fotos do documento antes de cada mudança
+            pilha: [], refazer: [], ultimo: null, textoEm: 0, textoBloco: null
         };
 
         // ── utilidades de documento ───────────────────────────────────────────
@@ -108,7 +110,75 @@
         }
 
         // ── gravação ──────────────────────────────────────────────────────────
-        function registrar(ev) { ed.eventos.push(ev); agendar(); }
+        function registrar(ev) { marco(); ed.eventos.push(ev); agendar(); }
+
+        // ── desfazer / refazer ────────────────────────────────────────────────
+        // ed.ultimo = o documento no último ponto estável. Cada mudança empilha o
+        // estado de antes; a digitação conta como uma mudança por "rajada".
+        const MAX_DESFAZER = 40;
+        function marco() {
+            if (ed.morto || !doc()) return;
+            const atual = JSON.stringify(doc());
+            if (ed.ultimo != null && atual !== ed.ultimo) {
+                ed.pilha.push(ed.ultimo);
+                if (ed.pilha.length > MAX_DESFAZER) ed.pilha.shift();
+                ed.refazer = [];
+            }
+            ed.ultimo = atual;
+            pintarDesfazer();
+        }
+        function aplicarFoto(j) {
+            const d = doc();
+            Object.keys(d).forEach(k => { delete d[k]; });
+            Object.assign(d, JSON.parse(j));
+            ed.ultimo = j; ed.edicoes = {}; ed.textoEm = 0; ed.textoBloco = null;
+            ed.eventos.push({ acao: 'editar', bloco_id: null, depois: { desfazer: true } });
+            agendar();
+            const y = window.scrollY;
+            pg.render();
+            window.scrollTo(0, y);
+            pintarDesfazer();
+        }
+        function desfazer() {
+            if (ed.morto) return;
+            marco();
+            if (!ed.pilha.length) { toast('Nada para desfazer.'); return; }
+            const ant = ed.pilha.pop();
+            ed.refazer.push(ed.ultimo);
+            aplicarFoto(ant);
+        }
+        function refazerUltimo() {
+            if (ed.morto) return;
+            if (!ed.refazer.length) { toast('Nada para refazer.'); return; }
+            const atual = JSON.stringify(doc());
+            if (atual !== ed.ultimo) { marco(); return; }   // mudou algo depois de desfazer: não há o que refazer
+            const prox = ed.refazer.pop();
+            ed.pilha.push(ed.ultimo);
+            aplicarFoto(prox);
+        }
+        function pintarDesfazer() {
+            const a = document.getElementById('ed-desfazer'), b = document.getElementById('ed-refazer');
+            if (a) a.disabled = !ed.pilha.length && JSON.stringify(doc()) === ed.ultimo;
+            if (b) b.disabled = !ed.refazer.length;
+        }
+        function teclaDesfazer(ev) {
+            if (ed.morto || !(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+            const k = String(ev.key || '').toLowerCase();
+            if (k !== 'z' && k !== 'y') return;
+            if (document.querySelector('.lo-modal, .cortex-confirm-overlay')) return;
+            const a = document.activeElement;
+            if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;   // campo de formulário: desfazer do próprio campo
+            if (!document.querySelector('.ed-papel')) return;
+            ev.preventDefault();
+            if (k === 'y' || ev.shiftKey) refazerUltimo(); else desfazer();
+        }
+        document.addEventListener('keydown', teclaDesfazer, true);
+        document.addEventListener('click', ev => {
+            const b = ev.target.closest && ev.target.closest('#ed-desfazer, #ed-refazer');
+            if (!b || ed.morto) return;
+            ev.preventDefault();
+            if (b.id === 'ed-desfazer') desfazer(); else refazerUltimo();
+        });
         function agendar() {
             ed.pendente = true; ed.status = 'pendente'; atualizarStatus();
             clearTimeout(ed.timer);
@@ -175,16 +245,21 @@
             const juntos = outros.length
                 ? `<span class="ed-juntos" title="Também com este laudo aberto: ${esc(outros.map(p => p.mesmaPessoa ? 'você, em outra janela' : p.nome).join(', '))}. As mudanças aparecem sozinhas nas duas telas.">👥 ${esc(nomes.slice(0, 2).join(', '))}${nomes.length > 2 ? ' +' + (nomes.length - 2) : ''}</span>`
                 : '';
-            return `<span class="ed-status ${t[0]}" id="ed-status" title="${esc(ed.erro || '')}">${t[1]}${ed.status === 'conflito' ? ' <button class="ed-link" id="ed-recarregar">Recarregar</button>' : ''}${juntos}</span>`;
+            const podeDesf = ed.pilha.length > 0 || (ed.ultimo != null && doc() && JSON.stringify(doc()) !== ed.ultimo);
+            return `<span class="ed-desf" id="ed-desf-grupo"><button type="button" id="ed-desfazer" title="Desfazer (Ctrl+Z)" ${podeDesf ? '' : 'disabled'}>↶</button><button type="button" id="ed-refazer" title="Refazer (Ctrl+Y)" ${ed.refazer.length ? '' : 'disabled'}>↷</button></span><span class="ed-status ${t[0]}" id="ed-status" title="${esc(ed.erro || '')}">${t[1]}${ed.status === 'conflito' ? ' <button class="ed-link" id="ed-recarregar">Recarregar</button>' : ''}${juntos}</span>`;
         }
         function atualizarStatus() {
             const el = document.getElementById('ed-status');
-            if (el) { el.outerHTML = statusHtml(); const b = document.getElementById('ed-recarregar'); if (b) b.addEventListener('click', () => location.reload()); }
+            if (el) {
+                const g = document.getElementById('ed-desf-grupo'); if (g) g.remove();
+                el.outerHTML = statusHtml();
+                const b = document.getElementById('ed-recarregar'); if (b) b.addEventListener('click', () => location.reload());
+            }
         }
         window.addEventListener('beforeunload', ev => { if (!ed.morto && (ed.pendente || ed.gravando)) { gravar(); ev.preventDefault(); ev.returnValue = ''; } });
 
         function mudouEstrutura(ev, manterFoco) {
-            if (ev) registrar(ev);
+            if (ev) registrar(ev); else marco();
             const y = window.scrollY;
             pg.render();
             window.scrollTo(0, y);
@@ -206,6 +281,7 @@
         }
         function desligar() {
             ed.morto = true;
+            document.removeEventListener('keydown', teclaDesfazer, true);
             clearTimeout(ed.timer); clearTimeout(ed.timerSync);
             if (ed.vivo) ed.vivo.desligar();
             ed.vivo = null;
@@ -281,6 +357,8 @@
                 st.laudo.documento = local;
                 st.impressao = null; st.ctxImp = null;
                 Object.keys(ed.edicoes).forEach(id => { if (!achar(id)) delete ed.edicoes[id]; });
+                // mudança de outra pessoa entrou: o Ctrl+Z recomeça daqui (não desfaz o que o outro fez)
+                ed.pilha = []; ed.refazer = []; ed.ultimo = JSON.stringify(local);
                 const aindaTem = J(local) !== J(ed.base);
                 if (!aindaTem && !ed.eventos.length) { ed.pendente = false; ed.status = 'salvo'; }
                 if (pg.aoRemoto) { try { await pg.aoRemoto({ figurasMudaram }); } catch (e) { console.warn('[ao vivo]', e); } }
@@ -314,6 +392,7 @@
             if (ed.vivo) ed.vivo.avisar(st.laudo.revisao);
         }
         conectarAoVivo();
+        ed.ultimo = JSON.stringify(doc() || {});
 
         // ── documento editável ────────────────────────────────────────────────
         function documentoHtml() {
@@ -458,6 +537,9 @@
                 const bl = el.closest('.ed-bloco'); if (!bl) return;
                 const r = achar(bl.dataset.bloco); if (!r) return;
                 if (!(r.b.id in ed.edicoes)) ed.edicoes[r.b.id] = textoAtual(r.b);
+                // nova rajada de digitação (pausa ou outro bloco) = um passo do Ctrl+Z
+                if (Date.now() - ed.textoEm > 1200 || ed.textoBloco !== r.b.id) marco();
+                ed.textoEm = Date.now(); ed.textoBloco = r.b.id;
                 ed.digitouEm = Date.now();
                 aplicarCampo(r.b, el, bl);
                 agendar();
@@ -1472,7 +1554,7 @@
             documentoHtml, arvoreHtml, lixeiraHtml, statusHtml, ligar, ligarLixeira, gravar,
             tem: () => ed.pendente || ed.gravando,
             reimportado: () => mudouEstrutura(null),
-            sincronizar, marcarSalvo, desligar
+            sincronizar, marcarSalvo, desligar, marco, desfazer, refazer: refazerUltimo
         };
     }
 

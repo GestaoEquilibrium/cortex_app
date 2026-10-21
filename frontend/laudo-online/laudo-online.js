@@ -833,6 +833,7 @@
         on('lo-finalizar-2', abrirFinalizar);
         on('lo-nova-versao', abrirNovaVersao);
         on('lo-liberar', liberarOnline);
+        on('lo-link', () => window.LaudoLink.abrir({ laudoId: st.laudo.id, versao: st.laudo.versao, pacienteId: st.pacienteId, pacienteNome: (st.banco.paciente || {}).nome_completo }));
         on('lo-figuras', () => abrirFiguras(false));
         raiz.querySelectorAll('[data-status]').forEach(bt => bt.addEventListener('click', () => mudarStatus(bt.dataset.status)));
         const sel = raiz.querySelector('#lo-versao');
@@ -1014,6 +1015,7 @@
         out.push(l.online_liberado_em
             ? '<button class="lo-btn lo-btn-lib on" id="lo-liberar" title="O paciente vê no portal e o médico externo com acesso aprovado vê no prontuário. Clique para desligar.">🌐 Online liberado</button>'
             : '<button class="lo-btn lo-btn-lib" id="lo-liberar" title="Mostra a página online no portal do paciente e para o médico externo com acesso aprovado">🌐 Liberar online</button>');
+        if (window.LaudoLink) out.push('<button class="lo-btn" id="lo-link" title="Link curto que abre só a página online deste laudo, sem senha e sem acesso ao sistema">🔗 Enviar link</button>');
         if (!st.laudos.some(v => v.status === 'em_construcao')) out.push('<button class="lo-btn prim" id="lo-nova-versao" title="Cria uma versão nova, em construção, a partir desta">＋ Nova versão</button>');
         return out.join('');
     }

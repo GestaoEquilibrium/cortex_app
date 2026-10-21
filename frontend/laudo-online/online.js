@@ -78,6 +78,7 @@
         return `<div class="p-barra">
             <a href="${volta}" title="Voltar ao Laudo Online">← Laudo Online v${esc(l.versao)}</a>
             ${situacao}
+            ${fin && st.admClin && window.LaudoLink ? '<button type="button" id="p-link" title="Link curto que abre só esta página, sem senha e sem acesso ao sistema">🔗 Enviar link</button>' : ''}
             <label class="dir" title="Esconde pendências e avisos internos, como o paciente vê"><input type="checkbox" id="p-publico" ${st.publico ? 'checked' : ''}> Ver como o paciente</label>
         </div>`;
     }
@@ -89,6 +90,8 @@
             doc: st.doc, banco: st.banco, glossario: st.glossario, publico: st.publico,
             linkProntuario: st.publico ? null : st.link, imagens: st.imagens
         });
+        const bl = document.getElementById('p-link');
+        if (bl) bl.addEventListener('click', () => window.LaudoLink.abrir({ laudoId: st.laudo.id, versao: st.laudo.versao, pacienteId: st.pacienteId, pacienteNome: (st.banco.paciente || {}).nome_completo }));
         const chk = document.getElementById('p-publico');
         if (chk) chk.addEventListener('change', () => {
             st.publico = chk.checked;

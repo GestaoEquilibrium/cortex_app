@@ -422,3 +422,7 @@ verify_jwt = false
 
 [functions.escola-portal]
 verify_jwt = false
+
+# Link curto do laudo online (LO-9): quem abre não faz login; a proteção é o código.
+[functions.laudo-link]
+verify_jwt = false

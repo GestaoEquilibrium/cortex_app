@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="p-pagina">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Laudo — Grupo Equilibrium</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#060B18">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/frontend/shared/laudo/laudo_impressao.css?v=lo9">
+<link rel="stylesheet" href="/frontend/shared/laudo/laudo_portfolio.css?v=lo9">
+<link rel="icon" type="image/svg+xml" href="/frontend/favicon.svg">
+</head>
+<body>
+<div id="p-raiz"><div class="p-estado"><div><div class="p-gira"></div><p style="margin-top:14px">Abrindo o laudo…</p></div></div></div>
+<script src="/frontend/config.js"></script>
+<script src="/frontend/shared/vendor/qrcode.js"></script>
+<script src="/frontend/shared/laudo/laudo_core.js?v=lo9"></script>
+<script src="/frontend/shared/laudo/laudo_dados.js?v=lo9"></script>
+<script src="/frontend/shared/laudo/laudo_modelo_padrao.js?v=lo9"></script>
+<script src="/frontend/shared/laudo/laudo_graficos.js?v=lo9"></script>
+<script src="/frontend/shared/laudo/laudo_impressao.js?v=lo9"></script>
+<script src="/frontend/shared/laudo/laudo_snapshot.js?v=lo9"></script>
+<script src="/frontend/shared/laudo/laudo_portfolio.js?v=lo9"></script>
+<script>
+// Link curto do laudo online (LO-9): cortexneuro.com.br/l/?CODIGO
+// Só a página do laudo. Sem login, sem barra, sem nenhum link para o sistema.
+(function () {
+    'use strict';
+    var FN = SUPABASE_CONFIG.url + '/functions/v1/laudo-link';
+    var q = (location.search || '').replace(/^\?/, '');
+    var m = /(?:^|&)c=([^&]+)/.exec(q);
+    var codigo = decodeURIComponent(m ? m[1] : q.split('&')[0] || '').trim();
+    function estado(titulo, texto) {
+        var e = function (s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+        document.getElementById('p-raiz').innerHTML = '<div class="p-estado"><div><h1>' + e(titulo) + '</h1><p>' + e(texto) + '</p></div></div>';
+    }
+    async function iniciar() {
+        if (!/^[A-Za-z0-9]{6,20}$/.test(codigo)) return estado('Link incompleto', 'Confira se o link foi copiado inteiro.');
+        try {
+            var resp = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_CONFIG.anonKey }, body: JSON.stringify({ codigo: codigo }) });
+            var r = await resp.json().catch(function () { return {}; });
+            if (!r.ok) {
+                var msg = {
+                    revogado: ['Link desativado', 'Este link foi tirado do ar pela clínica. Peça um novo ao Grupo Equilibrium.'],
+                    expirado: ['Link vencido', 'O prazo deste link terminou. Peça um novo ao Grupo Equilibrium.']
+                }[r.erro] || ['Laudo indisponível', 'Este link não abre um laudo. Confira se foi copiado inteiro ou peça um novo à clínica.'];
+                return estado(msg[0], msg[1]);
+            }
+            var snap = r.snapshot;
+            var banco = window.LaudoSnapshot.bancoDe(snap);
+            if (r.foto) banco.paciente.foto_assinada = r.foto;
+            document.getElementById('p-raiz').innerHTML = '<div id="p-alvo"></div>';
+            window.LaudoPortfolio.desenhar(document.getElementById('p-alvo'), {
+                doc: snap.documento, banco: banco, glossario: snap.glossario || {}, publico: true, imagens: r.imagens || {}, fotoUrl: r.foto || null
+            });
+        } catch (err) {
+            console.error('[link do laudo]', err);
+            estado('Não foi possível abrir o laudo', 'Erro de conexão. Tente de novo em alguns segundos.');
+        }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+})();
+</script>
+</body>
+</html>

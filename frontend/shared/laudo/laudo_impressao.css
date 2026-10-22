@@ -312,3 +312,6 @@ table.qi2 tr.qi2-ambar td.forte { color: #633806; } table.qi2 tr.qi2-vermelho td
 .imp table.i-tabx td.cl { font-style: normal; font-weight: 700; }
 .imp table.i-tabx .cl-selo { font-style: normal; }
 .imp table.i-tabx + .i-nota { margin-top: -6px; }
+
+/* Ventinho no pé da folha de Identificação (1ª depois da capa), antes do rodapé */
+.imp .f-ventinho { position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%); width: auto; pointer-events: none; }

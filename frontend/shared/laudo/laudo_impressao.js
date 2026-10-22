@@ -20,6 +20,9 @@
     const esc = s => C().esc(s);
     const A4 = { w: 794, h: 1123, mt: 94, mb: 76, ml: 94, mr: 76 };   // 96 dpi · margens 2,5 / 2 / 2,5 / 2 cm
     const CORPO_W = A4.w - A4.ml - A4.mr, CORPO_H = A4.h - A4.mt - A4.mb;
+    // Ventinho (mascote) travado no pé da 1ª folha depois da capa (Identificação), antes do rodapé
+    const VENT = { h: 120, gap: 12 };
+    const comVentinho = doc => (((doc.layout || {}).impressao) || {}).ventinho !== false;
     const BASE = (function () {
         const s = document.currentScript && document.currentScript.src;
         return s ? s.replace(/[^/]*$/, '') : '../shared/laudo/';
@@ -221,7 +224,9 @@
     }
 
     // ── paginação ─────────────────────────────────────────────────────────────
-    function paginar(ps, medidor) {
+    function paginar(ps, medidor, reserva1) {
+        // altura útil da folha atual (a 1ª pode ter o Ventinho no pé)
+        const lim = () => pags.length === 0 ? CORPO_H - (reserva1 || 0) : CORPO_H;
         const alt = html => { medidor.innerHTML = `<div class="ck">${html}</div>`; return medidor.firstChild.getBoundingClientRect().height; };
         const pags = []; let atual = [], usado = 0;
         // meta: o que começa cada pedaço (para o editor marcar onde a página quebra)
@@ -242,10 +247,10 @@
             while (k > 0 && metaAtual[k - 1].bloco === p.bloco) k--;
             // o título (e o que está "junto do próximo") vai junto com o trecho fixado
             while (k > 0 && metaAtual[k - 1].manter && !metaAtual[k - 1].fixo) k--;
-            const sobra = Math.max(0, CORPO_H - usado);
+            const sobra = Math.max(0, lim() - usado);
             atual.splice(k, 0, `<div class="i-fixo ${p.fixar}" data-fixo="${p.fixar}" style="height:${Math.floor(p.fixar === 'meio' ? sobra / 2 : sobra)}px"></div>`);
             metaAtual.splice(k, 0, { bloco: null, secao: null, titulo: false, cont: false, fixo: true });
-            usado = CORPO_H;
+            usado = lim();
             nova();
         };
         for (let i = 0; i < fila.length; i++) {
@@ -258,15 +263,15 @@
                 let j = i, juntos = 0;
                 while (j < fila.length && fila[j].manter && !fila[j].vazio) { juntos += fila[j].h; j++; }
                 if (j < fila.length && !fila[j].vazio && !fila[j].quebra) juntos += fila[j].dividir ? Math.min(fila[j].h, fila[j].tab ? 90 : 70) : fila[j].h;
-                if (usado + juntos > CORPO_H && atual.length && juntos <= CORPO_H) nova();
+                if (usado + juntos > lim() && atual.length && juntos <= lim()) nova();
             }
-            if (usado + p.h <= CORPO_H) { atual.push(emb(p, p.html)); usado += p.h; fixarSeFim(i); continue; }
-            if (p.tab && CORPO_H - usado > 60) {
-                const sobra = CORPO_H - usado;
+            if (usado + p.h <= lim()) { atual.push(emb(p, p.html)); usado += p.h; fixarSeFim(i); continue; }
+            if (p.tab && lim() - usado > 60) {
+                const sobra = lim() - usado;
                 const r = partirTab(p.tab, h => alt(h) <= sobra);
                 if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: r[2].linhas.length > 1, tab: r[2].linhas.length > 1 ? r[2] : null, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId, cont: true, fixar: p.fixar }); continue; }
-            } else if (p.dividir && CORPO_H - usado > 60) {
-                const sobra = CORPO_H - usado;
+            } else if (p.dividir && lim() - usado > 60) {
+                const sobra = lim() - usado;
                 const r = partirP(p.html, h => alt(h) <= sobra);
                 if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: true, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId, cont: true, fixar: p.fixar }); continue; }
             }
@@ -293,7 +298,7 @@
             <img class="capa-rod" src="${BASE}img/faixa_capa.png" alt="Grupo Equilibrium — CNPJ 34.032.586/0001-98"></div>`;
     }
 
-    function folha(conteudo, n, doc, ctx) {
+    function folha(conteudo, n, doc, ctx, ventinho) {
         const imp = ((doc.layout || {}).impressao) || {};
         const textos = doc.textos || {};
         const resp = textos.responsavel || window.LaudoModeloPadrao.RESP;
@@ -301,7 +306,8 @@
         const ass = imp.rodape_assinatura === false ? '' : (ctx.assinaturaImg
             ? `<span class="f-ass com-img"><img src="${esc(ctx.assinaturaImg)}" alt=""><b>${esc(resp)}</b>${esc(registro)}</span>`
             : `<span class="f-ass"><b>${esc(resp)}</b>Psicólogo<br>${esc(registro)}</span>`);
-        return `<div class="folha"><div class="f-cab">${esc(ctx.cabecalho)}</div><div class="f-corpo">${conteudo.join('')}</div>
+        const vent = ventinho ? `<img class="f-ventinho" src="${BASE}img/ventinho.png" alt="Ventinho, mascote do Grupo Equilibrium" style="height:${VENT.h}px">` : '';
+        return `<div class="folha${ventinho ? ' com-ventinho' : ''}"><div class="f-cab">${esc(ctx.cabecalho)}</div><div class="f-corpo" data-lim="${ventinho ? CORPO_H - VENT.h - VENT.gap : CORPO_H}">${conteudo.join('')}</div>${vent}
             <div class="f-rod"><span>${esc(resp)} - Neuropsicólogo - ${esc(registro)} | Página ${n}</span>${ass}</div></div>`;
     }
 
@@ -343,7 +349,7 @@
         // imagens precisam ter altura antes de medir
         medidor.innerHTML = ps.map(p => p.html).join('');
         await carregarImagens(medidor);
-        const pags = paginar(ps, medidor);
+        const pags = paginar(ps, medidor, comVentinho(doc) ? VENT.h + VENT.gap : 0);
         medidor.innerHTML = '';
         return pags;
     }
@@ -365,7 +371,7 @@
         alvo.querySelectorAll('.i-fixo').forEach(f => {
             const corpo = f.closest('.f-corpo'); if (!corpo) return;
             const atual = parseFloat(f.style.height) || 0;
-            const resto = CORPO_H - (corpo.offsetHeight - atual);   // o que sobra na folha sem o espaço
+            const resto = (Number(corpo.dataset.lim) || CORPO_H) - (corpo.offsetHeight - atual);   // o que sobra na folha sem o espaço
             f.style.height = Math.max(0, Math.floor(f.dataset.fixo === 'meio' ? resto / 2 : resto)) + 'px';
         });
     }
@@ -375,7 +381,7 @@
         const pags = await paginarDoc(doc, ctx);
         const imp = ((doc.layout || {}).impressao) || {};
         const inicio = Number(imp.numerar_desde || 1);
-        const folhas = (imp.capa === false ? [] : [capa(doc)]).concat(pags.map((c, i) => folha(c, i + inicio, doc, ctx)));
+        const folhas = (imp.capa === false ? [] : [capa(doc)]).concat(pags.map((c, i) => folha(c, i + inicio, doc, ctx, i === 0 && comVentinho(doc))));
         alvo.classList.add('imp');
         alvo.innerHTML = `<div class="folhas">${folhas.map(f => `<div class="folha-quadro">${f}</div>`).join('')}</div>`;
         escalar(alvo);

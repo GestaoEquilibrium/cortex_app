@@ -314,4 +314,14 @@ table.qi2 tr.qi2-ambar td.forte { color: #633806; } table.qi2 tr.qi2-vermelho td
 .imp table.i-tabx + .i-nota { margin-top: -6px; }
 
 /* Ventinho no pé da folha de Identificação (1ª depois da capa), antes do rodapé */
-.imp .f-ventinho { position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%); width: auto; pointer-events: none; }
+.imp .f-vent { position: absolute; z-index: 4; line-height: 0; }
+.imp .f-vent img { display: block; width: auto; }
+.imp .f-vent-balao {
+    position: absolute; left: calc(var(--vh) * .8); top: calc(var(--vh) * -.2); z-index: 1;
+    padding: .45em .9em; border: 2px solid #2E75B6; border-radius: 1.2em; background: #fff; color: #1F3864;
+    font: 700 calc(var(--vh) * .115)/1.2 Inter, Arial, sans-serif; white-space: nowrap;
+}
+.imp .f-vent-balao::before { content: ""; position: absolute; left: .7em; bottom: -.62em; width: .9em; height: .9em; background: #fff; border-right: 2px solid #2E75B6; border-bottom: 2px solid #2E75B6; transform: rotate(35deg) skewX(10deg); }
+
+.imp .f-vent-balao.esq { left: auto; right: calc(var(--vh) * .62); }
+.imp .f-vent-balao.esq::before { left: auto; right: .7em; transform: rotate(-35deg) skewX(-10deg) scaleX(-1); border-right: 0; border-left: 2px solid #2E75B6; }

@@ -340,3 +340,18 @@ table.lo-tabx td.cl { font-style: normal; font-weight: 700; }
 .lo-soltar[hidden] { display: none; }
 #lo-folhas .i-fixo { background: repeating-linear-gradient(135deg, transparent 0 9px, rgba(46, 117, 182, .07) 9px 11px); border-radius: 4px; }
 @media print { .lo-soltar { display: none !important; } #lo-print .i-fixo { background: none !important; } }
+
+/* LO-17: Ventinho solto na folha (arrastar, tamanho, balão) */
+#lo-folhas .f-vent.editavel { cursor: grab; touch-action: none; }
+#lo-folhas .f-vent.editavel:hover { outline: 2px dashed rgba(124, 77, 255, .6); outline-offset: 4px; border-radius: 6px; }
+#lo-folhas .f-vent.editavel .f-vent-balao { cursor: text; }
+#lo-folhas .f-vent-balao.escrevendo { outline: 3px solid rgba(124, 77, 255, .35); outline-offset: 2px; }
+.f-vent-alca { position: absolute; right: -8px; bottom: -8px; width: 16px; height: 16px; border-radius: 50%; background: #7C4DFF; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); cursor: nwse-resize; display: none; }
+.f-vent-menu { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 10px; display: none; gap: 4px; padding: 4px; border-radius: 10px; background: #141F3C; white-space: nowrap; line-height: 1.2; z-index: 6; }
+.f-vent-menu button { border: 0; border-radius: 7px; padding: 6px 10px; font: 600 12px Inter, sans-serif; color: #fff; background: rgba(255, 255, 255, .1); cursor: pointer; }
+.f-vent-menu button:hover { background: linear-gradient(135deg, #2F6FED, #7C4DFF); }
+#lo-folhas .f-vent.editavel:hover .f-vent-alca { display: block; }
+#lo-folhas .f-vent.editavel:hover .f-vent-menu { display: flex; }
+.f-vent-fantasma { z-index: 90; opacity: .92; pointer-events: none; cursor: grabbing; filter: drop-shadow(0 12px 18px rgba(15, 23, 42, .3)); }
+.f-vent-fantasma .f-vent-menu, .f-vent-fantasma .f-vent-alca { display: none !important; }
+@media print { .f-vent-alca, .f-vent-menu { display: none !important; } }

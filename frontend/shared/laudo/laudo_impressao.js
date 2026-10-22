@@ -21,8 +21,28 @@
     const A4 = { w: 794, h: 1123, mt: 94, mb: 76, ml: 94, mr: 76 };   // 96 dpi · margens 2,5 / 2 / 2,5 / 2 cm
     const CORPO_W = A4.w - A4.ml - A4.mr, CORPO_H = A4.h - A4.mt - A4.mb;
     // Ventinho (mascote) travado no pé da 1ª folha depois da capa (Identificação), antes do rodapé
-    const VENT = { h: 120, gap: 12 };
-    const comVentinho = doc => (((doc.layout || {}).impressao) || {}).ventinho !== false;
+    // layout.impressao.ventinho: false (sem) | { pagina, x, y, h, balao, texto } — sem x/y fica no pé da 1ª folha
+    // (com espaço reservado); com x/y fica solto onde a pessoa arrastou, por cima, como uma imagem.
+    const VENT = { h: 120, gap: 12, prop: 297 / 360, texto: 'Feito com amor!' };
+    function ventinhoCfg(doc) {
+        const v = (((doc.layout || {}).impressao) || {}).ventinho;
+        if (v === false) return null;
+        const o = v && typeof v === 'object' ? v : {};
+        const livre = o.x != null && o.y != null && isFinite(o.x) && isFinite(o.y);
+        const h = livre ? Math.max(50, Math.min(340, Number(o.h) || VENT.h)) : VENT.h;
+        return {
+            livre, h, pagina: livre ? Math.max(0, Math.floor(Number(o.pagina) || 0)) : 0,
+            x: livre ? Number(o.x) : Math.round((A4.w - h * VENT.prop) / 2),
+            y: livre ? Number(o.y) : A4.mt + CORPO_H - h,
+            balao: o.balao !== false, texto: String(o.texto || VENT.texto).slice(0, 60)
+        };
+    }
+    function ventinhoHtml(v) {
+        // o balão vai à direita (perto da mão); se não couber na folha, vai para a esquerda
+        const fs = v.h * 0.115, largBalao = (v.texto.length * 0.6 + 2.2) * fs;
+        const esq = v.x + v.h * 0.8 + largBalao > A4.w - 8 && v.x - largBalao + v.h * 0.25 > 8;
+        return `<div class="f-vent" style="left:${Math.round(v.x)}px;top:${Math.round(v.y)}px;--vh:${Math.round(v.h)}px"><img src="${BASE}img/ventinho.png" alt="Ventinho, mascote do Grupo Equilibrium" style="height:${Math.round(v.h)}px">${v.balao ? `<div class="f-vent-balao${esq ? ' esq' : ''}">${esc(v.texto)}</div>` : ''}</div>`;
+    }
     const BASE = (function () {
         const s = document.currentScript && document.currentScript.src;
         return s ? s.replace(/[^/]*$/, '') : '../shared/laudo/';
@@ -298,7 +318,7 @@
             <img class="capa-rod" src="${BASE}img/faixa_capa.png" alt="Grupo Equilibrium — CNPJ 34.032.586/0001-98"></div>`;
     }
 
-    function folha(conteudo, n, doc, ctx, ventinho) {
+    function folha(conteudo, n, doc, ctx, vent, reserva) {
         const imp = ((doc.layout || {}).impressao) || {};
         const textos = doc.textos || {};
         const resp = textos.responsavel || window.LaudoModeloPadrao.RESP;
@@ -306,8 +326,7 @@
         const ass = imp.rodape_assinatura === false ? '' : (ctx.assinaturaImg
             ? `<span class="f-ass com-img"><img src="${esc(ctx.assinaturaImg)}" alt=""><b>${esc(resp)}</b>${esc(registro)}</span>`
             : `<span class="f-ass"><b>${esc(resp)}</b>Psicólogo<br>${esc(registro)}</span>`);
-        const vent = ventinho ? `<img class="f-ventinho" src="${BASE}img/ventinho.png" alt="Ventinho, mascote do Grupo Equilibrium" style="height:${VENT.h}px">` : '';
-        return `<div class="folha${ventinho ? ' com-ventinho' : ''}"><div class="f-cab">${esc(ctx.cabecalho)}</div><div class="f-corpo" data-lim="${ventinho ? CORPO_H - VENT.h - VENT.gap : CORPO_H}">${conteudo.join('')}</div>${vent}
+        return `<div class="folha${vent ? ' com-ventinho' : ''}"><div class="f-cab">${esc(ctx.cabecalho)}</div><div class="f-corpo" data-lim="${CORPO_H - (reserva || 0)}">${conteudo.join('')}</div>${vent ? ventinhoHtml(vent) : ''}
             <div class="f-rod"><span>${esc(resp)} - Neuropsicólogo - ${esc(registro)} | Página ${n}</span>${ass}</div></div>`;
     }
 
@@ -349,7 +368,8 @@
         // imagens precisam ter altura antes de medir
         medidor.innerHTML = ps.map(p => p.html).join('');
         await carregarImagens(medidor);
-        const pags = paginar(ps, medidor, comVentinho(doc) ? VENT.h + VENT.gap : 0);
+        const v = ventinhoCfg(doc);
+        const pags = paginar(ps, medidor, v && !v.livre ? VENT.h + VENT.gap : 0);
         medidor.innerHTML = '';
         return pags;
     }
@@ -381,7 +401,8 @@
         const pags = await paginarDoc(doc, ctx);
         const imp = ((doc.layout || {}).impressao) || {};
         const inicio = Number(imp.numerar_desde || 1);
-        const folhas = (imp.capa === false ? [] : [capa(doc)]).concat(pags.map((c, i) => folha(c, i + inicio, doc, ctx, i === 0 && comVentinho(doc))));
+        const v = ventinhoCfg(doc), pv = v ? Math.min(v.pagina, pags.length - 1) : -1;
+        const folhas = (imp.capa === false ? [] : [capa(doc)]).concat(pags.map((c, i) => folha(c, i + inicio, doc, ctx, i === pv ? v : null, i === 0 && v && !v.livre ? VENT.h + VENT.gap : 0)));
         alvo.classList.add('imp');
         alvo.innerHTML = `<div class="folhas">${folhas.map(f => `<div class="folha-quadro">${f}</div>`).join('')}</div>`;
         escalar(alvo);
@@ -390,5 +411,5 @@
         return { paginas: pags.length, folhas: folhas.length, alvo: Number(imp.alvo_paginas || 25), omitidos: Array.from(new Set(ctx.omitidos || [])) };
     }
 
-    window.LaudoImpressao = { desenhar, mapa, escalar, qrSVG, A4, BASE, pedacos };
+    window.LaudoImpressao = { desenhar, mapa, escalar, qrSVG, A4, BASE, pedacos, ventinhoCfg, VENT };
 })();

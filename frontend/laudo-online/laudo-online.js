@@ -593,7 +593,7 @@
             st.altFolhas = alvo.offsetHeight;
             alvo.style.minHeight = '';
             if (podeAjustar()) ligarAjustes(alvo);
-            if (editavel()) { ligarEdicaoFolha(alvo); depoisDeDesenhar(alvo); }
+            if (editavel()) { ligarEdicaoFolha(alvo); ligarVentinho(alvo); depoisDeDesenhar(alvo); }
         } catch (err) {
             console.error('[impressão]', err);
             alvo.innerHTML = `<div class="lo-desc"><b>Não consegui montar as folhas.</b> ${esc(err.message || '')}</div>`;
@@ -857,6 +857,129 @@
         setTimeout(() => els.forEach(e => e.classList.remove('piscar-imp')), 1800);
         const txt = novo && els[0].querySelector('[data-ed]');
         if (txt && !txt.textContent.trim()) comecarEdicaoFolha(alvo, txt, id, { clientX: -1, clientY: -1 });
+    }
+
+    // ── Ventinho solto na folha: arrastar, mudar o tamanho, balão ─────────────
+    function escalaFolhas(alvo) { return parseFloat(getComputedStyle(alvo).getPropertyValue('--escala')) || 1; }
+    function ligarVentinho(alvo) {
+        const v = alvo.querySelector('.f-vent');
+        const cfg = window.LaudoImpressao.ventinhoCfg && window.LaudoImpressao.ventinhoCfg(st.doc);
+        if (!v || !cfg) return;
+        v.classList.add('editavel');
+        v.addEventListener('mouseenter', esconderBarra);
+        v.title = 'Arraste para levar o Ventinho para onde quiser (pode ser outra folha)';
+        v.insertAdjacentHTML('beforeend', `<span class="f-vent-alca" title="Arraste para aumentar ou diminuir"></span>
+            <div class="f-vent-menu">${cfg.livre ? '<button type="button" data-vent="pe">↺ Voltar ao pé da folha</button>' : ''}<button type="button" data-vent="balao">${cfg.balao ? '💬 Esconder o balão' : '💬 Mostrar o balão'}</button></div>`);
+        const folhaIdx = f => Array.from(alvo.querySelectorAll('.folha:not(.capa)')).indexOf(f);
+        v.querySelectorAll('[data-vent]').forEach(b => b.addEventListener('click', ev => {
+            ev.stopPropagation();
+            const c = Object.assign({}, cfg);
+            if (b.dataset.vent === 'pe') salvarVentinho({ balao: c.balao, texto: c.texto });
+            else salvarVentinho(Object.assign(posVentinho(c), { balao: !c.balao }));
+        }));
+        // o texto do balão: clique para escrever
+        const balao = v.querySelector('.f-vent-balao');
+        const editarBalao = () => {
+            balao.contentEditable = 'true'; balao.classList.add('escrevendo'); balao.focus();
+            const r = document.createRange(); r.selectNodeContents(balao); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+            const fim = () => {
+                balao.removeEventListener('blur', fim);
+                const t = balao.textContent.replace(/\s+/g, ' ').trim().slice(0, 60) || window.LaudoImpressao.VENT.texto;
+                if (t !== cfg.texto) salvarVentinho(Object.assign(posVentinho(cfg), { texto: t })); else { balao.contentEditable = 'false'; balao.classList.remove('escrevendo'); }
+            };
+            balao.addEventListener('blur', fim);
+            balao.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); balao.blur(); } });
+        };
+        v.addEventListener('pointerdown', ev => {
+            if (ev.button !== 0 || ev.target.closest('.f-vent-menu') || (balao && balao.isContentEditable)) return;
+            ev.preventDefault();
+            const esc0 = escalaFolhas(alvo);
+            const r0 = v.getBoundingClientRect();
+            const tam = !!ev.target.closest('.f-vent-alca');
+            const x0 = ev.clientX, y0 = ev.clientY;
+            let fantasma = null, mexeu = false;
+            const img = v.querySelector('img');
+            const mover = e => {
+                const dx = e.clientX - x0, dy = e.clientY - y0;
+                if (!mexeu && Math.abs(dx) + Math.abs(dy) < 4) return;
+                if (!mexeu) {
+                    mexeu = true;
+                    if (!tam) {
+                        // um "fantasma" segue o mouse por cima de tudo (pode ir para outra folha)
+                        fantasma = document.createElement('div');
+                        fantasma.className = 'imp f-vent-fantasma';
+                        const copia = v.cloneNode(true);
+                        copia.style.left = '0px'; copia.style.top = '0px';
+                        fantasma.appendChild(copia);
+                        fantasma.style.cssText = `position:fixed;left:${r0.left}px;top:${r0.top}px;width:0;height:0;transform:scale(${esc0});transform-origin:0 0;`;
+                        document.body.appendChild(fantasma);
+                        v.style.visibility = 'hidden';
+                    }
+                }
+                if (tam) {
+                    const h = Math.max(50, Math.min(340, cfg.h + dy / esc0));
+                    img.style.height = h + 'px'; v.style.setProperty('--vh', h + 'px');
+                } else {
+                    fantasma.style.left = (r0.left + dx) + 'px'; fantasma.style.top = (r0.top + dy) + 'px';
+                }
+            };
+            const soltar = e => {
+                document.removeEventListener('pointermove', mover);
+                document.removeEventListener('pointerup', soltar);
+                if (fantasma) fantasma.remove();
+                if (!mexeu) { if (balao && e.target.closest && e.target.closest('.f-vent-balao')) editarBalao(); return; }
+                if (tam) {
+                    const h = Math.round(parseFloat(img.style.height) || cfg.h);
+                    salvarVentinho(Object.assign(posVentinho(cfg), { h, pagina: folhaIdx(v.closest('.folha')) }));
+                    return;
+                }
+                // folha embaixo do mouse (a capa não vale)
+                const gx = r0.left + (e.clientX - x0), gy = r0.top + (e.clientY - y0);
+                const sob = document.elementsFromPoint(e.clientX, e.clientY).map(el => el.closest && el.closest('#lo-folhas .folha')).find(Boolean);
+                if (!sob || sob.classList.contains('capa')) { v.style.visibility = ''; toast('Solte o Ventinho em cima de uma folha do laudo.', 'info'); return; }
+                const fr = sob.getBoundingClientRect();
+                const largura = cfg.h * window.LaudoImpressao.VENT.prop;
+                const A4 = window.LaudoImpressao.A4;
+                const x = Math.round(Math.max(0, Math.min(A4.w - largura, (gx - fr.left) / esc0)));
+                const y = Math.round(Math.max(0, Math.min(A4.h - cfg.h, (gy - fr.top) / esc0)));
+                salvarVentinho({ pagina: folhaIdx(sob), x, y, h: cfg.h, balao: cfg.balao, texto: cfg.texto });
+            };
+            document.addEventListener('pointermove', mover);
+            document.addEventListener('pointerup', soltar);
+        });
+    }
+    // posição atual guardada como "solta" (se ainda estava no pé, vira solta no mesmo lugar)
+    function posVentinho(c) {
+        return c.livre ? { pagina: c.pagina, x: c.x, y: c.y, h: c.h, balao: c.balao, texto: c.texto } : { balao: c.balao, texto: c.texto };
+    }
+    async function salvarVentinho(novo) {
+        if (ajustando || !podeAjustar()) return;
+        if (st.editor && st.editor.tem()) await st.editor.gravar();
+        if (st.editor && st.editor.marco) st.editor.marco();
+        const copia = JSON.stringify(st.doc);
+        st.doc.layout = st.doc.layout || {};
+        st.doc.layout.impressao = st.doc.layout.impressao || {};
+        const antes = st.doc.layout.impressao.ventinho == null ? null : st.doc.layout.impressao.ventinho;
+        st.doc.layout.impressao.ventinho = novo;
+        if (st.editor && st.editor.marco) st.editor.marco();   // entra no Ctrl+Z
+        ajustando = true;
+        const y = window.scrollY;
+        try {
+            const { data, error, juntou } = await salvarDoc([{ acao: 'editar', bloco_id: null, antes: { ventinho: antes }, depois: { ventinho: novo } }]);
+            if (error) throw error;
+            if (!data || !data.ok) {
+                if (!juntou) { st.doc = JSON.parse(copia); st.laudo.documento = st.doc; }
+                toast((data && data.mensagem) || 'Não consegui gravar.', 'danger');
+            } else { st.laudo.revisao = data.revisao; st.laudo.documento = st.doc; }
+        } catch (err) {
+            st.doc = JSON.parse(copia); st.laudo.documento = st.doc;
+            toast('Não consegui gravar o Ventinho: ' + (err.message || ''), 'danger');
+        } finally {
+            ajustando = false;
+            st.impressao = null;
+            await desenharImpressao();
+            window.scrollTo(0, y);
+        }
     }
 
     // ── Escrever direto na folha (aba Impressão) ──────────────────────────────

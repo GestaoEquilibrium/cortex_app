@@ -216,14 +216,14 @@
         raiz.innerHTML = `${cabecalho()}<div class="lo-corpo">${corpo()}</div>`;
         ligarEventos(raiz);
         if (st.visao === 'editor' && editavel()) {
-            if (st.mapaPag && st.mapaPag._laudo === (st.laudo && st.laudo.id)) { try { aplicarMapa(st.mapaPag); } catch (e) { /* refaz já */ } }
+            if (st.mapaPag && st.mapaPag._laudo === (st.laudo && st.laudo.id)) contarPaginas(st.mapaPag);
             agendarPaginas(300);
         }
     }
 
-    // ── Quebras de página dentro do editor ────────────────────────────────────
-    // A mesma conta da Impressão roda por trás e o editor mostra onde cada folha
-    // começa, com os ajustes à mão (levar o trecho para a página seguinte etc.).
+    // ── Número de páginas no editor ───────────────────────────────────────────
+    // A mesma conta da Impressão roda por trás só para mostrar quantas folhas o
+    // PDF terá. Ver e ajustar as folhas é na aba Impressão (igual ao PDF).
     let timerPaginas = null, contaPaginas = 0;
     function agendarPaginas(ms) {
         clearTimeout(timerPaginas);
@@ -239,74 +239,11 @@
         if (minha !== contaPaginas || st.visao !== 'editor') return;
         m._laudo = st.laudo.id;
         st.mapaPag = m;
-        aplicarMapa(m);
+        contarPaginas(m);
     }
-    // Desenha as folhas com a última conta (também logo depois de redesenhar, para a tela não pular).
-    function aplicarMapa(m) {
-        const papel = document.querySelector('.ed-papel');
-        if (!papel || !m) return;
-        papel.querySelectorAll('.ed-corte, .ed-pagq-meio, .ed-folha-topo, .ed-folha-fim').forEach(x => x.remove());
-        papel.classList.add('ed-folhas');
-        const alvoDe = c => c.titulo ? document.getElementById('sec-' + c.secao)
-            : (c.bloco ? papel.querySelector(`.ed-bloco[data-bloco="${CSS.escape(c.bloco)}"]`) : null);
-        const cab = `<div class="ed-fc-cab">${esc(m.cabecalho || '')}</div>`;
-        const rod = n => `<div class="ed-fc-rod">${esc(m.rodape || '')} | Página ${n}</div>`;
-        // folha 1: cabeçalho no alto do papel
-        const topo = document.createElement('div');
-        topo.className = 'ed-folha-topo'; topo.contentEditable = 'false';
-        topo.innerHTML = `${m.capa ? '<div class="ed-fc-capa">A capa vem antes desta folha no PDF</div>' : ''}${cab}<div class="ed-fc-rot"><b>Página ${m.inicio}</b></div>`;
-        papel.insertBefore(topo, papel.firstChild);
-        // cortes entre as folhas: sobra da folha + rodapé + vão + cabeçalho da seguinte
-        const cortes = [];
-        m.meta.forEach((pg, i) => {
-            if (i === 0) return;
-            const n = i + m.inicio;
-            const k = pg.findIndex(c => alvoDe(c)); if (k < 0) return;
-            const c = pg[k], el = alvoDe(c);
-            const forcada = c.titulo ? !!((st.doc.secoes || []).find(x => x.id === c.secao) || {}).quebra_antes : !!((acharBloco(c.bloco) || {}).b || {}).quebra_antes;
-            const corte = document.createElement('div');
-            corte.className = 'ed-corte'; corte.contentEditable = 'false'; corte.dataset.pag = String(n);
-            const rotulo = c.cont && !c.titulo
-                ? `<b>Página ${n}</b> <em>continua o trecho de cima</em>`
-                : `<b>Página ${n}</b>${forcada ? ' <em>página nova marcada</em>' : ''}`;
-            corte.innerHTML = `<div class="ed-fc-sobra"></div>${rod(n - 1)}<div class="ed-fc-vao"></div>${cab}<div class="ed-fc-rot"><span>${rotulo}</span></div>`;
-            if (c.cont && !c.titulo) el.parentNode.insertBefore(corte, el.nextSibling); else el.parentNode.insertBefore(corte, el);
-            cortes.push({ corte, i });
-        });
-        // fim da última folha
-        const fim = document.createElement('div');
-        fim.className = 'ed-folha-fim'; fim.contentEditable = 'false';
-        fim.innerHTML = `<div class="ed-fc-sobra"></div>${rod(m.meta.length - 1 + m.inicio)}`;
-        papel.appendChild(fim);
-        // cortes ocupam a largura toda do papel
-        const pr = papel.getBoundingClientRect();
-        papel.querySelectorAll('.ed-corte, .ed-folha-topo, .ed-folha-fim').forEach(x => {
-            const er = x.parentNode.getBoundingClientRect();
-            x.style.marginLeft = (pr.left - er.left) + 'px'; x.style.marginRight = (er.right - pr.right) + 'px';
-        });
-        // sobra de cada folha: a mesma proporção de espaço vazio que a folha do PDF terá
-        const marcos = [topo].concat(cortes.map(x => x.corte)).concat([fim]);
-        for (let i = 0; i < marcos.length - 1; i++) {
-            const ini = marcos[i], prox = marcos[i + 1];
-            const y0 = ini.getBoundingClientRect().bottom;
-            const sobraEl = prox.querySelector('.ed-fc-sobra');
-            const y1 = sobraEl.getBoundingClientRect().top;
-            const hEd = Math.max(1, y1 - y0);
-            const usado = m.usado[i] || m.altura;
-            const falta = Math.max(0, Math.min(1400, hEd * (m.altura / Math.max(usado, 1)) - hEd));
-            sobraEl.style.height = Math.round(falta) + 'px';
-        }
+    function contarPaginas(m) {
         const info = document.getElementById('ed-pags');
         if (info) info.textContent = `${m.paginas} página${m.paginas === 1 ? '' : 's'} + capa${m.paginas > m.alvo ? ` (alvo do modelo: ${m.alvo})` : ''}`;
-        if (!papel._pagqLigado) {
-            papel._pagqLigado = true;
-            papel.addEventListener('click', ev => {
-                const bt = ev.target.closest('.ed-corte button[data-pq]');
-                if (!bt) return;
-                ev.preventDefault(); ev.stopPropagation();
-                ajustar(bt.dataset.pq, { dataset: { bloco: bt.dataset.pqBloco, secao: bt.dataset.pqSecao, tituloSecao: bt.dataset.pqTitulo } });
-            }, true);
-        }
     }
 
     function cabecalho() {
@@ -365,7 +302,7 @@
             return `
             <div class="lo-grade">
                 <aside class="lo-arvore" aria-label="Seções do laudo">${e.arvoreHtml()}</aside>
-                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco: à direita ficam mover, ocultar e apagar; à esquerda, os ajustes de página (espaço e página nova), iguais aos da Impressão. Errou? <b>Ctrl+Z</b> desfaz e <b>Ctrl+Y</b> refaz. A gravação é automática. <span class="ed-pags" id="ed-pags"></span></div>
+                <section class="lo-mesa"><div class="lo-faixa azul">Clique no texto para editar. Passe o mouse num bloco para mover, ocultar, apagar e mais opções; use o <b>+</b> entre blocos para inserir. Errou? <b>Ctrl+Z</b> desfaz e <b>Ctrl+Y</b> refaz. Para ver e ajustar as páginas exatamente como no PDF, use a aba <b>Impressão</b> — lá também dá para escrever direto na folha. <span class="ed-pags" id="ed-pags"></span></div>
                     <article class="lo-papel ed-papel" lang="pt-BR">${e.documentoHtml()}</article></section>
                 <aside class="lo-painel" aria-label="Conferências">${painel()}</aside>
             </div>`;
@@ -529,7 +466,7 @@
         return `
         <div class="lo-imp-barra">
             <div class="lo-imp-info"><b id="lo-imp-pags">Paginando…</b><span>Folhas A4 iguais ao PDF. ${origem}</span>${enviado}${rasc}
-                ${podeAjustar() ? '<span class="lo-imp-dica">Para ajustar as páginas, passe o mouse num trecho da folha: <b>↵ Espaço</b> empurra para baixo e <b>Página nova</b> começa outra folha.</span>' : ''}</div>
+                ${podeAjustar() ? `<span class="lo-imp-dica">${editavel() ? '<b>Clique no texto da folha</b> para escrever direto nela (Enter ou clicar fora termina). ' : ''}Para ajustar as páginas, passe o mouse num trecho: <b>↵ Espaço</b> empurra para baixo e <b>Página nova</b> começa outra folha. <b>Ctrl+Z</b> desfaz.</span>` : ''}</div>
             <div class="lo-imp-acoes">
                 ${st.admClin && !rascunho() ? '<button class="btn btn-secondary" id="lo-enviar-assinatura">✍️ Enviar para assinatura</button>' : ''}
                 ${editavel() ? '<button class="btn btn-secondary" id="lo-finalizar-2">✓ Finalizar</button>' : ''}
@@ -537,7 +474,7 @@
             </div>
         </div>
         <div class="lo-imp-aviso" id="lo-imp-aviso" hidden></div>
-        <div id="lo-folhas" class="lo-folhas" aria-label="Folhas do laudo"></div>`;
+        <div id="lo-folhas" class="lo-folhas${editavel() ? ' ed-ok' : ''}" aria-label="Folhas do laudo" style="min-height:${Math.round(st.altFolhas || 0)}px"></div>`;
     }
 
     // ── Impressão do online (LO-10): a página online em folhas A4 ──────────────
@@ -653,7 +590,10 @@
             if (!ctx.linkProntuario) avisos.push('O QR "Acompanhe este paciente" sai em branco: só admin gera o token do prontuário.');
             if (!ctx.assinaturaImg) avisos.push('Sem imagem de assinatura cadastrada: o rodapé mostra o nome. Cadastre em Configurações → Perfil.');
             if (av) { av.hidden = !avisos.length; av.innerHTML = avisos.map(a => `<p>⚠️ ${esc(a)}</p>`).join(''); }
+            st.altFolhas = alvo.offsetHeight;
+            alvo.style.minHeight = '';
             if (podeAjustar()) ligarAjustes(alvo);
+            if (editavel()) ligarEdicaoFolha(alvo);
         } catch (err) {
             console.error('[impressão]', err);
             alvo.innerHTML = `<div class="lo-desc"><b>Não consegui montar as folhas.</b> ${esc(err.message || '')}</div>`;
@@ -678,7 +618,7 @@
         return C().completarBloco({ id: 'u.' + C().aleatorio(8), tipo: 'espaco', altura: 'm', origem: 'manual' }, 'manual');
     }
 
-    let barraAjuste = null, ajustando = false;
+    let barraAjuste = null, ajustando = false, sessaoImp = null;
     // tabelas montadas pelo laudo (não os resultados dos testes) que podem continuar na folha seguinte
     const TABELAS_AUTO = ['tabela', 'tabela_instrumentos', 'classificacao_qi', 'mapa', 'campos'];
 
@@ -688,7 +628,7 @@
             barraAjuste.className = 'lo-ajuste';
             barraAjuste.hidden = true;
             document.body.appendChild(barraAjuste);
-            barraAjuste.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck, .ed-bloco, .ed-h2')) barraAjuste.hidden = true; });
+            barraAjuste.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck')) barraAjuste.hidden = true; });
             barraAjuste.addEventListener('click', ev => {
                 const bt = ev.target.closest('button[data-ajuste]');
                 if (bt && barraAjuste._alvo) ajustar(bt.dataset.ajuste, barraAjuste._alvo);
@@ -700,32 +640,8 @@
         alvo.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !barraAjuste.contains(ev.relatedTarget)) barraAjuste.hidden = true; });
     }
 
-    // No editor: a mesma barra da Impressão (↵ Espaço · ⤓ Página nova aqui · ✂ Dividir a tabela),
-    // no canto de cima à esquerda do trecho (à direita fica a barra do editor).
-    function ligarAjustesEditor(raiz) {
-        const papel = raiz.querySelector('.ed-papel');
-        if (!papel || !podeAjustar()) return;
-        ligarAjustes(document.createElement('div'));   // cria a barra (sem folhas para ligar)
-        let atual = null;
-        const esconder = () => { if (barraAjuste) barraAjuste.hidden = true; atual = null; };
-        papel.addEventListener('mouseover', ev => {
-            if (ajustando || document.querySelector('.lo-modal')) return;
-            const h2 = ev.target.closest('.ed-h2');
-            const bl = h2 ? null : ev.target.closest('.ed-bloco');
-            const alvo = h2 || bl;
-            if (!alvo || alvo === atual) return;
-            atual = alvo;
-            if (h2) {
-                const sec = h2.closest('.ed-sec');
-                mostrarAjuste({ dataset: { tituloSecao: '1', secao: sec ? sec.dataset.secao : '' }, getBoundingClientRect: () => h2.getBoundingClientRect() }, true);
-            } else mostrarAjuste(bl, true);
-        });
-        papel.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !barraAjuste || !barraAjuste.contains(ev.relatedTarget)) esconder(); });
-        papel.addEventListener('keydown', esconder);
-    }
-
-    function mostrarAjuste(el, noEditor) {
-        if (ajustando) return;
+    function mostrarAjuste(el) {
+        if (ajustando || sessaoImp) return;
         const ehTitulo = !!el.dataset.tituloSecao;
         let temEspacoAcima = false, temPagina = false, tabela = null;
         if (ehTitulo) {
@@ -750,16 +666,122 @@
         barraAjuste._alvo = el;
         const r = el.getBoundingClientRect();
         barraAjuste.hidden = false;
-        barraAjuste.classList.toggle('no-editor', !!noEditor);
-        if (noEditor) {
-            // em cima do trecho, à esquerda (a barra do editor fica à direita)
-            barraAjuste.style.top = (window.scrollY + r.top - 16) + 'px';
-            barraAjuste.style.left = (window.scrollX + r.left) + 'px';
-        } else {
-            // dentro do próprio trecho, no canto de cima à direita: o mouse vai do texto à barra sem sair dele
-            barraAjuste.style.top = (window.scrollY + r.top + 2) + 'px';
-            barraAjuste.style.left = (window.scrollX + Math.max(8, r.right - barraAjuste.offsetWidth - 2)) + 'px';
-        }
+        // dentro do próprio trecho, no canto de cima à direita: o mouse vai do texto à barra sem sair dele
+        barraAjuste.style.top = (window.scrollY + r.top + 2) + 'px';
+        barraAjuste.style.left = (window.scrollX + Math.max(8, r.right - barraAjuste.offsetWidth - 2)) + 'px';
+    }
+
+    // ── Escrever direto na folha (aba Impressão) ──────────────────────────────
+    // Clica no texto → ele vira editável ali mesmo, com a letra e a largura do PDF.
+    // Parágrafo dividido entre folhas junta tudo no primeiro pedaço enquanto escreve
+    // (a folha estica); ao terminar, as folhas se reorganizam como no PDF.
+    function lerCampoImp(b, campo) {
+        const [c, k] = campo.split(':');
+        if (c === 'par') return String(b.texto || '').split(/\n{2,}/).filter(x => x.trim())[Number(k)];
+        if (k != null) return (b[c] || [])[Number(k)];
+        return b[c] == null ? '' : String(b[c]);
+    }
+    function gravarCampoImp(b, campo, txt) {
+        const [c, k] = campo.split(':');
+        if (c === 'par') {
+            const ps = String(b.texto || '').split(/\n{2,}/).filter(x => x.trim());
+            ps[Number(k)] = txt; b.texto = ps.join('\n\n');
+        } else if (k != null) {
+            const arr = (b[c] || []).slice(); arr[Number(k)] = txt; b[c] = arr;
+        } else b[c] = txt;
+    }
+    function ligarEdicaoFolha(alvo) {
+        if (alvo._edFolha) return;
+        alvo._edFolha = true;
+        alvo.addEventListener('click', ev => {
+            if (!editavel() || sessaoImp || ajustando) return;
+            if (ev.target.closest('a, button, .lo-termo, .ed-var')) return;
+            const el = ev.target.closest('[data-ed]');
+            const ck = el && el.closest('.i-ck');
+            if (!ck || !ck.dataset.bloco || !alvo.contains(el)) return;
+            comecarEdicaoFolha(alvo, el, ck.dataset.bloco, ev);
+        });
+    }
+    function comecarEdicaoFolha(alvo, el, id, ev) {
+        const r = acharBloco(id), E = editor();
+        if (!r || !E || !E.editarTexto) return;
+        const campo = el.dataset.ed;
+        const valor = lerCampoImp(r.b, campo);
+        if (valor == null) return;
+        const pedacos = Array.from(alvo.querySelectorAll(`.i-ck[data-bloco="${CSS.escape(id)}"] [data-ed="${CSS.escape(campo)}"]`));
+        const k = Math.max(0, pedacos.indexOf(el));
+        // a letra onde clicou (contando os pedaços de antes, se o parágrafo foi dividido)
+        let pos = null;
+        try {
+            const rg = document.caretRangeFromPoint ? document.caretRangeFromPoint(ev.clientX, ev.clientY) : null;
+            if (rg && el.contains(rg.startContainer)) {
+                const pre = document.createRange(); pre.selectNodeContents(el); pre.setEnd(rg.startContainer, rg.startOffset);
+                pos = pre.toString().length;
+                for (let j = 0; j < k; j++) pos += pedacos[j].textContent.length + 1;
+            }
+        } catch (e) { pos = null; }
+        const prim = pedacos[0] || el;
+        pedacos.slice(1).forEach(p => p.closest('.i-ck').classList.add('imp-escondido'));
+        prim.classList.remove('cont-a', 'cont-b');
+        prim.innerHTML = E.paraHtml(valor);
+        prim.contentEditable = 'true'; prim.spellcheck = true;
+        prim.classList.add('imp-editando');
+        const folha = prim.closest('.folha'), quadro = folha && folha.parentElement, corpo = folha && folha.querySelector('.f-corpo');
+        if (barraAjuste) barraAjuste.hidden = true;
+        const esticar = () => {
+            if (!folha || !corpo) return;
+            const h = Math.max(1123, corpo.offsetTop + corpo.offsetHeight + 90);
+            folha.style.height = h + 'px';
+            const esc = parseFloat(getComputedStyle(alvo).getPropertyValue('--escala')) || 1;
+            quadro.style.height = (h * esc) + 'px';
+            folha.classList.toggle('esticada', h > 1123);
+            let av = folha.querySelector('.imp-aviso-esticada');
+            if (h > 1123 && !av) { av = document.createElement('div'); av.className = 'imp-aviso-esticada'; av.textContent = 'Escrevendo… ao terminar, esta folha se reorganiza como no PDF'; folha.appendChild(av); }
+            if (h <= 1123 && av) av.remove();
+        };
+        const s = sessaoImp = { prim, id, campo, fim: null };
+        const onInput = () => { E.editarTexto(id, b => gravarCampoImp(b, campo, E.paraTexto(prim).trim())); esticar(); };
+        const onKey = e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); prim.blur(); return; }
+            if (e.key === 'Escape') { e.preventDefault(); prim.blur(); return; }
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && ['b', 'i'].includes(String(e.key).toLowerCase())) {
+                e.preventDefault(); document.execCommand(String(e.key).toLowerCase() === 'b' ? 'bold' : 'italic'); onInput();
+            }
+        };
+        const onPaste = e => {
+            e.preventDefault();
+            const t = (e.clipboardData || window.clipboardData).getData('text/plain').replace(/\s*\n\s*/g, ' ');
+            document.execCommand('insertText', false, t);
+        };
+        const onBlur = () => setTimeout(() => { if (document.activeElement !== prim) terminarEdicaoFolha(s); }, 0);
+        prim.addEventListener('input', onInput);
+        prim.addEventListener('keydown', onKey);
+        prim.addEventListener('paste', onPaste);
+        prim.addEventListener('blur', onBlur);
+        esticar();
+        prim.focus();
+        // cursor na mesma letra do clique
+        try {
+            const sel = window.getSelection(), rg = document.createRange();
+            let falta = pos == null ? Infinity : pos, no = null, off = 0;
+            const w = document.createTreeWalker(prim, NodeFilter.SHOW_TEXT);
+            while (w.nextNode()) {
+                const n = w.currentNode, L = n.nodeValue.length;
+                if (falta <= L) { no = n; off = falta; break; }
+                falta -= L; no = n; off = L;
+            }
+            if (no) { rg.setStart(no, off); rg.collapse(true); } else { rg.selectNodeContents(prim); rg.collapse(false); }
+            sel.removeAllRanges(); sel.addRange(rg);
+        } catch (e) { /* cursor no começo */ }
+    }
+    async function terminarEdicaoFolha(s) {
+        if (!s || sessaoImp !== s) return;
+        sessaoImp = null;
+        if (st.editor && st.editor.marco) st.editor.marco();   // fecha a rajada (um Ctrl+Z)
+        const y = window.scrollY;
+        st.impressao = null;
+        await desenharImpressao();
+        window.scrollTo(0, y);
     }
 
     async function ajustar(acao, el) {
@@ -818,7 +840,7 @@
             st.laudo.revisao = data.revisao;
             st.laudo.documento = st.doc;
             st.impressao = null;
-            if (st.visao === 'editor') render(); else await desenharImpressao();
+            await desenharImpressao();
             window.scrollTo(0, y);
         } catch (err) {
             st.doc = JSON.parse(copia); st.laudo.documento = st.doc;
@@ -1045,7 +1067,7 @@
         }));
         on('lo-reimportar', () => abrirImportar(true));
         const p = raiz.querySelector('.lo-painel'); if (p) ligarPainel(p, true);
-        if (editavel() && st.visao === 'editor') { editor().ligar(raiz); ligarAjustesEditor(raiz); }
+        if (editavel() && st.visao === 'editor') editor().ligar(raiz);
         raiz.querySelectorAll('.lo-termo').forEach(t => {
             t.addEventListener('click', () => balao(t));
             t.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); balao(t); } });

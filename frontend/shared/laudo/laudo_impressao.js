@@ -67,26 +67,26 @@
                 const o = { quebra: !!b.quebra_antes, manter: !!b.manter_com_proximo };
                 switch (b.tipo) {
                     case 'titulo':
-                        add(Number(b.nivel) === 4 ? `<h4 class="i-h4">${I(b.texto)}</h4>` : `<h3 class="i-h3">${I(b.texto)}</h3>`, Object.assign(o, { manter: b.manter_com_proximo !== false })); break;
-                    case 'paragrafo': add(`<p class="i-p">${I(b.texto)}</p>`, Object.assign(o, { dividir: !o.manter })); break;
-                    case 'meta': add(`<p class="i-meta">${I(b.texto)}</p>`, Object.assign(o, { manter: true })); break;
-                    case 'nota': add(`<p class="i-nota">${I(b.texto)}</p>`, o); break;
-                    case 'alerta': add(`<div class="i-alerta${b.nivel === 'vermelho' ? ' verm' : ''}">⚠️ ${I(b.texto)}</div>`, o); break;
+                        add(Number(b.nivel) === 4 ? `<h4 class="i-h4" data-ed="texto">${I(b.texto)}</h4>` : `<h3 class="i-h3" data-ed="texto">${I(b.texto)}</h3>`, Object.assign(o, { manter: b.manter_com_proximo !== false })); break;
+                    case 'paragrafo': add(`<p class="i-p" data-ed="texto">${I(b.texto)}</p>`, Object.assign(o, { dividir: !o.manter })); break;
+                    case 'meta': add(`<p class="i-meta" data-ed="texto">${I(b.texto)}</p>`, Object.assign(o, { manter: true })); break;
+                    case 'nota': add(`<p class="i-nota" data-ed="texto">${I(b.texto)}</p>`, o); break;
+                    case 'alerta': add(`<div class="i-alerta${b.nivel === 'vermelho' ? ' verm' : ''}">⚠️ <span data-ed="texto">${I(b.texto)}</span></div>`, o); break;
                     case 'caixa': {
                         const ps = b.paragrafos || [];
-                        if (b.titulo) add(`<div class="i-box ini ${esc(b.estilo || 'azul')}"><p class="i-box-tit">${I(b.titulo)}</p></div>`, Object.assign({}, o, { manter: true }));
-                        ps.forEach((p, k) => add(`<div class="i-box ${esc(b.estilo || 'azul')}${!b.titulo && k === 0 ? ' ini' : ''}${k === ps.length - 1 ? ' fim' : ''}"><p class="i-p">${I(p)}</p></div>`, k === 0 && !b.titulo ? o : {}));
+                        if (b.titulo) add(`<div class="i-box ini ${esc(b.estilo || 'azul')}"><p class="i-box-tit" data-ed="titulo">${I(b.titulo)}</p></div>`, Object.assign({}, o, { manter: true }));
+                        ps.forEach((p, k) => add(`<div class="i-box ${esc(b.estilo || 'azul')}${!b.titulo && k === 0 ? ' ini' : ''}${k === ps.length - 1 ? ' fim' : ''}"><p class="i-p" data-ed="paragrafos:${k}">${I(p)}</p></div>`, k === 0 && !b.titulo ? o : {}));
                         break;
                     }
                     case 'lista': {
                         const num = b.estilo !== 'marcadores';
-                        (b.itens || []).forEach((it, k) => add(`<div class="i-li"><span>${num ? (k + 1) + '.' : '•'}</span><p class="i-p">${I(it)}</p></div>`, k === 0 ? o : {}));
+                        (b.itens || []).forEach((it, k) => add(`<div class="i-li"><span>${num ? (k + 1) + '.' : '•'}</span><p class="i-p" data-ed="itens:${k}">${I(it)}</p></div>`, k === 0 ? o : {}));
                         break;
                     }
                     case 'padrao': {
                         const paras = String(b.texto || '').split(/\n{2,}/).filter(x => x.trim());
-                        if (b.chave === 'nota_tecnica_81') paras.forEach((p, k) => add(`<div class="i-box${k === 0 ? ' ini' : ''}${k === paras.length - 1 ? ' fim' : ''}"><p class="i-p">${I(p)}</p></div>`, k === 0 ? o : {}));
-                        else paras.forEach((p, k) => add(`<p class="i-p">${I(p)}</p>`, Object.assign(k === 0 ? o : {}, { dividir: true })));
+                        if (b.chave === 'nota_tecnica_81') paras.forEach((p, k) => add(`<div class="i-box${k === 0 ? ' ini' : ''}${k === paras.length - 1 ? ' fim' : ''}"><p class="i-p" data-ed="par:${k}">${I(p)}</p></div>`, k === 0 ? o : {}));
+                        else paras.forEach((p, k) => add(`<p class="i-p" data-ed="par:${k}">${I(p)}</p>`, Object.assign(k === 0 ? o : {}, { dividir: true })));
                         break;
                     }
                     case 'campos': {
@@ -143,7 +143,7 @@
                     }
                     case 'fidedignidade':
                         add(`<h4 class="i-h4">Fidedignidade do QIT — Análise de Discrepância Indicial</h4>`, Object.assign(o, { manter: true }));
-                        (b.paragrafos || []).forEach(p => add(`<p class="i-p i-fided">${I(p)}</p>`, { dividir: true })); break;
+                        (b.paragrafos || []).forEach((p, k) => add(`<p class="i-p i-fided" data-ed="paragrafos:${k}">${I(p)}</p>`, { dividir: true })); break;
                     case 'hipotese': {
                         const cods = (Array.isArray(b.codigos) ? b.codigos : [b.codigos]).filter(Boolean).concat(b.confianca ? [`Nível de Confiança: ${b.confianca}`] : []).join(' | ');
                         const rot = { criterios: 'Critérios', evidencias: 'Evidências', contraponto: 'Contraponto', acao: 'Ação' };
@@ -155,7 +155,7 @@
                         addTab(b, '<table class="i-tab i-mapa"><thead><tr><th>Status</th><th>Domínio</th><th>Desempenho</th><th>Instrumentos Principais</th></tr></thead><tbody>',
                             (b.linhas || []).map(l => `<tr class="m-${st[l.status] || 'at'}"><td><span class="m-dot"></span></td><td><b>${I(l.dominio)}</b></td><td>${I(l.desempenho)}</td><td class="m-ins">${I(l.instrumentos)}</td></tr>`), '', o); break;
                     }
-                    case 'referencias': (b.itens || []).forEach((r, k) => add(`<p class="i-ref">${I(r)}</p>`, k === 0 ? o : {})); break;
+                    case 'referencias': (b.itens || []).forEach((r, k) => add(`<p class="i-ref" data-ed="itens:${k}">${I(r)}</p>`, k === 0 ? o : {})); break;
                     case 'imagem': {
                         const url = (ctx.imagens || {})[b.arquivo];
                         const w = { inteira: '100%', metade: '50%', terco: '33%' }[b.largura] || '100%';
@@ -197,14 +197,14 @@
         return out.filter(s => s.trim());
     }
     function partirP(htmlP, cabe) {
-        const m = /^<p class="([^"]*)">([\s\S]*)<\/p>$/.exec(htmlP.trim());
+        const m = /^<p class="([^"]*)"([^>]*)>([\s\S]*)<\/p>$/.exec(htmlP.trim());
         if (!m) return null;
-        const fs = frases(m[2]);
+        const fs = frases(m[3]), at = m[2];
         if (fs.length < 2) return null;
         let lo = 0, hi = fs.length - 2, best = 0;
-        while (lo <= hi) { const k = (lo + hi) >> 1; if (cabe(`<p class="${m[1]} cont-a">${fs.slice(0, k + 1).join(' ')}</p>`)) { best = k + 1; lo = k + 1; } else hi = k - 1; }
+        while (lo <= hi) { const k = (lo + hi) >> 1; if (cabe(`<p class="${m[1]} cont-a"${at}>${fs.slice(0, k + 1).join(' ')}</p>`)) { best = k + 1; lo = k + 1; } else hi = k - 1; }
         if (!best) return null;
-        return [`<p class="${m[1]} cont-a">${fs.slice(0, best).join(' ')}</p>`, `<p class="${m[1]} cont-b">${fs.slice(best).join(' ')}</p>`];
+        return [`<p class="${m[1]} cont-a"${at}>${fs.slice(0, best).join(' ')}</p>`, `<p class="${m[1]} cont-b"${at}>${fs.slice(best).join(' ')}</p>`];
     }
 
     // Tabela: quantas linhas cabem (no mínimo 1); o resto vira um pedaço novo com o cabeçalho repetido.

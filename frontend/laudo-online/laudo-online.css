@@ -286,27 +286,18 @@
 .lo-flo-mod { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font: 600 12.5px Inter, sans-serif; color: #44546F; cursor: pointer; }
 .lo-flo-mod[aria-pressed="true"] { background: #1F3864; color: #fff; }
 
-/* LO-11: o papel do editor separado em folhas, como no PDF */
+/* Editor: só o número de páginas (as folhas ficam na aba Impressão) */
 .ed-pags { display: inline-block; margin-left: 6px; padding: 1px 10px; border-radius: 999px; background: #1F3864; color: #fff; font-weight: 700; font-size: 12px; }
 .ed-pags:empty { display: none; }
-.ed-corte, .ed-folha-topo, .ed-folha-fim { user-select: none; font: 500 10.5px Inter, sans-serif; color: #64748B; position: relative; }
-.ed-folha-topo { margin-top: -40px; margin-bottom: 14px; }
-.ed-folha-fim { margin-top: 14px; margin-bottom: -56px; }
-.ed-corte { margin-top: 14px; margin-bottom: 14px; }
-.ed-fc-sobra { height: 0; transition: height .2s; }
-.ed-fc-cab { margin: 14px 56px 0; padding-bottom: 4px; border-bottom: 1px solid #2E75B6; color: #2E75B6; font-size: 11.5px; font-style: italic; text-align: right; }
-.ed-fc-rod { margin: 0 56px; padding: 6px 0 14px; color: #2E75B6; font-size: 11px; font-style: italic; }
-.ed-fc-capa { padding: 8px 56px; background: #F4F7FB; border-bottom: 1px dashed #CBD5E1; font-style: italic; border-radius: 6px 6px 0 0; }
-.ed-fc-vao { height: 36px; background: #E6EBF3; box-shadow: inset 0 9px 12px -10px rgba(15, 23, 42, .35), inset 0 -9px 12px -10px rgba(15, 23, 42, .35); }
-.ed-fc-rot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 6px 56px 0; font-size: 11.5px; }
-.ed-fc-rot b { color: #1F3864; }
-.ed-fc-rot em { font-style: normal; margin-left: 6px; padding: 1px 8px; border-radius: 99px; background: #E0EAF8; color: #1F4E79; font-size: 10.5px; }
 
-
-
-
-@media (max-width: 760px) { .ed-fc-rot, .ed-fc-capa { padding-left: 18px; padding-right: 18px; } .ed-fc-cab, .ed-fc-rod { margin-left: 18px; margin-right: 18px; } .ed-folha-topo { margin-top: -22px; } .ed-folha-fim { margin-bottom: -30px; } }
-@media print { .ed-corte, .ed-folha-topo, .ed-folha-fim { display: none !important; } }
+/* LO-16: escrever direto na folha da Impressão */
+#lo-folhas.ed-ok [data-ed] { cursor: text; border-radius: 3px; transition: background-color .15s, box-shadow .15s; }
+#lo-folhas.ed-ok [data-ed]:hover { background-color: rgba(124, 77, 255, .07); box-shadow: 0 0 0 3px rgba(124, 77, 255, .07); }
+#lo-folhas .imp-editando, #lo-folhas.ed-ok .imp-editando:hover { outline: 2px solid #7C4DFF; outline-offset: 3px; background-color: #fff; box-shadow: 0 0 0 7px rgba(124, 77, 255, .12); cursor: text; }
+#lo-folhas .imp-escondido { display: none; }
+#lo-folhas .folha.esticada { box-shadow: 0 0 0 2px #F59E0B, 0 18px 40px -18px rgba(15, 23, 42, .35); }
+#lo-folhas .imp-aviso-esticada { position: absolute; left: 50%; bottom: 6px; z-index: 3; transform: translateX(-50%); padding: 3px 12px; border-radius: 999px; background: #FEF3C7; color: #92400E; font: 600 11px Inter, sans-serif; white-space: nowrap; pointer-events: none; }
+.lo-ajuste[hidden] { display: none !important; }
 
 /* LO-12: tabelas dos testes (Gerador) no editor, iguais às da impressão */
 table.lo-tab.lo-tabx { border-collapse: separate; border-spacing: 0; border: 1px solid #D9E1EC; border-radius: 12px; overflow: hidden; background: #fff; font: 500 12.5px/1.35 Inter, system-ui, sans-serif; }

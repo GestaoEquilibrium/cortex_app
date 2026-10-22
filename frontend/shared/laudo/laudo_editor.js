@@ -168,7 +168,8 @@
             if (document.querySelector('.lo-modal, .cortex-confirm-overlay')) return;
             const a = document.activeElement;
             if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;   // campo de formulário: desfazer do próprio campo
-            if (!document.querySelector('.ed-papel')) return;
+            if (a && a.closest && a.closest('.imp-editando')) return;          // escrevendo na folha da Impressão: desfazer do próprio texto
+            if (!document.querySelector('.ed-papel, #lo-folhas')) return;
             ev.preventDefault();
             if (k === 'y' || ev.shiftKey) refazerUltimo(); else desfazer();
         }
@@ -292,6 +293,7 @@
             if (document.querySelector('.ed-bloco.arrastando, .ed-bloco.dragging')) return 'arrastando';
             const a = document.activeElement;
             if (a && a.closest && a.closest('.ed-txt') && Date.now() - ed.digitouEm < 2000) return 'digitando';
+            if (a && a.closest && a.closest('.imp-editando')) return 'digitando';
             return '';
         }
         // guarda e devolve o cursor no mesmo campo e na mesma letra
@@ -1550,8 +1552,21 @@
             });
         }
 
+        // Edição direto na folha da Impressão: o mesmo texto/marcação do editor,
+        // a mesma gravação automática e o mesmo Ctrl+Z (uma rajada por pausa).
+        function editarTexto(id, alterar) {
+            const r = achar(id); if (!r || ed.morto) return false;
+            if (!(r.b.id in ed.edicoes)) ed.edicoes[r.b.id] = textoAtual(r.b);
+            if (Date.now() - ed.textoEm > 1200 || ed.textoBloco !== r.b.id) marco();
+            ed.textoEm = Date.now(); ed.textoBloco = r.b.id; ed.digitouEm = Date.now();
+            alterar(r.b);
+            agendar();
+            return true;
+        }
+
         return {
             documentoHtml, arvoreHtml, lixeiraHtml, statusHtml, ligar, ligarLixeira, gravar,
+            paraHtml: t => inlineEdicao(t, ctxPac()), paraTexto: no => paraMarcacao(no), editarTexto,
             tem: () => ed.pendente || ed.gravando,
             reimportado: () => mudouEstrutura(null),
             sincronizar, marcarSalvo, desligar, marco, desfazer, refazer: refazerUltimo

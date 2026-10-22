@@ -310,3 +310,15 @@ table.lo-tabx td:first-child:not(.cl) { color: #1F3864; }
 table.lo-tabx tbody tr:nth-child(even) td:not(.cl) { background: #FAFBFD; }
 table.lo-tabx tbody tr:last-child td { border-bottom: 0; }
 table.lo-tabx td.cl { font-style: normal; font-weight: 700; }
+
+/* LO-16b: barra completa de cada trecho na Impressão, ao lado da folha */
+.lo-ajuste.lateral { flex-direction: column; align-items: stretch; width: 200px; padding: 6px; gap: 3px; }
+.lo-ajuste.lateral button { text-align: left; padding: 7px 10px; }
+.lo-ajuste button.perigo:hover { background: #DC2626; }
+.lo-aj-sep { display: block; height: 1px; background: rgba(255, 255, 255, .14); margin: 3px 2px; }
+.lo-ajuste:not(.lateral) .lo-aj-sep { width: 1px; height: auto; margin: 2px 1px; }
+#lo-folhas .i-ck.foco { outline: 2px dashed rgba(124, 77, 255, .6); outline-offset: 3px; border-radius: 2px; }
+#lo-folhas .i-ck.piscar-imp { animation: loPiscarImp 1.8s ease; }
+@keyframes loPiscarImp { 0%, 60% { background-color: rgba(245, 158, 11, .22); box-shadow: 0 0 0 6px rgba(245, 158, 11, .22); } 100% { background-color: transparent; box-shadow: none; } }
+#lo-folhas.ed-ok [data-ed]:empty { min-height: 1.6em; }
+#lo-folhas.ed-ok [data-ed]:empty::before { content: "Escreva aqui…"; color: #94A3B8; font-style: italic; }

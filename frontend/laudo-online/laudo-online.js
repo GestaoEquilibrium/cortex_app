@@ -466,7 +466,7 @@
         return `
         <div class="lo-imp-barra">
             <div class="lo-imp-info"><b id="lo-imp-pags">Paginando…</b><span>Folhas A4 iguais ao PDF. ${origem}</span>${enviado}${rasc}
-                ${podeAjustar() ? `<span class="lo-imp-dica">${editavel() ? '<b>Clique no texto da folha</b> para escrever direto nela (Enter ou clicar fora termina). ' : ''}Para ajustar as páginas, passe o mouse num trecho: <b>↵ Espaço</b> empurra para baixo e <b>Página nova</b> começa outra folha. <b>Ctrl+Z</b> desfaz.</span>` : ''}</div>
+                ${podeAjustar() ? `<span class="lo-imp-dica">${editavel() ? '<b>Clique no texto da folha</b> para escrever direto nela (Enter ou clicar fora termina). Passe o mouse em qualquer trecho — texto, tabela ou gráfico de teste — e use a barra ao lado da folha para subir, descer, trocar a vista, dar espaço, começar página nova, inserir ou apagar. ' : 'Para ajustar as páginas, passe o mouse num trecho: <b>↵ Espaço</b> empurra para baixo e <b>Página nova</b> começa outra folha. '}<b>Ctrl+Z</b> desfaz.</span>` : ''}</div>
             <div class="lo-imp-acoes">
                 ${st.admClin && !rascunho() ? '<button class="btn btn-secondary" id="lo-enviar-assinatura">✍️ Enviar para assinatura</button>' : ''}
                 ${editavel() ? '<button class="btn btn-secondary" id="lo-finalizar-2">✓ Finalizar</button>' : ''}
@@ -593,7 +593,7 @@
             st.altFolhas = alvo.offsetHeight;
             alvo.style.minHeight = '';
             if (podeAjustar()) ligarAjustes(alvo);
-            if (editavel()) ligarEdicaoFolha(alvo);
+            if (editavel()) { ligarEdicaoFolha(alvo); depoisDeDesenhar(alvo); }
         } catch (err) {
             console.error('[impressão]', err);
             alvo.innerHTML = `<div class="lo-desc"><b>Não consegui montar as folhas.</b> ${esc(err.message || '')}</div>`;
@@ -628,22 +628,35 @@
             barraAjuste.className = 'lo-ajuste';
             barraAjuste.hidden = true;
             document.body.appendChild(barraAjuste);
-            barraAjuste.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck')) barraAjuste.hidden = true; });
+            barraAjuste.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck, .ed-menu')) esconderBarra(); });
             barraAjuste.addEventListener('click', ev => {
-                const bt = ev.target.closest('button[data-ajuste]');
-                if (bt && barraAjuste._alvo) ajustar(bt.dataset.ajuste, barraAjuste._alvo);
+                const bt = ev.target.closest('button[data-ajuste], button[data-ed-acao]');
+                if (!bt || !barraAjuste._alvo) return;
+                if (bt.dataset.ajuste) ajustar(bt.dataset.ajuste, barraAjuste._alvo);
+                else acaoNaFolha(bt.dataset.edAcao, barraAjuste._alvo, bt);
             });
         }
         alvo.querySelectorAll('.i-ck').forEach(el => {
             el.addEventListener('mouseenter', () => mostrarAjuste(el));
         });
-        alvo.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !barraAjuste.contains(ev.relatedTarget)) barraAjuste.hidden = true; });
+        if (!alvo._barraSai) {
+            alvo._barraSai = true;
+            alvo.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !barraAjuste.contains(ev.relatedTarget)) esconderBarra(); });
+        }
+    }
+    function esconderBarra() {
+        if (barraAjuste) barraAjuste.hidden = true;
+        document.querySelectorAll('#lo-folhas .i-ck.foco').forEach(x => x.classList.remove('foco'));
     }
 
+    // Barra de cada trecho na folha: tudo o que o editor faz com o bloco (subir,
+    // descer, editar, trocar a vista do gráfico, ocultar, apagar, inserir) mais os
+    // ajustes de página. Fica ao lado da folha, sem cobrir o conteúdo.
     function mostrarAjuste(el) {
-        if (ajustando || sessaoImp) return;
+        if (ajustando || sessaoImp || document.querySelector('.lo-modal, .cortex-confirm-overlay')) return;
         const ehTitulo = !!el.dataset.tituloSecao;
-        let temEspacoAcima = false, temPagina = false, tabela = null;
+        const E = editavel() ? editor() : null;
+        let temEspacoAcima = false, temPagina = false, tabela = null, b = null;
         if (ehTitulo) {
             const sec = (st.doc.secoes || []).find(x => x.id === el.dataset.secao);
             temPagina = !!(sec && sec.quebra_antes);
@@ -652,23 +665,89 @@
             temEspacoAcima = !!(ult && ult.tipo === 'espaco');
         } else {
             const r = acharBloco(el.dataset.bloco);
-            if (!r || r.b.tipo === 'espaco') { barraAjuste.hidden = true; return; }
-            temPagina = !!r.b.quebra_antes;
-            if (TABELAS_AUTO.includes(r.b.tipo) && (r.b.tipo === 'campos' || (r.b.linhas || []).length > 1)) tabela = !!r.b.dividir_tabela;
+            if (!r) { esconderBarra(); return; }
+            b = r.b;
+            temPagina = !!b.quebra_antes;
+            if (TABELAS_AUTO.includes(b.tipo) && (b.tipo === 'campos' || (b.linhas || []).length > 1)) tabela = !!b.dividir_tabela;
             const a = anteriorVisivel(r.sec, r.i);
             temEspacoAcima = !!(a && a.b.tipo === 'espaco');
         }
-        barraAjuste.innerHTML = `
+        const espaco = b && b.tipo === 'espaco';
+        const bt = (k, txt, t, cls) => `<button data-ed-acao="${k}" title="${esc(t)}"${cls ? ` class="${cls}"` : ''}>${txt}</button>`;
+        const editar = E && b && E.temForm(b.tipo)
+            ? (b.tipo === 'resultado' ? bt('editar', '📊 Trocar vista / tamanho', 'Escolher outra vista do teste (tabela, gráfico, cabeçalho) e a largura') : bt('editar', espaco ? '✎ Tamanho do espaço' : '✎ Editar', 'Abrir as opções deste trecho'))
+            : '';
+        const pagina = espaco ? '' : `
             <button data-ajuste="espaco" title="Empurra este trecho para baixo, como dar Enter">↵ Espaço</button>
             ${temEspacoAcima ? '<button data-ajuste="tirar_espaco" title="Tira um espaço acima deste trecho">⌫ Tirar espaço</button>' : ''}
             <button data-ajuste="pagina" class="${temPagina ? 'ativo' : ''}" title="${temPagina ? 'Tira a página nova antes deste trecho' : 'Começa uma folha nova a partir deste trecho'}">${temPagina ? '✕ Tirar página nova' : '⤓ Página nova aqui'}</button>
             ${tabela === null ? '' : `<button data-ajuste="dividir_tabela" class="${tabela ? 'ativo' : ''}" title="${tabela ? 'A tabela volta a ficar inteira numa folha só' : 'O que não couber continua na folha seguinte, com o cabeçalho da tabela repetido'}">${tabela ? '✕ Não dividir a tabela' : '✂ Dividir a tabela entre páginas'}</button>`}`;
+        const sep = '<span class="lo-aj-sep"></span>';
+        let html;
+        if (!E) html = pagina;
+        else if (ehTitulo) html = `${pagina}${sep}${bt('secao', '✎ Editar seção', 'Renomear, renumerar e opções da seção')}${bt('inserir', '＋ Inserir no começo', 'Inserir texto, teste, tabela, imagem… no começo desta seção')}`;
+        else html = `${bt('subir', '↑ Subir', 'Sobe este trecho uma posição')}${bt('descer', '↓ Descer', 'Desce este trecho uma posição')}${editar ? sep + editar : ''}${pagina ? sep + pagina : ''}${sep}${bt('ocultar', '👁 Ocultar', 'Some do PDF sem apagar (volta pelo Editor)')}${bt('menu', '⋯ Mais opções', 'Onde aparece, manter junto do próximo, anotações…')}${bt('inserir', '＋ Inserir abaixo', 'Inserir texto, teste, tabela, imagem, espaço… logo abaixo')}${bt('apagar', '🗑 Apagar', 'Vai para a lixeira do laudo', 'perigo')}`;
+        barraAjuste.innerHTML = html;
         barraAjuste._alvo = el;
-        const r = el.getBoundingClientRect();
+        // destaca o trecho inteiro (todos os pedaços, se a tabela ou o parágrafo foi dividido)
+        document.querySelectorAll('#lo-folhas .i-ck.foco').forEach(x => x.classList.remove('foco'));
+        const sel = ehTitulo ? `.i-ck[data-titulo-secao][data-secao="${CSS.escape(el.dataset.secao)}"]` : `.i-ck[data-bloco="${CSS.escape(el.dataset.bloco)}"]`;
+        document.querySelectorAll('#lo-folhas ' + sel).forEach(x => x.classList.add('foco'));
         barraAjuste.hidden = false;
-        // dentro do próprio trecho, no canto de cima à direita: o mouse vai do texto à barra sem sair dele
-        barraAjuste.style.top = (window.scrollY + r.top + 2) + 'px';
-        barraAjuste.style.left = (window.scrollX + Math.max(8, r.right - barraAjuste.offsetWidth - 2)) + 'px';
+        const r = el.getBoundingClientRect();
+        const folha = el.closest('.folha'), fr = folha ? folha.getBoundingClientRect() : r;
+        const lateral = E && window.innerWidth - fr.right >= 200;
+        barraAjuste.classList.toggle('lateral', !!lateral);
+        if (lateral) {
+            // ao lado da folha, na altura do trecho (sem cobrir nada)
+            const h = barraAjuste.offsetHeight;
+            const topo = Math.min(Math.max(r.top, 8), Math.max(8, window.innerHeight - h - 8));
+            barraAjuste.style.top = (window.scrollY + topo) + 'px';
+            barraAjuste.style.left = (window.scrollX + fr.right + 10) + 'px';
+        } else {
+            barraAjuste.style.top = (window.scrollY + r.top + 2) + 'px';
+            barraAjuste.style.left = (window.scrollX + Math.max(8, r.right - barraAjuste.offsetWidth - 2)) + 'px';
+        }
+    }
+
+    // Ações do editor feitas a partir da folha: o editor muda o documento, grava,
+    // entra no Ctrl+Z e a folha é redesenhada; o trecho pisca onde foi parar.
+    async function acaoNaFolha(acao, el, bt) {
+        const E = editor(); if (!E || ajustando) return;
+        if (E.tem()) await E.gravar();
+        const ehTitulo = !!el.dataset.tituloSecao;
+        if (acao === 'secao') { esconderBarra(); E.editarSecao(el.dataset.secao); return; }
+        if (acao === 'inserir') {
+            let secId = el.dataset.secao, pos = 0;
+            if (!ehTitulo) { const r = acharBloco(el.dataset.bloco); if (!r) return; secId = r.sec.id; pos = r.i + 1; }
+            const ids = new Set(); C().cadaBloco(st.doc, b => ids.add(b.id));
+            st.antesInserir = ids;
+            E.menuInserir(secId, pos, bt);
+            esconderBarra();
+            return;
+        }
+        st.piscar = el.dataset.bloco;
+        E.acaoBloco(acao, el.dataset.bloco, bt);
+        esconderBarra();
+    }
+    // depois de redesenhar: mostra onde o trecho foi parar / começa a escrever no trecho novo
+    function depoisDeDesenhar(alvo) {
+        let novo = null;
+        if (st.antesInserir) {
+            const antes = st.antesInserir;
+            C().cadaBloco(st.doc, b => { if (!novo && !antes.has(b.id)) novo = b.id; });
+            if (novo) st.antesInserir = null;
+        }
+        const id = novo || st.piscar;
+        st.piscar = null;
+        if (!id) return;
+        const els = Array.from(alvo.querySelectorAll(`.i-ck[data-bloco="${CSS.escape(id)}"]`));
+        if (!els.length) return;
+        els[0].scrollIntoView({ block: 'nearest' });
+        els.forEach(e => e.classList.add('piscar-imp'));
+        setTimeout(() => els.forEach(e => e.classList.remove('piscar-imp')), 1800);
+        const txt = novo && els[0].querySelector('[data-ed]');
+        if (txt && !txt.textContent.trim()) comecarEdicaoFolha(alvo, txt, id, { clientX: -1, clientY: -1 });
     }
 
     // ── Escrever direto na folha (aba Impressão) ──────────────────────────────
@@ -727,7 +806,7 @@
         prim.contentEditable = 'true'; prim.spellcheck = true;
         prim.classList.add('imp-editando');
         const folha = prim.closest('.folha'), quadro = folha && folha.parentElement, corpo = folha && folha.querySelector('.f-corpo');
-        if (barraAjuste) barraAjuste.hidden = true;
+        esconderBarra();
         const esticar = () => {
             if (!folha || !corpo) return;
             const h = Math.max(1123, corpo.offsetTop + corpo.offsetHeight + 90);
@@ -826,7 +905,8 @@
         if (!eventos.length) return;
         if (st.editor && st.editor.marco) st.editor.marco();   // o ajuste entra no Ctrl+Z
         ajustando = true;
-        if (barraAjuste) barraAjuste.hidden = true;
+        esconderBarra();
+        if (!ehTitulo) st.piscar = el.dataset.bloco;
         const y = window.scrollY;
         try {
             const { data, error, juntou } = await salvarDoc(eventos);

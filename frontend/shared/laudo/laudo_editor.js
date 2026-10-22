@@ -1567,6 +1567,8 @@
         return {
             documentoHtml, arvoreHtml, lixeiraHtml, statusHtml, ligar, ligarLixeira, gravar,
             paraHtml: t => inlineEdicao(t, ctxPac()), paraTexto: no => paraMarcacao(no), editarTexto,
+            // a barra de cada trecho na aba Impressão usa as mesmas ações do editor
+            acaoBloco, menuInserir, editarSecao, temForm: tipo => COM_FORM.includes(tipo),
             tem: () => ed.pendente || ed.gravando,
             reimportado: () => mudouEstrutura(null),
             sincronizar, marcarSalvo, desligar, marco, desfazer, refazer: refazerUltimo

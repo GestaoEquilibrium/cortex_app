@@ -614,8 +614,9 @@
         for (let k = i - 1; k >= 0; k--) { const b = sec.blocos[k]; if (b && !b.oculto && b.exibir !== 'online') return { b, k }; }
         return null;
     }
-    function novoEspaco() {
-        return C().completarBloco({ id: 'u.' + C().aleatorio(8), tipo: 'espaco', altura: 'm', origem: 'manual' }, 'manual');
+    const ALTURAS = ['p', 'm', 'g', 'gg', 'xg'];
+    function novoEspaco(altura) {
+        return C().completarBloco({ id: 'u.' + C().aleatorio(8), tipo: 'espaco', altura: ALTURAS.includes(altura) ? altura : 'm', origem: 'manual' }, 'manual');
     }
 
     let barraAjuste = null, ajustando = false, sessaoImp = null;
@@ -628,12 +629,45 @@
             barraAjuste.className = 'lo-ajuste';
             barraAjuste.hidden = true;
             document.body.appendChild(barraAjuste);
-            barraAjuste.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck, .ed-menu')) esconderBarra(); });
+            barraAjuste.addEventListener('mouseleave', ev => { if (segurando || arrasto) return; if (!ev.relatedTarget || !ev.relatedTarget.closest('.i-ck, .ed-menu')) esconderBarra(); });
+            // segurando o ⠿ Arrastar: a barra não some nem troca de trecho até o arrasto começar
+            barraAjuste.addEventListener('mousedown', ev => { if (ev.target.closest('[data-arrastar]')) segurando = true; });
+            document.addEventListener('mouseup', () => { segurando = false; });
             barraAjuste.addEventListener('click', ev => {
                 const bt = ev.target.closest('button[data-ajuste], button[data-ed-acao]');
                 if (!bt || !barraAjuste._alvo) return;
                 if (bt.dataset.ajuste) ajustar(bt.dataset.ajuste, barraAjuste._alvo);
                 else acaoNaFolha(bt.dataset.edAcao, barraAjuste._alvo, bt);
+            });
+            barraAjuste.addEventListener('dragstart', comecarArrasto);
+            // perto da borda da janela, a tela rola sozinha enquanto arrasta
+            document.addEventListener('dragover', ev => {
+                if (!arrasto) return;
+                const m = 70;
+                if (ev.clientY < m) window.scrollBy(0, -Math.ceil((m - ev.clientY) / 3));
+                else if (ev.clientY > window.innerHeight - m) window.scrollBy(0, Math.ceil((ev.clientY - window.innerHeight + m) / 3));
+            });
+            barraAjuste.addEventListener('dragend', fimArrasto);
+        }
+        if (!alvo._arrasto) {
+            alvo._arrasto = true;
+            alvo.addEventListener('dragover', ev => {
+                if (!arrasto) return;
+                const d = destinoArrasto(ev);
+                arrasto.destino = d;
+                if (!d) { if (linhaSoltar) linhaSoltar.hidden = true; return; }
+                ev.preventDefault();
+                ev.dataTransfer.dropEffect = 'move';
+                mostrarLinhaSoltar(d);
+            });
+            alvo.addEventListener('drop', ev => {
+                if (!arrasto) return;
+                ev.preventDefault();
+                const d = destinoArrasto(ev), id = arrasto.id;
+                fimArrasto();
+                if (!d || !editor()) return;
+                st.piscar = id;
+                if (!editor().moverBloco(id, d.secao, d.pos)) st.piscar = null;
             });
         }
         alvo.querySelectorAll('.i-ck').forEach(el => {
@@ -641,9 +675,76 @@
         });
         if (!alvo._barraSai) {
             alvo._barraSai = true;
-            alvo.addEventListener('mouseleave', ev => { if (!ev.relatedTarget || !barraAjuste.contains(ev.relatedTarget)) esconderBarra(); });
+            alvo.addEventListener('mouseleave', ev => { if (segurando || arrasto) return; if (!ev.relatedTarget || !barraAjuste.contains(ev.relatedTarget)) esconderBarra(); });
         }
     }
+    // ── Arrastar um trecho pela folha (⠿ Arrastar na barra) ───────────────────
+    let arrasto = null, linhaSoltar = null, segurando = false;
+    function comecarArrasto(ev) {
+        const h = ev.target.closest && ev.target.closest('[data-arrastar]'), el = barraAjuste._alvo;
+        if (!h || !el || !el.dataset.bloco || !editavel()) { ev.preventDefault(); return; }
+        arrasto = { id: el.dataset.bloco, destino: null };
+        ev.dataTransfer.setData('text/x-bloco-folha', el.dataset.bloco);
+        ev.dataTransfer.effectAllowed = 'move';
+        try { ev.dataTransfer.setDragImage(el, 24, 16); } catch (e) { /* imagem padrão */ }
+        setTimeout(() => {
+            barraAjuste.classList.add('sumida');
+            document.querySelectorAll(`#lo-folhas .i-ck[data-bloco="${CSS.escape(arrasto ? arrasto.id : '')}"]`).forEach(x => x.classList.add('arrastando'));
+        }, 0);
+    }
+    function fimArrasto() {
+        arrasto = null; segurando = false;
+        if (linhaSoltar) linhaSoltar.hidden = true;
+        if (barraAjuste) barraAjuste.classList.remove('sumida');
+        esconderBarra();
+        document.querySelectorAll('#lo-folhas .i-ck.arrastando').forEach(x => x.classList.remove('arrastando'));
+    }
+    // onde o trecho vai entrar: antes ou depois do trecho sob o mouse (no branco da folha, o mais perto)
+    function destinoArrasto(ev) {
+        let ck = ev.target.closest && ev.target.closest('.i-ck');
+        if (!ck) {
+            const folha = ev.target.closest && ev.target.closest('.folha');
+            if (!folha) return null;
+            let melhor = null, dist = Infinity;
+            folha.querySelectorAll('.i-ck').forEach(c => {
+                const r = c.getBoundingClientRect();
+                const d = ev.clientY < r.top ? r.top - ev.clientY : (ev.clientY > r.bottom ? ev.clientY - r.bottom : 0);
+                if (d < dist) { dist = d; melhor = c; }
+            });
+            ck = melhor;
+        }
+        if (!ck || !arrasto) return null;
+        if (!ck.dataset.bloco && !ck.dataset.tituloSecao) return null;
+        if (ck.dataset.bloco === arrasto.id) return null;
+        const r = ck.getBoundingClientRect();
+        const depois = ev.clientY > r.top + r.height / 2;
+        if (ck.dataset.tituloSecao) {
+            const secs = st.doc.secoes, k = secs.findIndex(x => x.id === ck.dataset.secao);
+            if (k < 0) return null;
+            if (depois || k === 0) return { secao: secs[k].id, pos: 0, ck, depois };
+            return { secao: secs[k - 1].id, pos: (secs[k - 1].blocos || []).length, ck, depois };
+        }
+        const a = acharBloco(ck.dataset.bloco);
+        if (!a) return null;
+        return { secao: a.sec.id, pos: a.i + (depois ? 1 : 0), ck, depois };
+    }
+    function mostrarLinhaSoltar(d) {
+        if (!linhaSoltar) {
+            linhaSoltar = document.createElement('div');
+            linhaSoltar.className = 'lo-soltar';
+            linhaSoltar.innerHTML = '<span>Soltar aqui</span>';
+            document.body.appendChild(linhaSoltar);
+        }
+        // a linha fica no começo ou no fim do trecho inteiro (todos os pedaços dele)
+        const pedacos = d.ck.dataset.tituloSecao ? [d.ck] : Array.from(document.querySelectorAll(`#lo-folhas .i-ck[data-bloco="${CSS.escape(d.ck.dataset.bloco)}"]`));
+        const ref = (d.depois ? pedacos[pedacos.length - 1] : pedacos[0]) || d.ck;
+        const r = ref.getBoundingClientRect();
+        linhaSoltar.hidden = false;
+        linhaSoltar.style.top = (window.scrollY + (d.depois ? r.bottom + 3 : r.top - 3)) + 'px';
+        linhaSoltar.style.left = (window.scrollX + r.left) + 'px';
+        linhaSoltar.style.width = r.width + 'px';
+    }
+
     function esconderBarra() {
         if (barraAjuste) barraAjuste.hidden = true;
         document.querySelectorAll('#lo-folhas .i-ck.foco').forEach(x => x.classList.remove('foco'));
@@ -653,7 +754,7 @@
     // descer, editar, trocar a vista do gráfico, ocultar, apagar, inserir) mais os
     // ajustes de página. Fica ao lado da folha, sem cobrir o conteúdo.
     function mostrarAjuste(el) {
-        if (ajustando || sessaoImp || document.querySelector('.lo-modal, .cortex-confirm-overlay')) return;
+        if (ajustando || sessaoImp || segurando || arrasto || document.querySelector('.lo-modal, .cortex-confirm-overlay')) return;
         const ehTitulo = !!el.dataset.tituloSecao;
         const E = editavel() ? editor() : null;
         let temEspacoAcima = false, temPagina = false, tabela = null, b = null;
@@ -674,19 +775,27 @@
         }
         const espaco = b && b.tipo === 'espaco';
         const bt = (k, txt, t, cls) => `<button data-ed-acao="${k}" title="${esc(t)}"${cls ? ` class="${cls}"` : ''}>${txt}</button>`;
+        const aj = (k, txt, t, ativo) => `<button data-ajuste="${k}" title="${esc(t)}"${ativo ? ' class="ativo"' : ''}>${txt}</button>`;
         const editar = E && b && E.temForm(b.tipo)
             ? (b.tipo === 'resultado' ? bt('editar', '📊 Trocar vista / tamanho', 'Escolher outra vista do teste (tabela, gráfico, cabeçalho) e a largura') : bt('editar', espaco ? '✎ Tamanho do espaço' : '✎ Editar', 'Abrir as opções deste trecho'))
             : '';
+        const arrastar = E ? '<span draggable="true" role="button" class="lo-aj-arrastar" data-arrastar="1" title="Segure e arraste até o lugar novo na folha (aparece uma linha onde ele vai entrar)">⠿ Arrastar</span>' : '';
+        const TAM = [['p', 'P', 'Pequeno'], ['m', 'M', 'Médio'], ['g', 'G', 'Grande'], ['gg', 'GG', 'Muito grande (≈ 2,4 cm)'], ['xg', 'XG', 'Enorme (≈ 4,8 cm)']];
+        const espacos = `<span class="lo-aj-linha"><span>↵ Espaço</span>${TAM.map(t => `<button data-ajuste="espaco:${t[0]}" title="Dar espaço acima deste trecho: ${t[2]}">${t[1]}</button>`).join('')}</span>`;
+        const fixo = b ? b.fixar_folha : null;
         const pagina = espaco ? '' : `
-            <button data-ajuste="espaco" title="Empurra este trecho para baixo, como dar Enter">↵ Espaço</button>
-            ${temEspacoAcima ? '<button data-ajuste="tirar_espaco" title="Tira um espaço acima deste trecho">⌫ Tirar espaço</button>' : ''}
-            <button data-ajuste="pagina" class="${temPagina ? 'ativo' : ''}" title="${temPagina ? 'Tira a página nova antes deste trecho' : 'Começa uma folha nova a partir deste trecho'}">${temPagina ? '✕ Tirar página nova' : '⤓ Página nova aqui'}</button>
-            ${tabela === null ? '' : `<button data-ajuste="dividir_tabela" class="${tabela ? 'ativo' : ''}" title="${tabela ? 'A tabela volta a ficar inteira numa folha só' : 'O que não couber continua na folha seguinte, com o cabeçalho da tabela repetido'}">${tabela ? '✕ Não dividir a tabela' : '✂ Dividir a tabela entre páginas'}</button>`}`;
+            ${espacos}
+            ${temEspacoAcima ? aj('tirar_espaco', '⌫ Tirar espaço', 'Tira o espaço logo acima deste trecho') : ''}
+            ${aj('pagina', temPagina ? '✕ Tirar página nova' : '⤓ Página nova aqui', temPagina ? 'Tira a página nova antes deste trecho' : 'Começa uma folha nova a partir deste trecho', temPagina)}
+            ${b ? aj('fixar:baixo', fixo === 'baixo' ? '✕ Soltar do pé da folha' : '📌 Fixar embaixo', 'Leva este trecho para o pé da folha; o que vem depois começa na folha seguinte', fixo === 'baixo') : ''}
+            ${b ? aj('fixar:meio', fixo === 'meio' ? '✕ Soltar do meio' : '📌 Fixar no meio', 'Deixa este trecho no meio do espaço que sobra na folha; o que vem depois começa na folha seguinte', fixo === 'meio') : ''}
+            ${tabela === null ? '' : aj('dividir_tabela', tabela ? '✕ Não dividir a tabela' : '✂ Dividir a tabela entre páginas', tabela ? 'A tabela volta a ficar inteira numa folha só' : 'O que não couber continua na folha seguinte, com o cabeçalho da tabela repetido', tabela)}`;
         const sep = '<span class="lo-aj-sep"></span>';
         let html;
         if (!E) html = pagina;
         else if (ehTitulo) html = `${pagina}${sep}${bt('secao', '✎ Editar seção', 'Renomear, renumerar e opções da seção')}${bt('inserir', '＋ Inserir no começo', 'Inserir texto, teste, tabela, imagem… no começo desta seção')}`;
-        else html = `${bt('subir', '↑ Subir', 'Sobe este trecho uma posição')}${bt('descer', '↓ Descer', 'Desce este trecho uma posição')}${editar ? sep + editar : ''}${pagina ? sep + pagina : ''}${sep}${bt('ocultar', '👁 Ocultar', 'Some do PDF sem apagar (volta pelo Editor)')}${bt('menu', '⋯ Mais opções', 'Onde aparece, manter junto do próximo, anotações…')}${bt('inserir', '＋ Inserir abaixo', 'Inserir texto, teste, tabela, imagem, espaço… logo abaixo')}${bt('apagar', '🗑 Apagar', 'Vai para a lixeira do laudo', 'perigo')}`;
+        else if (espaco) html = `${arrastar}${bt('subir', '↑ Subir', 'Sobe este espaço uma posição')}${bt('descer', '↓ Descer', 'Desce este espaço uma posição')}${sep}${aj('maior', '＋ Espaço maior', 'Aumenta este espaço')}${aj('menor', '－ Espaço menor', 'Diminui este espaço')}${sep}${bt('apagar', '🗑 Tirar o espaço', 'Apaga este espaço', 'perigo')}`;
+        else html = `${arrastar}${bt('subir', '↑ Subir', 'Sobe este trecho uma posição')}${bt('descer', '↓ Descer', 'Desce este trecho uma posição')}${editar ? sep + editar : ''}${pagina ? sep + pagina : ''}${sep}${bt('ocultar', '👁 Ocultar', 'Some do PDF sem apagar (volta pelo Editor)')}${bt('menu', '⋯ Mais opções', 'Onde aparece, manter junto do próximo, anotações…')}${bt('inserir', '＋ Inserir abaixo', 'Inserir texto, teste, tabela, imagem, espaço… logo abaixo')}${bt('apagar', '🗑 Apagar', 'Vai para a lixeira do laudo', 'perigo')}`;
         barraAjuste.innerHTML = html;
         barraAjuste._alvo = el;
         // destaca o trecho inteiro (todos os pedaços, se a tabela ou o parágrafo foi dividido)
@@ -696,7 +805,7 @@
         barraAjuste.hidden = false;
         const r = el.getBoundingClientRect();
         const folha = el.closest('.folha'), fr = folha ? folha.getBoundingClientRect() : r;
-        const lateral = E && window.innerWidth - fr.right >= 200;
+        const lateral = E && window.innerWidth - fr.right >= 240;
         barraAjuste.classList.toggle('lateral', !!lateral);
         if (lateral) {
             // ao lado da folha, na altura do trecho (sem cobrir nada)
@@ -877,8 +986,8 @@
             if (acao === 'pagina') {
                 sec.quebra_antes = !sec.quebra_antes;
                 eventos.push({ acao: 'editar', bloco_id: sec.id, antes: { quebra_antes: !sec.quebra_antes }, depois: { quebra_antes: sec.quebra_antes } });
-            } else if (acao === 'espaco' && ant) {
-                const novo = novoEspaco(); ant.blocos.push(novo);
+            } else if (acao.startsWith('espaco') && ant) {
+                const novo = novoEspaco(acao.split(':')[1]); ant.blocos.push(novo);
                 eventos.push({ acao: 'inserir', bloco_id: novo.id, depois: { tipo: 'espaco', antes_de: sec.id } });
             } else if (acao === 'tirar_espaco' && ant && ant.blocos.length && ant.blocos[ant.blocos.length - 1].tipo === 'espaco') {
                 const tirado = ant.blocos.pop();
@@ -894,8 +1003,15 @@
             } else if (acao === 'pagina') {
                 r.b.quebra_antes = !r.b.quebra_antes;
                 eventos.push({ acao: 'editar', bloco_id: r.b.id, antes: { quebra_antes: !r.b.quebra_antes }, depois: { quebra_antes: r.b.quebra_antes } });
-            } else if (acao === 'espaco') {
-                const novo = novoEspaco(); r.sec.blocos.splice(r.i, 0, novo);
+            } else if (acao.startsWith('fixar:')) {
+                const f = acao.split(':')[1], antes = r.b.fixar_folha || null;
+                if (antes === f) delete r.b.fixar_folha; else r.b.fixar_folha = f;
+                eventos.push({ acao: 'editar', bloco_id: r.b.id, antes: { fixar_folha: antes }, depois: { fixar_folha: r.b.fixar_folha || null } });
+            } else if ((acao === 'maior' || acao === 'menor') && r.b.tipo === 'espaco') {
+                const k = ALTURAS.indexOf(r.b.altura || 'm'), n = Math.max(0, Math.min(ALTURAS.length - 1, (k < 0 ? 1 : k) + (acao === 'maior' ? 1 : -1)));
+                if (ALTURAS[n] !== (r.b.altura || 'm')) { eventos.push({ acao: 'editar', bloco_id: r.b.id, antes: { altura: r.b.altura || 'm' }, depois: { altura: ALTURAS[n] } }); r.b.altura = ALTURAS[n]; }
+            } else if (acao.startsWith('espaco')) {
+                const novo = novoEspaco(acao.split(':')[1]); r.sec.blocos.splice(r.i, 0, novo);
                 eventos.push({ acao: 'inserir', bloco_id: novo.id, depois: { tipo: 'espaco', antes_de: r.b.id } });
             } else if (acao === 'tirar_espaco') {
                 const a = anteriorVisivel(r.sec, r.i);

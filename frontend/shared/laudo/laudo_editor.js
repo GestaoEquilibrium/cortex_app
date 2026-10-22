@@ -456,6 +456,8 @@
             if (b.quebra_antes) tags.push('<em class="lo-tag azul">página nova antes</em>');
             if (b.manter_com_proximo && b.tipo !== 'titulo') tags.push('<em class="lo-tag">junto do próximo</em>');
             if (b.dividir_tabela) tags.push('<em class="lo-tag">divide entre páginas</em>');
+            if (b.fixar_folha === 'baixo') tags.push('<em class="lo-tag azul">fixo no pé da folha</em>');
+            if (b.fixar_folha === 'meio') tags.push('<em class="lo-tag azul">fixo no meio da folha</em>');
             if (editado) tags.push('<em class="lo-tag roxo">editado</em>');
             const conflito = b._conflito ? `
                 <div class="ed-conflito"><b>O Gerador mudou este trecho na reimportação.</b> A sua versão continua aqui.
@@ -860,6 +862,8 @@
             itens.push('<hr>');
             itens.push(`<button data-m="quebra">${b.quebra_antes ? '✓ ' : ''}Página nova antes</button>`);
             itens.push(`<button data-m="manter">${b.manter_com_proximo ? '✓ ' : ''}Manter junto do próximo</button>`);
+            itens.push(`<button data-m="fixar:baixo" title="Vai para o pé da folha; o que vem depois começa na folha seguinte">${b.fixar_folha === 'baixo' ? '✓ ' : ''}Fixar embaixo da folha</button>`);
+            itens.push(`<button data-m="fixar:meio" title="Fica no meio do espaço que sobra na folha; o que vem depois começa na folha seguinte">${b.fixar_folha === 'meio' ? '✓ ' : ''}Fixar no meio da folha</button>`);
             if (['tabela', 'tabela_instrumentos', 'classificacao_qi', 'mapa', 'campos'].includes(b.tipo)) itens.push(`<button data-m="dividir_tabela" title="O que não couber continua na folha seguinte, com o cabeçalho repetido">${b.dividir_tabela ? '✓ ' : ''}Dividir a tabela entre páginas</button>`);
             if (b.tipo === 'resultado') itens.push('<button data-m="vista">Trocar vista / opções do gráfico</button>');
             itens.push('<hr>');
@@ -870,6 +874,7 @@
                 if (m.startsWith('exibir:')) { b.exibir = m.split(':')[1]; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { exibir: b.exibir } }); }
                 else if (m === 'quebra') { b.quebra_antes = !b.quebra_antes; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { quebra_antes: b.quebra_antes } }); }
                 else if (m === 'dividir_tabela') { if (b.dividir_tabela) delete b.dividir_tabela; else b.dividir_tabela = true; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { dividir_tabela: !!b.dividir_tabela } }); }
+                else if (m.startsWith('fixar:')) { const f = m.split(':')[1]; if (b.fixar_folha === f) delete b.fixar_folha; else b.fixar_folha = f; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { fixar_folha: b.fixar_folha || null } }); }
                 else if (m === 'manter') { b.manter_com_proximo = !b.manter_com_proximo; mudouEstrutura({ acao: 'editar', bloco_id: id, depois: { manter_com_proximo: b.manter_com_proximo } }); }
                 else if (m === 'vista') escolherResultado(b);
                 else if (m === 'complementos') editarComplementos(b);
@@ -881,7 +886,7 @@
         function restaurarBloco(id) {
             const r = achar(id), o = original(id); if (!r || !o) return;
             const antes = r.b;
-            const layout = {}; ['oculto', 'quebra_antes', 'manter_com_proximo', 'dividir_tabela', 'exibir', 'complementos', 'nota_interna'].forEach(k => { if (k in antes) layout[k] = antes[k]; });
+            const layout = {}; ['oculto', 'quebra_antes', 'manter_com_proximo', 'dividir_tabela', 'fixar_folha', 'exibir', 'complementos', 'nota_interna'].forEach(k => { if (k in antes) layout[k] = antes[k]; });
             r.sec.blocos[r.i] = Object.assign(C().clonar(o), layout);
             delete ed.edicoes[id];
             mudouEstrutura({ acao: 'restaurar', bloco_id: id, antes });
@@ -1320,7 +1325,7 @@
                 case 'referencias': return F('Referências', [{ k: 'itens', rotulo: 'Uma referência por linha (APA)', tipo: 'area', linhas: 12, ajuda: MARC }], { itens: linhasTxt(b.itens) }, (x, v) => { x.itens = txtLinhas(v.itens); }, { largo: true });
                 case 'resultado': return escolherResultado(b);
                 case 'imagem': return escolherImagem(null, b);
-                case 'espaco': return F('Espaço', [{ k: 'altura', rotulo: 'Altura', tipo: 'select', opcoes: [['p', 'Pequeno'], ['m', 'Médio'], ['g', 'Grande']] }], { altura: b.altura || 'm' }, (x, v) => { x.altura = v.altura; });
+                case 'espaco': return F('Espaço', [{ k: 'altura', rotulo: 'Altura', tipo: 'select', opcoes: [['p', 'Pequeno'], ['m', 'Médio'], ['g', 'Grande'], ['gg', 'Muito grande (≈ 2,4 cm)'], ['xg', 'Enorme (≈ 4,8 cm)']] }], { altura: b.altura || 'm' }, (x, v) => { x.altura = v.altura; });
                 case 'local_data': return F('Local e data', [{ k: 'cidade', rotulo: 'Cidade' }], { cidade: b.cidade || '' }, (x, v) => { x.cidade = v.cidade.trim(); }, { texto: 'A data é a data de emissão do laudo.' });
                 case 'assinatura': return F('Assinatura', [{ k: 'nome', rotulo: 'Nome' }, { k: 'registro', rotulo: 'Registro' }, { k: 'mostrar_logo', rotulo: 'Mostrar o logo abaixo', tipo: 'check' }],
                     { nome: b.nome, registro: b.registro, mostrar_logo: b.mostrar_logo !== false }, (x, v) => { x.nome = v.nome.trim(); x.registro = v.registro.trim(); x.mostrar_logo = v.mostrar_logo; });
@@ -1509,7 +1514,7 @@
             if (escolha === 'ver') { verMudancas(b, b._conflito.novo, ['O Gerador mudou este trecho', 'Riscado = a sua versão. Sublinhado = a versão nova do Gerador.']); return; }
             if (escolha === 'meu') { delete b._conflito; mudouEstrutura({ acao: 'aceitar', bloco_id: id, depois: { conflito: 'manter_meu' } }); return; }
             if (escolha === 'novo') {
-                const layout = {}; ['oculto', 'quebra_antes', 'manter_com_proximo', 'dividir_tabela', 'exibir', 'complementos', 'nota_interna'].forEach(k => { if (k in b) layout[k] = b[k]; });
+                const layout = {}; ['oculto', 'quebra_antes', 'manter_com_proximo', 'dividir_tabela', 'fixar_folha', 'exibir', 'complementos', 'nota_interna'].forEach(k => { if (k in b) layout[k] = b[k]; });
                 const antes = C().clonar(b);
                 r.sec.blocos[r.i] = Object.assign(C().clonar(b._conflito.novo), layout);
                 mudouEstrutura({ acao: 'aceitar', bloco_id: id, antes, depois: { conflito: 'usar_novo' } });
@@ -1552,6 +1557,18 @@
             });
         }
 
+        // Arrastar na folha da Impressão: leva o bloco para a seção/posição indicada.
+        function moverBloco(id, secId, pos) {
+            const de = achar(id); if (!de) return false;
+            const sec = doc().secoes.find(s => s.id === secId); if (!sec) return false;
+            if (sec === de.sec && (pos === de.i || pos === de.i + 1)) return false;
+            const [m] = de.sec.blocos.splice(de.i, 1);
+            if (sec === de.sec && pos > de.i) pos--;
+            sec.blocos.splice(Math.max(0, Math.min(pos, sec.blocos.length)), 0, m);
+            mudouEstrutura({ acao: 'mover', bloco_id: id, antes: { secao: de.sec.id, posicao: de.i } });
+            return true;
+        }
+
         // Edição direto na folha da Impressão: o mesmo texto/marcação do editor,
         // a mesma gravação automática e o mesmo Ctrl+Z (uma rajada por pausa).
         function editarTexto(id, alterar) {
@@ -1568,7 +1585,7 @@
             documentoHtml, arvoreHtml, lixeiraHtml, statusHtml, ligar, ligarLixeira, gravar,
             paraHtml: t => inlineEdicao(t, ctxPac()), paraTexto: no => paraMarcacao(no), editarTexto,
             // a barra de cada trecho na aba Impressão usa as mesmas ações do editor
-            acaoBloco, menuInserir, editarSecao, temForm: tipo => COM_FORM.includes(tipo),
+            acaoBloco, menuInserir, editarSecao, moverBloco, temForm: tipo => COM_FORM.includes(tipo),
             tem: () => ed.pendente || ed.gravando,
             reimportado: () => mudouEstrutura(null),
             sincronizar, marcarSalvo, desligar, marco, desfazer, refazer: refazerUltimo

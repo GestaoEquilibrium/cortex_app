@@ -40,8 +40,10 @@
         const out = [];
         const pac = ctx.pac;
         const I = t => C().inline(t, pac, { impressao: true });
-        let blocoAtual = null, secaoAtual = null;
-        const add = (html, o) => out.push(Object.assign({ html, manter: false, dividir: false, quebra: false, bloco: blocoAtual, secaoId: secaoAtual }, o || {}));
+        let blocoAtual = null, secaoAtual = null, fixarAtual = null;
+        // fixar_folha: 'baixo' (vai para o pé da folha) ou 'meio' (fica no meio do espaço que sobra);
+        // o que vem depois começa na folha seguinte
+        const add = (html, o) => out.push(Object.assign({ html, manter: false, dividir: false, quebra: false, bloco: blocoAtual, secaoId: secaoAtual, fixar: fixarAtual }, o || {}));
         // Tabela automática: com "Dividir tabela entre páginas" ligado, as linhas que não cabem
         // seguem na folha seguinte com o cabeçalho da tabela repetido (sem buraco em branco).
         const addTab = (b, abre, linhas, depois, o) => {
@@ -58,12 +60,13 @@
         (doc.secoes || []).forEach((sec, si) => {
             if (sec.oculta) return;
             const blocos = (sec.blocos || []).filter(visivelNaImpressao);
-            blocoAtual = null; secaoAtual = sec.id;
+            blocoAtual = null; secaoAtual = sec.id; fixarAtual = null;
             add(`<h2 class="i-h2" id="i-sec-${esc(sec.id)}">${esc(sec.n)}. ${esc(sec.titulo)}</h2>`,
                 { manter: true, secao: sec.n, quebra: !!sec.quebra_antes || si === 0 });
             for (let i = 0; i < blocos.length; i++) {
                 const b = blocos[i];
                 blocoAtual = b.id;
+                fixarAtual = b.fixar_folha === 'baixo' || b.fixar_folha === 'meio' ? b.fixar_folha : null;
                 const o = { quebra: !!b.quebra_antes, manter: !!b.manter_com_proximo };
                 switch (b.tipo) {
                     case 'titulo':
@@ -223,12 +226,28 @@
         const pags = []; let atual = [], usado = 0;
         // meta: o que começa cada pedaço (para o editor marcar onde a página quebra)
         const metas = [], usos = []; let metaAtual = [];
-        const nova = () => { if (atual.length) { pags.push(atual); metas.push(metaAtual); usos.push(usado); } atual = []; metaAtual = []; usado = 0; };
+        const nova = () => { if (atual.length) { pags.push(atual); metas.push(metaAtual.filter(m => !m.fixo)); usos.push(usado); } atual = []; metaAtual = []; usado = 0; };
         const emb = (p, html) => {
-            metaAtual.push({ bloco: p.bloco || null, secao: p.secaoId || null, titulo: !!p.secao, cont: !!p.cont });
+            metaAtual.push({ bloco: p.bloco || null, secao: p.secaoId || null, titulo: !!p.secao, cont: !!p.cont, manter: !!p.manter });
             return `<div class="i-ck" data-bloco="${esc(p.bloco || '')}" data-secao="${esc(p.secaoId || '')}"${p.secao ? ' data-titulo-secao="1"' : ''}>${html}</div>`;
         };
         const fila = ps.map(p => Object.assign({}, p, { h: p.vazio ? 0 : alt(p.html) }));
+        // trecho fixado: o espaço que sobra na folha entra antes dele (todo = embaixo, metade = no meio)
+        const fixarSeFim = i => {
+            const p = fila[i];
+            if (!p.fixar || !p.bloco) return;
+            const prox = fila[i + 1];
+            if (prox && prox.bloco === p.bloco && !prox.quebra) return;   // o trecho continua no próximo pedaço
+            let k = metaAtual.length - 1;
+            while (k > 0 && metaAtual[k - 1].bloco === p.bloco) k--;
+            // o título (e o que está "junto do próximo") vai junto com o trecho fixado
+            while (k > 0 && metaAtual[k - 1].manter && !metaAtual[k - 1].fixo) k--;
+            const sobra = Math.max(0, CORPO_H - usado);
+            atual.splice(k, 0, `<div class="i-fixo ${p.fixar}" data-fixo="${p.fixar}" style="height:${Math.floor(p.fixar === 'meio' ? sobra / 2 : sobra)}px"></div>`);
+            metaAtual.splice(k, 0, { bloco: null, secao: null, titulo: false, cont: false, fixo: true });
+            usado = CORPO_H;
+            nova();
+        };
         for (let i = 0; i < fila.length; i++) {
             const p = fila[i];
             if (p.quebra && atual.length) nova();
@@ -241,21 +260,22 @@
                 if (j < fila.length && !fila[j].vazio && !fila[j].quebra) juntos += fila[j].dividir ? Math.min(fila[j].h, fila[j].tab ? 90 : 70) : fila[j].h;
                 if (usado + juntos > CORPO_H && atual.length && juntos <= CORPO_H) nova();
             }
-            if (usado + p.h <= CORPO_H) { atual.push(emb(p, p.html)); usado += p.h; continue; }
+            if (usado + p.h <= CORPO_H) { atual.push(emb(p, p.html)); usado += p.h; fixarSeFim(i); continue; }
             if (p.tab && CORPO_H - usado > 60) {
                 const sobra = CORPO_H - usado;
                 const r = partirTab(p.tab, h => alt(h) <= sobra);
-                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: r[2].linhas.length > 1, tab: r[2].linhas.length > 1 ? r[2] : null, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId, cont: true }); continue; }
+                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: r[2].linhas.length > 1, tab: r[2].linhas.length > 1 ? r[2] : null, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId, cont: true, fixar: p.fixar }); continue; }
             } else if (p.dividir && CORPO_H - usado > 60) {
                 const sobra = CORPO_H - usado;
                 const r = partirP(p.html, h => alt(h) <= sobra);
-                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: true, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId, cont: true }); continue; }
+                if (r) { atual.push(emb(p, r[0])); nova(); fila.splice(i + 1, 0, { html: r[1], dividir: true, h: alt(r[1]), bloco: p.bloco, secaoId: p.secaoId, cont: true, fixar: p.fixar }); continue; }
             }
             if (p.tab && atual.length) { nova(); i--; continue; }   // folha nova e tenta dividir de novo nela
             nova();
             atual.push(emb(p, p.html)); usado += p.h;
+            fixarSeFim(i);
         }
-        if (atual.length) { pags.push(atual); metas.push(metaAtual); usos.push(usado); }
+        if (atual.length) { pags.push(atual); metas.push(metaAtual.filter(m => !m.fixo)); usos.push(usado); }
         pags.meta = metas; pags.usado = usos;
         return pags;
     }
@@ -339,6 +359,17 @@
             altura: CORPO_H, cabecalho: ctx.cabecalho, rodape: `${resp} - Neuropsicólogo - ${registro}`, capa: imp.capa !== false };
     }
 
+    // A conta soma as alturas dos pedaços; na folha as margens se encostam. Aqui o espaço
+    // do trecho fixado é acertado pela altura real, para ele ficar exatamente no pé / no meio.
+    function acertarFixos(alvo) {
+        alvo.querySelectorAll('.i-fixo').forEach(f => {
+            const corpo = f.closest('.f-corpo'); if (!corpo) return;
+            const atual = parseFloat(f.style.height) || 0;
+            const resto = CORPO_H - (corpo.offsetHeight - atual);   // o que sobra na folha sem o espaço
+            f.style.height = Math.max(0, Math.floor(f.dataset.fixo === 'meio' ? resto / 2 : resto)) + 'px';
+        });
+    }
+
     async function desenhar(doc, alvo, ctx) {
         ctx = Object.assign({}, ctx);
         const pags = await paginarDoc(doc, ctx);
@@ -349,6 +380,7 @@
         alvo.innerHTML = `<div class="folhas">${folhas.map(f => `<div class="folha-quadro">${f}</div>`).join('')}</div>`;
         escalar(alvo);
         await carregarImagens(alvo);
+        acertarFixos(alvo);
         return { paginas: pags.length, folhas: folhas.length, alvo: Number(imp.alvo_paginas || 25), omitidos: Array.from(new Set(ctx.omitidos || [])) };
     }
 

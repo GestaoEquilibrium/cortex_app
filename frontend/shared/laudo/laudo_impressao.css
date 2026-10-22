@@ -250,7 +250,8 @@
 .imp .i-alerta.verm { background: #FFE4E6; }
 .imp .i-box.azul { } .imp .i-box.ambar { background: #FFF7E0; border-left-color: #F59E0B; } .imp .i-box.neutro { background: #F6F8FC; border-left-color: #94A3B8; }
 .imp .i-box-tit { margin: 0 0 4px; font-weight: 700; color: var(--aze); font-size: 13.3px; }
-.imp .i-espaco.p { height: 8px; } .imp .i-espaco.m { height: 18px; } .imp .i-espaco.g { height: 36px; }
+.imp .i-espaco.p { height: 8px; } .imp .i-espaco.m { height: 18px; } .imp .i-espaco.g { height: 36px; } .imp .i-espaco.gg { height: 90px; } .imp .i-espaco.xg { height: 180px; }
+.imp .i-fixo { display: block; }
 .imp .i-fig { margin: 8px 0 12px; text-align: center; }
 .imp .i-fig img { max-width: 100%; height: auto; }
 .imp .i-fig figcaption { font-size: 11.5px; font-style: italic; color: var(--nota); margin-top: 4px; }

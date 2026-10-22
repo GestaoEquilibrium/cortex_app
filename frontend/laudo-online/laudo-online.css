@@ -124,7 +124,7 @@
 .lo-assin p { margin: 0; font-family: Cambria, Georgia, serif; font-style: italic; font-size: 18px; color: var(--lo-az); }
 .lo-assin small { margin-top: 4px; font-weight: 700; color: var(--lo-az); }
 .lo-quebra { margin: 10px 0; text-align: center; font: 600 11px Inter, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #94A3B8; border-top: 2px dashed #CBD5E1; padding-top: 4px; }
-.lo-espaco.p { height: 8px; } .lo-espaco.m { height: 18px; } .lo-espaco.g { height: 36px; }
+.lo-espaco.p { height: 8px; } .lo-espaco.m { height: 18px; } .lo-espaco.g { height: 36px; } .lo-espaco.gg { height: 90px; } .lo-espaco.xg { height: 180px; }
 .lo-auto, .lo-desc { font-family: Inter, sans-serif; font-size: 12.5px; padding: 10px 12px; border-radius: 10px; background: #F6F8FC; border: 1px dashed #CBD5E1; margin: 6px 0 10px; }
 .lo-desc { background: #FFF7ED; border-color: #FDBA74; }
 .lo-desc pre { white-space: pre-wrap; font-size: 11px; max-height: 180px; overflow: auto; margin: 6px 0 0; }
@@ -312,7 +312,7 @@ table.lo-tabx tbody tr:last-child td { border-bottom: 0; }
 table.lo-tabx td.cl { font-style: normal; font-weight: 700; }
 
 /* LO-16b: barra completa de cada trecho na Impressão, ao lado da folha */
-.lo-ajuste.lateral { flex-direction: column; align-items: stretch; width: 200px; padding: 6px; gap: 3px; }
+.lo-ajuste.lateral { flex-direction: column; align-items: stretch; width: 226px; padding: 6px; gap: 3px; }
 .lo-ajuste.lateral button { text-align: left; padding: 7px 10px; }
 .lo-ajuste button.perigo:hover { background: #DC2626; }
 .lo-aj-sep { display: block; height: 1px; background: rgba(255, 255, 255, .14); margin: 3px 2px; }
@@ -322,3 +322,21 @@ table.lo-tabx td.cl { font-style: normal; font-weight: 700; }
 @keyframes loPiscarImp { 0%, 60% { background-color: rgba(245, 158, 11, .22); box-shadow: 0 0 0 6px rgba(245, 158, 11, .22); } 100% { background-color: transparent; box-shadow: none; } }
 #lo-folhas.ed-ok [data-ed]:empty { min-height: 1.6em; }
 #lo-folhas.ed-ok [data-ed]:empty::before { content: "Escreva aqui…"; color: #94A3B8; font-style: italic; }
+
+/* LO-16c: arrastar na folha, fixar no pé/meio, espaços grandes */
+.lo-ajuste .lo-aj-arrastar { display: block; border-radius: 7px; padding: 7px 10px; font: 600 12px Inter, sans-serif; color: #fff; cursor: grab; background: rgba(124, 77, 255, .35); user-select: none; white-space: nowrap; }
+.lo-ajuste .lo-aj-arrastar:hover { background: linear-gradient(135deg, #2F6FED, #7C4DFF); }
+.lo-ajuste .lo-aj-arrastar:active { cursor: grabbing; }
+.lo-ajuste.sumida { opacity: .25; }
+.lo-aj-linha { display: flex; align-items: center; gap: 3px; }
+.lo-aj-linha > span { flex: 1; font: 600 12px Inter, sans-serif; color: #fff; padding-left: 6px; white-space: nowrap; }
+.lo-ajuste .lo-aj-linha button { padding: 5px 6px; min-width: 26px; text-align: center; font-size: 11px; }
+.lo-ajuste.lateral .lo-aj-linha button { padding: 6px 4px; min-width: 25px; text-align: center; }
+#lo-folhas .i-ck.arrastando { opacity: .35; }
+.lo-soltar { position: absolute; z-index: 75; height: 0; border-top: 3px solid #7C4DFF; pointer-events: none; }
+.lo-soltar::before, .lo-soltar::after { content: ""; position: absolute; top: -7px; width: 11px; height: 11px; border-radius: 50%; background: #7C4DFF; }
+.lo-soltar::before { left: -6px; } .lo-soltar::after { right: -6px; }
+.lo-soltar span { position: absolute; right: 10px; top: -22px; padding: 1px 8px; border-radius: 999px; background: #7C4DFF; color: #fff; font: 700 10.5px Inter, sans-serif; }
+.lo-soltar[hidden] { display: none; }
+#lo-folhas .i-fixo { background: repeating-linear-gradient(135deg, transparent 0 9px, rgba(46, 117, 182, .07) 9px 11px); border-radius: 4px; }
+@media print { .lo-soltar { display: none !important; } #lo-print .i-fixo { background: none !important; } }

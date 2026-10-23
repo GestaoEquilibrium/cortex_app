@@ -263,7 +263,7 @@ window.CortexSidebar = (function() {
     // ── Som e aviso do navegador (avisos.js). Nunca pode derrubar a navegação.
     async function iniciarAvisos() {
         try {
-            if (!window.CortexAvisos) await carregarAsset('script', { src: caminhoShared() + 'avisos.js?v=1', 'data-cortex-avisos-js': '1' });
+            if (!window.CortexAvisos) await carregarAsset('script', { src: caminhoShared() + 'avisos.js?v=2', 'data-cortex-avisos-js': '1' });
         } catch (err) {
             console.warn('[sidebar] avisos indisponíveis:', err.message || err);
         }

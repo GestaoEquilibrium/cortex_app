@@ -163,5 +163,60 @@ window.CortexAvisos = (function () {
         }, espera);
     }
 
-    return { chegou, tocar, somLigado, ligarSom, avisoDoNavegador };
+    // ── Pedir a permissão do navegador ───────────────────────────────────────
+    // O navegador só mostra o pedido "Permitir notificações?" depois de um clique.
+    // No primeiro clique em qualquer lugar do CORTEX (uma vez por dia, enquanto a
+    // pessoa não decidiu), o próprio clique já dispara o pedido.
+    const CHAVE_ADIADO = 'cortex_push_adiado_em';
+    function hoje() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function lerLocal(k) { try { return window.localStorage.getItem(k); } catch (_) { return null; } }
+    function gravarLocal(k, v) { try { window.localStorage.setItem(k, v); } catch (_) { /* privado */ } }
+    function podePedir() {
+        if (!('Notification' in window) || Notification.permission !== 'default') return false;
+        if (!window.CortexNotificacoes || typeof window.CortexNotificacoes.ativarPush !== 'function') return false;
+        if (window.CortexChatBadge && typeof window.CortexChatBadge.devePerguntar === 'function') return window.CortexChatBadge.devePerguntar();
+        return lerLocal(CHAVE_ADIADO) !== hoje();
+    }
+    function pedirNoPrimeiroClique(ev) {
+        const alvo = ev && ev.target;
+        // o próprio convite e o painel do sino têm botões para isso
+        if (alvo && alvo.closest && alvo.closest('#chat-convite, #cortex-notif-painel, #cortex-sino')) return;
+        if (!podePedir()) return;
+        document.removeEventListener('pointerdown', pedirNoPrimeiroClique, true);
+        gravarLocal(CHAVE_ADIADO, hoje());
+        const convite = document.getElementById('chat-convite');
+        if (convite) convite.remove();
+        window.CortexNotificacoes.ativarPush();
+    }
+    document.addEventListener('pointerdown', pedirNoPrimeiroClique, true);
+
+    // Bloqueado no navegador: o pedido nunca mais aparece sozinho. Mostra como
+    // liberar (uma vez por dia, até a pessoa liberar).
+    const CHAVE_BLOQ = 'cortex_notif_bloqueada_avisada_em';
+    function avisarBloqueio() {
+        if (!('Notification' in window) || Notification.permission !== 'denied') return;
+        if (lerLocal(CHAVE_BLOQ) === hoje() || document.getElementById('chat-convite')) return;
+        gravarLocal(CHAVE_BLOQ, hoje());
+        const el = document.createElement('div');
+        el.id = 'chat-convite';
+        el.className = 'chat-convite';
+        el.setAttribute('role', 'dialog');
+        el.setAttribute('aria-label', 'Notificações bloqueadas');
+        el.innerHTML =
+            '<div class="chat-convite-ico">🔕</div>' +
+            '<div class="chat-convite-txt">' +
+                '<strong>Notificações bloqueadas neste navegador</strong>' +
+                '<span>Para receber as mensagens e os avisos: clique no cadeado (ou no ícone ao lado do endereço do site), em <b>Notificações</b> escolha <b>Permitir</b> e recarregue a página.</span>' +
+            '</div>' +
+            '<div class="chat-convite-btns"><button type="button" class="chat-convite-ok">Entendi</button></div>';
+        document.body.appendChild(el);
+        requestAnimationFrame(() => el.classList.add('visivel'));
+        el.querySelector('.chat-convite-ok').addEventListener('click', () => { el.classList.remove('visivel'); setTimeout(() => el.remove(), 260); });
+    }
+    setTimeout(avisarBloqueio, 2500);
+
+    return { chegou, tocar, somLigado, ligarSom, avisoDoNavegador, podePedir };
 })();

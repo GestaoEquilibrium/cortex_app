@@ -518,50 +518,78 @@
     }
     function fecharGaveta() { const g = document.getElementById('p-gaveta'); if (g) { g.remove(); document.body.style.overflow = ''; } }
 
-    // ── fundo vivo: rede de neurônios ────────────────────────────────────────
+    // ── fundo vivo: sinapses (rede neural orgânica) ──────────────────────────
+    // Corpos de neurônio com espinhos curtos, filamentos curvos que afinam até um
+    // botão sináptico e pulsos de luz correndo pelas ligações. O mouse/dedo solta
+    // uma onda de disparos; a rolagem acelera os pulsos. Escuro: tons do capítulo;
+    // claro creme: tudo no azul-marinho.
     function Fundo(cv) {
         const g = cv.getContext('2d');
-        let w = 0, h = 0, dpr = 1, nos = [], matiz = 215, alvo = 215, vel = 0, ultimoY = window.scrollY, raf = 0;
+        let w = 0, h = 0, dpr = 1, nos = [], matiz = 215, alvo = 215, vel = 0, ultimoY = window.scrollY, raf = 0, creme = false, ult = performance.now();
         const t0 = performance.now();
         const ponteiro = { x: -999, y: -999 };
+        const semente = (i, j, k) => { const x = Math.sin(i * 127.1 + j * 311.7 + k * 74.7) * 43758.5453; return x - Math.floor(x); };
         function medir() {
             dpr = Math.min(2, window.devicePixelRatio || 1); w = window.innerWidth; h = window.innerHeight;
             cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-            const n = w < 700 ? 52 : 104;
-            nos = Array.from({ length: n }, (_, i) => ({ x: Math.random() * w, y: Math.random() * h * 1.4, z: .35 + Math.random() * .65, f: Math.random() * 6.28, r: 1 + Math.random() * 1.8, k: i % 7 === 0 }));
+            const n = w < 700 ? 46 : 92;
+            nos = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h * 1.4, z: .4 + Math.random() * .6, f: Math.random() * 6.28, onda: 0 }));
         }
+        const linha = a => creme ? `rgba(31, 56, 100, ${a.toFixed(3)})` : `hsla(${matiz + 25}, 85%, 70%, ${a.toFixed(3)})`;
+        const viva = a => creme ? `rgba(46, 90, 156, ${a.toFixed(3)})` : `hsla(${matiz - 25}, 95%, 78%, ${a.toFixed(3)})`;
+        const corpo = a => creme ? `rgba(31, 56, 100, ${a.toFixed(3)})` : `hsla(${matiz + 15}, 90%, 74%, ${a.toFixed(3)})`;
         function quadro(agora) {
-            const t = (agora - t0) / 1000, sy = window.scrollY;
+            const t = (agora - t0) / 1000, dt = Math.min(.05, (agora - ult) / 1000), sy = window.scrollY;
+            ult = agora;
             vel += (sy - ultimoY) * 0.12; vel *= 0.9; ultimoY = sy;
             matiz += (alvo - matiz) * 0.035;
             g.clearRect(0, 0, w, h);
-            const pts = nos.map(n => {
-                const H = h * 1.4;
-                let y = ((n.y - sy * n.z * 0.22) % H + H) % H - h * 0.2;
-                let x = n.x + Math.sin(t * 0.25 + n.f) * 10 * n.z;
-                y += Math.cos(t * 0.2 + n.f) * 8 * n.z - vel * n.z * 0.6;
-                const dx = x - ponteiro.x, dy = y - ponteiro.y, d = Math.hypot(dx, dy);
-                let brilho = 0;
-                if (d < 170) { const f = (1 - d / 170); x -= dx * f * 0.12; y -= dy * f * 0.12; brilho = f; }
-                return { x, y, z: n.z, r: n.r, k: n.k, b: brilho };
-            });
             const forca = Math.min(1, Math.abs(vel) / 30);
-            for (let i = 0; i < pts.length; i++) {
-                const a = pts[i];
-                for (let j = i + 1; j < pts.length; j++) {
-                    const b = pts[j], dx = a.x - b.x, dy = a.y - b.y, lim = 70 + 80 * Math.min(a.z, b.z);
+            const H = h * 1.4;
+            const P = nos.map(n => {
+                let y = ((n.y - sy * n.z * 0.22) % H + H) % H - h * 0.2;
+                const x = n.x + Math.sin(t * 0.25 + n.f) * 8 * n.z;
+                y += Math.cos(t * 0.2 + n.f) * 7 * n.z - vel * n.z * 0.5;
+                const d = Math.hypot(x - ponteiro.x, y - ponteiro.y);
+                if (d < 150) n.onda = Math.max(n.onda, 1 - d / 150);
+                n.onda = Math.max(0, n.onda - dt * 0.7);
+                return { x, y, n };
+            });
+            const lim = w < 700 ? 118 : 150, liga = new Array(P.length).fill(0);
+            g.lineCap = 'round';
+            for (let i = 0; i < P.length; i++) {
+                const A = P[i];
+                for (let j = i + 1; j < P.length; j++) {
+                    if (liga[i] >= 3 || liga[j] >= 4) continue;
+                    const B = P[j], dx = A.x - B.x, dy = A.y - B.y;
                     if (dx * dx + dy * dy > lim * lim) continue;
-                    const d = Math.sqrt(dx * dx + dy * dy), al = (1 - d / lim) * (0.12 + 0.22 * Math.min(a.z, b.z) + 0.25 * forca + 0.35 * Math.max(a.b, b.b));
-                    g.strokeStyle = `hsla(${matiz + a.z * 40}, 85%, 68%, ${al.toFixed(3)})`;
-                    g.lineWidth = 0.6 + a.z * 0.6;
-                    g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+                    liga[i]++; liga[j]++;
+                    const d = Math.sqrt(dx * dx + dy * dy), perto = 1 - d / lim;
+                    const k = (semente(i, j, 1) - .5) * .5;
+                    const mx = (A.x + B.x) / 2 - (B.y - A.y) * k, my = (A.y + B.y) / 2 + (B.x - A.x) * k;
+                    const on = Math.max(A.n.onda, B.n.onda), z = Math.min(A.n.z, B.n.z);
+                    const base = (creme ? .1 : .12) + (creme ? .14 : .2) * z;
+                    const al = perto * (base + .25 * forca) + on * .45;
+                    // filamento: mais grosso no começo, fino até o botão sináptico
+                    const qx = (A.x + 2 * mx + B.x) / 4, qy = (A.y + 2 * my + B.y) / 4;
+                    g.strokeStyle = on > .15 ? viva(Math.min(.9, al)) : linha(al);
+                    g.lineWidth = .9 + z * .7; g.beginPath(); g.moveTo(A.x, A.y); g.quadraticCurveTo((A.x + mx) / 2, (A.y + my) / 2, qx, qy); g.stroke();
+                    g.lineWidth = .45 + z * .4; g.beginPath(); g.moveTo(qx, qy); g.quadraticCurveTo((mx + B.x) / 2, (my + B.y) / 2, B.x, B.y); g.stroke();
+                    g.fillStyle = corpo(Math.min(1, al * 1.6)); g.beginPath(); g.arc(B.x + (mx - B.x) * .12, B.y + (my - B.y) * .12, 1.3 + z * .5, 0, 6.283); g.fill();
+                    // pulso de luz correndo pela ligação (mais rápido ao rolar e perto do mouse)
+                    const fase = (t * (.1 + semente(i, j, 2) * .18) * (1 + forca * 2 + on * 2.5) + semente(i, j, 3)) % 1;
+                    const u = 1 - fase, px = u * u * A.x + 2 * u * fase * mx + fase * fase * B.x, py = u * u * A.y + 2 * u * fase * my + fase * fase * B.y;
+                    g.fillStyle = viva(Math.min(1, perto * (.3 + .4 * z) + on * .6 + forca * .3));
+                    g.beginPath(); g.arc(px, py, 1.3 + z * .6 + on * 1.4, 0, 6.283); g.fill();
                 }
             }
-            pts.forEach(p => {
-                const al = 0.35 + p.z * 0.45 + p.b * 0.4;
-                g.fillStyle = `hsla(${matiz + p.z * 40}, 90%, ${p.k ? 78 : 70}%, ${Math.min(1, al).toFixed(3)})`;
-                g.beginPath(); g.arc(p.x, p.y, p.r * (p.k ? 1.8 : 1) * (1 + p.b * 0.8), 0, 6.283); g.fill();
-                if (p.k) { g.fillStyle = `hsla(${matiz}, 90%, 70%, 0.08)`; g.beginPath(); g.arc(p.x, p.y, 14 + p.b * 10, 0, 6.283); g.fill(); }
+            P.forEach(p => {
+                const v = p.n.onda, z = p.n.z;
+                if (v > .05) { g.fillStyle = viva(v * (creme ? .12 : .16)); g.beginPath(); g.arc(p.x, p.y, 10 + v * 14, 0, 6.283); g.fill(); }
+                g.strokeStyle = v > .15 ? viva(.35 + v * .4) : linha((creme ? .2 : .26) + z * .2); g.lineWidth = .7;
+                for (let s = 0; s < 3; s++) { const a = p.n.f + s * 2.1, c = 5 + z * 6; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x + Math.cos(a) * c, p.y + Math.sin(a) * c); g.stroke(); }
+                g.fillStyle = v > .1 ? viva(.85) : corpo((creme ? .38 : .45) + z * .4);
+                g.beginPath(); g.arc(p.x, p.y, 1.8 + z * 1.6 + v * 1.6, 0, 6.283); g.fill();
             });
             if (!reduz()) raf = requestAnimationFrame(quadro);
         }
@@ -570,8 +598,124 @@
         return {
             iniciar() { medir(); window.addEventListener('resize', medir); window.addEventListener('pointermove', mover, { passive: true }); window.addEventListener('pointerleave', sair); cancelAnimationFrame(raf); raf = requestAnimationFrame(quadro); },
             parar() { cancelAnimationFrame(raf); window.removeEventListener('resize', medir); window.removeEventListener('pointermove', mover); window.removeEventListener('pointerleave', sair); },
-            alvo(m) { alvo = m; }
+            alvo(m) { alvo = m; },
+            tema(c) { creme = !!c; if (reduz()) { cancelAnimationFrame(raf); raf = requestAnimationFrame(quadro); } }
         };
+    }
+
+    // ── fundo vivo (opção A): neurônios com dendritos, axônios e disparos em cadeia ──
+    function FundoNeuronios(cv) {
+        const g = cv.getContext('2d');
+        let w = 0, h = 0, dpr = 1, ns = [], ax = [], pulsos = [], matiz = 215, alvo = 215, vel = 0, ultimoY = window.scrollY, raf = 0, creme = false, ult = performance.now(), prox = 0;
+        const t0 = performance.now();
+        const ponteiro = { x: -999, y: -999 };
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        function medir() {
+            dpr = Math.min(2, window.devicePixelRatio || 1); w = window.innerWidth; h = window.innerHeight;
+            cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const H = h * 1.4, n = w < 700 ? 18 : 34, dmin = Math.min(w, H) / 4.6;
+            ns = [];
+            for (let k = 0; k < n * 8 && ns.length < n; k++) {
+                const x = rnd(30, w - 30), y = rnd(0, H);
+                if (ns.every(o => Math.hypot(o.x - x, o.y - y) > dmin)) ns.push({ x, y, f: rnd(0, 6.28), fogo: 0, r: rnd(3.2, 5.6) });
+            }
+            ns.forEach(o => {
+                o.dend = [];
+                const q = Math.floor(rnd(5, 8));
+                for (let i = 0; i < q; i++) {
+                    const galho = (ang, x, y, comp, larg, prof) => {
+                        const pts = [[x, y]]; let a = ang;
+                        for (let s2 = 0; s2 < 6; s2++) { a += rnd(-.35, .35); x += Math.cos(a) * comp / 6; y += Math.sin(a) * comp / 6; pts.push([x, y]); }
+                        o.dend.push({ pts, larg });
+                        if (prof < 2) { galho(a + rnd(.3, .7), x, y, comp * .6, larg * .6, prof + 1); if (Math.random() < .6) galho(a - rnd(.3, .7), x, y, comp * .55, larg * .55, prof + 1); }
+                    };
+                    galho((i / q) * 6.283 + rnd(-.3, .3), 0, 0, rnd(24, 46), 1.6, 0);
+                }
+            });
+            ax = [];
+            ns.forEach((a, i) => {
+                ns.map((b, j) => ({ j, d: Math.hypot(a.x - b.x, a.y - b.y) })).filter(o => o.j !== i).sort((p1, p2) => p1.d - p2.d).slice(0, 2).forEach(({ j }) => {
+                    if (ax.some(e => e.a === j && e.b === i)) return;
+                    const b = ns[j], k = rnd(-.28, .28);
+                    ax.push({ a: i, b: j, k });
+                });
+            });
+            pulsos = [];
+        }
+        const linha = a => creme ? `rgba(31, 56, 100, ${a.toFixed(3)})` : `hsla(${matiz + 25}, 80%, 72%, ${a.toFixed(3)})`;
+        const viva = a => creme ? `rgba(46, 90, 156, ${a.toFixed(3)})` : `hsla(${matiz - 30}, 95%, 80%, ${a.toFixed(3)})`;
+        const disparar = i => { const o = ns[i]; if (!o || o.fogo > .3) return; o.fogo = 1; ax.forEach(e => { if (e.a === i) pulsos.push({ e, t: 0, ida: true, v: rnd(.45, .7) }); else if (e.b === i) pulsos.push({ e, t: 0, ida: false, v: rnd(.45, .7) }); }); };
+        function quadro(agora) {
+            const t = (agora - t0) / 1000, dt = Math.min(.05, (agora - ult) / 1000), sy = window.scrollY;
+            ult = agora;
+            vel += (sy - ultimoY) * 0.12; vel *= 0.9; ultimoY = sy;
+            matiz += (alvo - matiz) * 0.035;
+            g.clearRect(0, 0, w, h);
+            const H = h * 1.4, forca = Math.min(1, Math.abs(vel) / 30);
+            // posição na tela (a rede inteira desliza devagar com a rolagem)
+            const P = ns.map(o => ({ x: o.x, y: ((o.y - sy * 0.18) % H + H) % H - h * 0.2 - vel * 0.4 }));
+            if (t > prox) { disparar(Math.floor(Math.random() * ns.length)); prox = t + rnd(.5, 1.4) / (1 + forca * 2); }
+            ns.forEach((o, i) => { if (Math.hypot(P[i].x - ponteiro.x, P[i].y - ponteiro.y) < 120 && Math.random() < .05) disparar(i); o.fogo = Math.max(0, o.fogo - dt * .9); });
+            const curva = e => { const A = P[e.a], B = P[e.b]; if (Math.abs(A.y - B.y) > h * .7) return null; const mx = (A.x + B.x) / 2 - (B.y - A.y) * e.k, my = (A.y + B.y) / 2 + (B.x - A.x) * e.k; return { A, B, mx, my }; };
+            g.lineCap = 'round';
+            ax.forEach(e => { const c = curva(e); if (!c) return; g.strokeStyle = linha(creme ? .16 : .2); g.lineWidth = 1.1; g.beginPath(); g.moveTo(c.A.x, c.A.y); g.quadraticCurveTo(c.mx, c.my, c.B.x, c.B.y); g.stroke(); });
+            for (let k = pulsos.length - 1; k >= 0; k--) {
+                const p = pulsos[k]; p.t += dt * p.v * (1 + forca);
+                if (p.t >= 1) { pulsos.splice(k, 1); if (Math.random() < .55) disparar(p.ida ? p.e.b : p.e.a); continue; }
+                const c = curva(p.e); if (!c) continue;
+                for (let r = 0; r < 6; r++) {
+                    const base = p.ida ? p.t : 1 - p.t, tr = p.ida ? base - r * .018 : base + r * .018;
+                    if (tr < 0 || tr > 1) continue;
+                    const u = 1 - tr, x = u * u * c.A.x + 2 * u * tr * c.mx + tr * tr * c.B.x, y = u * u * c.A.y + 2 * u * tr * c.my + tr * tr * c.B.y;
+                    g.fillStyle = viva((1 - r / 6) * .9); g.beginPath(); g.arc(x, y, 2.5 - r * .3, 0, 6.283); g.fill();
+                }
+            }
+            ns.forEach((o, i) => {
+                const p = P[i]; if (p.y < -80 || p.y > h + 80) return;
+                const aceso = o.fogo;
+                g.save(); g.translate(p.x, p.y); g.rotate(Math.sin(t * .6 + o.f) * .04);
+                g.strokeStyle = aceso > .2 ? viva(.35 + aceso * .45) : linha(creme ? .28 : .34);
+                o.dend.forEach(d => { for (let s2 = 1; s2 < d.pts.length; s2++) { g.lineWidth = Math.max(.35, d.larg * (1 - s2 / d.pts.length * .8)); g.beginPath(); g.moveTo(d.pts[s2 - 1][0], d.pts[s2 - 1][1]); g.lineTo(d.pts[s2][0], d.pts[s2][1]); g.stroke(); } });
+                if (aceso > 0) { g.fillStyle = viva(aceso * (creme ? .14 : .2)); g.beginPath(); g.arc(0, 0, o.r * 5 * (2 - aceso), 0, 6.283); g.fill(); }
+                g.fillStyle = aceso > .1 ? viva(.6 + aceso * .4) : (creme ? `rgba(31, 56, 100, .55)` : `hsla(${matiz + 10}, 90%, 76%, .7)`);
+                g.beginPath(); g.ellipse(0, 0, o.r * 1.25, o.r, o.f, 0, 6.283); g.fill();
+                g.restore();
+            });
+            if (!reduz()) raf = requestAnimationFrame(quadro);
+        }
+        const mover = e => { const p = e.touches ? e.touches[0] : e; ponteiro.x = p.clientX; ponteiro.y = p.clientY; };
+        const sair = () => { ponteiro.x = ponteiro.y = -999; };
+        return {
+            iniciar() { medir(); window.addEventListener('resize', medir); window.addEventListener('pointermove', mover, { passive: true }); window.addEventListener('pointerleave', sair); cancelAnimationFrame(raf); raf = requestAnimationFrame(quadro); },
+            parar() { cancelAnimationFrame(raf); window.removeEventListener('resize', medir); window.removeEventListener('pointermove', mover); window.removeEventListener('pointerleave', sair); },
+            alvo(m) { alvo = m; },
+            tema(c) { creme = !!c; if (reduz()) { cancelAnimationFrame(raf); raf = requestAnimationFrame(quadro); } }
+        };
+    }
+    // estilo do fundo: 'neuronios' (escolhido, opção A) ou 'sinapses' (opção B)
+    const FUNDOS = { sinapses: Fundo, neuronios: FundoNeuronios };
+    let estiloFundo = 'neuronios';
+    function trocarFundo(estilo) {
+        if (!FUNDOS[estilo]) return;
+        estiloFundo = estilo;
+        if (!raizAtual || !fundo) return;
+        fundo.parar();
+        fundo = FUNDOS[estilo](raizAtual.querySelector('.port-fundo'));
+        fundo.iniciar();
+        fundo.alvo(Number(getComputedStyle(raizAtual).getPropertyValue('--matiz')) || 215);
+        fundo.tema(raizAtual.classList.contains('creme'));
+    }
+
+    // ── modo escuro / claro creme (escolha de quem lê, guardada no aparelho) ──
+    const CHAVE_TEMA = 'cortex_laudo_online_tema';
+    function temaSalvo() { try { return localStorage.getItem(CHAVE_TEMA) === 'creme'; } catch (e) { return false; } }
+    function aplicarTema(raiz, creme, guardar) {
+        raiz.classList.toggle('creme', creme);
+        document.documentElement.classList.toggle('p-creme', creme);
+        const bt = raiz.querySelector('.p-tema');
+        if (bt) { bt.setAttribute('aria-pressed', String(creme)); bt.title = creme ? 'Voltar para o modo escuro' : 'Ver no modo claro'; bt.querySelector('span').textContent = creme ? '🌙' : '☀'; }
+        if (fundo) fundo.tema(creme);
+        if (guardar) { try { localStorage.setItem(CHAVE_TEMA, creme ? 'creme' : 'escuro'); } catch (e) { /* ok */ } }
     }
 
     // ── montagem ─────────────────────────────────────────────────────────────
@@ -630,11 +774,14 @@
             ${abertura()}${caps.map((c, i) => capitulo(i, c, porCap[c.id].secoes, corpoCap(c))).join('')}
             <footer class="p-rodape port-larg">Laudo neuropsicológico · Equilibrium Med Center · documento sigiloso, acesso registrado (LGPD)</footer></div>
             <nav class="p-trilho" aria-label="Capítulos">${caps.map(c => `<a href="#cap-${c.id}" data-cap="${c.id}"><span>${esc(c.tit)}</span><i></i></a>`).join('')}</nav>
-            <div class="p-progresso" aria-hidden="true"><i></i></div></div>`;
+            <div class="p-progresso" aria-hidden="true"><i></i></div>
+            <button type="button" class="p-tema" aria-pressed="false" aria-label="Alternar entre modo escuro e modo claro"><span>☀</span></button></div>`;
         const raiz = alvo.querySelector('.port');
         raizAtual = raiz;
 
-        fundo = Fundo(raiz.querySelector('.port-fundo')); fundo.iniciar();
+        fundo = (FUNDOS[O.fundo] || FUNDOS[estiloFundo] || Fundo)(raiz.querySelector('.port-fundo')); fundo.iniciar();
+        aplicarTema(raiz, O.tema ? O.tema === 'creme' : temaSalvo(), false);
+        raiz.querySelector('.p-tema').addEventListener('click', () => aplicarTema(raiz, !raiz.classList.contains('creme'), true));
 
         // revelação, números que contam e barras que crescem
         const contar = el => {
@@ -726,5 +873,5 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { fecharBalao(); fecharGaveta(); } });
     window.addEventListener('resize', fecharBalao);
 
-    window.LaudoPortfolio = { desenhar, parar, INSTRUMENTOS };
+    window.LaudoPortfolio = { desenhar, parar, INSTRUMENTOS, trocarFundo };
 })();

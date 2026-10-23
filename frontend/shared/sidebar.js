@@ -238,14 +238,14 @@ window.CortexSidebar = (function() {
             if (!document.querySelector('link[data-cortex-notif-css]')) {
                 await carregarAsset('link', {
                     rel: 'stylesheet',
-                    href: base + 'notificacoes.css?v=911',
+                    href: base + 'notificacoes.css?v=912',
                     'data-cortex-notif-css': '1'
                 });
             }
 
             if (!window.CortexNotificacoes) {
                 const ok = await carregarAsset('script', {
-                    src: base + 'notificacoes.js?v=911',
+                    src: base + 'notificacoes.js?v=912',
                     'data-cortex-notif-js': '1'
                 });
                 if (!ok) return;
@@ -257,6 +257,15 @@ window.CortexSidebar = (function() {
         } catch (err) {
             // Notificação nunca pode derrubar a navegação do sistema.
             console.warn('[sidebar] notificações indisponíveis:', err.message || err);
+        }
+    }
+
+    // ── Som e aviso do navegador (avisos.js). Nunca pode derrubar a navegação.
+    async function iniciarAvisos() {
+        try {
+            if (!window.CortexAvisos) await carregarAsset('script', { src: caminhoShared() + 'avisos.js?v=1', 'data-cortex-avisos-js': '1' });
+        } catch (err) {
+            console.warn('[sidebar] avisos indisponíveis:', err.message || err);
         }
     }
 
@@ -277,7 +286,7 @@ window.CortexSidebar = (function() {
 
             if (!window.CortexChatBadge) {
                 const ok = await carregarAsset('script', {
-                    src: base + 'chat_badge.js?v=2',
+                    src: base + 'chat_badge.js?v=3',
                     'data-cortex-chat-js': '1'
                 });
                 if (!ok) return;
@@ -518,6 +527,9 @@ window.CortexSidebar = (function() {
 
         setupEventos();
 
+        // som e aviso do navegador quando chega algo (antes do sino e do chat)
+        iniciarAvisos();
+
         // Sprint 91 — sino de notificações (não bloqueia o render da sidebar)
         iniciarNotificacoes();
 
@@ -529,8 +541,18 @@ window.CortexSidebar = (function() {
     }
 
     // ── Bolinha de pedidos de acesso externo (cadastros + pedidos de prontuário) ──
-    let externosTimer = null, externosLigado = false;
+    let externosTimer = null, externosLigado = false, externosAntes = null;
     function pintarExternos(n) {
+        // chegou pedido novo (não na primeira contagem): som e aviso do navegador
+        if (externosAntes != null && n > externosAntes && window.CortexAvisos) {
+            window.CortexAvisos.chegou({
+                tipo: 'acesso_externo', tag: 'acesso_externo:' + n,
+                titulo: n - externosAntes > 1 ? `${n - externosAntes} novos pedidos de acesso externo` : 'Novo pedido de acesso externo',
+                corpo: `${n} aguardando sua autorização em Configurações → Acesso externo.`,
+                url: 'configuracoes/configuracoes.html?aba=externos'
+            }, 'alerta');
+        }
+        externosAntes = n;
         const txt = n > 99 ? '99+' : String(n);
         const b = document.getElementById('cfg-externos-badge');
         if (b) { b.textContent = txt; b.hidden = !n; b.title = n ? `${n} pedido(s) de acesso externo aguardando você` : ''; }

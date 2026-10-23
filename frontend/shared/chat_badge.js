@@ -268,7 +268,15 @@ window.CortexChatBadge = (function () {
                 }, (payload) => {
                     const n = payload.new;
                     if (!n || n.tipo !== 'chat_mensagem') return;
-                    if (payload.eventType === 'INSERT') { mostrarPopup(n); return; }
+                    if (payload.eventType === 'INSERT') {
+                        const novo = !state.vistos.has(n.id);
+                        const cid = conversaDaUrl(n.url);
+                        // conversa aberta e na frente: a mensagem já aparece ali, sem barulho
+                        const aberta = cid && window.CortexChatConversaAberta === cid && document.visibilityState === 'visible' && document.hasFocus();
+                        mostrarPopup(n);
+                        if (novo && !aberta && window.CortexAvisos) window.CortexAvisos.chegou(n, 'mensagem');
+                        return;
+                    }
                     // Lida em outra aba/aparelho: tira o cartão daqui também.
                     if (payload.eventType === 'UPDATE' && n.lida_em) {
                         const cid = conversaDaUrl(n.url);

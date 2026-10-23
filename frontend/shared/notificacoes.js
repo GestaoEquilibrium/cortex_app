@@ -186,6 +186,8 @@ window.CortexNotificacoes = (function () {
                                 'info'
                             );
                         }
+                        // som + aviso do navegador (quando o CORTEX não está na frente)
+                        if (window.CortexAvisos) window.CortexAvisos.chegou(nova, 'aviso');
                     }
                 )
                 .subscribe();
@@ -450,10 +452,15 @@ window.CortexNotificacoes = (function () {
               '</div>'
             : '<div class="notif-lista">' + state.lista.map(renderItem).join('') + '</div>';
 
-        painel.innerHTML = cabecalho + renderFaixaPush() + corpo;
+        painel.innerHTML = cabecalho + renderFaixaPush() + renderSom() + corpo;
 
         painel.querySelector('[data-acao="marcar-todas"]')?.addEventListener('click', marcarTodas);
         painel.querySelector('[data-acao="ativar-push"]')?.addEventListener('click', ativarPush);
+        painel.querySelector('[data-acao="som"]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.CortexAvisos.ligarSom(!window.CortexAvisos.somLigado());
+            renderPainel();
+        });
 
         painel.querySelectorAll('[data-notif-id]').forEach((el) => {
             el.addEventListener('click', async (e) => {
@@ -464,6 +471,19 @@ window.CortexNotificacoes = (function () {
                 if (destino) window.location.href = destino;
             });
         });
+    }
+
+    // Liga/desliga o som dos avisos (fica guardado neste aparelho).
+    function renderSom() {
+        if (!window.CortexAvisos) return '';
+        const on = window.CortexAvisos.somLigado();
+        return (
+            '<div class="notif-som">' +
+            '<span class="notif-som-ico">' + (on ? '🔊' : '🔇') + '</span>' +
+            '<div><strong>Som dos avisos</strong><span>' + (on ? 'Toca quando chega mensagem ou notificação.' : 'Desligado neste aparelho.') + '</span></div>' +
+            '<button type="button" class="notif-som-btn' + (on ? ' ligado' : '') + '" data-acao="som" role="switch" aria-checked="' + on + '" aria-label="Som dos avisos"><i></i></button>' +
+            '</div>'
+        );
     }
 
     // Faixa de convite para ligar o push — só aparece enquanto faz sentido.
@@ -496,7 +516,7 @@ window.CortexNotificacoes = (function () {
             '<div class="notif-faixa notif-faixa-cta">' +
             '<span class="notif-faixa-ico">🔔</span>' +
             '<div><strong>Ative os avisos neste aparelho</strong>' +
-            '<span>Receba quando uma bateria fechar, mesmo com o CORTEX fechado.</span></div>' +
+            '<span>Receba as mensagens e os avisos (bateria fechada, teste respondido…) mesmo com o CORTEX fechado ou em outra aba.</span></div>' +
             '<button class="notif-btn-cta" data-acao="ativar-push">Ativar</button>' +
             '</div>'
         );

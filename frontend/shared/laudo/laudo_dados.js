@@ -213,7 +213,7 @@
         Object.keys(E.APELIDOS).forEach(ap => {
             if (resultados[ap]) return;
             const achou = E.APELIDOS[ap].filter(s => resultados[s] && !resultados[s].erro);
-            if (achou.length) resultados[ap] = Object.assign({ apelido_de: achou[0] }, resultados[achou[0]]);
+            if (achou.length) resultados[ap] = Object.assign({}, resultados[achou[0]], { apelido_de: achou[0], formas: achou });
         });
     }
 

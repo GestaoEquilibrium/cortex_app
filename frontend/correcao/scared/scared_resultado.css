@@ -367,3 +367,8 @@
 .scared-toggle-btn.is-active { background: #fff; color: #1e3a8a; opacity: 1; }
 .scared-toggle-btn:disabled { opacity: .4; cursor: not-allowed; }
 .scared-pontos { text-align: right; }
+
+/* PDF e figuras do Laudo Online: os dois totais no cabeçalho, sem o seletor */
+body.scared-ambos .scared-toggle-btns { display: none; }
+body.scared-ambos .scared-header-pont { flex-direction: row; align-items: flex-end; gap: 26px; }
+body.scared-ambos .scared-pontos { display: block !important; }

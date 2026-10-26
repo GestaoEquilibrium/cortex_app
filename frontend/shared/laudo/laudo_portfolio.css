@@ -610,3 +610,8 @@ html.p-creme .p-barra a, html.p-creme .p-barra button, html.p-creme .p-barra .p-
 html.p-creme .p-barra a:hover, html.p-creme .p-barra button:hover, html.p-creme .p-barra label:hover { background: #fff; }
 html.p-creme .p-barra .p-barra-info { color: #44567A; } html.p-creme .p-barra .p-barra-info b { color: #14254A; }
 html.p-creme .p-barra .ok { color: #1E6B43; border-color: rgba(46, 139, 87, .4); } html.p-creme .p-barra .amb { color: #8A5A12; border-color: rgba(183, 121, 31, .4); }
+
+/* Teste com duas formas (SCARED auto + hetero): título de cada parte */
+.port .p-graf .cx-forma { margin: 18px 0 8px; font: 800 11px/1.2 var(--f-texto); letter-spacing: .14em; text-transform: uppercase; color: var(--turquesa); display: flex; align-items: center; gap: 10px; }
+.port .p-graf .cx-forma::after { content: ''; flex: 1; height: 1px; background: var(--borda); }
+.port .p-graf .cx-forma:first-child { margin-top: 0; }

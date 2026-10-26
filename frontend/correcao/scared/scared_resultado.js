@@ -368,6 +368,11 @@
 
         document.getElementById('btn-gerar-pdf').addEventListener('click', gerarPDF);
 
+        // Figuras do Laudo Online: o cabeçalho sai com os dois totais (auto e hetero)
+        if (state.autoData && state.heteroData && new URLSearchParams(location.search).has('laudo_figuras')) {
+            document.body.classList.add('scared-ambos');
+        }
+
         // Toggle cabeçalho: alterna Total entre Autorrelato e Heteroaplicação
         document.querySelectorAll('.scared-toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -589,7 +594,7 @@
         const temAmbos = !!auto && !!hetero;
         const klassWrap = temAmbos ? '' : 'solo';
         return `
-            <div class="scared-totais ${klassWrap}">
+            <div class="scared-totais scared-perfil-totais ${klassWrap}">
                 ${auto    ? card(auto,   'Autorrelato (criança)')   : (hetero ? '' : card(null, 'Autorrelato (criança)'))}
                 ${hetero  ? card(hetero, 'Heterorelato (pais)')      : (auto   ? '' : card(null, 'Heterorelato (pais)'))}
             </div>
@@ -665,7 +670,7 @@
         };
 
         return `
-            <div class="scared-subs">
+            <div class="scared-subs scared-perfil-subs">
                 <div class="scared-subs-titulo">Pontuação por subescala (C = autorrelato · P = heterorelato)</div>
                 ${linhasSub}
                 <div class="scared-sub-bloco" style="border-top:1px solid #e2e8f0;padding-top:10px;margin-top:10px">
@@ -761,7 +766,7 @@
         };
 
         return `
-            <div class="scared-comp">
+            <div class="scared-comp scared-tabela-comp">
                 <div class="scared-comp-titulo">📊 Comparativo Auto × Hetero</div>
                 <table>
                     <thead>
@@ -914,6 +919,8 @@
 
         try {
             document.body.classList.add('exportando');
+            // PDF: cabeçalho com os dois totais quando as duas formas foram respondidas
+            if (state.autoData && state.heteroData) document.body.classList.add('scared-ambos');
             await new Promise(r => setTimeout(r, 100));
 
             const laudo = document.querySelector('.laudo');
@@ -947,9 +954,11 @@
 
             const nomeAbreviado = state.paciente.nome_completo.toUpperCase()
                 .replace(/[^A-Z\s]/g, '').trim().substring(0, 50);
-            const totalAuto = state.autoData?.scores?.TOTAL ?? '0';
+            const totalAuto = state.autoData?.scores?.TOTAL;
+            const totalHetero = state.heteroData?.scores?.TOTAL;
+            const pontos = [totalAuto != null ? `auto ${totalAuto}pts` : null, totalHetero != null ? `hetero ${totalHetero}pts` : null].filter(Boolean).join('_') || '0pts';
             const dataStr = formatarDataArquivo(new Date());
-            const nomeArquivo = `SCARED - ${nomeAbreviado}_${dataStr}_${totalAuto}pts.pdf`;
+            const nomeArquivo = `SCARED - ${nomeAbreviado}_${dataStr}_${pontos}.pdf`;
 
             pdf.save(nomeArquivo);
             window.CortexUI.toast('PDF gerado com sucesso', 'success');
@@ -958,6 +967,7 @@
             window.CortexUI.toast('Erro ao gerar PDF: ' + err.message, 'danger');
         } finally {
             document.body.classList.remove('exportando');
+            if (!new URLSearchParams(location.search).has('laudo_figuras')) document.body.classList.remove('scared-ambos');
             btn.disabled = false;
             btn.textContent = textoOriginal;
         }

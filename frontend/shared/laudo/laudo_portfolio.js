@@ -354,6 +354,14 @@
     function expo(gr) {
         const R = O.banco.resultados || {}, d = R[gr.sigla], info = Object.assign({ dominio: O.dominios[gr.sigla] }, INSTRUMENTOS[gr.sigla] || {});
         const dest = G().destaque(gr.sigla, d);
+        // "SCARED" com as duas formas: o destaque mostra o total da outra forma também
+        if (dest && d && (d.formas || []).length > 1) {
+            const outras = d.formas.filter(s => s !== d.apelido_de).map(s => {
+                const r = (R[s] || {}).resumo || {}, P = r.principal;
+                return P && P.valor != null ? `${r.respondente || s}: total ${P.valor}${P.classificacao ? ' (' + P.classificacao + ')' : ''}.` : null;
+            }).filter(Boolean);
+            if (outras.length) dest.sub = [dest.sub].concat(outras).filter(Boolean).join(' ');
+        }
         const meta = gr.blocos.find(b => b.tipo === 'meta');
         const ehW = gr.sigla === 'WAIS-III' || gr.sigla === 'WISC-IV';
         const usados = new Set(meta ? [meta] : []);

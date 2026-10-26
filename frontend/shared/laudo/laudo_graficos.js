@@ -370,6 +370,28 @@
     const FIG = { figuras: null, urls: {} };
     const APELIDO_FIG = { 'SRS-2': ['SRS-2-HET', 'SRS-2-AUTO', 'SRS-2-PRE', 'SRS-2-ESC-F', 'SRS-2-ESC-M'], 'SCARED': ['SCARED-A', 'SCARED-H'], 'CARS-2': ['CARS2-ST', 'CARS2-HF'], 'CARS2': ['CARS2-ST', 'CARS2-HF'], 'QA16+': ['QA 16+'] };
     function usarFiguras(figuras, urls) { FIG.figuras = figuras || null; FIG.urls = urls || {}; }
+
+    // Testes com as duas formas na MESMA tela de correção (SCARED: auto + hetero juntos).
+    // Diz quais partes da tela vão em cada vista e qual parte é de cada forma.
+    const MESMA_TELA = {
+        'SCARED': {
+            vistas: { cartao: /scared-totais/, tabela: /scared-tab-z|scared-comp/, subescalas: /scared-subs/, regua: /scared-subs/ },
+            vistasForma: { cartao: /scared-card-total/ },             // uma forma só: o cartão dela
+            juntos: /scared-comp/,                                   // comparativo: só no "SCARED" (as duas formas)
+            formas: { 'SCARED-A': [/auto/i, /hetero|pais/i], 'SCARED-H': [/hetero|pais/i, /auto/i] }
+        }
+    };
+    function mesmaTela(sig) {
+        if (MESMA_TELA[sig]) return MESMA_TELA[sig];
+        return Object.keys(MESMA_TELA).map(k => MESMA_TELA[k]).find(r => r.formas[sig]) || null;
+    }
+    /** Formas de um nome do Gerador (SCARED → SCARED-A e SCARED-H) que têm resultado no banco. */
+    function formasDe(sig, banco) {
+        const E = window.LaudoEscalas, res = (banco || {}).resultados || {};
+        const ap = E && E.APELIDOS[sig];
+        if (!ap || ap.length < 2 || (res[sig] && !res[sig].apelido_de)) return [];
+        return ap.filter(s => res[s] && !res[s].erro);
+    }
     function figurasDaSigla(sig) {
         const F = FIG.figuras || {};
         if (F[sig]) return F[sig];
@@ -402,6 +424,21 @@
             if (so.length) return b.vista === 'cabecalho' ? [por('cabecalho')].filter(Boolean) : so;
         }
         const achar = re => corpo.find(x => re.test(`${x.classe || ''} ${x.titulo || ''}`));
+        // Tela com as duas formas juntas: cada vista pega as partes certas (e só as da forma pedida)
+        const mt = mesmaTela(b.sigla);
+        if (mt && mt.vistas[b.vista]) {
+            const fm = mt.formas[b.sigla], vf = mt.vistasForma && mt.vistasForma[b.vista];
+            // filtra: tira o que é só da outra forma (e o comparativo, que é das duas)
+            const pega = (re, filtra) => corpo.filter(x => re.test(x.classe || '')).filter(x => !(filtra && fm) ||
+                (!mt.juntos.test(x.classe || '') && !(fm[1].test(x.titulo || '') && !fm[0].test(x.titulo || ''))));
+            let l = fm && vf ? pega(vf, true) : pega(mt.vistas[b.vista], !!fm);
+            // cartões juntos × separados (figuras trazidas antes ou depois desta versão)
+            if (!l.length && vf) l = fm ? pega(mt.vistas[b.vista], false) : pega(vf, false);
+            if (b.vista === 'cartao') l = [por('cabecalho')].concat(l);
+            l = l.filter(Boolean);
+            // figuras antigas (sem estas partes): pede para trazer de novo em vez de pôr a parte errada
+            return l.length > (b.vista === 'cartao' ? 1 : 0) ? l : null;
+        }
         let lista;
         switch (b.vista) {
             case 'cabecalho': lista = [por('cabecalho')]; break;
@@ -518,6 +555,15 @@
      */
     function render(b, banco, extra) {
         extra = extra || {};
+        // "SCARED" com autorrelato e heterorrelato respondidos: sai cada forma, uma depois da outra.
+        // Na impressão, se a tela de correção já mostra as duas juntas (figuras), usa a tela.
+        const formas = formasDe(b.sigla, banco);
+        if (formas.length > 1 && !(mesmaTela(b.sigla) && !extra.online && figurasDe(b))) {
+            // no online o cabeçalho do teste não aparece: um título diz de quem é cada parte
+            const rotulo = s => { const r = (((banco || {}).resultados || {})[s] || {}).resumo || {}; return r.respondente || s; };
+            return formas.map(s => (extra.online ? `<div class="cx-forma" data-sigla="${esc(s)}">${esc(rotulo(s))}</div>` : '') +
+                render(Object.assign({}, b, { sigla: s }), banco, extra)).join('');
+        }
         if (extra.online) {
             b = paraOnline(b);
             if (!b) return '';

@@ -149,7 +149,9 @@
             const media = `background:linear-gradient(to right, transparent calc(${X(100)}% - 1px), #94A3B8 calc(${X(100)}% - 1px), #94A3B8 ${X(100)}%, transparent ${X(100)}%)`;
             const rows = lin.map(([s, c]) => {
                 const cl = classeDe(c), ic = c.ic95 || [c.composto - 5, c.composto + 5];
-                return `<div class="cx-ic"${pop(`${s} = ${c.composto}`, `${cl}. Com 95% de segurança, o escore verdadeiro está entre ${ic[0]} e ${ic[1]}.`, C().faixa(cl))}><span class="cx-ic-s">${s}</span>
+                // mesma cor da tela de resultados do WISC/WAIS (icColor): ≥110 verde · 90–109 azul · 80–89 amarelo · <80 vermelho
+                const v = Number(c.composto), cor = v >= 110 ? 'ic-ve' : v >= 90 ? 'ic-az' : v >= 80 ? 'ic-am' : 'ic-vm';
+                return `<div class="cx-ic ${cor}"${pop(`${s} = ${c.composto}`, `${cl}. Com 95% de segurança, o escore verdadeiro está entre ${ic[0]} e ${ic[1]}.`, C().faixa(cl))}><span class="cx-ic-s">${s}</span>
                     <span class="cx-ic-t" style="${media}"><span class="cx-ic-f" style="left:${X(ic[0])}%;width:${(X(ic[1]) - X(ic[0])).toFixed(2)}%"></span><span class="cx-ic-p" style="left:${X(c.composto)}%">${c.composto}</span></span>${selo(cl)}</div>`;
             }).join('');
             return `<div class="cx-card cx-icart"><div class="cx-ic-esc"><span></span><span class="cx-ic-t">${grade}</span><span></span></div>${rows}

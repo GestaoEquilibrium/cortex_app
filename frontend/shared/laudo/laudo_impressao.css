@@ -171,6 +171,11 @@
 .imp .cx-ic .cx-ic-t { background: linear-gradient(to right, transparent calc(46.15% - 1px), #94A3B8 calc(46.15% - 1px), #94A3B8 46.15%, transparent 46.15%); }
 .imp .cx-ic-f { position: absolute; top: 7px; height: 9px; background: rgba(22, 163, 74, .22); border: 1px solid rgba(22, 163, 74, .5); border-radius: 2px; }
 .imp .cx-ic-p { position: absolute; top: 3px; transform: translateX(-50%); background: #15803D; color: #fff; font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 99px; }
+/* Cor de cada linha pela classificação, igual à tela de resultados do WISC/WAIS */
+.imp .cx-ic.ic-ve .cx-ic-s { color: #059669; } .imp .cx-ic.ic-ve .cx-ic-f { background: rgba(5, 150, 105, .19); border-color: rgba(5, 150, 105, .5); } .imp .cx-ic.ic-ve .cx-ic-p { background: #059669; }
+.imp .cx-ic.ic-az .cx-ic-s { color: #1A56DB; } .imp .cx-ic.ic-az .cx-ic-f { background: rgba(26, 86, 219, .19); border-color: rgba(26, 86, 219, .5); } .imp .cx-ic.ic-az .cx-ic-p { background: #1A56DB; }
+.imp .cx-ic.ic-am .cx-ic-s { color: #D97706; } .imp .cx-ic.ic-am .cx-ic-f { background: rgba(245, 158, 11, .19); border-color: rgba(245, 158, 11, .55); } .imp .cx-ic.ic-am .cx-ic-p { background: #F59E0B; }
+.imp .cx-ic.ic-vm .cx-ic-s { color: #DC2626; } .imp .cx-ic.ic-vm .cx-ic-f { background: rgba(220, 38, 38, .19); border-color: rgba(220, 38, 38, .5); } .imp .cx-ic.ic-vm .cx-ic-p { background: #DC2626; }
 .imp .cx-leg { margin: 6px 0 0; text-align: center; font-size: 8.2px; font-style: italic; color: #94A3B8; }
 .imp .cx-leg.cima { text-align: left; margin: 0 0 6px; }
 .imp .cx-graf { padding: 8px 8px 2px; border-top: 6px solid #DCE7F5; }

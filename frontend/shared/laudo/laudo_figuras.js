@@ -107,7 +107,28 @@
     }
 
     async function fotografar(w, el, escala) {
+        // Gráfico em SVG que encolhe para caber na tela (width:100% + viewBox) sai cortado
+        // no html2canvas (ex.: o A7 da curva do RAVLT). Na cópia que ele fotografa, cada SVG
+        // recebe o tamanho exato que tem na tela.
+        const tamanhos = Array.from(el.querySelectorAll('svg')).map(s => { const r = s.getBoundingClientRect(), cs = w.getComputedStyle(s); return [r.width, r.height, cs.margin, cs.display]; });
         const canvas = await w.html2canvas(el, {
+            onclone: (doc, copia) => {
+                const alvo = copia || doc.body;
+                Array.from(alvo.querySelectorAll('svg')).forEach((s, i) => {
+                    const t = tamanhos[i];
+                    if (!t || !t[0] || !t[1]) return;
+                    s.setAttribute('width', String(t[0])); s.setAttribute('height', String(t[1]));
+                    s.style.width = t[0] + 'px'; s.style.height = t[1] + 'px'; s.style.maxWidth = 'none'; s.style.aspectRatio = 'auto';
+                    // a margem (ex.: margin: 0 auto para centralizar) vai para uma caixa em volta:
+                    // dentro do SVG ela empurra o desenho para o lado e corta a ponta
+                    if (t[2] && !/^0px( 0px)*$/.test(t[2]) && s.parentNode) {
+                        const caixa = doc.createElement('div');
+                        caixa.style.cssText = `width:${t[0]}px;height:${t[1]}px;margin:${t[2]};display:${t[3] === 'inline' ? 'inline-block' : 'block'};`;
+                        s.parentNode.insertBefore(caixa, s); caixa.appendChild(s);
+                        s.style.margin = '0'; s.style.display = 'block';
+                    }
+                });
+            },
             scale: escala, backgroundColor: '#ffffff', useCORS: true, logging: false,
             ignoreElements: n => n.classList && (n.classList.contains('cortex-copy-btn') || n.classList.contains('cortex-copy-laudo-btn'))
         });

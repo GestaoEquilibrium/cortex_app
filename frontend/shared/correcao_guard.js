@@ -118,4 +118,14 @@
     } else {
         window.addEventListener('cortex:auth-ready', checar, { once: true });
     }
+
+    // "Quem respondeu" (heterorrelato e escola) dentro do laudo da tela de resultado
+    try {
+        const eu = document.currentScript && document.currentScript.src;
+        if (eu && /\/correcao\//.test(window.location.pathname)) {
+            const s = document.createElement('script');
+            s.src = eu.replace(/correcao_guard\.js.*$/, 'respondente_resultado.js?v=1');
+            document.head.appendChild(s);
+        }
+    } catch (_) { /* nunca derruba a tela */ }
 })();

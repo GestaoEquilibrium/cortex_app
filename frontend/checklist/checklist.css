@@ -195,15 +195,7 @@
 @media print {
     @page {
         size: A4 portrait;
-        margin: 11mm 11mm 14mm 11mm;
-        @bottom-left {
-            content: "Equilibrium Neuropsicologia · Checklist de Instrumentos · documento de uso interno";
-            font: 600 7.5pt 'Inter', sans-serif; color: #94a3b8;
-        }
-        @bottom-right {
-            content: "Página " counter(page) " de " counter(pages);
-            font: 700 7.5pt 'Inter', sans-serif; color: #64748b;
-        }
+        margin: 11mm 11mm 12mm 11mm;
     }
 
     *, *::before, *::after {
@@ -567,3 +559,14 @@
 .bat-painel-nota { font-size: 11.5px; color: var(--color-text-soft, #94a3b8); }
 
 @media print { .bat-painel { display: none !important; } }
+
+/* ── Checklist numa folha só: linhas de uma linha, ficha e resumo enxutos ── */
+.pck-uma-linha { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pck-tabela td { padding: 3.5px 6px; vertical-align: middle; }
+.pck-cat td { padding: 6px 6px 3px; }
+.pck-ficha { gap: 6px 14px; padding: 8px 14px; margin-top: 8px; }
+.pck-hipoteses { padding: 7px 14px; margin-top: 6px; }
+.pck-resumo-linha { display: flex; align-items: center; gap: 8px; margin: 7px 0 6px; font-size: 8pt; color: #334155; }
+.pck-resumo-linha b { font-size: 10pt; color: #1d4ed8; }
+.pck-fecho { margin-top: 10px; padding: 9px 14px; }
+.pck-assinaturas { margin-top: 18px; }

@@ -635,6 +635,7 @@
 
         imprimirPDF: function() {
             gerarConteudoImpressao();
+            caberNumaFolha();
             window.print();
         }
     };
@@ -800,6 +801,21 @@
         `;
     }
 
+    // Mede o checklist na largura útil da A4 e, se passar de uma folha, encolhe por igual.
+    function caberNumaFolha() {
+        const doc = document.querySelector('#print-area .pck-doc');
+        if (!doc) return;
+        doc.style.zoom = '';
+        const pxMm = 96 / 25.4, largura = 188 * pxMm, altura = 274 * pxMm;   // A4 menos as margens
+        const medidor = doc.cloneNode(true);
+        medidor.style.cssText = `position:absolute;left:-10000px;top:0;width:${largura}px;visibility:hidden;`;
+        document.body.appendChild(medidor);
+        const h = medidor.getBoundingClientRect().height;
+        medidor.remove();
+        // folga de 4%: com o zoom algumas linhas quebram diferente
+        if (h > altura) doc.style.zoom = String(Math.max(0.7, Math.floor((altura * 0.96 / h) * 1000) / 1000));
+    }
+
     function gerarConteudoImpressao() {
         const printArea = document.getElementById('print-area');
         if (!printArea) return;
@@ -845,11 +861,8 @@
                 linhas += `
                     <tr class="pck-linha" style="--cat:${cor};">
                         <td class="pck-c-num">${n}</td>
-                        <td class="pck-c-inst">
-                            <div class="pck-sigla">${escapeHtml(inst.sigla)}</div>
-                            ${inst.nome_completo && inst.nome_completo !== inst.sigla ? `<div class="pck-nome">${escapeHtml(inst.nome_completo)}</div>` : ''}
-                        </td>
-                        <td class="pck-c-avalia">${escapeHtml(inst.o_que_avalia || '')}${inst.faixa_etaria_label ? `<div class="pck-idade">${escapeHtml(inst.faixa_etaria_label)}</div>` : ''}</td>
+                        <td class="pck-c-inst"><div class="pck-sigla">${escapeHtml(inst.sigla)}</div></td>
+                        <td class="pck-c-avalia"><div class="pck-uma-linha" title="${escapeHtml(inst.o_que_avalia || '')}">${escapeHtml(inst.o_que_avalia || '')}</div></td>
                         <td class="pck-c-resp">${escapeHtml(RESPONDENTE_CURTO[inst.tipo_respondente] || 'Paciente')}</td>
                         <td class="pck-c-modo"><span class="pck-modo ${modo}">${modo === 'online' ? 'Online' : 'Presencial'}</span></td>
                         <td class="pck-c-data">___/___/______</td>
@@ -880,10 +893,8 @@
                     ${campo('Paciente', p.nome_completo, 'pck-span2 pck-destaque')}
                     ${campo('Idade', p.idade_humanizada)}
                     ${campo('Nascimento', nasc)}
-                    ${campo('Sexo', p.sexo)}
-                    ${campo('Escolaridade', p.escolaridade_completa || p.escolaridade)}
-                    ${campo('Faixa do checklist', faixaLabel)}
-                    ${campo('Aplicador(a)', p.aplicador_nome)}
+                    ${campo('Escolaridade', p.escolaridade_completa || p.escolaridade, 'pck-span2')}
+                    ${campo('Aplicador(a)', p.aplicador_nome, 'pck-span2')}
                 </section>
 
                 <section class="pck-hipoteses">
@@ -891,16 +902,11 @@
                     <div class="pck-hip-texto">${state.hipoteseTexto ? escapeHtml(state.hipoteseTexto) : '<span class="pck-vazio">Não informadas.</span>'}</div>
                 </section>
 
-                <section class="pck-resumo">
-                    <div class="pck-res-item total"><b>${selecionados.length}</b><span>instrumentos</span></div>
-                    <div class="pck-res-item online"><b>${modos.online}</b><span>online · link ou portal</span></div>
-                    <div class="pck-res-item presencial"><b>${modos.presencial}</b><span>presenciais · com a aplicadora</span></div>
-                    <div class="pck-res-item cats"><b>${categorias.length}</b><span>${categorias.length === 1 ? 'categoria' : 'categorias'}</span></div>
-                </section>
+                <div class="pck-resumo-linha"><b>${selecionados.length}</b> instrumentos · <span class="pck-modo online">${modos.online} online</span> <span class="pck-modo presencial">${modos.presencial} presenciais</span></div>
 
                 <table class="pck-tabela">
                     <colgroup>
-                        <col style="width:6mm"><col style="width:41mm"><col><col style="width:21mm">
+                        <col style="width:6mm"><col style="width:30mm"><col><col style="width:21mm">
                         <col style="width:19mm"><col style="width:25mm"><col style="width:10mm">
                     </colgroup>
                     <thead>
@@ -920,16 +926,11 @@
                 <section class="pck-fecho">
                     <div class="pck-obs">
                         <div class="pck-rot">Observações da aplicação</div>
-                        <div class="pck-linha-esc"></div><div class="pck-linha-esc"></div><div class="pck-linha-esc"></div>
+                        <div class="pck-linha-esc"></div><div class="pck-linha-esc"></div>
                     </div>
                     <div class="pck-assinaturas">
                         <div class="pck-ass"><div class="pck-ass-linha"></div><span>Neuropsicólogo(a) responsável · CRP</span></div>
                         <div class="pck-ass"><div class="pck-ass-linha"></div><span>Aplicador(a)</span></div>
-                    </div>
-                    <div class="pck-legenda">
-                        <span><span class="pck-modo online">Online</span> respondido por link ou portal do paciente</span>
-                        <span><span class="pck-modo presencial">Presencial</span> aplicado na clínica com a aplicadora</span>
-                        <span><span class="pck-box"></span> marcar quando concluído</span>
                     </div>
                 </section>
             </div>`;

@@ -18,7 +18,10 @@
     const C = () => window.LaudoCore;
     const esc = s => C().esc(s);
     const num = v => (typeof v === 'number' && !Number.isInteger(v)) ? v.toFixed(2).replace('.', ',') : String(v == null ? '—' : v);
-    const pop = (tit, txt, faixa) => ` data-pop-tit="${esc(tit)}" data-pop-txt="${esc(txt)}"${faixa ? ` data-pop-faixa="${faixa}"` : ''}`;
+    // k = medida (idx:IMO, sub:DG, ravlt:A1…) e n = faixa (dificuldade/esperado/forte): a página online
+    // usa os dois para buscar a explicação para a família (laudo_explica.js)
+    const pop = (tit, txt, faixa, k, n) => ` data-pop-tit="${esc(tit)}" data-pop-txt="${esc(txt)}"${faixa ? ` data-pop-faixa="${faixa}"` : ''}${k ? ` data-pop-k="${esc(k)}"` : ''}${n ? ` data-pop-n="${esc(n)}"` : ''}`;
+    const EX = () => window.LaudoExplica || { nivelComp: () => null, nivelPond: () => null, nivelRotulo: () => null, nivelTom: () => null, nivelPct: () => null };
 
     function classPond(p) {
         if (p >= 16) return 'Muito Superior'; if (p >= 14) return 'Superior'; if (p >= 12) return 'Médio Superior';
@@ -109,15 +112,15 @@
             const subs = (COMPOSICAO[sig] || {})[k] || [], cl = classeDe(c);
             const det = subs.map(s => `${(SUBTESTES[s] || [s])[0]} ${pond[s] != null ? pond[s] : '—'}`).join(' · ');
             return cartaoIndice(NOME_IDX[k] || k, k, c.composto, percentilTxt(c.percentil), cl,
-                pop(`${k} = ${c.composto}`, `Subtestes que formam o índice (escore ponderado): ${det}. IC 95%: ${c.ic95 ? c.ic95.join(' a ') : '—'}.`, C().faixa(cl)));
+                pop(`${NOME_IDX[k] || k} · ${c.composto}`, `${k} = ${c.composto} (${cl}). Subtestes (escore ponderado): ${det}. IC 95%: ${c.ic95 ? c.ic95.join(' a ') : '—'}.`, C().faixa(cl), 'idx:' + k, EX().nivelComp(c.composto)));
         }
         if (vista === 'qit_icg') {
             const q = comp.QI_TOTAL, g = icgDe(d), interp = d._interpretacao;
-            let h = q ? cartaoIndice('QI Total', 'QIT', q.composto, percentilTxt(q.percentil), classeDe(q)) : '';
+            let h = q ? cartaoIndice('QI Total', 'QIT', q.composto, percentilTxt(q.percentil), classeDe(q), pop(`QI Total · ${q.composto}`, `QIT = ${q.composto} (${classeDe(q)}). Percentil ${q.percentil != null ? q.percentil : '—'}.`, C().faixa(classeDe(q)), 'idx:QIT', EX().nivelComp(q.composto))) : '';
             if (g) {
                 const cl = g.classificacao || classComp(g.composto);
                 h += `<div class="cx-card cx-icg"><div class="cx-icg-cab"><span>Índice de Capacidade Geral</span><span>Soma EP</span><span>ICG</span><span>Percentil</span><span>IC 95%</span><span>Classificação</span></div>
-                    <div class="cx-icg-lin"${pop('ICG = ' + g.composto, `Calculado pelo CORTEX a partir dos 6 subtestes de ICV e IOP (soma ${g.somaEP}), pela tabela oficial.`, C().faixa(cl))}><span class="cx-sig">ICG</span><span>${esc(g.somaEP)}</span><span class="t-${tom(cl)} forte">${esc(g.composto)}</span><span>${esc(percentilTxt(g.percentil))}</span><span>${g.ic95 ? esc(g.ic95.join('–')) : '—'}</span><span class="t-${tom(cl)} forte">${esc(cl)}</span></div></div>`;
+                    <div class="cx-icg-lin"${pop('Índice de Capacidade Geral · ' + g.composto, `ICG = ${g.composto} (${cl}). Calculado pelo CORTEX a partir dos 6 subtestes de ICV e IOP (soma ${g.somaEP}), pela tabela oficial.`, C().faixa(cl), 'idx:ICG', EX().nivelComp(g.composto))}><span class="cx-sig">ICG</span><span>${esc(g.somaEP)}</span><span class="t-${tom(cl)} forte">${esc(g.composto)}</span><span>${esc(percentilTxt(g.percentil))}</span><span>${g.ic95 ? esc(g.ic95.join('–')) : '—'}</span><span class="t-${tom(cl)} forte">${esc(cl)}</span></div></div>`;
             } else if (d._icg && d._icg.incompleto) {
                 h += `<p class="nota">ICG não calculado: faltam ponderados dos subtestes ${esc((d._icg.faltando || []).join(', '))}.</p>`;
             }
@@ -130,7 +133,7 @@
             const grupos = (GRUPOS[sig] || GRUPOS['WAIS-III']).map(([nome, cods]) => {
                 const linhas = cods.filter(c => pond[c] != null).map(c => {
                     const p = pond[c], cl = classPond(p), s = SUBTESTES[c] || [c, ''];
-                    return `<div class="cx-sb"${pop(`${s[0]} — ${p}`, `${s[1]}. Escore ponderado ${p} (${cl}). A média é 10.`, C().faixa(cl))}><span class="cx-sb-c">${c}</span>
+                    return `<div class="cx-sb"${pop(`${s[0]} · ${p}`, `${s[1]}. Escore ponderado ${p} (${cl}). A média é 10.`, C().faixa(cl), 'sub:' + c, EX().nivelPond(p))}><span class="cx-sb-c">${c}</span>
                         <span class="cx-sb-trilho"><span class="cx-sb-barra b-${tom(cl)}" style="width:${Math.min(100, p / 19 * 100).toFixed(1)}%"></span></span><span class="cx-sb-v">${p}</span>${selo(cl)}</div>`;
                 }).join('');
                 return linhas ? `<div class="cx-sb-grupo"><p class="cx-sb-tit">${esc(nome)}</p>${linhas}</div>` : '';
@@ -151,7 +154,7 @@
                 const cl = classeDe(c), ic = c.ic95 || [c.composto - 5, c.composto + 5];
                 // mesma cor da tela de resultados do WISC/WAIS (icColor): ≥110 verde · 90–109 azul · 80–89 amarelo · <80 vermelho
                 const v = Number(c.composto), cor = v >= 110 ? 'ic-ve' : v >= 90 ? 'ic-az' : v >= 80 ? 'ic-am' : 'ic-vm';
-                return `<div class="cx-ic ${cor}"${pop(`${s} = ${c.composto}`, `${cl}. Com 95% de segurança, o escore verdadeiro está entre ${ic[0]} e ${ic[1]}.`, C().faixa(cl))}><span class="cx-ic-s">${s}</span>
+                return `<div class="cx-ic ${cor}"${pop(`${({ QIV: 'QI Verbal', QIE: 'QI de Execução', QIT: 'QI Total', ICG: 'Índice de Capacidade Geral' })[s] || NOME_IDX[s] || s} · ${c.composto}`, `${s} = ${c.composto} (${cl}). Com 95% de segurança, o escore verdadeiro está entre ${ic[0]} e ${ic[1]}.`, C().faixa(cl), 'idx:' + s, EX().nivelComp(c.composto))}><span class="cx-ic-s">${s}</span>
                     <span class="cx-ic-t" style="${media}"><span class="cx-ic-f" style="left:${X(ic[0])}%;width:${(X(ic[1]) - X(ic[0])).toFixed(2)}%"></span><span class="cx-ic-p" style="left:${X(c.composto)}%">${c.composto}</span></span>${selo(cl)}</div>`;
             }).join('');
             return `<div class="cx-card cx-icart"><div class="cx-ic-esc"><span></span><span class="cx-ic-t">${grade}</span><span></span></div>${rows}
@@ -182,7 +185,7 @@
         const seg = (a, i0, i1) => a.slice(i0, i1 + 1).map((v, k) => v == null ? '' : `${k ? 'L' : 'M'}${X(i0 + k)} ${Y(v)}`).join(' ');
         const linhas = (a, cls) => `<path d="${seg(a, 0, 4)}" class="${cls}"/><path d="${seg(a, 6, 7)}" class="${cls}"/>`;
         const desc = { A1: 'Primeira leitura da lista A', A2: 'Segunda leitura', A3: 'Terceira leitura', A4: 'Quarta leitura', A5: 'Quinta leitura', B1: 'Lista B, lida uma vez só (distrator)', A6: 'Lista A logo após a lista B, sem nova leitura', A7: 'Lista A após cerca de 20 minutos' };
-        const pts = pac.map((v, i) => v == null ? '' : `<g class="g-item"${pop(`${rot[i]}: ${v} palavras`, `${desc[rot[i]]}. Mediana da idade: ${nor[i] != null ? nor[i] : '—'}.`)}><circle cx="${X(i)}" cy="${Y(v)}" r="6" class="pt"/><text x="${X(i)}" y="${Y(v) - 12}" class="g-val" text-anchor="middle">${v}</text></g>`).join('');
+        const pts = pac.map((v, i) => v == null ? '' : `<g class="g-item"${pop(`${rot[i]}: ${v} palavras`, `${desc[rot[i]]}. Mediana da idade: ${nor[i] != null ? nor[i] : '—'}.`, null, 'ravlt:' + rot[i], nor[i] == null ? null : v <= nor[i] - 2 ? 'dificuldade' : v >= nor[i] + 2 ? 'forte' : 'esperado')}><circle cx="${X(i)}" cy="${Y(v)}" r="6" class="pt"/><text x="${X(i)}" y="${Y(v) - 12}" class="g-val" text-anchor="middle">${v}</text></g>`).join('');
         const ptsN = nor.map((v, i) => v == null ? '' : `<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" class="ptn"/>`).join('');
         const xl = rot.map((r, i) => `<text x="${X(i)}" y="${yB + 20}" class="g-cod" text-anchor="middle">${r}</text>`).join('');
         const sep = [4.5, 5.5].map(k => `<line x1="${(X(Math.floor(k)) + X(Math.ceil(k))) / 2}" x2="${(X(Math.floor(k)) + X(Math.ceil(k))) / 2}" y1="${yT}" y2="${yB}" class="g-sep"/>`).join('');
@@ -218,7 +221,7 @@
         const barras = () => `<div class="cx-card cx-fdc"><p class="cx-leg cima">Barra = percentil estimado (1–99), baseado nos tempos · menos tempo é melhor</p>${ordem.filter(k => M[k]).map(k => {
             const m = M[k], cl = (m.classificacao || {}).label || '—', er = { C: 'eC', E: 'eE', A: 'eA' }[k];
             const erTxt = er && M[er] ? ` Erros: ${M[er].raw} (${(M[er].classificacao || {}).label || '—'}).` : '';
-            return `<div class="cx-fd"${pop(`${m.label}: ${m.raw} s`, `Percentil ${m.pctLabel || '—'} · ${cl}. Menos tempo é melhor.${erTxt}`, C().faixa(cl))}><span class="cx-fd-n">${esc(String(m.label || k).replace(/ \(.*\)/, ''))}</span>
+            return `<div class="cx-fd"${pop(`${m.label}: ${m.raw} s`, `Percentil ${m.pctLabel || '—'} · ${cl}. Menos tempo é melhor.${erTxt}`, C().faixa(cl), 'fdt:' + k, EX().nivelRotulo(cl))}><span class="cx-fd-n">${esc(String(m.label || k).replace(/ \(.*\)/, ''))}</span>
                 <span class="cx-fd-t"><span class="cx-fd-b b-${tom(cl)}" style="width:${Math.max(4, Math.min(100, m.pctNum || 0))}%"></span></span><span class="cx-fd-p">${esc(m.pctLabel || '—')}</span>${selo(cl)}</div>`;
         }).join('')}</div>`;
         const cabFdt = () => cabecalho({ titulo: op.titulo || 'FDT', sub: ['Teste dos Cinco Dígitos', 'Five Digit Test · Atenção, Controle Inibitório e Flexibilidade Cognitiva'],
@@ -258,7 +261,7 @@
             const v = z[f[0]]; if (v == null) return '';
             const cx = x0 + w * i + w / 2, y1 = Y(Math.max(v, 0)), h = Math.abs(Y(v) - Y(0));
             const g = (glossario || {})[f[1].toLowerCase()];
-            return `<g class="g-item"${pop(`${f[1]} — P${pc[f[0]]}`, `${g ? g.texto + ' ' : ''}Classificação: ${cl[f[0]] || '—'} (escore Z ${num(v)}).`)}>
+            return `<g class="g-item"${pop(`${f[1]} · P${pc[f[0]]}`, `Classificação: ${cl[f[0]] || '—'} (escore Z ${num(v)}, percentil ${pc[f[0]]}).`, null, 'bfp:' + f[0], EX().nivelPct(pc[f[0]]))}>
                 <rect x="${cx - w * 0.32}" y="${y1}" width="${w * 0.64}" height="${Math.max(h, 1)}" rx="3" class="fb-${f[0]}"/>
                 <text x="${cx}" y="${v >= 0 ? Y(v) - 7 : Y(v) + 16}" class="g-val c-${f[0]}" text-anchor="middle">${num(v).replace(',', '.')}</text>
                 <text x="${cx}" y="292" class="g-cod" text-anchor="middle">${f[1]}</text><text x="${cx}" y="308" class="g-tick" text-anchor="middle">P${pc[f[0]] != null ? pc[f[0]] : '—'}</text></g>`;
@@ -329,7 +332,7 @@
         return (R.subescalas || []).map(sb => {
             const lo = sb.max ? 0 : (rg ? rg.min : 0), hi = sb.max || (rg ? rg.max : null);
             const w = hi != null && sb.valor != null ? pct(sb.valor, lo, hi) : 0;
-            return `<div class="cx-fd"${pop(sb.nome, `${sb.valor}${sb.max ? ' de ' + sb.max : ''} · ${sb.classificacao || ''}`)}><span class="cx-fd-n">${esc(sb.nome)}</span>
+            return `<div class="cx-fd"${pop(`${sb.nome} · ${num(sb.valor)}${sb.max ? ' de ' + sb.max : ''}`, `${R.sigla ? R.sigla + ' · ' : ''}${num(sb.valor)}${sb.max ? ' de ' + sb.max : ''}${sb.classificacao ? ' · ' + sb.classificacao : ''}${sb.extra ? ' · ' + sb.extra : ''}`, null, 'esc:' + sb.nome, EX().nivelTom(sb.tom))}><span class="cx-fd-n">${esc(sb.nome)}</span>
                 <span class="cx-fd-t">${hi != null ? `<i class="cx-fd-b b-${TOM_CLS[sb.tom] || 'n'} anim-x" style="width:${w.toFixed(1)}%"></i>` : ''}</span>
                 <span class="cx-fd-p">${esc(num(sb.valor))}${sb.max ? `<small>/${esc(sb.max)}</small>` : ''}</span>${seloTom(sb.classificacao, sb.tom)}</div>`;
         }).join('');
@@ -345,7 +348,7 @@
         const ind = R.indicacao ? `<p class="cx-leg cima cx-ind">${esc(R.indicacao)}</p>` : '';
         const subs = (R.subescalas || []).length ? `<div class="cx-card cx-fdc">${linhasSub(R)}</div>` : '';
         const reguas = () => {
-            if (R.regua) return `<div class="cx-card cx-regua">${reguaEscala(R.regua, R.regua.rotulo || (P && P.rotulo))}</div>`;
+            if (R.regua) return `<div class="cx-card cx-regua"${P ? pop(`${P.rotulo || 'Total'} · ${num(P.valor)}${P.max ? ' de ' + P.max : ''}`, `${R.sigla || sig} · ${num(P.valor)}${P.max ? ' de ' + P.max : ''}${P.classificacao ? ' · ' + P.classificacao : ''}${R.norma ? ' · ' + R.norma : ''}`, null, 'esc:' + (P.rotulo || 'total'), EX().nivelTom(P.tom)) : ''}>${reguaEscala(R.regua, R.regua.rotulo || (P && P.rotulo))}</div>`;
             const rs = (R.subescalas || []).filter(sb => sb.zonas && sb.zonas.length)
                 .map(sb => reguaEscala({ min: 0, max: sb.max, valor: sb.valor, zonas: sb.zonas }, `${sb.nome}${sb.classificacao ? ' · ' + sb.classificacao : ''}`)).join('');
             return rs ? `<div class="cx-card cx-regua">${rs}</div>` : '';

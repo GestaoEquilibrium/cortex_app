@@ -615,3 +615,25 @@ html.p-creme .p-barra .ok { color: #1E6B43; border-color: rgba(46, 139, 87, .4);
 .port .p-graf .cx-forma { margin: 18px 0 8px; font: 800 11px/1.2 var(--f-texto); letter-spacing: .14em; text-transform: uppercase; color: var(--turquesa); display: flex; align-items: center; gap: 10px; }
 .port .p-graf .cx-forma::after { content: ''; flex: 1; height: 1px; background: var(--borda); }
 .port .p-graf .cx-forma:first-child { margin-top: 0; }
+
+/* ── Balões para a família (passar o mouse), citações e "voltar" ── */
+.p-balao { width: min(380px, calc(100vw - 32px)); }
+.p-balao .p-bal-parte { margin-top: 10px; }
+.p-balao .p-bal-parte small { margin-bottom: 3px; }
+.p-balao .p-bal-parte p { color: var(--texto, #E8EEFA); font-size: 14px; line-height: 1.5; }
+.p-balao .p-bal-parte.vida small { color: #F5C26B; }
+.p-balao .p-bal-tec { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(148, 178, 230, .18); font-size: 12px; color: #8C9BBA; }
+.p-balao.fixo { box-shadow: 0 24px 60px -16px rgba(0, 0, 0, .7), 0 0 0 2px rgba(92, 201, 211, .45); }
+html.p-creme .p-balao .p-bal-parte p { color: #14254A; }
+html.p-creme .p-balao .p-bal-parte.vida small { color: #9A6512; }
+html.p-creme .p-balao .p-bal-tec { color: #5B6B88; border-top-color: rgba(31, 56, 100, .15); }
+html.p-creme .p-balao.fixo { box-shadow: 0 24px 50px -18px rgba(31, 56, 100, .45), 0 0 0 2px rgba(31, 56, 100, .35); }
+.port [data-pop-tit] { cursor: help; }
+.port .p-cita { font: inherit; color: var(--turquesa); background: none; border: 0; padding: 0; cursor: pointer; border-bottom: 1px dotted currentColor; }
+.port .p-cita:hover { color: #fff; }
+.port.creme .p-cita:hover { color: #14254A; }
+.port .p-ref { scroll-margin: 120px; border-radius: 10px; padding: 4px 8px; margin-left: -8px; }
+.port .p-voltar { position: fixed; z-index: 45; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); font: 700 14px/1 "Inter", system-ui, sans-serif;
+    color: #061020; background: var(--turquesa); border: 0; border-radius: 999px; padding: 13px 20px; cursor: pointer; box-shadow: 0 12px 28px -10px rgba(0, 0, 0, .6); }
+.port .p-voltar[hidden] { display: none; }
+.port.creme .p-voltar { color: #fff; background: #1F3864; }

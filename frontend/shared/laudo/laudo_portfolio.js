@@ -88,6 +88,60 @@
         return { grupos, soltos };
     }
 
+    // ── referências: cada item ganha âncora para as citações do texto irem direto a ele ──
+    function refHtml(r) {
+        const i = (O.refs || []).indexOf(String(r));
+        return `<p class="p-ref"${i >= 0 ? ` id="p-ref-${i}"` : ''}>${I(r)}</p>`;
+    }
+    const semAc = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    // "(Wechsler, 2013)", "(Mattos et al., 2006; Rohde, 2010)", "Wechsler (2013)" → link para a referência
+    // certa. Só vira link quando o sobrenome e o ano batem com um item das referências (nunca chuta).
+    function acharRef(autor, ano) {
+        const a = (semAc(autor).match(/[a-z][a-z'-]+/) || [])[0];     // primeiro sobrenome citado
+        if (!a || a.length < 2 || a === 'et') return -1;
+        return (O.refsPlano || []).findIndex(t => t.startsWith(a) && t.includes(ano));
+    }
+    function botaoCita(txt, i) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'p-cita'; b.dataset.ref = 'p-ref-' + i;
+        b.dataset.popTag = 'Referência'; b.dataset.popTit = 'Referência citada'; b.dataset.popTxt = O.refsPlano2[i];
+        b.textContent = txt; return b;
+    }
+    function linkarCitacoes(raiz) {
+        if (!(O.refs || []).length) return;
+        const andar = document.createTreeWalker(raiz.querySelector('.port-conteudo') || raiz, NodeFilter.SHOW_TEXT, {
+            acceptNode: n => (!/\d{4}/.test(n.nodeValue) || n.parentElement.closest('.p-refs, button, a, svg, .termo, script, style')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+        });
+        const nos = []; while (andar.nextNode()) nos.push(andar.currentNode);
+        // (Autor, 2013) · (Autor et al., 2006; Outro, 2010) · Autor (2013)
+        const re = /\(([^()]{2,240}?\d{4}[a-z]?)\)|([A-ZÀ-Ú][A-Za-zÀ-ú'-]+(?:\s+(?:et al\.|e|&)(?:\s+[A-ZÀ-Ú][A-Za-zÀ-ú'-]+)?)?)\s+\((\d{4}[a-z]?)\)/g;
+        nos.forEach(no => {
+            const t = no.nodeValue, frag = document.createDocumentFragment();
+            let ult = 0, achou = false, m;
+            re.lastIndex = 0;
+            while ((m = re.exec(t))) {
+                const pecas = [];
+                if (m[1]) {
+                    let algum = false;
+                    m[1].split(/;\s*/).forEach((pt, k) => {
+                        if (k) pecas.push('; ');
+                        const mm = /^(.+?),\s*(\d{4}[a-z]?)$/.exec(pt.trim()), i = mm ? acharRef(mm[1], mm[2]) : -1;
+                        if (i >= 0) { algum = true; pecas.push(botaoCita(pt.trim(), i)); } else pecas.push(pt);
+                    });
+                    if (!algum) continue;
+                    pecas.unshift('('); pecas.push(')');
+                } else {
+                    const i = acharRef(m[2], m[3]); if (i < 0) continue;
+                    pecas.push(botaoCita(m[0], i));
+                }
+                achou = true;
+                frag.append(t.slice(ult, m.index), ...pecas); ult = m.index + m[0].length;
+            }
+            if (!achou) return;
+            frag.append(t.slice(ult)); no.replaceWith(frag);
+        });
+    }
+
     // ── anotações (complementos, Documento 1, §7.3) ─────────────────────────
     function compl(b) {
         const cs = (b.complementos || []).filter(c => c && (c.texto || c.titulo));
@@ -125,7 +179,7 @@
             case 'hipotese': return hipotese(b);
             case 'afastada': return `<div class="p-vidro p-afast"><i aria-hidden="true">✕</i><div><b>${I(b.condicao)} — afastada</b><p>${I(b.motivo)}${b.fonte ? ` Fonte: ${I(b.fonte)}.` : ''}</p></div></div>`;
             case 'mapa': return mapa(b);
-            case 'referencias': return (b.itens || []).length ? `<details class="p-det"><summary>${b.chave === 'normativas' ? 'Referências normativas' : 'Referências bibliográficas'}</summary><div class="p-det-corpo p-refs">${b.itens.map(r => `<p>${I(r)}</p>`).join('')}</div></details>` : '';
+            case 'referencias': return (b.itens || []).length ? `<details class="p-det"><summary>${b.chave === 'normativas' ? 'Referências normativas' : 'Referências bibliográficas'}</summary><div class="p-det-corpo p-refs">${b.itens.map(r => refHtml(r)).join('')}</div></details>` : '';
             case 'resultado': return resultado(b);
             case 'tabela': return `<div class="p-tabela-w"><table class="p-tabela"><thead><tr>${(b.cabecalho || []).map(x => `<th>${I(x)}</th>`).join('')}</tr></thead><tbody>${(b.linhas || []).map(l => `<tr>${l.map((cel, k) => celula(cel, b, k)).join('')}</tr>`).join('')}</tbody></table></div>${b.nota ? `<p class="p-nota">${I(b.nota)}</p>` : ''}`;
             case 'imagem': {
@@ -431,10 +485,18 @@
         const { grupos, soltos } = agrupar(bs, ehTitulo(3));
         return `${lista(soltos)}<div class="p-sint">${grupos.map((g, i) => {
             const txt = g.blocos.map(b => C().textos(b).join(' ')).join(' ');
-            const fontes = Object.keys(O.expos).filter(s => txt.includes(s));
+            // sigla como palavra inteira (sem pegar "ATA" dentro de outra palavra)
+            const fontes = Object.keys(O.expos).filter(s => new RegExp(`(^|[^A-Za-z0-9-])${s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9])`).test(txt));
+            // índices citados no texto (IMO, IVP…) levam direto à linha do gráfico daquele teste
+            const pontuais = [];
+            fontes.filter(s => s === 'WAIS-III' || s === 'WISC-IV').forEach(s => {
+                ['ICV', 'IOP', 'IMO', 'IVP', 'QIT', 'ICG', 'QIV', 'QIE'].forEach(k => { if (new RegExp(`\\b${k}\\b`).test(txt)) pontuais.push([s, k]); });
+            });
+            const bts = pontuais.map(([s, k]) => `<button class="p-fonte" type="button" data-ir="${O.expos[s]}" data-alvo="idx:${k}">${esc(k)} no ${esc(s)} ↗</button>`)
+                .concat(fontes.filter(s => !pontuais.some(p => p[0] === s)).map(s => `<button class="p-fonte" type="button" data-ir="${O.expos[s]}">Ver ${esc(s)} ↗</button>`));
             return `<article class="p-vidro p-sint-c rv" data-n="${String(i + 1).padStart(2, '0')}"><h3>${I(semNumero(g.cab.texto))}</h3>
                 ${g.blocos.map(b => conteudo(b, {}) + compl(b)).join('')}
-                ${fontes.length ? `<div class="p-fontes">${fontes.map(s => `<button class="p-fonte" type="button" data-ir="${O.expos[s]}">Ver ${esc(s)} ↗</button>`).join('')}</div>` : ''}</article>`;
+                ${bts.length ? `<div class="p-fontes">${bts.join('')}</div>` : ''}</article>`;
         }).join('')}</div>`;
     }
 
@@ -470,7 +532,7 @@
         const itensRefs = [];
         refs.forEach(r => (r.itens || []).forEach(x => itensRefs.push(x)));
         return `${lista(outros)}${cards.length ? `<div class="p-fim rv">${cards.map(b => conteudo(b, {})).join('')}</div>` : ''}
-            ${itensRefs.length ? `<details class="p-det rv"><summary>Referências bibliográficas e normativas</summary><div class="p-det-corpo p-refs">${itensRefs.map(r => `<p>${I(r)}</p>`).join('')}</div></details>` : ''}`;
+            ${itensRefs.length ? `<details class="p-det rv"><summary>Referências bibliográficas e normativas</summary><div class="p-det-corpo p-refs">${itensRefs.map(r => refHtml(r)).join('')}</div></details>` : ''}`;
     }
 
     // ── balão ────────────────────────────────────────────────────────────────
@@ -481,7 +543,13 @@
         balao.className = 'p-balao'; balao.setAttribute('role', 'dialog');
         if (o.faixa) balao.dataset.faixa = o.faixa;
         if (o.tipo) balao.dataset.tipo = o.tipo;
-        balao.innerHTML = `<button type="button" aria-label="Fechar">×</button>${o.tag ? `<small>${esc(o.tag)}</small>` : ''}<h4>${esc(o.tit)}</h4><p>${esc(o.txt)}</p>${o.extra ? `<p>${esc(o.extra)}</p>` : ''}`;
+        if (o.fixo) balao.classList.add('fixo');
+        const partes = (o.partes || []).filter(x => x && x.txt).map(x => `<div class="p-bal-parte ${x.cls || ''}"><small>${esc(x.rot)}</small><p>${esc(x.txt)}</p></div>`).join('');
+        balao.innerHTML = `<button type="button" aria-label="Fechar">×</button>${o.tag ? `<small>${esc(o.tag)}</small>` : ''}<h4>${esc(o.tit)}</h4>` +
+            (partes || `<p>${esc(o.txt)}</p>${o.extra ? `<p>${esc(o.extra)}</p>` : ''}`) +
+            (o.tecnico ? `<p class="p-bal-tec">${esc(o.tecnico)}</p>` : '');
+        balao.addEventListener('mouseenter', () => clearTimeout(tFechar));
+        balao.addEventListener('mouseleave', () => { if (!balao || !balao.classList.contains('fixo')) agendarFechar(); });
         document.body.appendChild(balao);
         const r = anc.getBoundingClientRect(), bw = balao.offsetWidth, bh = balao.offsetHeight;
         let left = r.left + window.scrollX + r.width / 2 - bw / 2;
@@ -492,21 +560,52 @@
         balao.querySelector('button').onclick = fecharBalao;
         balaoDe = anc;
     }
-    function fecharBalao() { if (balao) { balao.remove(); balao = null; if (balaoDe && balaoDe.focus) balaoDe.focus({ preventScroll: true }); balaoDe = null; } }
-    function acionarBalao(el) {
+    function fecharBalao() { if (balao) { const fixo = balao.classList.contains('fixo'); balao.remove(); balao = null; if (fixo && balaoDe && balaoDe.focus) balaoDe.focus({ preventScroll: true }); balaoDe = null; } }
+    function acionarBalao(el, fixo) {
         if (el.matches('.termo')) {
             const t = el.dataset.termo || el.textContent;
-            if (el.dataset.texto) return abrirBalao(el, { tag: 'Explicação deste caso', tit: t, txt: el.dataset.texto });
+            if (el.dataset.texto) return abrirBalao(el, { tag: 'Explicação deste caso', tit: t, txt: el.dataset.texto, fixo });
             const g = (O.glossario || {})[String(t).toLowerCase()];
-            return abrirBalao(el, g ? { tag: 'Glossário', tit: g.titulo || t, txt: g.texto } : { tag: 'Glossário', tit: t, txt: 'Termo sem explicação no glossário da clínica.' });
+            return abrirBalao(el, g ? { tag: 'Glossário', tit: g.titulo || t, txt: g.texto, fixo } : { tag: 'Glossário', tit: t, txt: 'Termo sem explicação no glossário da clínica.', fixo });
         }
-        if (el.matches('.pend')) return abrirBalao(el, { tag: 'Pendência', tipo: 'pend', tit: 'Campo a confirmar', txt: 'O Gerador marcou este ponto para confirmação. Não aparece no portal nem para o médico externo.', extra: el.textContent });
+        if (el.matches('.pend')) return abrirBalao(el, { tag: 'Pendência', tipo: 'pend', tit: 'Campo a confirmar', txt: 'O Gerador marcou este ponto para confirmação. Não aparece no portal nem para o médico externo.', extra: el.textContent, fixo });
         if (el.matches('[data-pop-tit]')) {
             const f = el.dataset.popFaixa;
-            return abrirBalao(el, { tag: el.dataset.popTag || 'Resultado', tit: el.dataset.popTit, txt: el.dataset.popTxt, faixa: f, extra: f ? FAIXA_TEXTO[f] : '' });
+            // medida com explicação para a família: "o que é" + "no dia a dia", e os números embaixo
+            const ex = el.dataset.popK && window.LaudoExplica ? window.LaudoExplica.de(el.dataset.popK, el.dataset.popN, (O.ctx || {}).primeiroNome) : null;
+            if (ex && ex.oque) return abrirBalao(el, { tag: 'Entenda este resultado', tit: el.dataset.popTit, faixa: f, fixo,
+                partes: [{ rot: 'O que é', txt: ex.oque }, { rot: `No dia a dia${(O.ctx || {}).primeiroNome ? ' de ' + O.ctx.primeiroNome : ''}`, txt: ex.vida, cls: 'vida' }],
+                tecnico: el.dataset.popTxt });
+            return abrirBalao(el, { tag: el.dataset.popTag || 'Resultado', tit: el.dataset.popTit, txt: el.dataset.popTxt, faixa: f, extra: f ? FAIXA_TEXTO[f] : '', fixo });
         }
     }
     const SEL_BALAO = '.termo, .pend, [data-pop-tit]';
+    // Ao passar o mouse (computador): abre sozinho e fecha ao sair. Clique fixa o balão aberto.
+    // No celular/tablet continua por toque.
+    const comMouse = () => window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    let tAbrir = null, tFechar = null;
+    function agendarFechar() { clearTimeout(tFechar); tFechar = setTimeout(() => { if (balao && !balao.classList.contains('fixo')) fecharBalao(); }, 220); }
+    function cliqueBalao(el) {
+        clearTimeout(tAbrir);
+        if (balaoDe === el && balao) { if (balao.classList.contains('fixo')) fecharBalao(); else balao.classList.add('fixo'); }
+        else acionarBalao(el, true);
+    }
+    document.addEventListener('mouseover', e => {
+        if (!comMouse()) return;
+        const el = e.target.closest && e.target.closest(SEL_BALAO);
+        if (!el || !el.closest('.port, #p-gaveta')) return;
+        clearTimeout(tFechar);
+        if (el === balaoDe) return;
+        if (balao && balao.classList.contains('fixo')) return;
+        clearTimeout(tAbrir); tAbrir = setTimeout(() => acionarBalao(el, false), 140);
+    });
+    document.addEventListener('mouseout', e => {
+        if (!comMouse()) return;
+        const el = e.target.closest && e.target.closest(SEL_BALAO);
+        if (!el || el.contains(e.relatedTarget) || (balao && balao.contains(e.relatedTarget))) return;
+        clearTimeout(tAbrir);
+        if (el === balaoDe) agendarFechar();
+    });
 
     // ── gaveta ───────────────────────────────────────────────────────────────
     function abrirGaveta(html, sup, tit) {
@@ -518,7 +617,7 @@
         g.addEventListener('click', e => {
             if (e.target === g) { fecharGaveta(); return; }
             const el = e.target.closest(SEL_BALAO);
-            if (el) { e.stopPropagation(); if (balaoDe === el && balao) fecharBalao(); else acionarBalao(el); }
+            if (el) { e.stopPropagation(); cliqueBalao(el); }
         });
         g.querySelector('.p-fechar').onclick = fecharGaveta;
         g.querySelector('.p-fechar').focus();
@@ -766,6 +865,8 @@
             return nome ? Object.assign({}, c, { tit: nome }) : c;
         }).filter(c => porCap[c.id]);
 
+        O.refs = []; O.refsPlano = []; O.refsPlano2 = [];
+        (O.doc.secoes || []).forEach(s => (s.blocos || []).forEach(b => { if (b.tipo === 'referencias') (b.itens || []).forEach(r => { if (!O.refs.includes(String(r))) { O.refs.push(String(r)); O.refsPlano2.push(plano(r)); O.refsPlano.push(semAc(plano(r))); } }); }));
         O.dominios = {};
         (O.doc.secoes || []).forEach(s => (s.blocos || []).forEach(b => { if (b.tipo === 'tabela_instrumentos') (b.linhas || []).forEach(l => { if (l.sigla && l.dominio) O.dominios[l.sigla] = l.dominio; }); }));
         const A = gruposAchados(porCap.achados ? porCap.achados.blocos : []);
@@ -783,7 +884,8 @@
             <footer class="p-rodape port-larg">Laudo neuropsicológico · Equilibrium Med Center · documento sigiloso, acesso registrado (LGPD)</footer></div>
             <nav class="p-trilho" aria-label="Capítulos">${caps.map(c => `<a href="#cap-${c.id}" data-cap="${c.id}"><span>${esc(c.tit)}</span><i></i></a>`).join('')}</nav>
             <div class="p-progresso" aria-hidden="true"><i></i></div>
-            <button type="button" class="p-tema" aria-pressed="false" aria-label="Alternar entre modo escuro e modo claro"><span>☀</span></button></div>`;
+            <button type="button" class="p-tema" aria-pressed="false" aria-label="Alternar entre modo escuro e modo claro"><span>☀</span></button>
+            <button type="button" class="p-voltar" hidden>← Voltar para onde eu estava</button></div>`;
         const raiz = alvo.querySelector('.port');
         raizAtual = raiz;
 
@@ -829,7 +931,28 @@
         window.addEventListener('scroll', aoRolar, { passive: true }); aoRolar();
         trilho.forEach(a => a.addEventListener('click', e => { e.preventDefault(); const c = document.getElementById(a.getAttribute('href').slice(1)); if (c) c.scrollIntoView({ behavior: reduz() ? 'auto' : 'smooth' }); }));
 
-        const ir = id => { const el = document.getElementById(id); if (!el) return; el.scrollIntoView({ behavior: reduz() ? 'auto' : 'smooth', block: 'start' }); el.classList.remove('flash-p'); void el.offsetWidth; el.classList.add('flash-p'); };
+        // Saltos (Síntese → teste, citação → referência, mapa → análise) guardam o lugar de onde saiu
+        const btVolta = raiz.querySelector('.p-voltar');
+        let volta = null;
+        const marcarVolta = () => { volta = window.scrollY; btVolta.hidden = false; };
+        btVolta.addEventListener('click', () => { if (volta != null) window.scrollTo({ top: volta, behavior: reduz() ? 'auto' : 'smooth' }); volta = null; btVolta.hidden = true; });
+        const piscar = el => { el.classList.remove('flash-p'); void el.offsetWidth; el.classList.add('flash-p'); };
+        const ir = (id, alvo) => {
+            const sec = document.getElementById(id); if (!sec) return;
+            // alvo = medida citada (ex.: idx:IMO): vai à linha do gráfico, e não só ao começo do teste
+            const ponto = alvo ? [...sec.querySelectorAll(`[data-pop-k="${alvo}"]`)].find(x => x.offsetParent) : null;
+            marcarVolta();
+            (ponto || sec).scrollIntoView({ behavior: reduz() ? 'auto' : 'smooth', block: ponto ? 'center' : 'start' });
+            piscar(ponto || sec);
+        };
+        const irRef = id => {
+            const el = document.getElementById(id); if (!el) return;
+            const det = el.closest('details'); if (det) det.open = true;
+            marcarVolta();
+            el.scrollIntoView({ behavior: reduz() ? 'auto' : 'smooth', block: 'center' });
+            piscar(el);
+        };
+        linkarCitacoes(raiz);
 
         // curva das faixas
         raiz.querySelectorAll('.p-sino').forEach(sinoEl => {
@@ -859,7 +982,8 @@
 
         // cliques gerais: ir para um teste, gaveta, balões
         raiz.addEventListener('click', e => {
-            const bIr = e.target.closest('[data-ir]'); if (bIr) { ir(bIr.dataset.ir); return; }
+            const bCita = e.target.closest('.p-cita'); if (bCita) { e.stopPropagation(); fecharBalao(); irRef(bCita.dataset.ref); return; }
+            const bIr = e.target.closest('[data-ir]'); if (bIr) { ir(bIr.dataset.ir, bIr.dataset.alvo); return; }
             const bG = e.target.closest('[data-gaveta]');
             if (bG) {
                 const gr = A.grupos.find(g => g.id === bG.dataset.gaveta);
@@ -867,12 +991,12 @@
                 return;
             }
             const el = e.target.closest(SEL_BALAO);
-            if (el) { e.stopPropagation(); if (balaoDe === el && balao) fecharBalao(); else acionarBalao(el); }
+            if (el) { e.stopPropagation(); cliqueBalao(el); }
         });
         raiz.addEventListener('keydown', e => {
             if (e.key !== 'Enter' && e.key !== ' ') return;
             const el = e.target.closest(SEL_BALAO);
-            if (el && !el.closest('.faixa') && !el.closest('.no') && el.tagName !== 'BUTTON') { e.preventDefault(); acionarBalao(el); }
+            if (el && !el.closest('.faixa') && !el.closest('.no') && el.tagName !== 'BUTTON') { e.preventDefault(); acionarBalao(el, true); }
         });
         return { capitulos: secs.length, testes: A.grupos.length };
     }

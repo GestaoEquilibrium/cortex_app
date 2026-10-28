@@ -888,6 +888,7 @@
             <button type="button" class="p-voltar" hidden>← Voltar para onde eu estava</button></div>`;
         const raiz = alvo.querySelector('.port');
         raizAtual = raiz;
+        ULT = { A, porCap, caps };
 
         fundo = (FUNDOS[O.fundo] || FUNDOS[estiloFundo] || Fundo)(raiz.querySelector('.port-fundo')); fundo.iniciar();
         aplicarTema(raiz, O.tema ? O.tema === 'creme' : temaSalvo(), false);
@@ -1005,5 +1006,193 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { fecharBalao(); fecharGaveta(); } });
     window.addEventListener('resize', fecharBalao);
 
-    window.LaudoPortfolio = { desenhar, parar, INSTRUMENTOS, trocarFundo };
+    // ═════════════════════════════════════════════════════════════════════════
+    // MODO APRESENTAÇÃO (TV) — o mesmo laudo, uma parte por tela
+    // ─────────────────────────────────────────────────────────────────────────
+    // Palco fixo 1920×1080 que escala para a tela (TV). Fundo parado (sem a rede
+    // animada) para o espelhamento não travar. Clique/rodinha/setas avançam;
+    // botão direito volta. Clicar numa linha de gráfico acende o holofote: o resto
+    // escurece e a explicação para a família aparece embaixo, em letra grande.
+    // ═════════════════════════════════════════════════════════════════════════
+    let ULT = null;
+    const primeiraFrase = (t, max) => {
+        const x = plano(t || '').replace(/\s+/g, ' ').trim(); if (!x) return '';
+        const fr = (x.match(/^.*?[.!?](\s|$)/) || [x])[0].trim();
+        const r = fr.length >= 60 || x.length <= fr.length ? fr : (x.match(/^(.*?[.!?]\s.*?[.!?])(\s|$)/) || [x])[1];
+        return r.length > max ? r.slice(0, max).replace(/\s+\S*$/, '') + '…' : r;
+    };
+    function telasDaApresentacao() {
+        const { A, porCap } = ULT, R = O.banco.resultados || {}, p = O.banco.paciente || {}, ctx = O.ctx;
+        const todos = []; (O.doc.secoes || []).forEach(sc => { if (!sc.oculta) (sc.blocos || []).filter(visivel).forEach(b => todos.push(b)); });
+        const telas = [];
+        // 1 · abertura
+        const camposB = todos.find(b => b.tipo === 'campos');
+        const campo = re => { const l = camposB && (camposB.linhas || []).find(x => re.test(plano(x.rotulo))); return l ? l.valor : ''; };
+        const mp = todos.find(b => b.tipo === 'mapa'), lm = (mp && mp.linhas) || [];
+        const ti = todos.find(b => b.tipo === 'tabela_instrumentos');
+        const nInst = (O.doc.inventario || []).length || ((ti && ti.linhas) || []).length;
+        const okN = lm.filter(l => l.status === 'preservado').length;
+        telas.push({ nome: 'Abertura', matiz: 215, html: `<div class="ap-capa">
+            <p class="ap-olho"><img src="${esc(logo())}" alt="">Devolutiva · Avaliação neuropsicológica</p>
+            <h1>${esc(p.nome_completo || '')}</h1>
+            <p class="ap-sub"><b>${esc(ctx.idade)}</b>${p.escolaridade ? ` · ${esc(p.escolaridade)}` : ''}${plano(campo(/Aplica/i)) ? ` · avaliação de ${esc(plano(campo(/Aplica/i)))}` : ''}</p>
+            ${campo(/Finalidade/i) ? `<div class="ap-pergunta"><span>?</span><div><small>A pergunta da avaliação</small><p>${esc(primeiraFrase(campo(/Finalidade/i), 220))}</p></div></div>` : ''}
+            <div class="ap-nums">${nInst ? `<div><b>${nInst}</b><span>instrumentos aplicados</span></div>` : ''}${lm.length ? `<div><b>${okN}</b><span>áreas preservadas</span></div><div class="al"><b>${lm.length - okN}</b><span>áreas pedem atenção</span></div>` : ''}</div></div>` });
+        // 2 · como avaliamos
+        if (ti && (ti.linhas || []).length) {
+            const ls = ti.linhas.slice(0, 15);
+            telas.push({ nome: 'Como avaliamos', matiz: 195, html: `<p class="ap-olho">Como avaliamos</p><h2>${ls.length} instrumentos, cada um olhando uma parte</h2>
+                <div class="ap-inst ${ls.length > 9 ? 'muitos' : ''}">${ls.map(l => `<div class="ap-vidro"><small>${esc(plano(l.dominio || O.dominios[l.sigla] || ''))}</small><b>${esc(l.sigla || '')}</b></div>`).join('')}</div>` });
+        }
+        // 3 · mapa das áreas
+        if (lm.length) {
+            const cor = { preservado: 'ok', atencao: 'at', comprometido: 'cr' }, rot = { ok: 'Preservado', at: 'Atenção', cr: 'Comprometido' };
+            telas.push({ nome: 'Mapa das áreas', matiz: 165, html: `<p class="ap-olho">Mapa das áreas</p><h2>O que está bem e o que pede atenção</h2>
+                <div class="ap-mapa ${lm.length > 6 ? 'muitos' : ''}">${lm.map(l => { const c = cor[l.status] || 'at'; return `<div class="ap-vidro ap-area ${c}"><i></i><div><small>${rot[c]}</small><b>${esc(plano(l.dominio || ''))}</b><p>${esc(primeiraFrase(l.desempenho, 110))}</p></div></div>`; }).join('')}</div>` });
+        }
+        // 4 · um teste por tela
+        A.grupos.forEach(gr => {
+            const d = R[gr.sigla], dest = d ? G().destaque(gr.sigla, d) : null;
+            const ehW = gr.sigla === 'WAIS-III' || gr.sigla === 'WISC-IV';
+            const rs = gr.blocos.filter(b => b.tipo === 'resultado' && visivel(b) && !G().indisponivel(b, O.banco, ON));
+            const vis = b => (G().paraOnline ? G().paraOnline(b) || {} : b).vista;
+            const graf = ehW ? (rs.find(b => vis(b) === 'intervalos') || rs.find(b => vis(b) === 'perfil_subtestes'))
+                : (rs.find(b => !VISTAS_VITRINE_FORA.test(vis(b))) || rs[0]);
+            const par = gr.blocos.find(b => b.tipo === 'paragrafo' && visivel(b));
+            const info = Object.assign({ dominio: O.dominios[gr.sigla] }, INSTRUMENTOS[gr.sigla] || {});
+            let grafHtml = '';
+            if (graf) { try { grafHtml = G().render(graf, O.banco, { glossario: O.glossario, congelado: O.congelado, online: true }); } catch (e) { grafHtml = ''; } }
+            if (!dest && !grafHtml && !par) return;      // teste sem nada para mostrar na TV
+            telas.push({ nome: gr.sigla, matiz: 230, html: `<p class="ap-olho">${esc(gr.num ? gr.num + ' · ' : '')}${esc(info.dominio || 'Resultado')}</p>
+                <h2>${esc(gr.sigla)}${gr.nome && gr.nome !== gr.sigla ? `<span>${esc(gr.nome)}</span>` : ''}</h2>
+                <div class="ap-teste ${grafHtml ? '' : 'so-texto'}">
+                    <div class="ap-lado">${dest ? `<div class="ap-vidro ap-dest"><small>${esc(dest.rotulo || 'Resultado')}</small><b>${esc(dest.valor)}</b>${dest.classe ? pilula(dest.classe, dest.tom) : ''}</div>` : ''}
+                        ${par ? `<div class="ap-vidro ap-palavras"><small>Em poucas palavras</small><p>${esc(primeiraFrase(par.texto, 230))}</p></div>` : ''}</div>
+                    ${grafHtml ? `<div class="ap-vidro ap-graf"><div class="p-graf"><div class="imp">${grafHtml}</div></div></div>` : ''}
+                </div>` });
+        });
+        // 5 · síntese
+        const sint = porCap.sintese ? agrupar(porCap.sintese.blocos, ehTitulo(3)).grupos : [];
+        if (sint.length) telas.push({ nome: 'Como tudo se conecta', matiz: 38, html: `<p class="ap-olho">Síntese</p><h2>Como tudo se conecta</h2>
+            <div class="ap-sint ${sint.length > 4 ? 'muitos' : ''}">${sint.slice(0, 6).map((g, i) => { const pp = g.blocos.find(b => b.tipo === 'paragrafo'); return `<div class="ap-vidro"><small>${String(i + 1).padStart(2, '0')}</small><b>${esc(plano(semNumero(g.cab.texto)))}</b>${pp ? `<p>${esc(primeiraFrase(pp.texto, 150))}</p>` : ''}</div>`; }).join('')}</div>` });
+        // 6 · hipóteses
+        const hips = todos.filter(b => b.tipo === 'hipotese');
+        if (hips.length) telas.push({ nome: 'Hipóteses', matiz: 320, html: `<p class="ap-olho">Hipóteses</p><h2>O que os resultados indicam</h2>
+            <div class="ap-hips">${hips.slice(0, 3).map(b => { const cods = Array.isArray(b.codigos) ? b.codigos : String(b.codigos || '').split('|').map(x => x.trim()).filter(Boolean);
+                const rot = { principal: 'Hipótese principal', secundaria: 'Hipótese secundária', investigar: 'Hipótese a investigar' }[b.rotulo || 'principal'] || 'Hipótese';
+                return `<div class="ap-vidro ap-hip"><small>${rot}</small><b>${esc(plano(b.nome || ''))}</b>${cods.length ? `<div class="ap-cods">${cods.map(c => `<span>${esc(c)}</span>`).join('')}</div>` : ''}${b.confianca ? `<p>Nível de confiança: <b>${esc(String(b.confianca).charAt(0).toUpperCase() + String(b.confianca).slice(1).toLowerCase())}</b></p>` : ''}</div>`; }).join('')}</div>` });
+        // 7 · conclusão
+        const conc = porCap.conclusao && porCap.conclusao.blocos.find(b => b.tipo === 'paragrafo');
+        if (conc) telas.push({ nome: 'Conclusão', matiz: 215, html: `<p class="ap-olho">Conclusão</p><h2>Em resumo</h2><p class="ap-concl">${esc(primeiraFrase(conc.texto, 420))}</p>` });
+        // 8 · próximos passos
+        const li = porCap.passos && porCap.passos.blocos.find(b => b.tipo === 'lista');
+        if (li && (li.itens || []).length) telas.push({ nome: 'Próximos passos', matiz: 150, html: `<p class="ap-olho">Próximos passos</p><h2>O que fazer daqui para frente</h2>
+            <div class="ap-passos ${li.itens.length > 4 ? 'muitos' : ''}">${li.itens.slice(0, 6).map((it, i) => { const mm = /^\*\*(.+?)\*\*\s*([\s\S]*)$/.exec(String(it));
+                return `<div class="ap-vidro"><small>${String(i + 1).padStart(2, '0')}</small>${mm ? `<b>${esc(plano(mm[1]).replace(/[.:]$/, ''))}</b><p>${esc(primeiraFrase(mm[2], 140))}</p>` : `<p>${esc(primeiraFrase(it, 170))}</p>`}</div>`; }).join('')}</div>` });
+        // 9 · fim
+        telas.push({ nome: 'Encerramento', matiz: 215, html: `<div class="ap-fim"><img src="${esc(logo())}" alt=""><h2>Ficou alguma dúvida?</h2><p>Podemos voltar em qualquer parte. O laudo completo fica disponível para ${esc(ctx.primeiroNome)} e a família.</p></div>` });
+        return telas;
+    }
+
+    let AP = null;
+    function apresentar() {
+        if (!ULT || AP) return;
+        const telas = telasDaApresentacao(), creme = raizAtual && raizAtual.classList.contains('creme');
+        const el = document.createElement('div');
+        el.className = 'ap port' + (creme ? ' creme' : ''); el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Modo apresentação');
+        el.innerHTML = `<div class="ap-palco"><div class="ap-veu"></div><div class="ap-prog"><i></i></div>
+            ${telas.map((t, i) => `<section class="ap-tela" data-i="${i}" style="--matiz:${t.matiz}">${t.html}</section>`).join('')}
+            <div class="ap-holo"><h3 class="ap-h-t"></h3><div><small>O que é</small><p class="ap-h-o"></p></div><div class="vida"><small class="ap-h-vt">No dia a dia</small><p class="ap-h-v"></p></div><button type="button" class="ap-holo-x" aria-label="Fechar holofote">×</button></div>
+            <div class="ap-partes"><p class="ap-olho">Ir para</p><div class="ap-partes-lista">${telas.map((t, i) => `<button type="button" data-ir-tela="${i}"><small>${String(i + 1).padStart(2, '0')}</small><span>${esc(t.nome)}</span></button>`).join('')}</div></div>
+</div>
+            <div class="ap-dica">Clique ou gire a rodinha para avançar · botão direito volta · clique numa linha do gráfico para o holofote</div>
+            <nav class="ap-ctrl" aria-label="Controles da apresentação">
+                <button type="button" data-ap="ant">‹ Voltar</button><span class="ap-cont"></span><button type="button" data-ap="prox">Avançar ›</button><i></i>
+                <button type="button" data-ap="partes">Partes</button><button type="button" data-ap="tema">${creme ? 'Modo escuro' : 'Modo creme'}</button><button type="button" data-ap="tela">Tela cheia</button><button type="button" data-ap="sair">Sair</button></nav>`;
+        document.body.appendChild(el);
+        document.documentElement.classList.add('ap-aberta');
+        fecharBalao(); if (fundo && fundo.parar) fundo.parar();
+        const palco = el.querySelector('.ap-palco'), secs = [...el.querySelectorAll('.ap-tela')], holo = el.querySelector('.ap-holo');
+        let atual = 0;
+        const caber = () => { const k = Math.min(window.innerWidth / 1920, window.innerHeight / 1080); palco.style.transform = `translate(-50%, -50%) scale(${k})`; };
+        // gráficos que passam da altura da tela encolhem para caber
+        // o gráfico do laudo (desenhado para a página) é ampliado para ocupar o espaço da TV
+        const ajustar = sec => sec.querySelectorAll('.ap-graf').forEach(caixa => {
+            const g = caixa.querySelector('.p-graf'); if (!g) return;
+            g.style.zoom = '1';
+            const pr = palco.getBoundingClientRect(), k = pr.height / 1080 || 1;
+            const larg = caixa.clientWidth - 80, topo = (caixa.getBoundingClientRect().top - pr.top) / k;
+            const disp = 1080 - 130 - topo - 70, h = g.offsetHeight || 1, w = g.offsetWidth || 1;
+            g.style.zoom = Math.max(.6, Math.min(2.1, larg / w, disp / h)).toFixed(3);
+        });
+        const tirarHolo = () => { palco.classList.remove('holo'); el.querySelectorAll('.ap-foco').forEach(x => x.classList.remove('ap-foco')); };
+        const ir = i => {
+            atual = Math.max(0, Math.min(secs.length - 1, i)); tirarHolo();
+            secs.forEach((s2, k) => s2.classList.toggle('ativa', k === atual));
+            el.querySelector('.ap-prog i').style.width = ((atual + 1) / secs.length * 100) + '%';
+            el.querySelector('.ap-cont').textContent = `${atual + 1} / ${secs.length}`;
+            ajustar(secs[atual]);
+        };
+        const holofote = item => {
+            if (item.classList.contains('ap-foco')) { tirarHolo(); return; }
+            tirarHolo();
+            const ex = window.LaudoExplica ? window.LaudoExplica.de(item.dataset.popK, item.dataset.popN, O.ctx.primeiroNome) : null;
+            item.classList.add('ap-foco'); palco.classList.add('holo');
+            // a explicação fica do lado oposto à linha destacada, para não cobrir o gráfico
+            const pr = palco.getBoundingClientRect(), ir2 = item.getBoundingClientRect();
+            holo.classList.toggle('cima', (ir2.top + ir2.height / 2 - pr.top) / (pr.height / 1080) > 540);
+            el.querySelector('.ap-h-o').textContent = ex && ex.oque ? ex.oque : (item.dataset.popTxt || '');
+            el.querySelector('.ap-h-t').textContent = item.dataset.popTit || '';
+            el.querySelector('.ap-h-vt').textContent = O.ctx.primeiroNome ? 'No dia a dia de ' + O.ctx.primeiroNome : 'No dia a dia';
+            el.querySelector('.ap-h-v').textContent = ex && ex.vida ? ex.vida : (item.dataset.popTxt || '');
+        };
+        const sair = () => {
+            window.removeEventListener('resize', caber); document.removeEventListener('keydown', teclas, true); el.removeEventListener('wheel', roda);
+            clearTimeout(ocioso); el.remove(); document.documentElement.classList.remove('ap-aberta'); AP = null;
+            try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { /* sem tela cheia */ }
+            if (fundo && fundo.iniciar && !reduz()) fundo.iniciar();
+        };
+        const telaCheia = () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); } catch (e) { /* sem tela cheia */ } };
+        const partes = abrir => { el.querySelector('.ap-partes').classList.toggle('aberto', abrir); el.querySelectorAll('[data-ir-tela]').forEach(b => b.classList.toggle('atual', Number(b.dataset.irTela) === atual)); };
+        el.addEventListener('click', e => {
+            const b = e.target.closest('[data-ap]');
+            if (b) {
+                const a = b.dataset.ap;
+                if (a === 'ant') ir(atual - 1); else if (a === 'prox') ir(atual + 1); else if (a === 'sair') sair(); else if (a === 'tela') telaCheia();
+                else if (a === 'partes') partes(!el.querySelector('.ap-partes').classList.contains('aberto'));
+                else if (a === 'tema') { el.classList.toggle('creme'); b.textContent = el.classList.contains('creme') ? 'Modo escuro' : 'Modo creme'; }
+                return;
+            }
+            const t = e.target.closest('[data-ir-tela]'); if (t) { ir(Number(t.dataset.irTela)); partes(false); return; }
+            if (el.querySelector('.ap-partes.aberto')) { partes(false); return; }
+            if (e.target.closest('.ap-holo-x')) { tirarHolo(); return; }
+            const item = e.target.closest('[data-pop-k]'); if (item && item.closest('.ap-tela.ativa')) { holofote(item); return; }
+            if (palco.classList.contains('holo')) { tirarHolo(); return; }
+            if (e.target.closest('.ap-ctrl')) return;
+            ir(atual + 1);
+        });
+        el.addEventListener('contextmenu', e => { e.preventDefault(); ir(atual - 1); });
+        let acum = 0, trava = 0;
+        const roda = e => { e.preventDefault(); const ag = Date.now(); if (ag < trava) return; acum += e.deltaY; if (Math.abs(acum) > 60) { ir(atual + (acum > 0 ? 1 : -1)); acum = 0; trava = ag + 450; } };
+        el.addEventListener('wheel', roda, { passive: false });
+        const teclas = e => {
+            const k = e.key;
+            if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) { e.preventDefault(); e.stopPropagation(); ir(atual + 1); }
+            else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) { e.preventDefault(); e.stopPropagation(); ir(atual - 1); }
+            else if (k === 'Home') ir(0); else if (k === 'End') ir(secs.length - 1);
+            else if (k === 'Escape') { e.stopPropagation(); if (palco.classList.contains('holo')) tirarHolo(); else if (el.querySelector('.ap-partes.aberto')) partes(false); else sair(); }
+            else if (k === 'f' || k === 'F') telaCheia(); else if (k === 'p' || k === 'P') partes(!el.querySelector('.ap-partes').classList.contains('aberto'));
+        };
+        document.addEventListener('keydown', teclas, true);
+        // barra e cursor somem com o mouse parado (TV limpa)
+        let ocioso = null;
+        const acordar = () => { el.classList.remove('ocioso'); clearTimeout(ocioso); ocioso = setTimeout(() => el.classList.add('ocioso'), 2600); };
+        el.addEventListener('mousemove', acordar); acordar();
+        setTimeout(() => { const d = el.querySelector('.ap-dica'); if (d) d.classList.add('some'); }, 5000);
+        window.addEventListener('resize', caber); caber(); ir(0);
+        AP = { ir, sair };
+        telaCheia();
+    }
+
+    window.LaudoPortfolio = { desenhar, parar, INSTRUMENTOS, trocarFundo, apresentar };
 })();

@@ -1234,7 +1234,7 @@
          */
         function abrirForm(o) {
             const linhaHtml = (cols, v) => `<tr>${cols.map(c => `<td>${c.tipo === 'select'
-                ? `<select data-col="${c.k}">${c.opcoes.map(op => `<option value="${esc(op[0])}" ${String(v[c.k] ?? '') === String(op[0]) ? 'selected' : ''}>${esc(op[1])}</option>`).join('')}</select>`
+                ? `<select data-col="${c.k}">${c.opcoes.map(op => `<option value="${esc(op[0])}" ${String((c.normalizar ? c.normalizar(v[c.k]) : v[c.k]) ?? '') === String(op[0]) ? 'selected' : ''}>${esc(op[1])}</option>`).join('')}</select>`
                 : c.tipo === 'area' ? `<textarea data-col="${c.k}" rows="2">${esc(v[c.k] ?? '')}</textarea>` : `<input data-col="${c.k}" value="${esc(v[c.k] ?? '')}">`}</td>`).join('')}
                 <td class="ed-lin-acoes"><button type="button" data-lin="subir" title="Subir">↑</button><button type="button" data-lin="tirar" title="Tirar linha">✕</button></td></tr>`;
             const campoHtml = c => {
@@ -1302,7 +1302,9 @@
                     { paragrafos: (b.paragrafos || []).join('\n\n') }, (x, v) => { x.paragrafos = v.paragrafos.split(/\n{2,}/).map(p => p.trim()).filter(Boolean); }, { largo: true });
                 case 'campos': return F('Identificação', [{ k: 'linhas', rotulo: 'Campos', tipo: 'linhas', colunas: [{ k: 'rotulo', rotulo: 'Rótulo' }, { k: 'valor', rotulo: 'Valor', tipo: 'area' }] }],
                     { linhas: b.linhas || [] }, (x, v) => { x.linhas = v.linhas; }, { largo: true, texto: 'Data de nascimento e profissional responsável entram sozinhos na Seção 1.' });
-                case 'tabela_instrumentos': return F('Instrumentos', [{ k: 'linhas', rotulo: 'Instrumentos', tipo: 'linhas', colunas: [{ k: 'sigla', rotulo: 'Sigla' }, { k: 'nome', rotulo: 'Nome' }, { k: 'dominio', rotulo: 'Domínio' }, { k: 'status', rotulo: 'Status', tipo: 'select', opcoes: [['fundamental', 'Fundamental'], ['a_confirmar', 'A confirmar'], ['complementar', 'Complementar (†)'], ['sem_peso', 'Sem peso (‡)']] }] }],
+                case 'tabela_instrumentos': return F('Instrumentos', [{ k: 'linhas', rotulo: 'Instrumentos', tipo: 'linhas', colunas: [{ k: 'sigla', rotulo: 'Sigla' }, { k: 'nome', rotulo: 'Nome' }, { k: 'dominio', rotulo: 'Domínio' }, { k: 'status', rotulo: 'Regime', tipo: 'select', opcoes: [['fundamental', '🟢 Parecer favorável'], ['complementar', '🟠 Uso multiprofissional (†)']],
+                    // só dois regimes (28/10/2026): os status antigos abrem já no regime certo
+                    normalizar: s => s === 'sem_peso' ? 'complementar' : (s === 'a_confirmar' || !s ? 'fundamental' : s) }] }],
                     { linhas: b.linhas || [] }, (x, v) => { x.linhas = v.linhas; }, { largo: true });
                 case 'hipotese': return F('Hipótese', [
                     { k: 'rotulo', rotulo: 'Tipo', tipo: 'select', opcoes: [['principal', 'Principal'], ['secundaria', 'Secundária'], ['investigar', 'A investigar']] },

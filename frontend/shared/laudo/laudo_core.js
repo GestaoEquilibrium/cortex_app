@@ -302,7 +302,8 @@
     }
 
     // ── Conversão 1.0 → 2.0 (Documento 1, §14) ───────────────────────────────
-    const STATUS_INSTR_1 = { '🟢': 'fundamental', '⚪': 'a_confirmar', '🟠': 'complementar', '🟡': 'complementar', '🔴': 'sem_peso' };
+    // só dois regimes (28/10/2026): marcas antigas de dúvida ou restrição entram no regime equivalente
+    const STATUS_INSTR_1 = { '🟢': 'fundamental', '⚪': 'fundamental', '🟠': 'complementar', '🟡': 'complementar', '🔴': 'complementar' };
     const STATUS_MAPA_1 = { '🟢': 'preservado', '⚠️': 'atencao', '⚠': 'atencao', '🔴': 'comprometido' };
     function bloco1para2(b) {
         switch (b.tipo) {
@@ -424,6 +425,18 @@
             faltam.length ? `Sem aplicação corrigida no CORTEX: ${faltam.join(', ')}.` : `${inv.length} de ${inv.length} instrumentos corrigidos neste paciente.`, faltam);
 
         // Números do texto × banco
+        // O laudo escreve o número com a precisão da tela (ex.: RAVLT Retro 0,87); o banco guarda a razão
+        // inteira (0,8666…). Compara na precisão em que o texto escreveu; inteiro do banco segue exato.
+        function mesmoNumero(banco, pacote) {
+            const a = Number(banco), b = Number(pacote);
+            if (!isFinite(a) || !isFinite(b)) return false;
+            if (a === b) return true;
+            const txt = String(pacote);
+            let casas = txt.includes('.') ? txt.split('.')[1].length : 0;
+            if (!casas && !Number.isInteger(a)) casas = 2;      // banco decimal × texto sem casas (ex.: 1,00 → 1)
+            if (!casas) return false;
+            return Math.abs(a - b) <= 0.5 * Math.pow(10, -casas) + 1e-9;
+        }
         const conf = doc.conferencia || {};
         let total = 0; const div = []; const adiadas = [];
         Object.keys(conf).forEach(sig => Object.keys(conf[sig] || {}).forEach(k => {
@@ -435,7 +448,7 @@
             // escala lida, mas sem esse número (ex.: percentil que a tela não calcula): fica sem conferência
             if (res && res.tipo === 'escala' && v === undefined) { adiadas.push(`${sig} ${k}`); return; }
             total++;
-            if (v === undefined || v === null || Number(v) !== Number(conf[sig][k])) div.push({ sigla: sig, chave: k, pacote: conf[sig][k], banco: v == null ? null : v });
+            if (v === undefined || v === null || !mesmoNumero(v, conf[sig][k])) div.push({ sigla: sig, chave: k, pacote: conf[sig][k], banco: v == null ? null : v });
         }));
         add('conferencia', 'Testes', 'Números do texto × banco', div.length ? 'importante' : (total ? 'ok' : 'atencao'),
             div.length ? div.map(d => `${d.sigla} ${d.chave}: texto diz ${d.pacote}, banco tem ${d.banco == null ? '—' : d.banco}`).join(' · ')

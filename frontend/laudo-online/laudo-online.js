@@ -390,9 +390,9 @@
                 return `<table class="lo-campos"><tbody>${linhas.map(l => `<tr><th>${l[0]}</th><td>${l[1]}</td></tr>`).join('')}</tbody></table>`;
             }
             case 'tabela_instrumentos': {
-                const marca = { complementar: '†', sem_peso: '‡' };
+                const marca = { complementar: '†', sem_peso: '†' };   // sem_peso (legado) = complementar
                 return `<table class="lo-tab"><thead><tr><th>Instrumento</th><th>Domínio avaliado</th></tr></thead><tbody>${(b.linhas || []).map(l => `
-                    <tr class="${l.status === 'a_confirmar' ? 'pend' : ''}"><td class="esq"><b>${esc(l.nome || l.sigla)}</b>${marca[l.status] ? ' ' + marca[l.status] : ''}</td><td class="esq"><em>${esc(l.dominio || '')}</em></td></tr>`).join('')}</tbody></table>`;
+                    <tr><td class="esq"><b>${esc(l.nome || l.sigla)}</b>${marca[l.status] ? ' ' + marca[l.status] : ''}</td><td class="esq"><em>${esc(l.dominio || '')}</em></td></tr>`).join('')}</tbody></table>`;
             }
             case 'fidedignidade': return `<div class="lo-caixa azul"><b>Análise de fidedignidade</b>${(b.paragrafos || []).map(x => `<p class="lo-p">${I(x, ctx)}</p>`).join('')}</div>`;
             case 'hipotese': {

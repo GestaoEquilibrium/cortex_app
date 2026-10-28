@@ -132,7 +132,7 @@
                         add(`<div class="i-qrbloco"><div class="i-qrcol">${qrSVG(ctx.linkProntuario, 92)}<span>Escaneie aqui</span></div>
                             <div><p class="i-chips"><span>CFP 06/2019</span><span>LGPD</span><span class="v">Acesso auditado</span></p><p class="i-qrtit">Acompanhe este paciente</p><p class="i-qrtxt">${esc(b.texto || '')}</p></div></div>`, o); break;
                     case 'tabela_instrumentos': {
-                        const marca = { complementar: '†', sem_peso: '‡' };
+                        const marca = { complementar: '†', sem_peso: '†' };   // sem_peso (legado) = complementar
                         addTab(b, '<table class="i-tab i-instr"><thead><tr><th>Instrumento</th><th>Domínio Avaliado</th></tr></thead><tbody>',
                             (b.linhas || []).map(l => `<tr><td class="n">${esc(l.nome || l.sigla)}${marca[l.status] ? ' ' + marca[l.status] : ''}</td><td class="d">${esc(l.dominio || '')}</td></tr>`), '', o); break;
                     }

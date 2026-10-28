@@ -18,14 +18,14 @@
     /** Texto da Seção 3 a partir da tabela de instrumentos (texto do motor 5.5). */
     function intro3(tabela) {
         const linhas = (tabela && tabela.linhas) || [];
-        const comp = linhas.filter(l => l.status === 'complementar').map(l => l.sigla);
-        const semPeso = linhas.filter(l => l.status === 'sem_peso').map(l => l.sigla);
+        // Diretriz do responsável técnico (28/10/2026): nenhum instrumento é invalidado nem marcado "a confirmar".
+        // 'sem_peso' (legado) é lido como 'complementar'; 'a_confirmar' (legado) entra como os demais testes.
+        const comp = linhas.filter(l => l.status === 'complementar' || l.status === 'sem_peso').map(l => l.sigla);
         let t = 'A avaliação neuropsicológica de **{nome}** adotou uma abordagem abrangente e multimétodo, incluindo entrevista de anamnese, observação comportamental durante as sessões e aplicação de bateria neuropsicológica padronizada. Os testes psicológicos empregados possuem parecer favorável no **SATEPSI/CFP** e normas para a população brasileira, em conformidade com as **Resoluções CFP nº 06/2019 e nº 31/2022**.';
-        if (comp.length) t += ` ${comp.length > 1 ? 'Os instrumentos' : 'O instrumento'} ${listaPt(comp)} ${comp.length > 1 ? 'foram empregados' : 'foi empregado'} como **fonte complementar** de rastreio (art. 4º, I, da Resolução CFP nº 31/2022), com respaldo em estudos brasileiros, e não ${comp.length > 1 ? 'sustentam' : 'sustenta'} isoladamente nenhuma conclusão deste laudo.`;
-        if (semPeso.length) t += ` ${semPeso.length > 1 ? 'Os instrumentos' : 'O instrumento'} ${listaPt(semPeso)} ${semPeso.length > 1 ? 'têm' : 'tem'} o resultado descrito na Seção 5, sem uso como fundamento de hipótese diagnóstica (art. 12 da Resolução CFP nº 31/2022).`;
+        if (comp.length > 1) t += ` Complementarmente, foram empregados instrumentos de uso multiprofissional — ${listaPt(comp)} —, fundamentados na literatura científica indicada nas referências, nos termos do art. 4º, I, da Resolução CFP nº 31/2022. Seus resultados foram interpretados segundo a referência de cada instrumento e integrados às demais fontes da avaliação.`;
+        else if (comp.length) t += ` Complementarmente, foi empregado o instrumento de uso multiprofissional ${comp[0]}, fundamentado na literatura científica indicada nas referências, nos termos do art. 4º, I, da Resolução CFP nº 31/2022. Seu resultado foi interpretado segundo a referência do instrumento e integrado às demais fontes da avaliação.`;
         const marcas = [];
-        if (comp.length) marcas.push('† Fonte complementar de rastreio, sem atribuição de peso diagnóstico isolado (art. 4º, I, Res. CFP nº 31/2022).');
-        if (semPeso.length) marcas.push('‡ Aplicado; resultado descrito sem uso como fundamento diagnóstico.');
+        if (comp.length) marcas.push('† Instrumento de uso multiprofissional, fundamentado na referência indicada (art. 4º, I, da Resolução CFP nº 31/2022).');
         return { texto: t, nota: marcas.join('  ') };
     }
 
@@ -117,7 +117,7 @@
             }
         }
 
-        // Seção 3 — texto de abertura e marcas † ‡ a partir da tabela de instrumentos.
+        // Seção 3 — texto de abertura e marca † a partir da tabela de instrumentos.
         const s3 = secao(3);
         if (s3) {
             const tab = s3.blocos.find(b => b.tipo === 'tabela_instrumentos');

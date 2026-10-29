@@ -512,11 +512,11 @@ window.CortexSidebar = (function() {
                     ${navHtml}
                 </nav>
 
-                <div class="sidebar-user">
+                <div class="sidebar-user${window.cortexVerComo ? ' vendo-como' : ''}">
                     ${avatarHtml}
-                    <div class="sidebar-user-info">
+                    <div class="sidebar-user-info"${window.cortexProfissionalReal ? ' id="sidebar-user-menu" role="button" tabindex="0" title="Opções do usuário"' : ''}>
                         <div class="sidebar-user-name">${escapeHtml(nomeExibido)}</div>
-                        <div class="sidebar-user-perfil">${escapeHtml(perfilLabel)}</div>
+                        <div class="sidebar-user-perfil">${window.cortexVerComo ? '👁 Vendo como · ' : ''}${escapeHtml(perfilLabel)}</div>
                     </div>
                     <button class="sidebar-user-logout" id="sidebar-logout-btn" title="Sair">
                         ${LOGOUT_SVG}
@@ -526,6 +526,17 @@ window.CortexSidebar = (function() {
         `;
 
         setupEventos();
+
+        // nome na sidebar: menu do usuário com "ver o sistema como…" (admin clínico)
+        const menuUsuario = document.getElementById('sidebar-user-menu');
+        if (menuUsuario) {
+            const abrir = () => { if (window.CortexVerComo) window.CortexVerComo.abrirMenu(menuUsuario); };
+            menuUsuario.addEventListener('click', abrir);
+            menuUsuario.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } });
+        }
+
+        // No "ver como" o chat e os avisos de mensagem ficam de fora (são pessoais)
+        if (window.cortexVerComo) { iniciarNotificacoes(); return; }
 
         // som e aviso do navegador quando chega algo (antes do sino e do chat)
         iniciarAvisos();

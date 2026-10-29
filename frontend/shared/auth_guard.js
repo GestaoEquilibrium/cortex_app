@@ -135,6 +135,25 @@
             try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), dados: profissional })); } catch (e) {}
         }
 
+        // ── Ver como (admin clínico vê o sistema como outra pessoa) ─────────
+        // O banco passa a responder como a pessoa escolhida (current_profissional_id
+        // e current_perfil). Aqui a tela também vira a dela e nada é gravado.
+        if (profissional.perfil === 'admin_clinico') {
+            let estado = null;
+            try {
+                const { data } = await window.cortexClient.rpc('ver_como_estado');
+                if (data && data.ativo && data.alvo && data.alvo.id) estado = data;
+            } catch (e) { /* SQL do "ver como" ainda não rodado: segue normal */ }
+            window.cortexProfissionalReal = profissional;
+            if (estado) {
+                window.cortexVerComo = estado;
+                profissional = estado.alvo;
+                ativarSoLeitura();
+                if (/\/chat\//.test(path)) { bloquearChat(); return; }
+            }
+            carregarVerComo(caminhoRaiz);
+        }
+
         window.cortexProfissional = profissional;
 
         // Marca que auth está pronto (flag persistente)
@@ -197,3 +216,83 @@ window.cortexOnAuthReady = function (callback) {
         window.addEventListener('cortex:auth-ready', (ev) => callback(ev.detail || {}), { once: true });
     }
 };
+
+// ============================================================================
+// VER COMO — modo só leitura e carregamento da tela (shared/ver_como.js)
+// ============================================================================
+// Enquanto o admin clínico vê o sistema como outra pessoa, tudo o que gravaria
+// no banco é barrado aqui: insert/update/upsert/delete, rpcs que salvam,
+// envio de arquivo e funções do servidor. Assim nada sai com o nome da outra
+// pessoa. As leituras seguem normais (e o banco responde como ela).
+function ativarSoLeitura() {
+    const c = window.cortexClient;
+    if (!c || c.__soLeitura) return;
+    c.__soLeitura = true;
+    const MSG = 'Você está vendo como outra pessoa: nada é salvo. Volte para o seu usuário para alterar.';
+    let ultimoAviso = 0;
+    const avisar = () => {
+        const n = Date.now();
+        if (n - ultimoAviso < 2500) return;
+        ultimoAviso = n;
+        if (window.CortexUI && window.CortexUI.toast) window.CortexUI.toast(MSG, 'info');
+    };
+    const resultado = () => ({ data: null, error: { message: MSG, code: 'VER_COMO' } });
+    // devolve algo que aceita os mesmos encadeamentos (.select().single()…) e termina em erro
+    const barrado = () => {
+        avisar();
+        const r = resultado(), t = {};
+        ['select', 'eq', 'neq', 'in', 'is', 'match', 'single', 'maybeSingle', 'order', 'limit', 'filter', 'not', 'or',
+         'gt', 'gte', 'lt', 'lte', 'like', 'ilike', 'contains', 'range', 'returns', 'throwOnError', 'csv', 'abortSignal']
+            .forEach(k => { t[k] = () => t; });
+        t.then = (ok, ko) => Promise.resolve(r).then(ok, ko);
+        t.catch = ko => Promise.resolve(r).catch(ko);
+        return t;
+    };
+    const from0 = c.from.bind(c);
+    c.from = function (tabela) {
+        const q = from0(tabela);
+        ['insert', 'update', 'upsert', 'delete'].forEach(m => { q[m] = barrado; });
+        return q;
+    };
+    const ESCRITA = /(salvar|criar|inserir|atualizar|alterar|editar|excluir|apagar|deletar|remover|registrar|gravar|marcar|enviar|aprovar|negar|revogar|vincular|finalizar|liberar|gerar|cadastrar|importar|reabrir|arquivar|mover|aceitar|recusar|definir|trocar|confirmar|cancelar|corrigir|calcular|upsert|insert|update|delete|set_|add_|novo|nova)/i;
+    const rpc0 = c.rpc.bind(c);
+    c.rpc = function (nome, args, opts) {
+        if (!/^ver_como_/.test(nome) && ESCRITA.test(nome)) return barrado();
+        return rpc0(nome, args, opts);
+    };
+    try {
+        const st = c.storage, stFrom = st.from.bind(st);
+        st.from = function (b) {
+            const x = stFrom(b);
+            ['upload', 'update', 'remove', 'move', 'copy', 'uploadToSignedUrl'].forEach(m => { x[m] = async () => { avisar(); return resultado(); }; });
+            return x;
+        };
+        Object.defineProperty(c, 'storage', { value: st, configurable: true });
+    } catch (e) { /* storage indisponível */ }
+    try {
+        const fn = c.functions;
+        fn.invoke = async () => { avisar(); return resultado(); };
+        Object.defineProperty(c, 'functions', { value: fn, configurable: true });
+    } catch (e) { /* functions indisponível */ }
+}
+
+// O chat é pessoal: não abre no "ver como".
+function bloquearChat() {
+    const pintar = () => {
+        document.body.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:Inter,system-ui,sans-serif;background:#F7F8FC;color:#0F172A;text-align:center">
+            <div style="max-width:420px"><div style="font-size:34px">💬</div><h1 style="font-size:20px;margin:10px 0 6px">O chat não abre no modo “ver como”</h1>
+            <p style="color:#475569;line-height:1.6;margin:0 0 18px">As conversas são pessoais. Volte para o seu usuário para usar o chat.</p>
+            <a href="../dashboard.html" style="display:inline-block;padding:10px 18px;border-radius:10px;background:#1F3864;color:#fff;text-decoration:none;font-weight:700">Ir para o início</a></div></div>`;
+    };
+    if (document.body) pintar(); else document.addEventListener('DOMContentLoaded', pintar);
+}
+
+// Carrega a faixa "vendo como" e o menu do nome (só para o admin clínico).
+function carregarVerComo(raiz) {
+    if (window.CortexVerComo || document.querySelector('script[data-cortex-ver-como]')) return;
+    const s = document.createElement('script');
+    s.src = raiz + 'shared/ver_como.js?v=vc1';
+    s.setAttribute('data-cortex-ver-como', '1');
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+}

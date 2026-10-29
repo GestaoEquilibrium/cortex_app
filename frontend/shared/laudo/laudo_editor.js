@@ -501,6 +501,7 @@
             const pend = new Set(((st.validacao || {}).pendencias || []).map(x => String(x.secao)));
             return `<h3>Seções</h3><ol class="ed-arvore">${(doc().secoes || []).map((s, k, arr) => `
                 <li class="${s.oculta ? 'oculta' : ''}" data-secao="${esc(s.id)}">
+                    <span class="ed-arv-alca" title="Arraste para mudar a ordem da seção">⠿</span>
                     <a href="#sec-${esc(s.id)}" data-ir="${esc(s.id)}"><i>${esc(s.n)}</i><span>${esc(cap(s.titulo))}</span>${pend.has(String(s.n)) ? '<b class="lo-ponto" title="Tem pendência"></b>' : ''}</a>
                     <span class="ed-arv-acoes">
                         <button data-sec-acao="subir" ${k === 0 ? 'disabled' : ''} title="Subir seção">↑</button>
@@ -607,6 +608,11 @@
             if (arv) arv.addEventListener('click', ev => {
                 const bt = ev.target.closest('[data-sec-acao]'); if (!bt) return;
                 acaoSecao(bt.dataset.secAcao, bt.closest('li').dataset.secao);
+            });
+            if (arv) arrastarLista(arv, 'li', '.ed-arv-alca', (de, para) => {
+                const secs = doc().secoes, [s] = secs.splice(de, 1);
+                secs.splice(para, 0, s);
+                mudouEstrutura({ acao: 'mover', bloco_id: s.id, antes: { posicao: de } });
             });
             const ns = raiz.querySelector('#ed-nova-sec'); if (ns) ns.addEventListener('click', () => editarSecao(null));
             ligarLixeira(raiz);
@@ -1229,20 +1235,51 @@
             m.addEventListener('click', ev => { if (ev.target === m || ev.target.closest('[data-fechar]')) m.remove(); });
             return m;
         }
+        function crescer(t) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, 150) + 'px'; }
+        /**
+         * Arrastar para reordenar: segura a alça e a linha acompanha o mouse, trocando de lugar
+         * com as vizinhas ao passar da metade delas. aoSoltar(de, para, item) quando muda de posição.
+         */
+        function arrastarLista(cont, itemSel, alcaSel, aoSoltar) {
+            cont.addEventListener('pointerdown', ev => {
+                const alca = ev.target.closest(alcaSel); if (!alca || !cont.contains(alca) || ev.button > 0) return;
+                const item = alca.closest(itemSel); if (!item) return;
+                ev.preventDefault();
+                const irmaos = () => [...item.parentNode.children].filter(x => x.matches(itemSel));
+                const de = irmaos().indexOf(item);
+                item.classList.add('ed-arrastando'); document.body.classList.add('ed-arrastando-lista');
+                try { alca.setPointerCapture(ev.pointerId); } catch (e) { /* sem captura */ }
+                const mover = e => {
+                    for (let n = 0; n < 50; n++) {
+                        const lista = irmaos(), k = lista.indexOf(item), ant = lista[k - 1], prox = lista[k + 1];
+                        if (ant) { const r = ant.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { item.parentNode.insertBefore(item, ant); continue; } }
+                        if (prox) { const r = prox.getBoundingClientRect(); if (e.clientY > r.top + r.height / 2) { item.parentNode.insertBefore(prox, item); continue; } }
+                        break;
+                    }
+                };
+                const soltar = () => {
+                    alca.removeEventListener('pointermove', mover); alca.removeEventListener('pointerup', soltar); alca.removeEventListener('pointercancel', soltar);
+                    item.classList.remove('ed-arrastando'); document.body.classList.remove('ed-arrastando-lista');
+                    const para = irmaos().indexOf(item);
+                    if (para !== de && aoSoltar) aoSoltar(de, para, item);
+                };
+                alca.addEventListener('pointermove', mover); alca.addEventListener('pointerup', soltar); alca.addEventListener('pointercancel', soltar);
+            });
+        }
         /**
          * Formulário genérico. campos: { k, rotulo, tipo: texto|area|select|check|linhas, opcoes, colunas, obrigatorio, ajuda }
          */
         function abrirForm(o) {
-            const linhaHtml = (cols, v) => `<tr>${cols.map(c => `<td>${c.tipo === 'select'
+            const linhaHtml = (cols, v) => `<tr><td class="ed-lin-alca" title="Arraste para mudar a ordem">⠿</td>${cols.map(c => `<td>${c.tipo === 'select'
                 ? `<select data-col="${c.k}">${c.opcoes.map(op => `<option value="${esc(op[0])}" ${String((c.normalizar ? c.normalizar(v[c.k]) : v[c.k]) ?? '') === String(op[0]) ? 'selected' : ''}>${esc(op[1])}</option>`).join('')}</select>`
-                : c.tipo === 'area' ? `<textarea data-col="${c.k}" rows="2">${esc(v[c.k] ?? '')}</textarea>` : `<input data-col="${c.k}" value="${esc(v[c.k] ?? '')}">`}</td>`).join('')}
-                <td class="ed-lin-acoes"><button type="button" data-lin="subir" title="Subir">↑</button><button type="button" data-lin="tirar" title="Tirar linha">✕</button></td></tr>`;
+                : c.tipo === 'area' ? `<textarea data-col="${c.k}" rows="1">${esc(v[c.k] ?? '')}</textarea>` : `<input data-col="${c.k}" value="${esc(v[c.k] ?? '')}">`}</td>`).join('')}
+                <td class="ed-lin-acoes"><button type="button" data-lin="subir" title="Subir">↑</button><button type="button" data-lin="descer" title="Descer">↓</button><button type="button" data-lin="tirar" title="Tirar linha">✕</button></td></tr>`;
             const campoHtml = c => {
                 const v = o.valores[c.k];
                 if (c.tipo === 'area') return `<label class="ed-campo">${esc(c.rotulo)}<textarea data-k="${c.k}" rows="${c.linhas || 4}">${esc(v ?? '')}</textarea>${c.ajuda ? `<small>${esc(c.ajuda)}</small>` : ''}</label>`;
                 if (c.tipo === 'select') return `<label class="ed-campo">${esc(c.rotulo)}<select data-k="${c.k}">${c.opcoes.map(op => `<option value="${esc(op[0])}" ${String(v ?? '') === String(op[0]) ? 'selected' : ''}>${esc(op[1])}</option>`).join('')}</select></label>`;
                 if (c.tipo === 'check') return `<label class="ed-campo chk"><input type="checkbox" data-k="${c.k}" ${v ? 'checked' : ''}> ${esc(c.rotulo)}</label>`;
-                if (c.tipo === 'linhas') return `<div class="ed-campo"><span>${esc(c.rotulo)}</span><table class="ed-linhas" data-k="${c.k}"><thead><tr>${c.colunas.map(cc => `<th>${esc(cc.rotulo)}</th>`).join('')}<th></th></tr></thead><tbody>${(v || []).map(x => linhaHtml(c.colunas, x)).join('')}</tbody></table><button type="button" class="ed-link" data-add="${c.k}">+ Linha</button></div>`;
+                if (c.tipo === 'linhas') return `<div class="ed-campo"><span>${esc(c.rotulo)}</span><table class="ed-linhas" data-k="${c.k}"><thead><tr><th></th>${c.colunas.map(cc => `<th>${esc(cc.rotulo)}</th>`).join('')}<th></th></tr></thead><tbody>${(v || []).map(x => linhaHtml(c.colunas, x)).join('')}</tbody></table><button type="button" class="ed-link" data-add="${c.k}">+ Linha</button></div>`;
                 return `<label class="ed-campo">${esc(c.rotulo)}<input data-k="${c.k}" value="${esc(v ?? '')}">${c.ajuda ? `<small>${esc(c.ajuda)}</small>` : ''}</label>`;
             };
             const m = modal(`<h2>${esc(o.titulo)}</h2>${o.texto ? `<p>${esc(o.texto)}</p>` : ''}<form class="ed-form">${o.campos.map(campoHtml).join('')}</form>
@@ -1250,10 +1287,19 @@
                 <div class="lo-modal-acoes"><button class="btn btn-secondary" data-fechar>Cancelar</button><button class="btn btn-primary" id="ef-ok">${esc(o.botao || 'Aplicar')}</button></div>`, o.largo ? 'largo' : '');
             m.addEventListener('click', ev => {
                 const ad = ev.target.closest('[data-add]');
-                if (ad) { const c = o.campos.find(x => x.k === ad.dataset.add); m.querySelector(`table[data-k="${c.k}"] tbody`).insertAdjacentHTML('beforeend', linhaHtml(c.colunas, {})); return; }
+                if (ad) { const c = o.campos.find(x => x.k === ad.dataset.add); const tb = m.querySelector(`table[data-k="${c.k}"] tbody`); tb.insertAdjacentHTML('beforeend', linhaHtml(c.colunas, {})); tb.lastElementChild.querySelectorAll('textarea').forEach(crescer); return; }
                 const li = ev.target.closest('[data-lin]');
-                if (li) { const tr = li.closest('tr'); if (li.dataset.lin === 'tirar') tr.remove(); else if (tr.previousElementSibling) tr.parentNode.insertBefore(tr, tr.previousElementSibling); }
+                if (li) {
+                    const tr = li.closest('tr');
+                    if (li.dataset.lin === 'tirar') tr.remove();
+                    else if (li.dataset.lin === 'descer') { if (tr.nextElementSibling) tr.parentNode.insertBefore(tr.nextElementSibling, tr); }
+                    else if (tr.previousElementSibling) tr.parentNode.insertBefore(tr, tr.previousElementSibling);
+                }
             });
+            // linhas finas: o texto cresce só até o tamanho do que foi escrito; e arrastar pela alça ⠿
+            m.querySelectorAll('.ed-linhas textarea').forEach(crescer);
+            m.addEventListener('input', ev => { if (ev.target.matches('.ed-linhas textarea')) crescer(ev.target); });
+            m.querySelectorAll('table.ed-linhas tbody').forEach(tb => arrastarLista(tb, 'tr', '.ed-lin-alca'));
             const primeiro = m.querySelector('input, textarea, select'); if (primeiro) primeiro.focus();
             m.querySelector('#ef-ok').addEventListener('click', () => {
                 const v = {};

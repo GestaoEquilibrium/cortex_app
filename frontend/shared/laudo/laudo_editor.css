@@ -215,3 +215,23 @@
 .ed-desf button { border: 0; width: 28px; height: 24px; border-radius: 999px; background: transparent; color: #fff; font: 700 15px/1 Inter, sans-serif; cursor: pointer; }
 .ed-desf button:hover:not(:disabled) { background: rgba(255,255,255,.18); }
 .ed-desf button:disabled { opacity: .35; cursor: default; }
+
+/* ── Listas reordenáveis: linhas finas e alça de arrastar (⠿) ── */
+.lo-modal-card .ed-linhas textarea { min-height: 0; height: 32px; font: 13px/1.4 Inter, sans-serif; padding: 6px 8px; border-radius: 8px; resize: none; overflow: hidden; background: #F8FAFC; }
+.ed-linhas td { padding: 2px 3px; vertical-align: top; }
+.ed-linhas input, .ed-linhas select { padding: 6px 8px; height: 32px; }
+.ed-linhas select { min-width: 128px; }
+.ed-linhas tbody tr { transition: background .12s; }
+.ed-linhas tbody tr:hover { background: #F8FAFC; }
+.ed-lin-alca { width: 1%; padding: 0 2px !important; vertical-align: middle !important; color: #94A3B8; font-size: 15px; line-height: 32px; cursor: grab; user-select: none; touch-action: none; text-align: center; }
+.ed-lin-alca:hover { color: #7C4DFF; }
+.ed-lin-acoes { vertical-align: middle !important; }
+.ed-lin-acoes button { width: 22px; height: 22px; font-size: 11px; line-height: 1; margin-left: 1px; color: #64748B; background: transparent; }
+.ed-lin-acoes button:hover { background: #EEF2F7; color: #0F172A; }
+.ed-linhas tr.ed-arrastando { background: #F3EEFF !important; box-shadow: 0 6px 18px -8px rgba(124, 77, 255, .5); position: relative; z-index: 2; }
+.ed-linhas tr.ed-arrastando td { background: #F3EEFF; }
+body.ed-arrastando-lista, body.ed-arrastando-lista * { cursor: grabbing !important; user-select: none; }
+.ed-arv-alca { position: absolute; left: -14px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 13px; cursor: grab; opacity: 0; transition: opacity .15s; touch-action: none; user-select: none; padding: 4px 2px; }
+.ed-arvore li:hover .ed-arv-alca { opacity: 1; }
+.ed-arvore li.ed-arrastando { background: #F3EEFF; border-radius: 8px; box-shadow: 0 6px 18px -8px rgba(124, 77, 255, .5); }
+.ed-arvore li.ed-arrastando .ed-arv-alca { opacity: 1; color: #7C4DFF; }

@@ -1,7 +1,6 @@
 /* ===== Escalas complementares (GDS-15 · PHQ-9 · GAD-7 · ZARIT) — laudo =====
    Complementa a base laudo-* do raadsr_resultado.css. Cor de destaque da escala em --rast-cor. */
 
-.rast-laudo .laudo-header { border-bottom: 4px solid var(--rast-cor, #2F6FED); }
 
 /* ── Níveis em etapas (Modelo 2) ── */
 .rast-niveis-bloco { margin: 4px 0 14px; }

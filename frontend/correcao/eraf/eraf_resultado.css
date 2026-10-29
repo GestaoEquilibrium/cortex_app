@@ -8,18 +8,7 @@
   --eraf-baixa:#0d9488; --eraf-baixa-d:#0f766e;
 }
 
-/* ---- Header com gradiente navy→roxo ---- */
-.laudo .laudo-header{
-  background:linear-gradient(120deg,var(--eraf-navy) 0%, var(--eraf-roxo) 78%, var(--eraf-roxo2) 100%)!important;
-  position:relative; overflow:hidden;
-}
-.laudo .laudo-header::after{
-  content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;
-  background:radial-gradient(circle,rgba(124,77,255,.35),transparent 70%);pointer-events:none;
-}
-.laudo .laudo-header-logo{
-  background:linear-gradient(135deg,#7c4dff,#4c1d95);box-shadow:0 6px 18px rgba(76,29,149,.5);
-}
+/* Cabeçalho: o padrão de todos os testes (raadsr_resultado.css · painel escuro) */
 
 /* ---- Escore Geral: painel-herói ---- */
 .eraf-geral{

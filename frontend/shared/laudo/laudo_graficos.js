@@ -54,7 +54,7 @@
         return `<div class="cx-cab"><div class="cx-cab-esq"><span class="cx-ico" aria-hidden="true">${ICONE}</span><div>
             <p class="cx-supra">${esc(o.supra || 'Relatório Neuropsicológico')}</p><p class="cx-tit">${esc(o.titulo)}</p>
             ${(o.sub || []).filter(Boolean).map(s => `<p class="cx-sub">${esc(s)}</p>`).join('')}</div></div>
-            <div class="cx-cab-dir"><p class="cx-supra">${esc(o.rot)}</p><p class="cx-valor">${o.valor}</p>${o.nota ? `<p class="cx-sub">${esc(o.nota)}</p>` : ''}</div></div>`;
+            ${o.rot || o.valor || o.nota ? `<div class="cx-cab-dir"><p class="cx-supra">${esc(o.rot)}</p><p class="cx-valor">${o.valor}</p>${o.nota ? `<p class="cx-sub">${esc(o.nota)}</p>` : ''}</div>` : ''}</div>`;
     }
 
     // ── WECHSLER ──────────────────────────────────────────────────────────────
@@ -556,12 +556,26 @@
         const ap = todas.filter(a => nomes.includes(a.sigla));
         return ap.find(a => a.corrigida) || ap[0] || null;
     }
-    function cabecalhoSimples(sig, banco) {
+    /** O bloco traz os dados do cabeçalho (Gerador, para teste sem tela no CORTEX, ou editados no laudo)? */
+    const CAMPOS_CAB = ['nome', 'descricao', 'rotulo', 'valor', 'maximo', 'nota'];
+    const temCabManual = op => CAMPOS_CAB.some(k => op && op[k] != null && String(op[k]).trim() !== '');
+    function cabecalhoSimples(sig, banco, op) {
+        op = op || {};
         const d = ((banco || {}).resultados || {})[sig];
         if (C().SIGLAS_DO_CORTEX.includes(sig) && d && !d.erro) return null;   // WAIS/WISC/RAVLT/FDT/BFP: cabeçalho do modelo
         const a = aplicacaoDe(sig, banco);
-        if (!a) return null;
-        return cabecalho({ titulo: sig, sub: [a.nome && a.nome !== sig ? a.nome : null], rot: '', valor: '' });
+        const manual = temCabManual(op);
+        if (!a && !manual) return null;
+        // Cabeçalho montado com as informações do teste: nome, linha de descrição e o resultado principal
+        const txt = v => v == null ? '' : String(v).trim();
+        const nome = txt(op.nome) || (a && a.nome && a.nome !== sig ? a.nome : '');
+        const valor = txt(op.valor);
+        return cabecalho({
+            titulo: txt(op.titulo) || sig, sub: [nome || null, txt(op.descricao) || null],
+            rot: txt(op.rotulo) || (valor ? 'Resultado' : ''),
+            valor: valor ? esc(valor) + (txt(op.maximo) ? `<small>/${esc(txt(op.maximo))}</small>` : '') : '',
+            nota: txt(op.nota)
+        });
     }
 
     // Teste sem as partes da tela: diz o que falta fazer (lançar, corrigir ou trazer as figuras).
@@ -601,7 +615,7 @@
         }
         const sig = b.sigla;
         if (figurasDe(b)) return null;
-        if (b.vista === 'cabecalho' && cabecalhoSimples(sig, banco)) return null;
+        if (b.vista === 'cabecalho' && cabecalhoSimples(sig, banco, b.opcoes)) return null;
         // Escalas e demais testes: só as partes da tela de correção (sem desenho próprio).
         if (!C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo') { const m = motivoSemFigura(sig, banco); if (m) return m; }
         if (b.vista === 'figura') return `${sig}: figura da tela de correção ainda não capturada`;
@@ -642,13 +656,18 @@
             if (m) return aviso(esc(m) + '.', b.sigla);
         }
         const sig = b.sigla, op = b.opcoes || {};
+        // Cabeçalho com os dados escritos (Gerador ou editor): vale mesmo sem tela de correção no CORTEX
+        if (!extra.online && b.vista === 'cabecalho' && temCabManual(op)) {
+            const cm = cabecalhoSimples(sig, banco, op);
+            if (cm) return `<div class="resultado" data-sigla="${esc(sig)}" data-vista="cabecalho" data-origem="pacote">${cm}${op.legenda ? `<p class="cx-leg">${esc(op.legenda)}</p>` : ''}</div>`;
+        }
         const figs = extra.online ? null : figurasDe(b);
         if (figs) return figurasHtml(b, figs);
         if (b.vista === 'figura') return aviso(`${esc(sig)}: figura da tela de correção ainda não capturada. Use 📷 Figuras dos testes.`, sig);
         if (!C().vistasDe(sig).includes(b.vista)) return aviso(`${esc(sig)}: componente ainda não construído (vista "${esc(b.vista)}").`, sig);
         const d = ((banco || {}).resultados || {})[sig];
         if (b.vista === 'cabecalho') {
-            const cs = cabecalhoSimples(sig, banco);
+            const cs = cabecalhoSimples(sig, banco, op);
             if (cs) return `<div class="resultado" data-sigla="${esc(sig)}" data-vista="cabecalho" data-origem="${extra.congelado ? 'snapshot' : 'banco'}">${cs}${op.legenda ? `<p class="cx-leg">${esc(op.legenda)}</p>` : ''}</div>`;
         }
         if (!extra.online && !C().SIGLAS_DO_CORTEX.includes(sig) && b.vista !== 'resumo') { const m = motivoSemFigura(sig, banco); if (m) return aviso(esc(m) + '.', sig); }
@@ -686,5 +705,5 @@
         return r ? { valor: r.valor, rotulo: r.principal, sub: '', classe: r.classificacao } : null;
     }
 
-    window.LaudoGraf = { render, indisponivel, paraOnline, destaque, usarFiguras, figurasDaSigla, figurasDe, selo, tom, classComp, classPond, SUBTESTES, FACETAS, NOME_IDX };
+    window.LaudoGraf = { render, temCabManual, CAMPOS_CAB, indisponivel, paraOnline, destaque, usarFiguras, figurasDaSigla, figurasDe, selo, tom, classComp, classPond, SUBTESTES, FACETAS, NOME_IDX };
 })();

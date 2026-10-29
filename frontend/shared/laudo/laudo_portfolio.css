@@ -756,3 +756,55 @@ html.ap-aberta, html.ap-aberta body { overflow: hidden; }
 .ap-ctrl .ap-cont { font: 700 14px/1 var(--f-texto); color: var(--suave); padding: 0 8px; min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
 .ap-ctrl > i { width: 1px; height: 22px; background: var(--borda-forte); margin: 0 4px; }
 @media (prefers-reduced-motion: reduce) { .ap-tela, .ap-holo, .ap-prog i { transition: none; } }
+
+/* WAIS / WISC · painel moderno no online (escuro e creme) */
+.port .p-graf .imp .cx-ga, .port .p-graf .imp .cx-pp, .port .p-graf .imp .cx-pl, .port .p-graf .imp .cx-wts {
+    --g-tx: var(--texto); --g-su: var(--suave); --g-ap: var(--apagado); --g-ln: var(--borda); --g-nv: rgba(232, 238, 250, .75); --g-anel: #0A1226; --g-tr: rgba(148, 178, 230, .1);
+    --g-fx: rgba(92, 201, 211, .1); --g-fxl: rgba(159, 176, 207, .45);
+    --z-eb: rgba(242, 112, 107, .13); --z-l: rgba(242, 112, 107, .07); --z-mi: rgba(245, 181, 68, .09); --z-m: rgba(76, 141, 246, .09); --z-ms: rgba(76, 208, 138, .06); --z-s: rgba(76, 208, 138, .1); --z-vs: rgba(76, 208, 138, .15);
+}
+.port .p-graf .imp .cx-ga, .port .p-graf .imp .cx-pp { padding: 16px 18px 12px; }
+.port .p-graf .imp .cx-ga-esc, .port .p-graf .imp .cx-ga-l, .port .p-graf .imp .cx-ga-zr { grid-template-columns: 200px minmax(0, 1fr) 128px; gap: 12px; }
+.port .p-graf .imp .cx-ga-l { height: 36px; font-size: 12.5px; }
+.port .p-graf .imp .cx-ga-n b { font-size: 14px; min-width: 34px; }
+.port .p-graf .imp .cx-ga-esc i { font-size: 10.5px; } .port .p-graf .imp .cx-ga-et { height: 18px; }
+.port .p-graf .imp .cx-ga-g, .port .p-graf .imp .cx-pp-g { font-size: 10px; margin: 12px 0 6px; }
+.port .p-graf .imp .cx-ga-p { font-size: 11.5px; padding: 3px 8px; border-width: 3px; }
+.port .p-graf .imp .cx-ga-zr .cx-ga-et { height: 26px; } .port .p-graf .imp .cx-ga-zr em { font-size: 9.5px; } .port .p-graf .imp .cx-ga-zr em.b { top: 12px; }
+.port .p-graf .imp .cx-pp-esc, .port .p-graf .imp .cx-pp-l { grid-template-columns: 38px 170px minmax(0, 1fr) 26px 128px; gap: 10px; }
+.port .p-graf .imp .cx-pp-l { height: 28px; font-size: 12.5px; }
+.port .p-graf .imp .cx-pp-et { height: 16px; } .port .p-graf .imp .cx-pp-et i { font-size: 10px; }
+.port .p-graf .imp .cx-pp-t { height: 11px; }
+.port .p-graf .imp .cx-pp-v, .port .p-graf .imp .cx-pp-c, .port .p-graf .imp .cx-ga-n b { filter: brightness(1.45) saturate(.9); }
+.port .p-graf .imp .cx-pl .pl-fx { fill: rgba(92, 201, 211, .09); }
+.port .p-graf .imp .cx-pl .pl-ln { stroke: var(--turquesa); stroke-width: 2.6; filter: drop-shadow(0 0 5px rgba(92, 201, 211, .55)); }
+.port .p-graf .imp .cx-pl .pl-vl { fill: var(--texto); font-size: 11.5px; }
+.port .p-graf .imp .cx-pl .pl-gr { fill: var(--suave); font-size: 10px; }
+.port .p-graf .imp .cx-pl .pl-nm { fill: var(--apagado); font-size: 9.5px; }
+.port .p-graf .imp .cx-pl .g-cod { fill: var(--texto); }
+.port .p-graf .imp .cx-ga-l:hover, .port .p-graf .imp .cx-pp-l:hover { background: rgba(148, 178, 230, .06); border-radius: 8px; }
+.port .p-graf .imp .cx-wts { grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr; gap: 10px; }
+.port .p-graf .imp .cx-wt { background: rgba(8, 15, 32, .55); border-color: var(--borda); border-radius: 16px; padding: 14px 14px 16px; }
+.port .p-graf .imp .cx-wt small { filter: brightness(1.45); font-size: 10.5px; } .port .p-graf .imp .cx-wt-n { font-size: 11px; color: var(--suave); min-height: 28px; }
+.port .p-graf .imp .cx-wt b { color: var(--texto); font-size: 30px; font-family: var(--f-titulo); }
+.port .p-graf .imp .cx-wt.main { background: linear-gradient(140deg, rgba(47, 111, 237, .55), rgba(92, 201, 211, .35)); }
+.port.creme .p-graf .imp .cx-ga, .port.creme .p-graf .imp .cx-pp, .port.creme .p-graf .imp .cx-pl, .port.creme .p-graf .imp .cx-wts {
+    --g-nv: #1F3864; --g-anel: #FFFCF4; --g-tr: rgba(31, 56, 100, .08); --g-fx: rgba(31, 56, 100, .07); --g-fxl: rgba(31, 56, 100, .35);
+    --z-eb: #FBEDEA; --z-l: #FCF2EE; --z-mi: #FCF5E3; --z-m: #EEF1F6; --z-ms: #EEF6EE; --z-s: #E6F2E6; --z-vs: #DCEDDC;
+}
+.port.creme .p-graf .imp .cx-pp-v, .port.creme .p-graf .imp .cx-pp-c, .port.creme .p-graf .imp .cx-ga-n b, .port.creme .p-graf .imp .cx-wt small { filter: none; }
+.port.creme .p-graf .imp .cx-pl .pl-fx { fill: rgba(31, 56, 100, .07); }
+.port.creme .p-graf .imp .cx-pl .pl-ln { stroke: #1F3864; filter: none; }
+.port.creme .p-graf .imp .cx-pl .pl-vl { fill: var(--c); }
+.port.creme .p-graf .imp .cx-wt { background: rgba(255, 252, 244, .82); }
+.port.creme .p-graf .imp .cx-wt b { color: #14254A; }
+.port.creme .p-graf .imp .cx-wt.main { background: linear-gradient(140deg, #14254A, #2E3F86); }
+.port.creme .p-graf .imp .cx-wt.main b { color: #fff; }
+.ap-palco.holo .ap-tela.ativa .ap-graf .cx-ga-esc, .ap-palco.holo .ap-tela.ativa .ap-graf .cx-ga-zr, .ap-palco.holo .ap-tela.ativa .ap-graf .cx-ga-g, .ap-palco.holo .ap-tela.ativa .ap-graf .cx-pp-esc, .ap-palco.holo .ap-tela.ativa .ap-graf .cx-pp-g { opacity: .3; }
+@media (max-width: 640px) {
+    .port .p-graf .imp .cx-ga-esc, .port .p-graf .imp .cx-ga-l, .port .p-graf .imp .cx-ga-zr { grid-template-columns: 44px minmax(0, 1fr) 0; gap: 8px; }
+    .port .p-graf .imp .cx-ga-n span, .port .p-graf .imp .cx-ga-l .selo { display: none; }
+    .port .p-graf .imp .cx-pp-esc, .port .p-graf .imp .cx-pp-l { grid-template-columns: 30px 0 minmax(0, 1fr) 22px 104px; gap: 8px; }
+    .port .p-graf .imp .cx-pp-n { visibility: hidden; }
+    .port .p-graf .imp .cx-wts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .port .p-graf .imp .cx-wt.main { grid-column: 1 / -1; }
+}

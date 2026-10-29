@@ -982,7 +982,7 @@
                 </div>
                 <div class="lo-modal-acoes"><button class="btn btn-secondary" data-fechar>Cancelar</button><button class="btn btn-primary" id="er-ok">${existente ? 'Aplicar' : 'Inserir'}</button></div>`, 'largo ed-res-modal');
             const $ = id => m.querySelector('#' + id);
-            const NOMES = { indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes', intervalos: 'Intervalos de confiança', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', cabecalho: 'Só o cabeçalho', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas' };
+            const NOMES = { indice: 'Cartão de um índice', qit_icg: 'QIT e ICG', perfil_subtestes: 'Perfil de subtestes (barras)', perfil_linha: 'Perfil de subtestes (linha)', cartoes: 'Cartões (QI Total e índices)', intervalos: 'Índices e QI (intervalos de confiança)', discrepancias: 'Discrepâncias', tabela_subtestes: 'Tabela de subtestes', resumo: 'Resumo em uma linha', cartao: 'Cartão completo', cabecalho: 'Só o cabeçalho', curva: 'Curva', tabela: 'Tabela', barras: 'Barras', fatores: 'Fatores', facetas: 'Facetas' };
             let trazendo = false;
             function encherPartes() {
                 const sig = $('er-sigla').value;

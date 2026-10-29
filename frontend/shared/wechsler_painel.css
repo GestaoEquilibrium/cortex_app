@@ -1,0 +1,169 @@
+/* ============================================================================
+   CORTEX · Painel moderno do WAIS-III e do WISC-IV  (frontend/shared/wechsler_painel.css)
+   Vale dentro de .laudo.cxp (tela de resultados). O cabeçalho azul-marinho
+   (.laudo-header) continua o mesmo de sempre: ele também vai para o laudo.
+   Sem color-mix e sem sombra interna: o PDF e o 📋 passam pelo html2canvas.
+   ============================================================================ */
+
+.laudo.cxp {
+    --cxp-fundo: #F7F8FC; --cxp-tinta: #0F172A; --cxp-suave: #475569; --cxp-apagado: #94A3B8; --cxp-linha: #E2E8F0;
+    --cxp-navy: #1F3864; --cxp-navy-2: #14254A;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+.laudo.cxp .laudo-body { background: var(--cxp-fundo); padding: 20px 22px 24px; display: grid; gap: 16px; }
+.laudo.cxp .num, .laudo.cxp .cxp-cv, .laudo.cxp td { font-variant-numeric: tabular-nums; }
+
+/* cartões das seções */
+.cxp-card { background: #fff; border-radius: 18px; padding: 18px 20px; box-shadow: 0 1px 0 #E2E8F0, 0 14px 30px -24px rgba(15, 23, 42, .4); min-width: 0; }
+.laudo.cxp .laudo-secao-titulo { margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font: 800 15px/1.2 'Inter', sans-serif; color: var(--cxp-navy-2); letter-spacing: -.005em; }
+.laudo.cxp .laudo-secao-titulo .laudo-secao-hint { margin: 0; font: 500 11px/1.3 'Inter', sans-serif; color: var(--cxp-apagado); text-align: right; text-transform: none; letter-spacing: 0; }
+.laudo.cxp .laudo-secao-titulo.cxp-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
+.cxp-duas > :only-child { grid-column: 1 / -1; }
+.cxp-duas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.cxp-vazio { margin: 0; font-size: 12.5px; color: var(--cxp-apagado); }
+.cxp-leg { margin: 10px 0 0; font-size: 10.5px; color: var(--cxp-apagado); text-align: center; }
+.cxp-pil { display: inline-block; font: 700 10px/1 'Inter', sans-serif; padding: 5px 9px; border-radius: 99px; border: 1px solid; white-space: nowrap; justify-self: start; }
+.cxp-pil-main { color: #fff; background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .38); }
+.laudo.cxp table { width: 100%; border-collapse: collapse; }
+.laudo.cxp .c { text-align: center; }
+
+/* identificação */
+.laudo.cxp .laudo-identificacao { background: none; border: 0; border-radius: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 16px; }
+.laudo.cxp .laudo-identif-item { font-size: 12.5px; line-height: 1.35; min-width: 0; }
+.laudo.cxp .laudo-identif-label { display: block; margin: 0 0 4px; font: 700 9.5px/1 'Inter', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--cxp-apagado); }
+.laudo.cxp .laudo-identif-valor { font-weight: 600; color: var(--cxp-tinta); overflow-wrap: anywhere; }
+
+/* texto livre (motivo, observações, recomendações) */
+.laudo.cxp .cxp-card .wais-texto-bloco, .laudo.cxp .cxp-card .wisc-texto-bloco { background: none; border: 0; padding: 0; margin: 0; font-size: 13px; line-height: 1.7; color: #334155; white-space: pre-wrap; }
+
+/* 1. cartões do topo */
+.laudo.cxp .cxp-hero.laudo-cards { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr; gap: 10px; margin: 0; }
+.cxp-tile { background: #fff; border-radius: 16px; padding: 14px 14px 16px; box-shadow: 0 1px 0 #E2E8F0, 0 10px 24px -18px rgba(15, 23, 42, .35); display: grid; gap: 6px; align-content: start; position: relative; overflow: hidden; color: var(--cxp-tinta); text-align: left; }
+.cxp-tile small { font: 800 10px/1 'Inter', sans-serif; letter-spacing: .1em; }
+.cxp-tile .cxp-tile-nome { font-size: 10.5px; color: var(--cxp-suave); line-height: 1.25; min-height: 26px; }
+.cxp-tile b { font: 800 30px/1 'Inter', sans-serif; color: var(--cxp-navy-2); letter-spacing: -.02em; }
+.cxp-tile .cxp-tile-barra { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; }
+.cxp-tile .cxp-tile-sem { font-size: 10.5px; color: var(--cxp-apagado); }
+.cxp-tile.main { background: linear-gradient(140deg, #14254A, #2E3F86); color: #fff; }
+.cxp-tile.main small, .cxp-tile.main b { color: #fff; }
+.cxp-tile.main .cxp-tile-nome { color: rgba(255, 255, 255, .8); }
+
+/* 2. conversão PB → ponderado */
+.cxp-matriz { overflow-x: auto; }
+.cxp-cv { border-collapse: separate !important; border-spacing: 0; }
+.cxp-cv th { padding: 0 4px 10px; border: 0; vertical-align: bottom; text-align: center; background: none; }
+.cxp-cv th.esq { text-align: left; }
+.cxp-cv .cab-idx { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.cxp-cv .cab-idx b { font: 800 11px/1 'Inter', sans-serif; padding: 5px 8px; border-radius: 8px; border: 1px solid; letter-spacing: .04em; }
+.cxp-cv .cab-idx small { font: 600 9px/1.1 'Inter', sans-serif; color: var(--cxp-apagado); white-space: nowrap; }
+.cxp-cv .cab-txt { font: 700 9.5px/1 'Inter', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--cxp-apagado); }
+.cxp-cv .grupo-cab th { padding: 0 4px 8px; }
+.cxp-cv .grupo-cab th span { display: block; font: 800 9px/1 'Inter', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--cxp-apagado); border-bottom: 1px solid var(--cxp-linha); padding-bottom: 6px; }
+.cxp-cv td { padding: 5px 4px; border-bottom: 1px solid #F3F5F9; text-align: center; vertical-align: middle; font-size: 12.5px; }
+.cxp-cv td.sub { text-align: left; padding-left: 12px; position: relative; white-space: nowrap; }
+.cxp-cv td.sub .acento { position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; border-radius: 2px; }
+.cxp-cv td.sub b { font-weight: 600; font-size: 12.5px; color: var(--cxp-tinta); }
+.cxp-cv td.sub span { font: 700 10px/1 'Inter', sans-serif; color: var(--cxp-apagado); margin-left: 4px; }
+.cxp-cv td.sub em { font: 600 9px/1 'Inter', sans-serif; font-style: normal; color: var(--cxp-apagado); margin-left: 6px; padding: 2px 5px; border-radius: 5px; background: #F1F5F9; }
+.cxp-cv tr.dom td { padding: 12px 4px 4px 12px; text-align: left; border: 0; font: 800 9.5px/1 'Inter', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.cxp-cv tr.dom:first-child td { padding-top: 4px; }
+.cxp-cv .pb { color: var(--cxp-apagado); font-weight: 600; }
+.cxp-cv .pond { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid; font: 800 13px/1 'Inter', sans-serif; box-sizing: border-box; }
+.cxp-cv .chip { display: inline-block; min-width: 30px; font: 800 12px/1 'Inter', sans-serif; padding: 6px 7px; border-radius: 8px; color: #fff; box-sizing: border-box; }
+.cxp-cv .chip.sup { background: transparent; border: 1.5px solid; padding: 4.5px 5.5px; }
+.cxp-cv .vz { display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #E2E8F0; }
+.cxp-cv td.sep, .cxp-cv th.sep { border-left: 1px dashed var(--cxp-linha); }
+.cxp-cv tr.soma td { border: 0; padding-top: 12px; }
+.cxp-cv tr.soma td.rot { text-align: right; padding-right: 10px; font: 800 10px/1 'Inter', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--cxp-navy); }
+.cxp-cv tr.soma .tot { display: inline-block; min-width: 36px; font: 800 15px/1 'Inter', sans-serif; padding: 8px 6px; border-radius: 10px; border: 1.5px solid; box-sizing: border-box; }
+.cxp-cv-leg { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 10.5px; color: var(--cxp-apagado); }
+.cxp-cv-leg span { display: inline-flex; align-items: center; gap: 6px; }
+.cxp-cv-leg i { display: inline-block; width: 16px; height: 12px; border-radius: 4px; background: var(--cxp-navy); box-sizing: border-box; }
+.cxp-cv-leg i.s { background: transparent; border: 1.5px solid var(--cxp-navy); }
+
+/* 3. perfil dos pontos ponderados (barras) */
+.cxp-perfil-pond { display: grid; gap: 4px; }
+.cxp-pp-g { font: 800 9.5px/1 'Inter', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--cxp-navy); padding: 10px 0 5px; border-bottom: 1px solid var(--cxp-linha); margin-bottom: 4px; }
+.cxp-pp-l, .cxp-pp-esc { display: grid; grid-template-columns: 34px 150px minmax(0, 1fr) 26px 124px; gap: 10px; align-items: center; }
+.cxp-pp-l { height: 24px; }
+.cxp-pp-l .cd { font: 800 11px/1 'Inter', sans-serif; }
+.cxp-pp-l .nm { font-size: 11.5px; color: var(--cxp-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cxp-pp-l .tr { position: relative; height: 12px; border-radius: 6px; background: #F1F5F9; }
+.cxp-pp-l .tr .faixa { position: absolute; top: -3px; bottom: -3px; left: 41.667%; width: 16.667%; background: rgba(26, 86, 219, .08); border-left: 1px dashed rgba(31, 56, 100, .35); border-right: 1px dashed rgba(31, 56, 100, .35); }
+.cxp-pp-l .tr .br { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; }
+.cxp-pp-l .vl { font: 800 13px/1 'Inter', sans-serif; text-align: right; }
+.cxp-pp-esc .t { position: relative; height: 14px; }
+.cxp-pp-esc i { position: absolute; transform: translateX(-50%); font: 600 9.5px/1 'Inter', sans-serif; font-style: normal; color: var(--cxp-apagado); }
+
+/* 4. índices e QI (intervalos de confiança) */
+.cxp-ga-esc, .cxp-ga-l, .cxp-ga-grupo, .cxp-ga-zrot { display: grid; grid-template-columns: 186px minmax(0, 1fr) 124px; gap: 12px; align-items: center; }
+.cxp-ga-esc .t, .cxp-ga-zrot .t { position: relative; height: 18px; }
+.cxp-ga-esc i { position: absolute; bottom: 2px; transform: translateX(-50%); font: 600 10px/1 'Inter', sans-serif; font-style: normal; color: var(--cxp-apagado); }
+.cxp-ga-esc i.m { color: var(--cxp-tinta); font-weight: 800; }
+.cxp-ga-grupo { display: block; font: 800 9.5px/1 'Inter', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--cxp-apagado); padding: 10px 0 5px; }
+.cxp-ga-l { height: 34px; }
+.cxp-ga-nome { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.cxp-ga-nome b { font: 800 13px/1 'Inter', sans-serif; min-width: 32px; }
+.cxp-ga-nome span { font-size: 11.5px; color: var(--cxp-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cxp-ga-t { position: relative; height: 100%; }
+.cxp-ga-zonas { position: absolute; inset: 0; display: flex; border-radius: 6px; overflow: hidden; }
+.cxp-ga-zonas span { height: 100%; }
+.cxp-ga-med { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: rgba(31, 56, 100, .55); }
+.cxp-ga-ic { position: absolute; top: 3px; bottom: 3px; border-radius: 8px; border: 1.5px solid; box-sizing: border-box; }
+.cxp-ga-p { position: absolute; top: 50%; transform: translate(-50%, -50%); color: #fff; font: 800 11px/1 'Inter', sans-serif; font-style: normal; padding: 4px 7px; border-radius: 99px; border: 3px solid #fff; }
+.cxp-ga-zrot { margin-top: 6px; }
+.cxp-ga-zrot .t { height: 26px; }
+.cxp-ga-zrot em.b { top: 12px; }
+.cxp-ga-zrot em { position: absolute; top: 0; transform: translateX(-50%); font: 600 9px/1 'Inter', sans-serif; font-style: normal; color: var(--cxp-apagado); white-space: nowrap; }
+
+/* 5. perfil em linha */
+.cxp-perfil-linha svg { width: 100%; height: auto; display: block; }
+
+/* tabelas (índices, detalhamento, discrepâncias) */
+.cxp-tab-qis, .cxp-tab-detalhe, .cxp-discrep { margin-top: 2px; }
+.cxp-tab-qis { margin-top: 18px; }
+.laudo.cxp .cxp-tab-qis th, .laudo.cxp .cxp-tab-detalhe th, .laudo.cxp .cxp-discrep th { padding: 7px 8px; background: none; font: 700 9.5px/1.2 'Inter', sans-serif; color: var(--cxp-apagado); text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--cxp-linha); text-align: left; }
+.laudo.cxp .cxp-tab-qis th.c, .laudo.cxp .cxp-tab-detalhe th.c, .laudo.cxp .cxp-discrep th.c { text-align: center; }
+.laudo.cxp .cxp-tab-qis td, .laudo.cxp .cxp-tab-detalhe td, .laudo.cxp .cxp-discrep td { padding: 7px 8px; border-bottom: 1px solid #F1F5F9; font-size: 12.5px; color: #1E293B; vertical-align: middle; }
+.cxp-tab-qis td:first-child b { font-weight: 800; margin-right: 8px; }
+.cxp-tab-qis td:first-child span { color: var(--cxp-suave); font-size: 11.5px; }
+.cxp-tab-qis td b.num, .cxp-tab-detalhe td b.num { font-size: 14px; font-weight: 800; }
+.cxp-tab-qis td.ic { color: var(--cxp-suave); }
+.cxp-tab-qis tr.quebra td { border-top: 1px dashed var(--cxp-linha); }
+.cxp-tab-detalhe tr.gr td { padding-top: 12px; border: 0; font: 800 9.5px/1 'Inter', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.cxp-tab-detalhe .cod { color: var(--cxp-apagado); font-size: 11px; }
+.cxp-tab-detalhe tfoot td { border: 0; padding-top: 12px; }
+.cxp-tab-detalhe tfoot td.rot { text-align: right; font: 800 10px/1 'Inter', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--cxp-navy); }
+.cxp-discrep td:first-child small { display: block; margin-top: 2px; font-size: 10.5px; color: var(--cxp-apagado); font-weight: 500; }
+.cxp-discrep td small { display: block; margin-top: 2px; font-size: 9.5px; color: var(--cxp-apagado); }
+.cxp-ff-lista { display: grid; gap: 8px; }
+.cxp-ff-item { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: #F7F8FC; font-size: 12.5px; line-height: 1.45; color: #334155; }
+.cxp-ff-item i { width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; font-style: normal; font-weight: 800; color: #fff; flex: none; font-size: 12px; }
+.cxp-ff-item b { color: var(--cxp-tinta); }
+.cxp-ff-item em { font-style: normal; color: var(--cxp-apagado); font-size: 11px; }
+
+/* blocos antigos que continuam dentro dos cartões */
+.laudo.cxp .cxp-card .wais-interp-bloco, .laudo.cxp .cxp-card .wisc-interp-bloco { border: 0; padding: 0; background: none; }
+.laudo.cxp .cxp-card .wais-interp-bloco::before, .laudo.cxp .cxp-card .wisc-interp-bloco::before { display: none; }
+.laudo.cxp .cxp-card .qit-alerta { margin: 14px 0 0; }
+.laudo.cxp .cxp-card .wais-indices-nota, .laudo.cxp .cxp-card .wisc-indices-nota { margin-top: 18px; }
+
+/* rodapé no mesmo fundo */
+.laudo.cxp .laudo-rodape { margin: 0; padding: 16px 36px 24px; background: var(--cxp-fundo); border-top: 0; }
+
+/* PDF */
+.exportando .laudo.cxp .cxp-matriz { overflow: visible; }
+
+@media (max-width: 760px) {
+    .laudo.cxp .laudo-body { padding: 14px 12px 18px; }
+    .cxp-card { padding: 14px 14px; border-radius: 14px; }
+    .cxp-duas { grid-template-columns: minmax(0, 1fr); }
+    .laudo.cxp .cxp-hero.laudo-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .laudo.cxp .cxp-hero .cxp-tile.main { grid-column: 1 / -1; }
+    .laudo.cxp .laudo-identificacao { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cxp-pp-l, .cxp-pp-esc { grid-template-columns: 30px 0 minmax(0, 1fr) 22px 112px; gap: 8px; }
+    .cxp-pp-l .nm { visibility: hidden; }
+    .cxp-ga-esc, .cxp-ga-l, .cxp-ga-grupo, .cxp-ga-zrot { grid-template-columns: 44px minmax(0, 1fr) 0; gap: 8px; }
+    .cxp-ga-nome span, .cxp-ga-l .cxp-pil { display: none; }
+    .laudo.cxp .laudo-rodape { padding: 14px 16px 20px; }
+}

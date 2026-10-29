@@ -173,3 +173,11 @@
 .flo .flo-fluxo > .flo-flutua { float: left; width: 190px; margin: 0 18px 12px 0; }
 .flo .flo-fluxo > :not(.flo-flutua) { margin-top: 0; margin-bottom: 10px; }
 .flo .flo-fluxo > :not(.flo-flutua):last-child { margin-bottom: 0; }
+/* WAIS / WISC · painel moderno nas folhas (794 px) */
+.port.flo .p-graf .imp .cx-ga-esc, .port.flo .p-graf .imp .cx-ga-l, .port.flo .p-graf .imp .cx-ga-zr { grid-template-columns: 200px minmax(0, 1fr) 128px; gap: 12px; }
+.port.flo .p-graf .imp .cx-ga-n span { display: inline; } .port.flo .p-graf .imp .cx-ga-l .selo { display: inline-block; }
+.port.flo .p-graf .imp .cx-pp-esc, .port.flo .p-graf .imp .cx-pp-l { grid-template-columns: 38px 170px minmax(0, 1fr) 26px 128px; }
+.port.flo .p-graf .imp .cx-pp-n { visibility: visible; }
+.port.flo .p-graf .imp .cx-wts { grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr; }
+.port.flo .flo-graf .imp .cx-ga-esc, .port.flo .flo-graf .imp .cx-ga-l, .port.flo .flo-graf .imp .cx-ga-zr { grid-template-columns: 150px minmax(0, 1fr) 100px; gap: 10px; }
+.port.flo .flo-graf .imp .cx-pp-esc, .port.flo .flo-graf .imp .cx-pp-l { grid-template-columns: 28px 120px minmax(0, 1fr) 20px 100px; gap: 8px; }

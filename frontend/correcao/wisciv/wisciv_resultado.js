@@ -630,7 +630,7 @@
 
 
     // ============================================================================
-    // MODO LAUDO — padrão visual do sistema antigo (mais gráficos + interpretação)
+    // MODO LAUDO — painel moderno (peças em shared/wechsler_painel.js)
     // ============================================================================
 
     // Helpers de classificação visual (cores)
@@ -647,17 +647,7 @@
         };
         return m[cl] || "cl-m";
     }
-    function clBadge(cl) {
-        return `<span class="cl-badge ${clBadgeClass(cl)}">${escapeHtml(cl)}</span>`;
-    }
 
-    // Cor de barra (subtestes — pontos ponderados)
-    function barColor(p) {
-        if (p >= 12) return '#1a56db';   // azul forte (médio sup+)
-        if (p >= 9)  return '#3b82f6';   // azul (médio)
-        if (p >= 7)  return '#f59e0b';   // amarelo (médio inferior)
-        return '#dc2626';                // vermelho (limítrofe ou abaixo)
-    }
 
     // Cor de barra (índices/QIs — pontuação composta)
     function icColor(comp) {
@@ -667,10 +657,6 @@
         return '#dc2626';                   // vermelho
     }
 
-    // Escala IC (40-170 mapeado pra 0-100%)
-    function icScale(v) {
-        return ((v - 40) / 130) * 100;
-    }
 
     // Verbo de abertura por classificação (usado na interpretação textual)
     function introVerbByClass(cls) {
@@ -730,15 +716,52 @@
         cont.innerHTML = renderLaudoCompleto();
     }
 
+    // Dados para o painel moderno (shared/wechsler_painel.js). Só organiza o que o
+    // cálculo já gravou: nenhum número é recalculado aqui.
+    function painelCfg() {
+        const r = state.resultado;
+        const ponds = r.ponderados || {};
+        let icg = null;
+        if (window.CortexICG) {
+            const g = window.CortexICG.calcularICG('WISC', ponds);
+            if (g && !g.incompleto && !g.foraDaTabela) icg = g;
+        }
+        return {
+            subtestes: SUBTESTES,
+            grupos: GRUPOS_WISC,
+            ponds, brutos: state.brutos || {}, somas: r.somas || {}, compostos: r.compostos || {}, icg,
+            media: r.fortes_fracos?.media,
+            rotuloQI: 'Escala total',
+            escalasQI: [],
+            colunas: [
+                { k: 'ICV', soma: 'ICV',      nome: 'Comp. Verbal',     cor: '#4338CA', poss: ['SM', 'VC', 'CO', 'IN', 'RP'] },
+                { k: 'IOP', soma: 'IOP',      nome: 'Org. Perceptual',  cor: '#9333EA', poss: ['CB', 'CN', 'RM', 'CF'] },
+                { k: 'IMO', soma: 'IMO',      nome: 'Mem. Operacional', cor: '#DB2777', poss: ['DG', 'SNL', 'AR'] },
+                { k: 'IVP', soma: 'IVP',      nome: 'Velocidade',       cor: '#0D9488', poss: ['CD', 'PS', 'CA'] },
+                { k: 'QIT', soma: 'QI_TOTAL', nome: 'QI Total',         cor: '#1F3864', poss: ['CB', 'SM', 'DG', 'CN', 'CD', 'VC', 'SNL', 'RM', 'CO', 'PS'], qi: true },
+            ],
+        };
+    }
+
+    // Título de seção dentro de um cartão (o .laudo-secao-titulo continua sendo a
+    // referência do 📋 e das figuras do Laudo Online para dar nome a cada bloco).
+    function tituloSecao(txt, dica, oculto) {
+        return `<div class="laudo-secao-titulo${oculto ? ' cxp-oculto' : ''}"><span class="cxp-tt">${txt}</span>${dica ? `<span class="laudo-secao-hint">${dica}</span>` : ''}</div>`;
+    }
+
     function renderLaudoCompleto() {
         const r = state.resultado;
         const compostoQIT = r.compostos?.QI_TOTAL?.composto;
         const classifQIT = compostoQIT != null ? classByComposite(compostoQIT) : '—';
         const dataApl = state.aplicacao.data_aplicacao;
         const idadeStr = `${r.idade_anos}a${r.idade_meses ? ' ' + r.idade_meses + 'm' : ''}`;
+        const P = window.WechslerPainel;
+        const cfg = painelCfg();
+        const ident = (rot, val) => `<div class="laudo-identif-item"><span class="laudo-identif-label">${rot}</span><span class="laudo-identif-valor">${val}</span></div>`;
+        const media = r.fortes_fracos?.media;
 
         return `
-        <div class="laudo">
+        <div class="laudo cxp">
             <div class="laudo-header">
                 <div class="laudo-header-esq">
                     <div class="laudo-header-logo">E</div>
@@ -760,134 +783,88 @@
 
             <div class="laudo-body">
 
-                <!-- ─── 1. IDENTIFICAÇÃO ─── -->
-                <div class="laudo-secao-titulo">
-                    <span class="laudo-secao-tag">1</span>
-                    Identificação
-                </div>
-                <div class="laudo-identificacao">
-                    <div class="laudo-identif-item">
-                        <span class="laudo-identif-label">Nome:</span>
-                        <span class="laudo-identif-valor">${escapeHtml(state.paciente.nome_completo)}</span>
+                <section class="cxp-card">
+                    ${tituloSecao('Identificação')}
+                    <div class="laudo-identificacao">
+                        ${ident('Nome', escapeHtml(state.paciente.nome_completo))}
+                        ${ident('CPF', escapeHtml(state.paciente.cpf || '—'))}
+                        ${ident('Sexo', escapeHtml(state.paciente.sexo || '—'))}
+                        ${ident('Escolaridade', escapeHtml(state.paciente.escolaridade || '—'))}
+                        ${ident('Nascimento', `${formatarDataBR(state.paciente.data_nascimento)} (${idadeStr})`)}
+                        ${ident('Aplicação', formatarDataBR(dataApl))}
+                        ${ident('Profissional', `${escapeHtml(r.profissional_nome || '—')}${r.profissional_crp ? ' — ' + escapeHtml(r.profissional_crp) : ''}`)}
+                        ${ident('Especialidade', escapeHtml(r.profissional_especialidade || '—'))}
                     </div>
-                    <div class="laudo-identif-item">
-                        <span class="laudo-identif-label">CPF:</span>
-                        <span class="laudo-identif-valor">${escapeHtml(state.paciente.cpf || '—')}</span>
-                    </div>
-                    <div class="laudo-identif-item">
-                        <span class="laudo-identif-label">Sexo:</span>
-                        <span class="laudo-identif-valor">${escapeHtml(state.paciente.sexo || '—')}</span>
-                    </div>
-                    <div class="laudo-identif-item">
-                        <span class="laudo-identif-label">Escolaridade:</span>
-                        <span class="laudo-identif-valor">${escapeHtml(state.paciente.escolaridade || '—')}</span>
-                    </div>
-                    <div class="laudo-identif-item">
-                        <span class="laudo-identif-label">Nascimento:</span>
-                        <span class="laudo-identif-valor">${formatarDataBR(state.paciente.data_nascimento)} (${idadeStr})</span>
-                    </div>
-                    <div class="laudo-identif-item">
-                        <span class="laudo-identif-label">Aplicação:</span>
-                        <span class="laudo-identif-valor">${formatarDataBR(dataApl)}</span>
-                    </div>
-                    <div class="laudo-identif-item">
-                        <span class="laudo-identif-label">Profissional:</span>
-                        <span class="laudo-identif-valor">${escapeHtml(r.profissional_nome || '—')}${r.profissional_crp ? ' — ' + escapeHtml(r.profissional_crp) : ''}</span>
-                    </div>
-                    <div class="laudo-identif-item">
-                        <span class="laudo-identif-label">Especialidade:</span>
-                        <span class="laudo-identif-valor">${escapeHtml(r.profissional_especialidade || '—')}</span>
-                    </div>
-                </div>
+                </section>
 
-                <!-- ─── 2. MOTIVO ─── -->
+                <section class="cxp-sec">
+                    ${tituloSecao('Resumo dos índices', '', true)}
+                    ${P.cartoes(cfg)}
+                </section>
+
                 ${r.motivo_encaminhamento ? `
-                    <div class="laudo-secao-titulo">
-                        <span class="laudo-secao-tag">2</span>
-                        Motivo do Encaminhamento
-                    </div>
+                <section class="cxp-card">
+                    ${tituloSecao('Motivo do Encaminhamento')}
                     <div class="wisc-texto-bloco">${escapeHtml(r.motivo_encaminhamento)}</div>
-                ` : ''}
+                </section>` : ''}
 
-                <!-- ─── 3. MATRIZ DE CONVERSÃO ─── -->
-                <div class="laudo-secao-titulo">
-                    <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 3 : 2}</span>
-                    Conversão PB → Ponderado e Contribuição nos Índices
-                    <span class="laudo-secao-hint">Células azuis = subtestes usados. Parênteses = suplementares.</span>
+                <section class="cxp-card">
+                    ${tituloSecao('Conversão PB → Ponderado', 'e contribuição nos índices')}
+                    ${P.conversao(cfg)}
+                </section>
+
+                <section class="cxp-card">
+                    ${tituloSecao('Perfil dos Pontos Ponderados dos Subtestes', 'barras por domínio · média 10')}
+                    ${P.barras(cfg)}
+                </section>
+
+                <section class="cxp-card">
+                    ${tituloSecao('Índices e QI', 'ICV · IOP · IMO · IVP → QIT · ICG')}
+                    ${P.indices(cfg)}
+                    ${P.tabelaIndices(cfg)}
+                    ${renderICG()}
+                    ${renderTabelasPorIndice()}
+                    ${renderAlertaQIT(classifQIT)}
+                </section>
+
+                <section class="cxp-card">
+                    ${tituloSecao('Perfil dos Subtestes', 'ponderados · faixa Média 9 a 11')}
+                    ${P.linha(cfg)}
+                </section>
+
+                <div class="cxp-duas">
+                    ${r.discrepancias && r.discrepancias.length > 0 ? `
+                    <section class="cxp-card">
+                        ${tituloSecao('Discrepâncias entre Índices', 'p &lt; 0,05')}
+                        ${P.discrepancias(r.discrepancias)}
+                    </section>` : ''}
+                    <section class="cxp-card">
+                        ${tituloSecao('Pontos Fortes e Fracos', `média pessoal ${media != null ? String(media).replace('.', ',') : '—'}`)}
+                        ${P.fortesFracos(r.fortes_fracos)}
+                    </section>
                 </div>
-                ${renderMatrizConversao()}
 
-                <!-- ─── 4. PERFIL DE SUBTESTES (4 grupos) ─── -->
-                <div class="laudo-secao-titulo">
-                    <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 4 : 3}</span>
-                    Perfil dos Pontos Ponderados dos Subtestes
-                    <span class="laudo-secao-hint">Barras por domínio cognitivo. Faixa azul = média (9–11).</span>
-                </div>
-                ${renderPerfilSubtestesHTML()}
+                <section class="cxp-card">
+                    ${tituloSecao('Subtestes — Detalhamento')}
+                    ${P.detalhe(cfg)}
+                </section>
 
-                <!-- ─── 5. ÍNDICES E QI TOTAL (gráfico IC95 + tabela) ─── -->
-                <div class="laudo-secao-titulo">
-                    <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 5 : 4}</span>
-                    Índices e QI Total
-                    <span class="laudo-secao-hint">Gráfico com intervalos de confiança (95%) e tabela completa.</span>
-                </div>
-                ${renderICChart()}
-                ${renderTabelaIndices()}
+                <section class="cxp-card">
+                    ${tituloSecao('Interpretação Clínica')}
+                    ${renderInterpretacaoClinica()}
+                </section>
 
-                ${renderICG()}
-
-                ${renderTabelasPorIndice()}
-                ${renderAlertaQIT(classifQIT)}
-
-                <!-- ─── 6. SUBTESTES — DETALHAMENTO ─── -->
-                <div class="laudo-secao-titulo">
-                    <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 6 : 5}</span>
-                    Subtestes — Detalhamento
-                </div>
-                ${renderTabelaDetalheSubtestes()}
-
-                <!-- ─── 7. ANÁLISE DE DISCREPÂNCIAS ─── -->
-                ${r.discrepancias && r.discrepancias.length > 0 ? `
-                    <div class="laudo-secao-titulo">
-                        <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 7 : 6}</span>
-                        Análise de Discrepâncias entre Índices
-                        <span class="laudo-secao-hint">Comparações pareadas com valores críticos (p &lt; .05).</span>
-                    </div>
-                    ${renderTabelaDiscrepancias()}
-                ` : ''}
-
-                <!-- ─── 8. PONTOS FORTES E FRACOS ─── -->
-                <div class="laudo-secao-titulo">
-                    <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 8 : 7}</span>
-                    Pontos Fortes e Fracos Pessoais
-                    <span class="laudo-secao-hint">Média pessoal: ${r.fortes_fracos?.media ?? '—'} · Desvio ≥ 3 pontos = significativo</span>
-                </div>
-                ${renderFortesFracos()}
-
-                <!-- ─── 9. INTERPRETAÇÃO CLÍNICA ─── -->
-                <div class="laudo-secao-titulo">
-                    <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 9 : 8}</span>
-                    Interpretação Clínica
-                </div>
-                ${renderInterpretacaoClinica()}
-
-                <!-- ─── 10. OBSERVAÇÕES ─── -->
                 ${r.observacoes_comportamentais ? `
-                    <div class="laudo-secao-titulo">
-                        <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 10 : 9}</span>
-                        Observações Comportamentais
-                    </div>
+                <section class="cxp-card">
+                    ${tituloSecao('Observações Comportamentais')}
                     <div class="wisc-texto-bloco">${escapeHtml(r.observacoes_comportamentais)}</div>
-                ` : ''}
+                </section>` : ''}
 
-                <!-- ─── 11. RECOMENDAÇÕES ─── -->
                 ${r.recomendacoes ? `
-                    <div class="laudo-secao-titulo">
-                        <span class="laudo-secao-tag">${r.motivo_encaminhamento ? 11 : 10}</span>
-                        Conclusão e Recomendações
-                    </div>
+                <section class="cxp-card">
+                    ${tituloSecao('Conclusão e Recomendações')}
                     <div class="wisc-texto-bloco">${escapeHtml(r.recomendacoes)}</div>
-                ` : ''}
+                </section>` : ''}
 
             </div>
 
@@ -910,221 +887,6 @@
         </div>
         `;
     }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // MATRIZ DE CONVERSÃO (PB → Pond + Contribuição em cada índice)
-    // ────────────────────────────────────────────────────────────────────────
-
-    function renderMatrizConversao() {
-        const r = state.resultado;
-        const ponds = r.ponderados || {};
-        const somas = r.somas || {};
-
-        const usadosICV = new Set(somas.ICV?.usados      || []);
-        const usadosIOP = new Set(somas.IOP?.usados      || []);
-        const usadosIMO = new Set(somas.IMO?.usados      || []);
-        const usadosIVP = new Set(somas.IVP?.usados      || []);
-        const usadosQIT = new Set(somas.QI_TOTAL?.usados || []);
-
-        const possiveis = {
-            ICV: new Set(['SM','VC','CO','IN','RP']),       // 3 principais + 2 supl
-            IOP: new Set(['CB','CN','RM','CF']),            // 3 principais + 1 supl
-            IMO: new Set(['DG','SNL','AR']),                // 2 principais + 1 supl
-            IVP: new Set(['CD','PS','CA']),                 // 2 principais + 1 supl
-            QIT: new Set(['CB','SM','DG','CN','CD','VC','SNL','RM','CO','PS']), // 10 principais
-        };
-
-        function celula(codigo, usadosSet, possiveisSet) {
-            if (!possiveisSet.has(codigo)) return `<td></td>`;
-            const v = ponds[codigo];
-            if (v == null) return `<td></td>`;
-            const usado = usadosSet.has(codigo);
-            return `<td><span class="wisc-pill${usado ? '' : ' sup'}">${usado ? v : '(' + v + ')'}</span></td>`;
-        }
-
-        const linhas = SUBTESTES.slice().sort((a, b) => a.ordem - b.ordem).map(s => {
-            const b = state.brutos[s.codigo] ?? '—';
-            const p = ponds[s.codigo] ?? '—';
-            const tagSupl = s.principal ? '' : ' <span style="color:#94a3b8; font-size:10px;">(supl.)</span>';
-            return `<tr>
-                <td class="col-sub">${escapeHtml(s.nome)} <span class="wisc-escala-sigla">(${s.codigo})</span>${tagSupl}</td>
-                <td class="col-pb">${b}</td>
-                <td class="col-pp">${p}</td>
-                ${celula(s.codigo, usadosICV, possiveis.ICV)}
-                ${celula(s.codigo, usadosIOP, possiveis.IOP)}
-                ${celula(s.codigo, usadosIMO, possiveis.IMO)}
-                ${celula(s.codigo, usadosIVP, possiveis.IVP)}
-                ${celula(s.codigo, usadosQIT, possiveis.QIT)}
-            </tr>`;
-        }).join('');
-
-        return `<div class="wisc-matriz"><table>
-            <thead>
-                <tr>
-                    <th class="col-sub" rowspan="2">SUBTESTES</th>
-                    <th class="col-pb"  rowspan="2">PB</th>
-                    <th class="col-pp"  rowspan="2">POND.</th>
-                    <th colspan="5">CONTRIBUIÇÃO (PONTOS PONDERADOS)</th>
-                </tr>
-                <tr>
-                    <th>ICV</th><th>IOP</th><th>IMO</th><th>IVP</th><th>QIT</th>
-                </tr>
-            </thead>
-            <tbody>${linhas}</tbody>
-            <tfoot>
-                <tr>
-                    <td class="sum-label" colspan="3">SOMA DOS PONTOS PONDERADOS</td>
-                    <td>${somas.ICV?.soma      ?? '—'}</td>
-                    <td>${somas.IOP?.soma      ?? '—'}</td>
-                    <td>${somas.IMO?.soma      ?? '—'}</td>
-                    <td>${somas.IVP?.soma      ?? '—'}</td>
-                    <td>${somas.QI_TOTAL?.soma ?? '—'}</td>
-                </tr>
-            </tfoot>
-        </table></div>`;
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // PERFIL DE SUBTESTES (4 grupos com barras horizontais)
-    // ────────────────────────────────────────────────────────────────────────
-
-    function renderPerfilSubtestesHTML() {
-        const r = state.resultado;
-        const ponds = r.ponderados || {};
-
-        const blocos = GRUPOS_WISC.map(g => {
-            const linhas = g.codes.map(code => {
-                const p = ponds[code];
-                if (p == null) return '';
-                const cl = classByPonderado(p);
-                const col = barColor(p);
-                // Faixa de média (9-11) — área cinza ao fundo
-                const avgL = ((9 / 19) * 100).toFixed(1);
-                const avgW = ((2 / 19) * 100).toFixed(1);
-                const fillW = ((p / 19) * 100).toFixed(1);
-
-                return `<div class="wisc-bar-row">
-                    <div class="wisc-bar-code">${code}</div>
-                    <div class="wisc-bar-track">
-                        <div class="wisc-bar-avg-zone" style="left:${avgL}%; width:${avgW}%;"></div>
-                        <div class="wisc-bar-fill" style="width:${fillW}%; background:${col};"></div>
-                    </div>
-                    <div class="wisc-bar-val">${p}</div>
-                    <div class="wisc-bar-badge">${clBadge(cl)}</div>
-                </div>`;
-            }).join('');
-
-            return `<div class="wisc-bar-group">
-                <div class="wisc-bar-group-titulo">${escapeHtml(g.titulo).toUpperCase()}</div>
-                ${linhas}
-            </div>`;
-        }).join('');
-
-        return `<div class="wisc-perfil-bloco">${blocos}</div>`;
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // GRÁFICO DE IC (Índices e QIs com intervalos de confiança)
-    // ────────────────────────────────────────────────────────────────────────
-
-    function renderICChart() {
-        const r = state.resultado;
-        const compostos = r.compostos || {};
-
-        const items = [
-            { sigla: 'ICV', key: 'ICV' },
-            { sigla: 'IOP', key: 'IOP' },
-            { sigla: 'IMO', key: 'IMO' },
-            { sigla: 'IVP', key: 'IVP' },
-            { sigla: 'QIT', key: 'QI_TOTAL' },
-        ];
-
-        const linhas = items.map(it => {
-            const c = compostos[it.key];
-            if (!c?.composto) return '';
-            const comp = +c.composto;
-            const cl = classByComposite(comp);
-            const col = icColor(comp);
-            const ic = c.ic95 || [comp - 5, comp + 5];
-
-            // Linhas de grade verticais em valores específicos
-            const grid = [60, 80, 100, 120, 140].map(v => {
-                const isMain = (v === 100);
-                return `<div class="wisc-ic-gridline" style="left:${icScale(v)}%; ${isMain ? 'width:2px; background:rgba(100,116,139,.3);' : 'width:1px; background:rgba(203,213,225,.3);'}"></div>`;
-            }).join('');
-
-            return `<div class="wisc-ic-row">
-                <div class="wisc-ic-label" style="color:${col};">${it.sigla}</div>
-                <div class="wisc-ic-track">
-                    ${grid}
-                    <div class="wisc-ic-bar" style="left:${icScale(ic[0])}%; width:${(icScale(ic[1]) - icScale(ic[0])).toFixed(2)}%; background:${col}30; border:1px solid ${col}80;"></div>
-                    <div class="wisc-ic-whisker" style="left:${icScale(ic[0])}%; background:${col}80;"></div>
-                    <div class="wisc-ic-whisker" style="left:${icScale(ic[1])}%; background:${col}80;"></div>
-                    <div class="wisc-ic-dot" style="left:${icScale(comp)}%; background:${col}; box-shadow:0 2px 6px ${col}50;">${comp}</div>
-                </div>
-                <div class="wisc-ic-badge">${clBadge(cl)}</div>
-            </div>`;
-        }).join('');
-
-        return `<div class="wisc-ic-chart">
-            <div class="wisc-ic-scale">
-                <span>40</span><span>60</span><span>80</span>
-                <span style="font-weight:800; color:#475569;">100</span>
-                <span>120</span><span>140</span><span>160</span>
-            </div>
-            ${linhas}
-            <div class="wisc-ic-legenda">Linha escura = média normativa (100) · Faixa colorida = IC 95% · Círculo = composto obtido</div>
-        </div>`;
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // TABELA DE ÍNDICES (resumo numérico)
-    // ────────────────────────────────────────────────────────────────────────
-
-    function renderTabelaIndices() {
-        const r = state.resultado;
-        const compostos = r.compostos || {};
-        const somas = r.somas || {};
-
-        const items = [
-            { sigla: 'ICV', key: 'ICV' },
-            { sigla: 'IOP', key: 'IOP' },
-            { sigla: 'IMO', key: 'IMO' },
-            { sigla: 'IVP', key: 'IVP' },
-            { sigla: 'QIT', key: 'QI_TOTAL' },
-        ];
-
-        const linhas = items.map(it => {
-            const c = compostos[it.key];
-            const s = somas[it.key];
-            if (!c?.composto) return '';
-            const cl = classByComposite(c.composto);
-            const col = icColor(c.composto);
-            return `<tr>
-                <td class="wisc-ind-sigla">${it.sigla}</td>
-                <td class="ctr">${s?.soma ?? '—'}</td>
-                <td class="ctr" style="font-weight:800; font-size:14px; color:${col};">${c.composto}</td>
-                <td class="ctr">${c.percentil ?? '—'}</td>
-                <td class="ctr"><span class="wisc-ic">${c.ic90?.[0]}–${c.ic90?.[1]}</span></td>
-                <td class="ctr"><span class="wisc-ic">${c.ic95?.[0]}–${c.ic95?.[1]}</span></td>
-                <td>${clBadge(cl)}</td>
-            </tr>`;
-        }).join('');
-
-        return `<div class="wisc-tab-qis"><table>
-            <thead><tr>
-                <th>ESCALA</th>
-                <th class="ctr">SOMA POND.</th>
-                <th class="ctr">QI / ÍNDICE</th>
-                <th class="ctr">RANK PERCENTIL</th>
-                <th class="ctr">IC 90%</th>
-                <th class="ctr">IC 95%</th>
-                <th>CLASSIFICAÇÃO</th>
-            </tr></thead>
-            <tbody>${linhas}</tbody>
-        </table></div>`;
-    }
-
 
     // ────────────────────────────────────────────────────────────────────────
     // TABELAS INDIVIDUAIS POR ÍNDICE (para colar no laudo)
@@ -1317,132 +1079,6 @@
                 Passe o mouse sobre a tabela e use o botão para copiar como imagem.
             </div>
             <div class="wisc-indices-lista">${blocos}</div>`;
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // TABELA DETALHADA DE SUBTESTES (PB / Pond / Classif / Desvio MP)
-    // ────────────────────────────────────────────────────────────────────────
-
-    function renderTabelaDetalheSubtestes() {
-        const r = state.resultado;
-        const ponds = r.ponderados || {};
-        const media = r.fortes_fracos?.media || 10;
-
-        const linhas = SUBTESTES.slice().sort((a, b) => a.ordem - b.ordem).map(s => {
-            const p = ponds[s.codigo];
-            if (p == null) return '';
-            const dev = p - media;
-            const devCol = dev >= 3 ? '#059669' : dev <= -3 ? '#dc2626' : '#94a3b8';
-            const cl = classByPonderado(p);
-            const bruto = state.brutos[s.codigo] ?? '—';
-
-            return `<tr>
-                <td class="wisc-detalhe-sub">${escapeHtml(s.nome)} <span class="wisc-escala-sigla">(${s.codigo})</span></td>
-                <td class="ctr">${bruto}</td>
-                <td class="ctr" style="font-weight:700; font-size:14px;">${p}</td>
-                <td>${clBadge(cl)}</td>
-                <td class="ctr" style="font-weight:700; color:${devCol};">${dev >= 0 ? '+' : ''}${dev.toFixed(1)}</td>
-            </tr>`;
-        }).join('');
-
-        return `<div class="wisc-tab-detalhe"><table>
-            <thead><tr>
-                <th>SUBTESTE</th>
-                <th class="ctr">PB</th>
-                <th class="ctr">PONDERADO</th>
-                <th>CLASSIFICAÇÃO</th>
-                <th class="ctr">DESVIO MP</th>
-            </tr></thead>
-            <tbody>${linhas}</tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="4" class="wisc-detalhe-mp-label">MÉDIA PESSOAL DOS PONDERADOS</td>
-                    <td class="ctr" style="font-weight:800;">${media}</td>
-                </tr>
-            </tfoot>
-        </table></div>`;
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // TABELA DE DISCREPÂNCIAS (com badges + legenda)
-    // ────────────────────────────────────────────────────────────────────────
-
-    function renderTabelaDiscrepancias() {
-        const r = state.resultado;
-        const linhas = r.discrepancias.map(d => {
-            // 3 níveis: Significativa (sig=true), Notável (8+), Não significativa
-            let badge, sigCol, icone = '';
-            if (d.sig) {
-                badge = '<span class="wisc-disc-badge sig">SIM</span>';
-                sigCol = '#dc2626';
-            } else if (Math.abs(d.diff) >= 8) {
-                badge = '<span class="wisc-disc-badge notavel">NÃO</span>';
-                sigCol = '#f59e0b';
-                icone = ' ⚠';
-            } else {
-                badge = '<span class="wisc-disc-badge nao">NÃO</span>';
-                sigCol = '#94a3b8';
-            }
-
-            return `<tr>
-                <td class="wisc-disc-par">${escapeHtml(d.par)}</td>
-                <td class="ctr">${d.va}</td>
-                <td class="ctr">${d.vb}</td>
-                <td class="ctr" style="font-weight:700; color:${sigCol};">${d.diff >= 0 ? '+' : ''}${d.diff}${icone}</td>
-                <td class="ctr">${d.vc}</td>
-                <td class="ctr">${badge}</td>
-            </tr>`;
-        }).join('');
-
-        return `<div class="wisc-tab-discrep"><table>
-            <thead><tr>
-                <th>COMPARAÇÃO</th>
-                <th class="ctr">ÍNDICE 1</th>
-                <th class="ctr">ÍNDICE 2</th>
-                <th class="ctr">DIFERENÇA</th>
-                <th class="ctr">VAL. CRÍTICO (.05)</th>
-                <th class="ctr">SIGNIFICATIVO?</th>
-            </tr></thead>
-            <tbody>${linhas}</tbody>
-        </table>
-        <div class="wisc-disc-legenda">
-            <span><span class="wisc-disc-dot nao"></span> Não significativo</span>
-            <span><span class="wisc-disc-dot notavel"></span> Notável (≥8)</span>
-            <span><span class="wisc-disc-dot sig"></span> Significativo (p &lt; .05)</span>
-        </div>
-        </div>`;
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // PONTOS FORTES E FRACOS
-    // ────────────────────────────────────────────────────────────────────────
-
-    function renderFortesFracos() {
-        const ff = state.resultado.fortes_fracos;
-        if (!ff) return '';
-
-        const renderLista = (items, vazioMsg, sinal) => {
-            if (!items || items.length === 0) {
-                return `<div class="wisc-ff-vazio">${escapeHtml(vazioMsg)}</div>`;
-            }
-            return items.map(it => `
-                <div class="wisc-ff-item">
-                    <div class="wisc-ff-item-titulo">${escapeHtml(it.nome)} <span class="wisc-escala-sigla">(${it.cod})</span></div>
-                    <div class="wisc-ff-item-detalhe">Ponderado: <strong>${it.p}</strong> · Desvio: <strong>${sinal}${Math.abs(it.desvio).toFixed(1)}</strong> ${sinal === '+' ? 'acima' : 'abaixo'} da média pessoal</div>
-                </div>
-            `).join('');
-        };
-
-        return `<div class="wisc-ff-grid">
-            <div class="wisc-ff-card wisc-ff-card-fortes">
-                <div class="wisc-ff-titulo">▲ Pontos Fortes</div>
-                ${renderLista(ff.fortes, 'Nenhum desvio ≥3 positivo encontrado.', '+')}
-            </div>
-            <div class="wisc-ff-card wisc-ff-card-fracos">
-                <div class="wisc-ff-titulo">▼ Pontos Fracos</div>
-                ${renderLista(ff.fracos, 'Nenhum desvio ≥3 negativo encontrado.', '-')}
-            </div>
-        </div>`;
     }
 
     // ────────────────────────────────────────────────────────────────────────

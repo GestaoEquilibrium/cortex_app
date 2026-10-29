@@ -38,8 +38,8 @@
 
     /** Vistas de resultado (Documento 1, §5.3). */
     const VISTAS = {
-        'WAIS-III': ['cabecalho', 'indice', 'qit_icg', 'perfil_subtestes', 'intervalos', 'discrepancias', 'tabela_subtestes', 'resumo', 'figura'],
-        'WISC-IV': ['cabecalho', 'indice', 'qit_icg', 'perfil_subtestes', 'intervalos', 'discrepancias', 'tabela_subtestes', 'resumo', 'figura'],
+        'WAIS-III': ['cabecalho', 'cartoes', 'indice', 'qit_icg', 'perfil_subtestes', 'perfil_linha', 'intervalos', 'discrepancias', 'tabela_subtestes', 'resumo', 'figura'],
+        'WISC-IV': ['cabecalho', 'cartoes', 'indice', 'qit_icg', 'perfil_subtestes', 'perfil_linha', 'intervalos', 'discrepancias', 'tabela_subtestes', 'resumo', 'figura'],
         'RAVLT': ['cabecalho', 'cartao', 'curva', 'tabela', 'resumo', 'figura'],
         'FDT': ['cabecalho', 'cartao', 'barras', 'tabela', 'resumo', 'figura'],
         'BFP': ['cabecalho', 'cartao', 'fatores', 'facetas', 'resumo', 'figura'],

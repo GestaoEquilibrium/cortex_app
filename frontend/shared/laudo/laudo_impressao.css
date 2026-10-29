@@ -330,3 +330,68 @@ table.qi2 tr.qi2-ambar td.forte { color: #633806; } table.qi2 tr.qi2-vermelho td
 
 .imp .f-vent-balao.esq { left: auto; right: calc(var(--vh) * .62); }
 .imp .f-vent-balao.esq::before { left: auto; right: .7em; transform: rotate(-35deg) skewX(-10deg) scaleX(-1); border-right: 0; border-left: 2px solid #2E75B6; }
+
+/* ── WAIS / WISC · painel moderno (o mesmo desenho da tela de resultados) ──── */
+.imp .cx-ga, .imp .cx-pp, .imp .cx-pl, .imp .cx-wts {
+    --g-tx: #0F172A; --g-su: #475569; --g-ap: #94A3B8; --g-ln: #E2E8F0; --g-nv: #1F3864; --g-anel: #fff; --g-tr: #F1F5F9; --g-fx: rgba(26, 86, 219, .08); --g-fxl: rgba(31, 56, 100, .35);
+    --z-eb: #FEF2F2; --z-l: #FFF5F5; --z-mi: #FFFBEB; --z-m: #F1F6FF; --z-ms: #F0FBF6; --z-s: #E8F8F0; --z-vs: #DDF4E9;
+}
+.imp .cx-leg { color: var(--g-ap, #94A3B8); }
+/* índices e QI */
+.imp .cx-ga { padding: 10px 14px 8px; }
+.imp .cx-ga-esc, .imp .cx-ga-l, .imp .cx-ga-zr { display: grid; grid-template-columns: 150px minmax(0, 1fr) 96px; gap: 10px; align-items: center; }
+.imp .cx-ga-et { position: relative; height: 14px; display: block; }
+.imp .cx-ga-esc i { position: absolute; bottom: 1px; transform: translateX(-50%); font-size: 8px; font-style: normal; font-weight: 600; color: var(--g-ap); }
+.imp .cx-ga-esc i.m { color: var(--g-tx); font-weight: 800; }
+.imp .cx-ga-g { margin: 6px 0 3px; font-size: 7.6px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--g-ap); }
+.imp .cx-ga-l { height: 25px; font-size: 9.5px; }
+.imp .cx-ga-n { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.imp .cx-ga-n b { font-weight: 800; font-size: 10.5px; min-width: 26px; }
+.imp .cx-ga-n span { color: var(--g-su); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.imp .cx-ga-t { position: relative; height: 100%; display: block; }
+.imp .cx-ga-z { position: absolute; inset: 0; display: flex; border-radius: 5px; overflow: hidden; }
+.imp .cx-ga-z i { height: 100%; display: block; }
+.imp .z-eb { background: var(--z-eb); } .imp .z-l { background: var(--z-l); } .imp .z-mi { background: var(--z-mi); } .imp .z-m { background: var(--z-m); }
+.imp .z-ms { background: var(--z-ms); } .imp .z-s { background: var(--z-s); } .imp .z-vs { background: var(--z-vs); }
+.imp .cx-ga-m { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--g-nv); opacity: .55; }
+.imp .cx-ga-f { position: absolute; top: 2px; bottom: 2px; border-radius: 6px; border: 1.2px solid; box-sizing: border-box; }
+.imp .cx-ga-p { position: absolute; top: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 8.6px; font-weight: 800; font-style: normal; padding: 2px 6px; border-radius: 99px; border: 2px solid var(--g-anel); line-height: 1.2; }
+.imp .cx-ga-zr { margin-top: 4px; }
+.imp .cx-ga-zr .cx-ga-et { height: 20px; }
+.imp .cx-ga-zr em { position: absolute; top: 0; transform: translateX(-50%); font-size: 7.2px; font-style: normal; font-weight: 600; color: var(--g-ap); white-space: nowrap; }
+.imp .cx-ga-zr em.b { top: 9px; }
+.imp .cx-ga .selo, .imp .cx-pp-l .selo { justify-self: start; }
+/* perfil dos pontos ponderados */
+.imp .cx-pp { padding: 10px 14px 8px; }
+.imp .cx-pp-esc, .imp .cx-pp-l { display: grid; grid-template-columns: 26px 118px minmax(0, 1fr) 18px 96px; gap: 8px; align-items: center; }
+.imp .cx-pp-et { position: relative; height: 12px; display: block; }
+.imp .cx-pp-et i { position: absolute; transform: translateX(-50%); font-size: 7.6px; font-style: normal; font-weight: 600; color: var(--g-ap); }
+.imp .cx-pp-g { margin: 6px 0 3px; padding-bottom: 3px; border-bottom: 1px solid var(--g-ln); font-size: 7.6px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--g-nv); }
+.imp .cx-pp-l { height: 18px; font-size: 9.3px; }
+.imp .cx-pp-c { font-weight: 800; }
+.imp .cx-pp-n { color: var(--g-su); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.imp .cx-pp-t { position: relative; height: 9px; border-radius: 5px; background: var(--g-tr); display: block; }
+.imp .cx-pp-fx { position: absolute; top: -2px; bottom: -2px; left: 41.667%; width: 16.667%; background: var(--g-fx); border-left: 1px dashed var(--g-fxl); border-right: 1px dashed var(--g-fxl); }
+.imp .cx-pp-b { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; display: block; }
+.imp .cx-pp-v { font-weight: 800; text-align: right; }
+/* perfil em linha */
+.imp .cx-pl { padding: 8px 10px 6px; }
+.imp .cx-pl .pl-fx { fill: #EEF4FF; }
+.imp .cx-pl .pl-md { stroke: var(--g-nv); stroke-dasharray: 4 4; opacity: .55; }
+.imp .cx-pl .pl-ln { fill: none; stroke: var(--g-nv); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+.imp .cx-pl .pl-pt { fill: var(--c); stroke: var(--g-anel); stroke-width: 2.5; }
+.imp .cx-pl .pl-vl { fill: var(--c); font-size: 10.5px; font-weight: 800; }
+.imp .cx-pl .pl-gr { fill: var(--c); font-size: 9.5px; font-weight: 800; letter-spacing: .1em; }
+.imp .cx-pl .pl-nm { fill: var(--g-su); font-size: 9px; }
+.imp .cx-pl .g-cod { font-size: 10.5px; font-weight: 800; fill: var(--g-tx); }
+/* cartões (QI Total + índices) */
+.imp .cx-wts { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+.imp .cx-wt { position: relative; overflow: hidden; display: grid; gap: 4px; align-content: start; padding: 10px 10px 12px; border-radius: 10px; background: #fff; border: 1px solid var(--g-ln); font-family: var(--fonte-cx); }
+.imp .cx-wt small { font-size: 8px; font-weight: 800; letter-spacing: .1em; }
+.imp .cx-wt-n { font-size: 8.2px; color: var(--g-su); line-height: 1.25; min-height: 20px; }
+.imp .cx-wt b { font-size: 22px; font-weight: 800; color: #14254A; line-height: 1; }
+.imp .cx-wt .selo { justify-self: start; }
+.imp .cx-wt-b { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; display: block; }
+.imp .cx-wt.main { background: linear-gradient(140deg, #14254A, #2E3F86); border-color: transparent; }
+.imp .cx-wt.main small, .imp .cx-wt.main b { color: #fff; } .imp .cx-wt.main .cx-wt-n { color: rgba(255, 255, 255, .8); }
+.imp .cx-wt.main .selo { background: rgba(255, 255, 255, .16); color: #fff; }

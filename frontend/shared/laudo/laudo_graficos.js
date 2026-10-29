@@ -3,8 +3,8 @@
    ----------------------------------------------------------------------------
    Desenha, a partir do que está gravado em *_resultados, os blocos que hoje
    são copiados das telas de correção como imagem (Documento 1, §5.3):
-     WAIS-III / WISC-IV: cabecalho · indice · qit_icg · perfil_subtestes ·
-                         intervalos · discrepancias · tabela_subtestes · resumo
+     WAIS-III / WISC-IV: cabecalho · cartoes · indice · qit_icg · perfil_subtestes ·
+                         perfil_linha · intervalos · discrepancias · tabela_subtestes · resumo
      RAVLT: cartao · curva · tabela · resumo
      FDT:   cartao · barras · tabela · resumo
      BFP:   cartao · fatores · facetas · resumo
@@ -87,6 +87,52 @@
         'WISC-IV': 'Escala Wechsler de Inteligência para Crianças — 4ª Edição'
     };
 
+    // Cores das classificações (iguais às da tela de resultados) e faixas do gráfico de índices
+    function corComp(v) { return v >= 130 ? '#047857' : v >= 110 ? '#059669' : v >= 90 ? '#1A56DB' : v >= 80 ? '#D97706' : v >= 70 ? '#DC2626' : '#991B1B'; }
+    function corPond(p) { return p >= 16 ? '#047857' : p >= 12 ? '#059669' : p >= 9 ? '#1A56DB' : p >= 7 ? '#D97706' : p >= 4 ? '#DC2626' : '#991B1B'; }
+    const rgba = (h, a) => `rgba(${[1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)).join(',')},${a})`;
+    const ZONAS_IC = [[40, 70, 'eb'], [70, 80, 'l'], [80, 90, 'mi'], [90, 110, 'm'], [110, 120, 'ms'], [120, 130, 's'], [130, 160, 'vs']];
+    const NOME_CURTO = { ICV: 'Compreensão Verbal', IOP: 'Organização Perceptual', IMO: 'Memória Operacional', IVP: 'Velocidade de Processamento' };
+    const COR_DOMINIO = ['#4338CA', '#9333EA', '#DB2777', '#0D9488', '#64748B'];
+    /** Domínios só com os subtestes que têm ponderado (o que sobrar vai em "Outros"). */
+    function gruposCom(sig, pond) {
+        const gs = GRUPOS[sig] || GRUPOS['WAIS-III'], todos = new Set(gs.flatMap(g => g[1]));
+        const l = gs.map(([nome, cods], i) => ({ nome, cor: COR_DOMINIO[i], cods: cods.filter(c => pond[c] != null && pond[c] !== '') }));
+        const resto = Object.keys(pond).filter(c => !todos.has(c) && pond[c] != null && pond[c] !== '');
+        if (resto.length) l.push({ nome: 'Outros', cor: COR_DOMINIO[4], cods: resto });
+        return l.filter(g => g.cods.length);
+    }
+    const CURTO_DOM = { 'Compreensão Verbal': 'COMPREENSÃO VERBAL', 'Organização Perceptual': 'ORG. PERCEPTUAL', 'Memória Operacional': 'MEM. OPERACIONAL', 'Velocidade de Processamento': 'VELOCIDADE', Outros: 'OUTROS' };
+    /** Perfil dos subtestes em linha (ponderados, faixa Média 9 a 11). */
+    function perfilLinha(sig, pond) {
+        const gs = gruposCom(sig, pond);
+        const todos = []; gs.forEach(g => g.cods.forEach(c => todos.push({ c, v: Number(pond[c]) })));
+        if (!todos.length) return '<p class="nota">Sem ponderados.</p>';
+        const W = 760, l = 34, r = 22, t = 30, gap = 18, n = todos.length, larg = (W - l - r - gap * (gs.length - 1)) / n;
+        const alterna = larg < 66, b = alterna ? 74 : 62, H = 208 + b;
+        const xs = []; let x0 = l; gs.forEach(g => { g.cods.forEach(() => { xs.push(x0 + larg / 2); x0 += larg; }); x0 += gap; });
+        const Y = v => +(t + (1 - (Math.max(1, Math.min(19, v)) - 1) / 18) * (H - t - b)).toFixed(2);
+        const curto = nm => { const m = Math.max(5, Math.floor((alterna ? 2 * larg : larg) / 5.2)); return nm.length > m ? nm.slice(0, m - 1).trim() + '…' : nm; };
+        let s = `<rect class="pl-fx" x="${l}" y="${Y(11.5)}" width="${W - l - r}" height="${(Y(8.5) - Y(11.5)).toFixed(2)}" rx="4"/>`;
+        [1, 4, 7, 10, 13, 16, 19].forEach(v => { s += `<line class="g-grid" x1="${l}" x2="${W - r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="g-tick" x="${l - 8}" y="${Y(v) + 3.5}" text-anchor="end">${v}</text>`; });
+        s += `<line class="pl-md" x1="${l}" x2="${W - r}" y1="${Y(10)}" y2="${Y(10)}"/>`;
+        let k = 0;
+        gs.forEach((g, gi) => {
+            const ini = k, fim = k + g.cods.length - 1, xa = xs[ini] - larg / 2, xb = xs[fim] + larg / 2;
+            s += `<text class="pl-gr" x="${((xa + xb) / 2).toFixed(1)}" y="16" text-anchor="middle" style="--c:${g.cor}">${esc(CURTO_DOM[g.nome] || g.nome.toUpperCase())}</text>`;
+            if (gi) s += `<line class="g-sep" x1="${(xa - gap / 2).toFixed(1)}" x2="${(xa - gap / 2).toFixed(1)}" y1="${t - 6}" y2="${H - b + 4}"/>`;
+            if (fim > ini) s += `<polyline class="pl-ln anim-l" pathLength="1" points="${g.cods.map((_, j) => `${xs[ini + j].toFixed(1)},${Y(todos[ini + j].v)}`).join(' ')}"/>`;
+            k = fim + 1;
+        });
+        todos.forEach((p, i) => {
+            const cor = corPond(p.v), x = xs[i].toFixed(1), cl = classPond(p.v), sb = SUBTESTES[p.c] || [p.c, ''];
+            s += `<g class="g-item"${pop(`${sb[0]} · ${p.v}`, `${sb[1]}. Escore ponderado ${p.v} (${cl}). A média é 10.`, C().faixa(cl), 'sub:' + p.c, EX().nivelPond(p.v))}><circle class="pl-pt anim-o" cx="${x}" cy="${Y(p.v)}" r="7" style="--c:${cor}"/><text class="pl-vl" x="${x}" y="${(Y(p.v) - 12).toFixed(1)}" text-anchor="middle" style="--c:${cor}">${p.v}</text></g>`
+                + `<text class="g-cod" x="${x}" y="${H - b + 20}" text-anchor="middle">${p.c}</text><text class="pl-nm" x="${x}" y="${H - b + 34 + (alterna && i % 2 ? 12 : 0)}" text-anchor="middle">${esc(curto(sb[0]))}</text>`;
+        });
+        return `<div class="cx-card cx-graf cx-pl anima"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Perfil dos subtestes">${s}</svg>
+            <p class="cx-leg">Faixa azul = Média (9 a 11) · tracejado = média 10 · cor do ponto = classificação</p></div>`;
+    }
+
     function classeDe(c) { return (c && c.classificacao) || (c && c.composto != null ? classComp(c.composto) : '—'); }
 
     function cartaoIndice(cab, sig, valor, pct, classe, popAttr) {
@@ -129,36 +175,56 @@
             }
             return h || `<p class="nota">QIT e ICG não calculados.</p>`;
         }
+        // Painel moderno (o mesmo desenho da tela de resultados do WAIS/WISC, shared/wechsler_painel.js)
         if (vista === 'perfil_subtestes') {
-            const grupos = (GRUPOS[sig] || GRUPOS['WAIS-III']).map(([nome, cods]) => {
-                const linhas = cods.filter(c => pond[c] != null).map(c => {
-                    const p = pond[c], cl = classPond(p), s = SUBTESTES[c] || [c, ''];
-                    return `<div class="cx-sb"${pop(`${s[0]} · ${p}`, `${s[1]}. Escore ponderado ${p} (${cl}). A média é 10.`, C().faixa(cl), 'sub:' + c, EX().nivelPond(p))}><span class="cx-sb-c">${c}</span>
-                        <span class="cx-sb-trilho"><span class="cx-sb-barra b-${tom(cl)}" style="width:${Math.min(100, p / 19 * 100).toFixed(1)}%"></span></span><span class="cx-sb-v">${p}</span>${selo(cl)}</div>`;
+            const X = v => Math.max(0, Math.min(100, (v - 1) / 18 * 100)).toFixed(2) + '%';
+            const grupos = gruposCom(sig, pond).map(g => {
+                const linhas = g.cods.map(c => {
+                    const p = Number(pond[c]), cl = classPond(p), s = SUBTESTES[c] || [c, ''], cor = corPond(p);
+                    return `<div class="cx-pp-l"${pop(`${s[0]} · ${p}`, `${s[1]}. Escore ponderado ${p} (${cl}). A média é 10.`, C().faixa(cl), 'sub:' + c, EX().nivelPond(p))}><span class="cx-pp-c" style="color:${cor}">${c}</span><span class="cx-pp-n">${esc(s[0])}</span>
+                        <span class="cx-pp-t"><i class="cx-pp-fx"></i><i class="cx-pp-b anim-x" style="width:${p <= 1 ? '2%' : X(p)};background:${cor}"></i></span><span class="cx-pp-v" style="color:${cor}">${p}</span>${selo(cl)}</div>`;
                 }).join('');
-                return linhas ? `<div class="cx-sb-grupo"><p class="cx-sb-tit">${esc(nome)}</p>${linhas}</div>` : '';
+                return `<p class="cx-pp-g">${esc(g.nome)}</p>${linhas}`;
             }).join('');
-            return `<div class="cx-card cx-perfil">${grupos || '<p class="nota">Sem ponderados.</p>'}</div>`;
+            if (!grupos) return '<p class="nota">Sem ponderados.</p>';
+            const escala = `<div class="cx-pp-esc"><span></span><span></span><span class="cx-pp-et">${[1, 4, 7, 10, 13, 16, 19].map(v => `<i style="left:${X(v)}">${v}</i>`).join('')}</span><span></span><span></span></div>`;
+            return `<div class="cx-card cx-perfil cx-pp anima">${escala}${grupos}<p class="cx-leg">Barra = escore ponderado (1 a 19) · faixa tracejada = Média (9 a 11) · cor = classificação</p></div>`;
+        }
+        if (vista === 'perfil_linha') return perfilLinha(sig, pond);
+        if (vista === 'cartoes') {
+            const tile = (s, nome, c, main) => {
+                const v = c ? Number(c.composto) : null, cl = c ? classeDe(c) : '', cor = c ? corComp(v) : '#94A3B8';
+                return `<div class="cx-wt${main ? ' main' : ''}"${c ? pop(`${nome} · ${c.composto}`, `${s} = ${c.composto} (${cl}). Percentil ${c.percentil != null ? c.percentil : '—'}.`, C().faixa(cl), 'idx:' + s, EX().nivelComp(v)) : ''}>
+                    <small style="${main ? '' : `color:${cor}`}">${s}</small><span class="cx-wt-n">${esc(nome)}</span><b>${c ? esc(c.composto) : '—'}</b>${c ? selo(cl) : '<span class="nota">não calculado</span>'}${main ? '' : `<i class="cx-wt-b" style="background:${cor}"></i>`}</div>`;
+            };
+            return `<div class="cx-wts">${tile('QIT', 'QI Total', comp.QI_TOTAL, true)}${['ICV', 'IOP', 'IMO', 'IVP'].map(k => tile(k, NOME_CURTO[k], comp[k])).join('')}</div>`;
         }
         if (vista === 'intervalos') {
-            const lin = [['QIV', comp.QI_VERBAL], ['QIE', comp.QI_EXECUCAO], ['QIT', comp.QI_TOTAL], ['ICV', comp.ICV], ['IOP', comp.IOP], ['IMO', comp.IMO], ['IVP', comp.IVP], ['ICG', icgDe(d)]].filter(x => x[1] && x[1].composto != null);
+            const grupos = [
+                ['Índices fatoriais', [['ICV', comp.ICV], ['IOP', comp.IOP], ['IMO', comp.IMO], ['IVP', comp.IVP]]],
+                ['Escalas de QI', [['QIV', comp.QI_VERBAL], ['QIE', comp.QI_EXECUCAO]]],
+                ['Resultado global', [['QIT', comp.QI_TOTAL], ['ICG', icgDe(d)]]]
+            ].map(([t, l]) => [t, l.filter(x => x[1] && x[1].composto != null)]).filter(g => g[1].length);
+            if (!grupos.length) return '<p class="nota">Índices não calculados.</p>';
             const auto = op.escala === 'auto';
-            const vals = lin.map(x => x[1].composto);
+            const vals = grupos.flatMap(g => g[1].map(x => Number(x[1].composto)));
             const min = auto ? Math.max(40, Math.floor((Math.min(...vals) - 15) / 10) * 10) : 40;
             const max = auto ? Math.min(160, Math.ceil((Math.max(...vals) + 15) / 10) * 10) : 160;
-            const X = v => ((Math.max(min, Math.min(max, v)) - min) / (max - min) * 100).toFixed(2);
+            const X = v => ((Math.max(min, Math.min(max, v)) - min) / (max - min) * 100).toFixed(2) + '%';
+            const zonas = `<span class="cx-ga-z">${ZONAS_IC.filter(z => z[1] > min && z[0] < max).map(z => `<i class="z-${z[2]}" style="width:${((Math.min(max, z[1]) - Math.max(min, z[0])) / (max - min) * 100).toFixed(3)}%"></i>`).join('')}</span>`;
             const marcas = []; for (let v = min; v <= max; v += 20) marcas.push(v);
-            const grade = marcas.map(v => `<span class="cx-ic-g${v === 100 ? ' m' : ''}" style="left:${X(v)}%"><i>${v}</i></span>`).join('');
-            const media = `background:linear-gradient(to right, transparent calc(${X(100)}% - 1px), #94A3B8 calc(${X(100)}% - 1px), #94A3B8 ${X(100)}%, transparent ${X(100)}%)`;
-            const rows = lin.map(([s, c]) => {
-                const cl = classeDe(c), ic = c.ic95 || [c.composto - 5, c.composto + 5];
-                // mesma cor da tela de resultados do WISC/WAIS (icColor): ≥110 verde · 90–109 azul · 80–89 amarelo · <80 vermelho
-                const v = Number(c.composto), cor = v >= 110 ? 'ic-ve' : v >= 90 ? 'ic-az' : v >= 80 ? 'ic-am' : 'ic-vm';
-                return `<div class="cx-ic ${cor}"${pop(`${({ QIV: 'QI Verbal', QIE: 'QI de Execução', QIT: 'QI Total', ICG: 'Índice de Capacidade Geral' })[s] || NOME_IDX[s] || s} · ${c.composto}`, `${s} = ${c.composto} (${cl}). Com 95% de segurança, o escore verdadeiro está entre ${ic[0]} e ${ic[1]}.`, C().faixa(cl), 'idx:' + s, EX().nivelComp(c.composto))}><span class="cx-ic-s">${s}</span>
-                    <span class="cx-ic-t" style="${media}"><span class="cx-ic-f" style="left:${X(ic[0])}%;width:${(X(ic[1]) - X(ic[0])).toFixed(2)}%"></span><span class="cx-ic-p" style="left:${X(c.composto)}%">${c.composto}</span></span>${selo(cl)}</div>`;
-            }).join('');
-            return `<div class="cx-card cx-icart"><div class="cx-ic-esc"><span></span><span class="cx-ic-t">${grade}</span><span></span></div>${rows}
-                <p class="cx-leg">Linha escura = média normativa (100) · Faixa colorida = IC 95% · Círculo = composto obtido</p></div>`;
+            const NOME = { QIV: 'QI Verbal', QIE: 'QI de Execução', QIT: 'QI Total', ICG: 'Capacidade Geral' };
+            const linha = ([s, c]) => {
+                const cl = classeDe(c), v = Number(c.composto), cor = corComp(v), ic = c.ic95 || [v - 5, v + 5];
+                return `<div class="cx-ga-l"${pop(`${({ QIV: 'QI Verbal', QIE: 'QI de Execução', QIT: 'QI Total', ICG: 'Índice de Capacidade Geral' })[s] || NOME_IDX[s] || s} · ${c.composto}`, `${s} = ${c.composto} (${cl}). Com 95% de segurança, o escore verdadeiro está entre ${ic[0]} e ${ic[1]}.`, C().faixa(cl), 'idx:' + s, EX().nivelComp(v))}>
+                    <span class="cx-ga-n"><b style="color:${cor}">${s}</b><span>${esc(NOME[s] || NOME_CURTO[s] || s)}</span></span>
+                    <span class="cx-ga-t">${zonas}<i class="cx-ga-m" style="left:${X(100)}"></i><i class="cx-ga-f" style="left:${X(ic[0])};width:calc(${X(ic[1])} - ${X(ic[0])});background:${rgba(cor, .2)};border-color:${rgba(cor, .7)}"></i><i class="cx-ga-p anim-o" style="left:${X(v)};background:${cor}">${esc(c.composto)}</i></span>${selo(cl)}</div>`;
+            };
+            const rot = [[55, 'Extr. baixo'], [75, 'Limítrofe', 1], [85, 'Méd. inf.'], [100, 'Médio', 1], [115, 'Méd. sup.'], [125, 'Superior', 1], [145, 'Muito sup.']].filter(q => q[0] > min && q[0] < max);
+            return `<div class="cx-card cx-icart cx-ga anima"><div class="cx-ga-esc"><span></span><span class="cx-ga-et">${marcas.map(v => `<i class="${v === 100 ? 'm' : ''}" style="left:${X(v)}">${v}</i>`).join('')}</span><span></span></div>
+                ${grupos.map(([t, l]) => `<p class="cx-ga-g">${esc(t)}</p>${l.map(linha).join('')}`).join('')}
+                <div class="cx-ga-zr"><span></span><span class="cx-ga-et">${rot.map(q => `<em class="${q[2] ? 'b' : ''}" style="left:${X(q[0])}">${q[1]}</em>`).join('')}</span><span></span></div>
+                <p class="cx-leg">Linha escura = média (100) · faixa = intervalo de confiança 95% · círculo = escore obtido, na cor da classificação</p></div>`;
         }
         if (vista === 'discrepancias') {
             const ds = d.discrepancias || [];

@@ -441,7 +441,7 @@
             const fid = gr.blocos.find(b => b.tipo === 'fidedignidade');
             if (fid) usados.add(fid);
             const vistaW = b => { const bo = G().paraOnline ? G().paraOnline(b) : b; return bo ? bo.vista : ''; };
-            const graf = semRepetir(gr.blocos.filter(b => b.tipo === 'resultado' && visivel(b) && (vistaW(b) === 'intervalos' || vistaW(b) === 'perfil_subtestes') && !G().indisponivel(b, O.banco, ON)));
+            const graf = semRepetir(gr.blocos.filter(b => b.tipo === 'resultado' && visivel(b) && ['intervalos', 'perfil_subtestes', 'perfil_linha'].includes(vistaW(b)) && !G().indisponivel(b, O.banco, ON)));
             graf.forEach(b => usados.add(b));
             gr.blocos.filter(b => b.tipo === 'resultado' || (b.tipo === 'titulo' && Number(b.nivel) === 4 && !idx.some(x => x.h4 === b && x.res))).forEach(b => usados.add(b));
             const resto = gr.blocos.filter(b => !usados.has(b) && visivel(b));

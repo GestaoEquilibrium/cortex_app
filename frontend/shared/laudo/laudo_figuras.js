@@ -169,10 +169,13 @@
             const corpoLaudo = d.querySelector('.laudo-body');
             if (corpoLaudo) {
                 let grupo = null; const grupos = [];
-                [...corpoLaudo.children].forEach(el => {
+                // Telas em cartões (WAIS/WISC): o título fica dentro do cartão — entra nele e segue igual
+                const visitar = cont => [...cont.children].forEach(el => {
                     if (el.classList.contains('laudo-secao-titulo')) { grupo = { titulo: el, els: [] }; grupos.push(grupo); }
+                    else if (el.querySelector('.laudo-secao-titulo') && !el.matches('.cortex-copyable')) { grupo = null; visitar(el); grupo = null; }
                     else if (grupo) grupo.els.push(el);
                 });
+                visitar(corpoLaudo);
                 grupos.forEach((g, k) => {
                     const nome = textoTitulo(g.titulo);
                     if (/identifica/i.test(nome)) return;

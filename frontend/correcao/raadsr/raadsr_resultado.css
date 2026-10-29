@@ -603,6 +603,25 @@
 #laudo-conteudo .laudo-header-pontuacao-label { font-size: 9px; letter-spacing: 0.16em; font-weight: 700; color: rgba(255, 255, 255, 0.72); }
 #laudo-conteudo .laudo-header-pontuacao-valor { font-size: 28px; margin: 5px 0 3px; }
 #laudo-conteudo .laudo-header-pontuacao-max { color: rgba(255, 255, 255, 0.75); }
+/* Cabeçalho das telas de lançamento (WAIS, WISC, BFP): o mesmo cartão azul-marinho */
+main [class$="-aplicar-header"] {
+    position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px;
+    margin: 0 0 18px; padding: 20px 22px 20px 82px; border: 0; border-radius: 20px; color: #fff;
+    background-color: #14254A;
+    background-image: radial-gradient(120% 140% at 100% 0%, rgba(92, 201, 211, 0.22), transparent 55%),
+                      linear-gradient(135deg, #14254A 0%, #22346B 55%, #2E3F86 100%);
+    box-shadow: 0 18px 34px -22px rgba(20, 37, 74, 0.75);
+}
+main [class$="-aplicar-header"]::before {
+    content: ""; position: absolute; left: 22px; top: 50%; width: 46px; height: 46px; margin-top: -23px; border-radius: 14px;
+    background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj48ZyBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS40IiBmaWxsPSIjZmZmZmZmIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iOSIgeTI9IjkiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iMjMiIHkyPSI5IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjkiIHkyPSIyMyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTYiIHgyPSIyMyIgeTI9IjIzIiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjE2IiB5Mj0iNyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTYiIHgyPSIxNiIgeTI9IjI1IiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIyLjgiLz48Y2lyY2xlIGN4PSI5IiBjeT0iOSIgcj0iMS42Ii8+PGNpcmNsZSBjeD0iMjMiIGN5PSI5IiByPSIxLjYiLz48Y2lyY2xlIGN4PSI5IiBjeT0iMjMiIHI9IjEuNiIvPjxjaXJjbGUgY3g9IjIzIiBjeT0iMjMiIHI9IjEuNiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iNyIgcj0iMS40Ii8+PGNpcmNsZSBjeD0iMTYiIGN5PSIyNSIgcj0iMS40Ii8+PC9nPjwvc3ZnPgo=") center / 28px 28px no-repeat, rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+main [class$="-aplicar-supratitulo"] { color: #8FE3E8; font-weight: 700; letter-spacing: 0.18em; font-size: 10px; }
+main [class$="-aplicar-titulo"] { color: #fff; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+main [class$="-aplicar-subtitulo"] { color: rgba(255, 255, 255, 0.78); }
+main [class$="-aplicar-status"] { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); }
+@media (max-width: 700px) { main [class$="-aplicar-header"] { padding: 74px 16px 16px; } main [class$="-aplicar-header"]::before { top: 16px; margin-top: 0; left: 16px; } }
 /* 📷 do cabeçalho: aparece ao passar o mouse, no canto, sem cobrir o resultado */
 #laudo-conteudo .laudo-header .cortex-copy-header-btn { top: 6px !important; right: 6px !important; width: 26px !important; height: 26px !important; font-size: 13px !important; opacity: 0; }
 #laudo-conteudo .laudo-header:hover .cortex-copy-header-btn,

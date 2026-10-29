@@ -10,6 +10,7 @@
     --cxp-navy: #1F3864; --cxp-navy-2: #14254A;
     font-family: 'Inter', system-ui, sans-serif;
 }
+#laudo-conteudo .laudo.cxp { background: var(--cxp-fundo); }
 .laudo.cxp .laudo-body { background: var(--cxp-fundo); padding: 20px 22px 24px; display: grid; gap: 16px; }
 .laudo.cxp .num, .laudo.cxp .cxp-cv, .laudo.cxp td { font-variant-numeric: tabular-nums; }
 

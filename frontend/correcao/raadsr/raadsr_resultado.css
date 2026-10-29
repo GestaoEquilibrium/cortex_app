@@ -548,3 +548,69 @@
 .cortex-copy-header-btn:hover {
     background: rgba(255, 255, 255, 0.30) !important;
 }
+
+/* ============================================================================ */
+/* CABEÇALHO · PAINEL ESCURO (modelo 1) — vale para todos os testes            */
+/* Cartão azul-marinho arredondado (mesmo degradê do cartão do QI Total), o     */
+/* resultado num quadro de vidro à direita e o símbolo do CORTEX clarinho ao    */
+/* fundo. Só CSS: a marcação do cabeçalho de cada teste continua a mesma.       */
+/* Sem color-mix: o PDF e o 📷 passam pelo html2canvas.                          */
+/* ============================================================================ */
+#laudo-conteudo .laudo .laudo-header {
+    position: relative;
+    overflow: hidden;
+    margin: 14px 14px 0;
+    border-radius: 20px;
+    padding: 18px 22px;
+    gap: 18px;
+    background-color: #14254A;
+    background-image: radial-gradient(120% 140% at 100% 0%, rgba(92, 201, 211, 0.22), transparent 55%),
+                      linear-gradient(135deg, #14254A 0%, #22346B 55%, #2E3F86 100%);
+    box-shadow: 0 18px 34px -22px rgba(20, 37, 74, 0.75);
+}
+#laudo-conteudo .laudo .laudo-header::before {
+    content: "";
+    position: absolute;
+    right: 150px;
+    top: -46px;
+    width: 220px;
+    height: 220px;
+    opacity: 0.07;
+    background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj48ZyBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS40IiBmaWxsPSIjZmZmZmZmIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iOSIgeTI9IjkiIHN0cm9rZS13aWR0aD0iMSIvPjxsaW5lIHgxPSIxNiIgeTE9IjE2IiB4Mj0iMjMiIHkyPSI5IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjkiIHkyPSIyMyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTYiIHgyPSIyMyIgeTI9IjIzIiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMTYiIHkxPSIxNiIgeDI9IjE2IiB5Mj0iNyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGxpbmUgeDE9IjE2IiB5MT0iMTYiIHgyPSIxNiIgeTI9IjI1IiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIyLjgiLz48Y2lyY2xlIGN4PSI5IiBjeT0iOSIgcj0iMS42Ii8+PGNpcmNsZSBjeD0iMjMiIGN5PSI5IiByPSIxLjYiLz48Y2lyY2xlIGN4PSI5IiBjeT0iMjMiIHI9IjEuNiIvPjxjaXJjbGUgY3g9IjIzIiBjeT0iMjMiIHI9IjEuNiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iNyIgcj0iMS40Ii8+PGNpcmNsZSBjeD0iMTYiIGN5PSIyNSIgcj0iMS40Ii8+PC9nPjwvc3ZnPgo=") center / contain no-repeat;
+    pointer-events: none;
+}
+#laudo-conteudo .laudo .laudo-header-esq,
+#laudo-conteudo .laudo .laudo-header-pontuacao { position: relative; z-index: 1; }
+#laudo-conteudo .laudo .laudo-header-esq { gap: 14px; }
+#laudo-conteudo .laudo .laudo-header .laudo-header-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    background-size: 30px 30px !important;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+#laudo-conteudo .laudo .laudo-header-supratitulo { font-size: 9.5px; letter-spacing: 0.18em; color: #8FE3E8; font-weight: 700; margin-bottom: 5px; }
+#laudo-conteudo .laudo .laudo-header-titulo { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+#laudo-conteudo .laudo .laudo-header-subtitulo { font-size: 11px; line-height: 1.45; color: rgba(255, 255, 255, 0.78); margin-top: 4px; }
+#laudo-conteudo .laudo .laudo-header-pontuacao {
+    padding: 10px 16px 11px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    min-width: 112px;
+}
+#laudo-conteudo .laudo .laudo-header-pontuacao-label { font-size: 9px; letter-spacing: 0.16em; font-weight: 700; color: rgba(255, 255, 255, 0.72); }
+#laudo-conteudo .laudo .laudo-header-pontuacao-valor { font-size: 28px; margin: 5px 0 3px; }
+#laudo-conteudo .laudo .laudo-header-pontuacao-max { color: rgba(255, 255, 255, 0.75); }
+/* 📷 do cabeçalho: aparece ao passar o mouse, no canto, sem cobrir o resultado */
+#laudo-conteudo .laudo .laudo-header .cortex-copy-header-btn { top: 6px !important; right: 6px !important; width: 26px !important; height: 26px !important; font-size: 13px !important; opacity: 0; }
+#laudo-conteudo .laudo .laudo-header:hover .cortex-copy-header-btn,
+#laudo-conteudo .laudo .laudo-header .cortex-copy-header-btn:focus { opacity: 1; }
+/* no PDF e na cópia, o cartão sai inteiro com o fundo branco em volta */
+.exportando #laudo-conteudo .laudo .laudo-header { box-shadow: none; }
+@media (max-width: 700px) {
+    #laudo-conteudo .laudo .laudo-header { margin: 10px 10px 0; padding: 16px; border-radius: 16px; }
+    #laudo-conteudo .laudo .laudo-header::before { right: -40px; }
+    #laudo-conteudo .laudo .laudo-header-pontuacao { text-align: left; }
+}

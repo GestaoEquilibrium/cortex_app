@@ -138,20 +138,15 @@
         // ── Acesso de suporte técnico (só quem está em acesso_suporte, no banco) ──
         // O suporte tem o "ver como": o banco passa a responder como a pessoa
         // escolhida (current_profissional_id e current_perfil). Aqui a tela também
-        // vira a dela e nada é gravado. Quem não é suporte faz essa pergunta ao
-        // banco uma vez a cada 10 minutos por aba.
-        const SUP_KEY = 'cortex_sup_' + session.user.id;
-        let semSuporte = false;
-        try {
-            const c = JSON.parse(sessionStorage.getItem(SUP_KEY) || 'null');
-            semSuporte = !!(c && c.suporte === false && (Date.now() - c.ts) < 10 * 60 * 1000);
-        } catch (e) { /* refaz a pergunta */ }
-        if (!semSuporte) {
+        // vira a dela e nada é gravado. A pergunta ao banco é pequena e é feita
+        // em toda tela (sem guardar resposta, para valer na hora em que o acesso é dado).
+        {
             let sup = null;
             try {
-                const { data } = await window.cortexClient.rpc('suporte_estado');
+                const { data, error } = await window.cortexClient.rpc('suporte_estado');
+                if (error) console.warn('[suporte] suporte_estado:', error.message);
                 sup = data || null;
-            } catch (e) { /* SQL do suporte ainda não rodado: segue normal */ }
+            } catch (e) { console.warn('[suporte] suporte_estado indisponível:', e); }
             if (sup && sup.suporte) {
                 window.cortexSuporte = true;
                 window.cortexProfissionalReal = profissional;
@@ -163,8 +158,6 @@
                     if (/\/chat\//.test(path)) { bloquearChat(); return; }
                 }
                 carregarSuporte(caminhoRaiz);
-            } else if (sup) {
-                try { sessionStorage.setItem(SUP_KEY, JSON.stringify({ ts: Date.now(), suporte: false })); } catch (e) {}
             }
         }
 
@@ -305,7 +298,7 @@ function bloquearChat() {
 function carregarSuporte(raiz) {
     if (window.CortexVerComo || document.querySelector('script[data-cortex-suporte]')) return;
     const s = document.createElement('script');
-    s.src = raiz + 'shared/suporte.js?v=sp1';
+    s.src = raiz + 'shared/suporte.js?v=sp2';
     s.setAttribute('data-cortex-suporte', '1');
     s.defer = true;
     (document.head || document.documentElement).appendChild(s);

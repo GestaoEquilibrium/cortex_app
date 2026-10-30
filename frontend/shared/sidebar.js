@@ -513,7 +513,7 @@ window.CortexSidebar = (function() {
                 </nav>
 
                 <div class="sidebar-user${window.cortexVerComo ? ' vendo-como' : ''}">
-                    ${avatarHtml}
+                    ${window.cortexSuporte ? `<span id="sidebar-user-avatar-menu" role="button" tabindex="0" title="Suporte técnico" style="cursor:pointer;display:contents">${avatarHtml}</span>` : avatarHtml}
                     <div class="sidebar-user-info"${window.cortexSuporte ? ' id="sidebar-user-menu" role="button" tabindex="0" title="Suporte técnico"' : ''}>
                         <div class="sidebar-user-name">${escapeHtml(nomeExibido)}</div>
                         <div class="sidebar-user-perfil">${window.cortexVerComo ? '👁 Vendo como · ' : ''}${escapeHtml(perfilLabel)}</div>
@@ -528,12 +528,18 @@ window.CortexSidebar = (function() {
         setupEventos();
 
         // nome na sidebar: menu do suporte técnico ("ver o sistema como…")
-        const menuUsuario = document.getElementById('sidebar-user-menu');
-        if (menuUsuario) {
-            const abrir = () => { if (window.CortexVerComo) window.CortexVerComo.abrirMenu(menuUsuario); };
-            menuUsuario.addEventListener('click', abrir);
-            menuUsuario.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } });
-        }
+        // (o nome some com a sidebar recolhida: a foto/iniciais também abrem o menu)
+        ['sidebar-user-menu', 'sidebar-user-avatar-menu'].forEach(idEl => {
+            const el = document.getElementById(idEl);
+            if (!el) return;
+            const abrir = () => {
+                const ancora = document.querySelector('.sidebar-user') || el;
+                if (window.CortexVerComo) window.CortexVerComo.abrirMenu(ancora);
+                else if (window.CortexUI && window.CortexUI.toast) window.CortexUI.toast('Carregando o suporte… tente de novo em um segundo.', 'info');
+            };
+            el.addEventListener('click', abrir);
+            el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } });
+        });
 
         // No "ver como" o chat e os avisos de mensagem ficam de fora (são pessoais)
         if (window.cortexVerComo) { iniciarNotificacoes(); return; }

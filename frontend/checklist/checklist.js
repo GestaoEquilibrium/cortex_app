@@ -93,12 +93,13 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, descricao_longa, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online')
+            .select('id, sigla, nome_completo, o_que_avalia, descricao_longa, dominio_principal, faixa_etaria_min_meses, faixa_etaria_max_meses, faixa_etaria_label, faixas_aplicaveis, sexo_filtro, tipo_respondente, permite_aplicacao_online, ativo')
             .order('dominio_principal')
             .order('sigla');
 
         if (error) throw new Error('Erro ao carregar catálogo: ' + error.message);
-        state.catalogo = data || [];
+        // Teste inativado em Instrumentos não aparece mais no checklist
+        state.catalogo = (data || []).filter(i => i.ativo !== false);
     }
 
     async function carregarHipotese() {
@@ -215,6 +216,10 @@
         // 'Outro'/null -> só instrumentos sem filtro de sexo
 
         const meses = idadePacienteMeses();
+
+        // Teste inativado sai também da seleção deste paciente
+        const ativos = new Set(state.catalogo.map(i => i.id));
+        state.instrumentosSelecionados = state.instrumentosSelecionados.filter(id => ativos.has(id));
 
         state.catalogoFiltrado = state.catalogo.filter(i => {
             // Sexo SEMPRE filtra (mesmo no modo "ver todos")

@@ -242,7 +242,7 @@
     async function carregarCatalogo() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_label, permite_aplicacao_online, permite_correcao_sistema, tipo_aplicacao, tipo_respondente')
+            .select('id, sigla, nome_completo, o_que_avalia, dominio_principal, faixa_etaria_label, permite_aplicacao_online, permite_correcao_sistema, tipo_aplicacao, tipo_respondente, ativo')
             .order('sigla');
 
         if (error) throw new Error('Erro ao carregar catálogo: ' + error.message);
@@ -288,6 +288,14 @@
      * NUNCA remove registros existentes.
      */
     async function sincronizarComChecklist() {
+        // Teste inativado em Instrumentos: sai da bateria, a não ser que já
+        // tenha aplicação (essa fica, para não perder o que já foi feito)
+        const comAplicacao = new Set(state.aplicacoes.map(a => a.instrumento_id));
+        state.instrumentosNoChecklist = state.instrumentosNoChecklist.filter(id => {
+            const inst = state.catalogo.find(i => i.id === id);
+            return comAplicacao.has(id) || (inst && inst.ativo !== false);
+        });
+
         if (!state.podeChecklist) return;
         if (state.instrumentosNoChecklist.length === 0) return;
 
@@ -763,7 +771,7 @@
         const grupos = {};
         ids.forEach(id => {
             const inst = state.catalogo.find(i => i.id === id);
-            if (!inst) return;
+            if (!inst || inst.ativo === false) return;
             const apls = state.aplicacoes.filter(a => a.instrumento_id === id);
             const ultima = apls[apls.length - 1] || null;
             let motivo = null;

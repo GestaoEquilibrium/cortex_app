@@ -134,7 +134,7 @@
     async function carregarCatalogoInstrumentos() {
         const { data, error } = await window.cortexClient
             .from('instrumentos_catalogo')
-            .select('id, sigla, nome_completo, o_que_avalia')
+            .select('id, sigla, nome_completo, o_que_avalia, ativo')
             .order('sigla');
 
         if (error) {
@@ -495,9 +495,11 @@
         const t = normalizarTexto(termo);
         const limite = 10;
 
-        let resultados = state.catalogoInstrumentos;
+        // Teste inativado em Instrumentos não aparece para escolher
+        const ativos = state.catalogoInstrumentos.filter(i => i.ativo !== false);
+        let resultados = ativos;
         if (t.length > 0) {
-            resultados = state.catalogoInstrumentos.filter(i =>
+            resultados = ativos.filter(i =>
                 normalizarTexto(i.sigla).includes(t) ||
                 normalizarTexto(i.nome_completo).includes(t) ||
                 normalizarTexto(i.o_que_avalia || '').includes(t)

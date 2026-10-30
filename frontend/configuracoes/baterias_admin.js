@@ -259,6 +259,8 @@ window.CortexBateriasAdmin = (function () {
     function listaInstrumentos(marcados, busca) {
         const grupos = {};
         state.catalogo.forEach(i => {
+            // inativo só aparece se já estava na bateria (para poder tirar)
+            if (i.ativo === false && !marcados.has(i.id)) return;
             if (busca) {
                 const alvo = (i.sigla + ' ' + (i.nome_completo || '')).toLowerCase();
                 if (!alvo.includes(busca)) return;

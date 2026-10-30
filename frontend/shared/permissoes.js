@@ -45,6 +45,8 @@ window.CortexPerfil = (function () {
     function isAplicador()    { return perfilAtual() === 'neuropsicologo_aplicador'; }
     function isCorretor()     { return perfilAtual() === 'corretor'; }
     function isEstagiario()   { return perfilAtual() === 'estagiario'; }
+    // Profissional de fora da clínica: vê só os pacientes atribuídos, sem editar
+    function isExterno()      { return perfilAtual() === 'profissional_externo'; }
 
     // ── Capacidades de UI ─────────────────────────────────────────────────────
     // Pasta — editar dados/fotos/agendar/capa/portal: admin + aplicador
@@ -90,7 +92,7 @@ window.CortexPerfil = (function () {
 
     return {
         perfilAtual,
-        isAdmin, isAdminClinico, isAdminGestor, isAplicador, isCorretor, isEstagiario,
+        isAdmin, isAdminClinico, isAdminGestor, isAplicador, isCorretor, isEstagiario, isExterno,
         podeEditarPasta, podeCadastrarPaciente,
         podeUsarChecklist, podeAlterarFaixaChecklist,
         podeCorrigir, podeUsarAgenda, podeEditarAnamnese, podeDesignarAplicador,

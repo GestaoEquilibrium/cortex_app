@@ -161,6 +161,16 @@
             }
         }
 
+        // ── Profissional externo: só pacientes, resultados, laudo e chat ──
+        if (profissional && profissional.perfil === 'profissional_externo') {
+            const rel = path.substring(caminhoRaiz.length);
+            const permitido = /^(pacientes\/(lista|pasta)\.html|chat\/|correcao\/|laudo-online\/)/.test(rel);
+            if (!permitido) {
+                window.location.replace(caminhoRaiz + 'pacientes/lista.html');
+                return;
+            }
+        }
+
         window.cortexProfissional = profissional;
 
         // Marca que auth está pronto (flag persistente)

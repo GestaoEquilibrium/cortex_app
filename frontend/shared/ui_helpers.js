@@ -172,7 +172,8 @@ window.CortexUI = (function() {
         'admin_gestor': 'Admin Gestor',
         'neuropsicologo_aplicador': 'Neuropsicólogo',
         'estagiario': 'Estagiário',
-        'corretor': 'Corretor'
+        'corretor': 'Corretor',
+        'profissional_externo': 'Profissional externo'
     };
 
     /**

@@ -17,6 +17,16 @@
     <link rel="stylesheet" href="../checklist/checklist.css">
     <link rel="stylesheet" href="../bateria/bateria.css">
     <style>
+        /* Profissional externo */
+        .pasta-banner-externo { display:flex; align-items:center; gap:14px; margin-bottom:18px; padding:14px 20px; border-radius:16px;
+            background:linear-gradient(135deg,#14254A 0%,#22346B 55%,#2E3F86 100%); color:#fff; box-shadow:0 10px 26px rgba(20,37,74,.25); }
+        .pasta-banner-externo-ic { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; font-size:21px;
+            background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); flex-shrink:0; }
+        .pasta-banner-externo strong { display:block; font-size:15px; }
+        .pasta-banner-externo span { display:block; font-size:13px; color:#C9D6F2; line-height:1.45; }
+        .pasta-btn-caso { background:linear-gradient(135deg,#0E9AA7,#2F6FED); color:#fff; border:none; font-weight:700;
+            box-shadow:0 6px 16px rgba(47,111,237,.28); }
+        .pasta-btn-caso:hover { filter:brightness(1.06); color:#fff; }
     /* Sprint 8: Modais Agendar Sessão + Designar Aplicador */
     .sprint8-modal {
         position: fixed; inset: 0;
@@ -283,6 +293,7 @@
     <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
     <script src="../shared/marcadores.js"></script>
+    <script src="../shared/externos_caso.js?v=ec1"></script>
 
     <script>
     let pacienteId = null;
@@ -300,6 +311,9 @@
     let respostasRemotas = [];    // Sprint 56: anamneses_tokens_publicos pendentes
     let marcadoresPaciente = [];  // sprint_marcadores: etiquetas coloridas no nome
     let estrelasPaciente = null;  // sprint_estrelas: nível de atendimento (1-3)
+    let ehExterno = false;        // profissional de fora da clínica: só lê as abas liberadas
+    let abasExterno = null;       // abas que o externo pode ver neste paciente
+    let externosPaciente = [];    // (admin) externos atribuídos a este paciente
 
     const ETAPAS = [
         { id: 'visao_geral', label: 'Visão geral' },
@@ -321,6 +335,7 @@
         const perfil = window.cortexProfissional?.perfil;
         ehAdmin = (perfil === 'admin_clinico' || perfil === 'admin_gestor');
         ehAdminClinico = (perfil === 'admin_clinico');
+        ehExterno = (perfil === 'profissional_externo');
 
         // Sprint 78: corretor/estagiário abrem a pasta em modo somente leitura
         podeEditar = !window.CortexPerfil || window.CortexPerfil.podeEditarPasta();
@@ -350,6 +365,17 @@
 
         paciente = data;
         await CortexAudit.log('leitura', 'pacientes', pacienteId, { pacienteId });
+
+        // Profissional externo: só as abas liberadas para ele neste paciente
+        if (ehExterno && window.CortexExternosCaso) {
+            abasExterno = (await window.CortexExternosCaso.minhasAbas(pacienteId)) || [];
+            if (!abasExterno.includes(etapaAtual)) {
+                const primeira = ETAPAS.find(e => abasExterno.includes(e.id));
+                etapaAtual = primeira ? primeira.id : null;
+            }
+        } else if (ehAdmin && window.CortexExternosCaso) {
+            externosPaciente = await window.CortexExternosCaso.listar(pacienteId);
+        }
 
         await Promise.all([
             carregarAnamnese(),
@@ -594,7 +620,7 @@
                                 <span class="pasta-meta-valor">${escapeHtml(paciente.convenio_nome)}</span>
                             </div>
                         ` : ''}
-                        ${aplicadorAtivo?.aplicador ? `
+                        ${ehExterno ? '' : aplicadorAtivo?.aplicador ? `
                             <div class="pasta-meta-item">
                                 <span class="pasta-meta-label">Aplicador:</span>
                                 <span class="pasta-meta-valor">${escapeHtml(aplicadorAtivo.aplicador.nome_completo)}${aplicadorAtivo.aplicador.crp ? ` — ${escapeHtml(aplicadorAtivo.aplicador.crp)}` : ''}</span>
@@ -615,13 +641,16 @@
                         <button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalCapa()">🖨️ Imprimir capa</button>
                         ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.acessoExterno()" title="Liberar este paciente para uma clínica parceira">🤝 Acesso externo</button>` : ''}
                         ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.abrirModalDesignar()">👤 Designar aplicador</button>` : ''}
+                        ${ehAdmin ? `<button class="btn btn-secondary btn-sm" onclick="window.CortexPasta.externos()" title="Médico, escola, psicólogo... que acompanham este paciente">🩺 Profissionais externos${externosPaciente.length ? ` (${externosPaciente.length})` : ''}</button>` : ''}
                         ` : ''}
+                        ${(ehExterno || (ehAdmin && externosPaciente.length)) ? `<button class="btn btn-sm pasta-btn-caso" onclick="window.CortexPasta.discutirCaso()" title="Conversa com os profissionais externos deste paciente e o Wessilon">💬 Vamos discutir o caso!</button>` : ''}
                     </div>
                 </div>
             </div>
         `;
 
-        const etapasComStatus = ETAPAS.map(et => {
+        const etapasBase = ehExterno ? ETAPAS.filter(e => (abasExterno || []).includes(e.id)) : ETAPAS;
+        const etapasComStatus = etapasBase.map(et => {
             let concluida = false;
             if (et.id === 'anamnese' && anamneseExistente && anamneseExistente.status === 'concluida') {
                 concluida = true;
@@ -649,10 +678,23 @@
             </div>
         `;
 
-        const conteudoEtapa = renderizarEtapa(etapaAtual);
+        const conteudoEtapa = (ehExterno && !etapaAtual) ? `
+            <div class="etapa-content"><div class="etapa-placeholder">
+                <div class="etapa-placeholder-icon">🔒</div>
+                <h3>Nenhuma aba liberada</h3>
+                <p>A clínica ainda não liberou nenhuma parte da pasta deste paciente para você.</p>
+            </div></div>` : renderizarEtapa(etapaAtual);
 
         // Sprint 78: banner "Modo somente leitura" para corretor/estagiário
-        const bannerReadOnly = !podeEditar ? `
+        const bannerReadOnly = ehExterno ? `
+            <div class="pasta-banner-externo">
+                <div class="pasta-banner-externo-ic">🩺</div>
+                <div>
+                    <strong>Acesso de profissional externo</strong>
+                    <span>Você vê só o que a clínica liberou para este paciente, sem editar. Dúvidas? Use “Vamos discutir o caso!”.</span>
+                </div>
+            </div>
+        ` : !podeEditar ? `
             <div style="
                 display:flex; align-items:center; gap:14px;
                 margin-bottom:18px; padding:14px 20px; border-radius:14px;
@@ -674,7 +716,7 @@
 
         // Sprint 91: faixa de bateria concluída — mesma leitura de status usada
         // em carregarBateriaInfo (concluido conta encerrados + corrigidos).
-        const bateriaFechada = bateriaInfo && bateriaInfo.total > 0
+        const bateriaFechada = !ehExterno && bateriaInfo && bateriaInfo.total > 0
             && bateriaInfo.concluido === bateriaInfo.total;
 
         const bannerBateria = bateriaFechada ? `
@@ -708,6 +750,7 @@
     }
 
     function trocarEtapa(novaEtapa) {
+        if (ehExterno && !(abasExterno || []).includes(novaEtapa)) return;
         etapaAtual = novaEtapa;
         renderizarPasta();
     }
@@ -738,7 +781,7 @@
         if (etapaId === 'bateria') return renderBateria();
         if (etapaId === 'correcao') {
             // Sprint 78: estagiário não acessa correção
-            if (window.CortexPerfil && !window.CortexPerfil.podeCorrigir()) {
+            if (!ehExterno && window.CortexPerfil && !window.CortexPerfil.podeCorrigir()) {
                 return `
                     <div class="etapa-content">
                         <div class="etapa-placeholder">
@@ -873,7 +916,33 @@
         }
     }
 
+    // Profissional externo: só os testes já corrigidos, para abrir o resultado
+    function renderCorrecaoExterno(aplicacoes) {
+        const corrigidos = aplicacoes.filter(a => a.status === 'corrigido' || a.status === 'integrado_laudo');
+        if (!corrigidos.length) {
+            return `
+                <div class="etapa-placeholder">
+                    <div class="etapa-placeholder-icon">📋</div>
+                    <h3>Nenhum resultado ainda</h3>
+                    <p>Os resultados aparecem aqui quando a clínica terminar a correção dos testes.</p>
+                </div>`;
+        }
+        return `
+            <div class="correcao-dashboard">
+                <div class="correcao-grupo">
+                    <h4 class="correcao-grupo-titulo" style="color: #059669;">
+                        📊 Resultados dos testes
+                        <span class="correcao-grupo-contador">${corrigidos.length}</span>
+                    </h4>
+                    <div class="correcao-lista">
+                        ${corrigidos.map(apl => renderCorrecaoLinhaCorrigido(apl)).join('')}
+                    </div>
+                </div>
+            </div>`;
+    }
+
     function renderCorrecao(aplicacoes) {
+        if (ehExterno) return renderCorrecaoExterno(aplicacoes);
         if (aplicacoes.length === 0) {
             return `
                 <div class="etapa-placeholder">
@@ -1140,14 +1209,14 @@
         }).join('');
         return `
             <div class="lo-pasta">
-                <div class="lo-pasta-codigo">
+                ${ehExterno ? '' : `<div class="lo-pasta-codigo">
                     <div>
                         <small>Código do paciente</small>
                         <strong id="lo-pasta-codigo">${escapeHtml(online.codigo || '—')}</strong>
                         <p>Cole este código na conversa do Gerador de Laudos junto com os PDFs.</p>
                     </div>
                     ${online.codigo ? '<button class="btn btn-secondary btn-sm" id="lo-pasta-copiar" title="Copiar o código">📋 Copiar</button>' : ''}
-                </div>
+                </div>`}
                 <div class="lo-pasta-online">
                     <div class="lo-pasta-online-topo">
                         <div>
@@ -3455,6 +3524,18 @@
     }
 
     window.CortexPasta = {
+        // Profissionais externos: atribuir este paciente e escolher as abas
+        externos: function () {
+            if (!window.CortexExternosCaso) { window.CortexUI.toast('Recarregue a página.', 'danger'); return; }
+            window.CortexExternosCaso.gerenciar(pacienteId, paciente?.nome_completo || '', async () => {
+                externosPaciente = await window.CortexExternosCaso.listar(pacienteId);
+                renderizarPasta();
+            });
+        },
+        discutirCaso: function () {
+            if (!window.CortexExternosCaso) { window.CortexUI.toast('Recarregue a página.', 'danger'); return; }
+            window.CortexExternosCaso.discutir(pacienteId);
+        },
         abrirPortal: function () { abrirPortal(); },
         acessoExterno: async function () { await acessoExterno(); },
         // QR que vai impresso no laudo. Quem escaneia se cadastra e pede

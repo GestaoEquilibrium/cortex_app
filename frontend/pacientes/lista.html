@@ -129,6 +129,14 @@
     window.addEventListener('cortex:auth-ready', async (e) => {
         await CortexSidebar.render('pacientes');
 
+        // Profissional externo: vê só os pacientes atribuídos, sem cadastrar
+        if (window.cortexProfissional?.perfil === 'profissional_externo') {
+            ['btn-pre-cadastro', 'btn-novo-paciente'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+
         aplicarModoVisualizacao(modoVisualizacao);
         await carregarConvenios();
         await carregarPacientes();

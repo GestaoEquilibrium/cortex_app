@@ -936,16 +936,29 @@
         'neuropsicologo_aplicador': 'Neuropsicólogo Aplicador',
         'estagiario':               'Estagiário',
         'corretor':                 'Corretor',
+        'profissional_externo':     'Profissional externo',
     };
+    const PERFIL_EXTERNO = 'profissional_externo';
 
     async function carregarProfissionais() {
         const { data, error } = await window.cortexClient
             .from('profissionais')
-            .select('id, nome_completo, email, crp, perfil, ativo, foto_url, created_at, telefone')
+            .select('id, nome_completo, email, crp, perfil, ativo, foto_url, created_at, telefone, especialidade')
             .order('ativo', { ascending: false })
             .order('nome_completo');
         if (error) throw error;
         const profs = data || [];
+
+        // Quantos pacientes cada profissional externo acompanha
+        state.externosPacientes = new Map();
+        if (profs.some(p => p.perfil === PERFIL_EXTERNO)) {
+            try {
+                const { data: vinc } = await window.cortexClient
+                    .from('vinculos_paciente_externo').select('profissional_id').eq('ativo', true);
+                (vinc || []).forEach(v => state.externosPacientes.set(v.profissional_id,
+                    (state.externosPacientes.get(v.profissional_id) || 0) + 1));
+            } catch (_) { /* tabela ainda não criada */ }
+        }
 
         // Busca URLs assinadas pras fotos em paralelo (só pra quem tem foto)
         await Promise.all(profs.map(async (p) => {
@@ -966,8 +979,10 @@
     }
 
     function renderProfissionais() {
-        const ativos = state.profissionaisLista.filter(p => p.ativo);
-        const inativos = state.profissionaisLista.filter(p => !p.ativo);
+        const internos = state.profissionaisLista.filter(p => p.perfil !== PERFIL_EXTERNO);
+        const externos = state.profissionaisLista.filter(p => p.perfil === PERFIL_EXTERNO);
+        const ativos = internos.filter(p => p.ativo);
+        const inativos = internos.filter(p => !p.ativo);
 
         return `
             <div class="cfg-card">
@@ -998,6 +1013,24 @@
                         ${inativos.map(p => renderProfLinha(p)).join('')}
                     </div>
                 ` : ''}
+            </div>
+
+            <!-- Profissionais externos: de fora da clínica, veem só os pacientes atribuídos -->
+            <div class="cfg-card" style="margin-top: 18px;">
+                <div class="cfg-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                    <div>
+                        <h3>🩺 Profissionais externos</h3>
+                        <p>Médicos, escolas, psicólogos e outros que acompanham ou pediram a avaliação. Entram com login próprio
+                           e veem só os pacientes que vocês atribuírem (na pasta do paciente → <strong>🩺 Profissionais externos</strong>),
+                           e só as abas liberadas. Não editam nada.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-novo-externo">+ Profissional externo</button>
+                </div>
+                ${externos.length ? `
+                    <div class="cfg-conv-lista">
+                        ${externos.filter(p => p.ativo).concat(externos.filter(p => !p.ativo)).map(p => renderProfLinha(p)).join('')}
+                    </div>
+                ` : `<div class="cfg-empty"><p>Nenhum profissional externo cadastrado ainda.</p></div>`}
             </div>
 
             <!-- Modal -->
@@ -1031,8 +1064,13 @@
                             </div>
 
                             <div class="cfg-field">
-                                <label>CRP</label>
+                                <label id="prof-crp-label">CRP</label>
                                 <input type="text" name="crp" id="prof-crp" maxlength="20" placeholder="04/12345">
+                            </div>
+
+                            <div class="cfg-field span-full" id="prof-bloco-especialidade">
+                                <label>Especialidade / instituição</label>
+                                <input type="text" name="especialidade" id="prof-especialidade" maxlength="200" placeholder="Ex.: Neuropediatra · Escola Tal · Psicólogo">
                             </div>
 
                             <div class="cfg-field">
@@ -1065,6 +1103,8 @@
 
     function renderProfLinha(p) {
         const perfilLabel = PERFIS_DISPONIVEIS[p.perfil] || p.perfil;
+        const ehExterno = p.perfil === PERFIL_EXTERNO;
+        const nPac = ehExterno ? ((state.externosPacientes && state.externosPacientes.get(p.id)) || 0) : 0;
         const ehVoce = p.id === state.profissional.id;
         const inicial = (p.nome_completo || p.email || '?').charAt(0).toUpperCase();
 
@@ -1081,9 +1121,11 @@
                             ${escapeHtml(p.nome_completo || '— sem nome —')}
                             ${ehVoce ? '<span class="cfg-conv-codigo" style="background:#dbeafe; color:#1d4ed8;">VOCÊ</span>' : ''}
                             <span class="cfg-conv-codigo">${escapeHtml(perfilLabel)}</span>
+                            ${ehExterno ? `<span class="cfg-conv-codigo" style="background:#E6F7F8; color:#0E6E75;">${nPac} ${nPac === 1 ? 'paciente' : 'pacientes'}</span>` : ''}
+                            ${ehExterno && !p.ativo ? '<span class="cfg-conv-codigo">inativo</span>' : ''}
                         </div>
                         <div class="cfg-conv-meta">
-                            ${escapeHtml(p.email)}${p.crp ? ' · CRP ' + escapeHtml(p.crp) : ''}
+                            ${escapeHtml(p.email)}${p.crp ? (ehExterno ? ' · ' : ' · CRP ') + escapeHtml(p.crp) : ''}${p.especialidade ? ' · ' + escapeHtml(p.especialidade) : ''}
                         </div>
                     </div>
                 </div>
@@ -1101,13 +1143,26 @@
 
     function bindProfissionais() {
         document.getElementById('btn-novo-prof').addEventListener('click', () => abrirModalProf(null));
+        const bExt = document.getElementById('btn-novo-externo');
+        if (bExt) bExt.addEventListener('click', () => abrirModalProf(null, PERFIL_EXTERNO));
+        const selPerfil = document.getElementById('prof-perfil');
+        if (selPerfil) selPerfil.addEventListener('change', () => ajustarModalPerfil(selPerfil.value));
         document.getElementById('form-prof').addEventListener('submit', salvarProf);
     }
 
-    function abrirModalProf(p) {
+    // O externo pode ser médico, escola... o registro não é só CRP
+    function ajustarModalPerfil(perfil) {
+        const ext = perfil === PERFIL_EXTERNO;
+        const lab = document.getElementById('prof-crp-label');
+        const inp = document.getElementById('prof-crp');
+        if (lab) lab.textContent = ext ? 'Registro (CRM, CRP...)' : 'CRP';
+        if (inp) inp.placeholder = ext ? 'CRM 12345/MG' : '04/12345';
+    }
+
+    function abrirModalProf(p, perfilPadrao) {
         const ehNovo = !p;
         document.getElementById('modal-prof-titulo').textContent = ehNovo
-            ? 'Novo profissional'
+            ? (perfilPadrao === PERFIL_EXTERNO ? 'Novo profissional externo' : 'Novo profissional')
             : `Editar: ${p.nome_completo || p.email}`;
 
         document.getElementById('prof-id').value = p?.id || '';
@@ -1115,7 +1170,9 @@
         document.getElementById('prof-email').value = p?.email || '';
         document.getElementById('prof-crp').value = p?.crp || '';
         document.getElementById('prof-telefone').value = p?.telefone || '';
-        document.getElementById('prof-perfil').value = p?.perfil || 'neuropsicologo_aplicador';
+        document.getElementById('prof-perfil').value = p?.perfil || perfilPadrao || 'neuropsicologo_aplicador';
+        document.getElementById('prof-especialidade').value = p?.especialidade || '';
+        ajustarModalPerfil(document.getElementById('prof-perfil').value);
 
         const blocoSenha = document.getElementById('prof-bloco-senha');
         const inpSenha = document.getElementById('prof-senha');
@@ -1187,6 +1244,7 @@
                     crp: dados.crp,
                     telefone: dados.telefone,
                     perfil: dados.perfil,
+                    especialidade: dados.especialidade,
                 };
                 const { error } = await window.cortexClient
                     .from('profissionais')
@@ -1270,6 +1328,7 @@
                 crp: dados.crp,
                 telefone: dados.telefone,
                 perfil: dados.perfil,
+                especialidade: dados.especialidade,
                 ativo: true,
             })
             .eq('auth_user_id', authUserId);

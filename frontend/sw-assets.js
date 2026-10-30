@@ -20,7 +20,7 @@
 //   em segundo plano. Trocar de versão (CACHE) invalida tudo.
 // ============================================================================
 
-const CACHE = 'cortex-assets-v6';
+const CACHE = 'cortex-assets-v7';
 
 const EXTENSOES = /\.(css|js|png|jpg|jpeg|svg|ico|webp|woff2?)$/i;
 

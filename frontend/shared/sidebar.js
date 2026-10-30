@@ -401,7 +401,10 @@ window.CortexSidebar = (function() {
         // Filtra itens com restrição de perfil (Sprint 74/78)
         const ehAdmin = (prof?.perfil === 'admin_clinico' || prof?.perfil === 'admin_gestor');
         const ehClinico = (prof?.perfil === 'admin_clinico');
+        const ehExterno = (prof?.perfil === 'profissional_externo');
         const itensVisiveis = NAV_ITEMS.filter(item => {
+            // Profissional externo: só os pacientes dele e as mensagens
+            if (ehExterno) return item.id === 'pacientes' || item.id === 'mensagens';
             if (item.adminOnly && !ehAdmin) return false;       // relatórios: clínico + gestor
             if (item.clinicoOnly && !ehClinico) return false;   // configurações: só clínico
             return true;

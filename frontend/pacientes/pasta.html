@@ -966,8 +966,10 @@
         for (const apl of aplicacoes) {
             const inst = apl.instrumentos_catalogo;
             const sigla = inst?.sigla || '?';
-            const ehOnline = apl.modalidade === 'online'
-                || (inst?.permite_aplicacao_online && inst?.tipo_aplicacao !== 'presencial');
+            // vale o que foi marcado (checklist/bateria); sem marcação, o tipo do teste
+            const ehOnline = apl.modalidade
+                ? apl.modalidade === 'online'
+                : (inst?.permite_aplicacao_online && inst?.tipo_aplicacao !== 'presencial');
 
             if (apl.status === 'corrigido' || apl.status === 'integrado_laudo') {
                 corrigidos.push(apl);

@@ -299,6 +299,20 @@
         if (!state.podeChecklist) return;
         if (state.instrumentosNoChecklist.length === 0) return;
 
+        // Online × Presencial mudou no checklist: acompanha nas aplicações
+        // que ainda não começaram (as em andamento ou concluídas ficam como estão)
+        const trocar = state.aplicacoes.filter(a =>
+            a.status === 'aguardando'
+            && state.instrumentosNoChecklist.includes(a.instrumento_id)
+            && a.modalidade !== modalidadeDoChecklist(a.instrumento_id));
+        for (const a of trocar) {
+            const nova = modalidadeDoChecklist(a.instrumento_id);
+            const { error: eMod } = await window.cortexClient
+                .from('aplicacoes_instrumento').update({ modalidade: nova }).eq('id', a.id);
+            if (!eMod) a.modalidade = nova;
+            else console.warn('[bateria] modalidade:', eMod.message);
+        }
+
         const idsComAplicacao = state.aplicacoes.map(a => a.instrumento_id);
         const novos = state.instrumentosNoChecklist.filter(id => !idsComAplicacao.includes(id));
 
@@ -1234,6 +1248,17 @@
             const observacoes = document.getElementById('modal-observacoes').value || null;
 
             const apl = state.aplicacoes.find(a => a.id === id);
+
+            // Trocou Online × Presencial aqui: grava também no checklist, para
+            // as duas telas dizerem a mesma coisa (e o checklist não desfazer)
+            if (apl && modalidade !== apl.modalidade && state.hipoteseId
+                && state.instrumentosNoChecklist.includes(apl.instrumento_id)) {
+                const qa = Object.assign({}, state.quemAplica || {}, { [apl.instrumento_id]: modalidade });
+                const { error: eQa } = await window.cortexClient
+                    .from('hipoteses').update({ checklist_aplicacao: qa }).eq('id', state.hipoteseId);
+                if (!eQa) state.quemAplica = qa;
+                else console.warn('[bateria] checklist_aplicacao:', eQa.message);
+            }
 
             // Estados que significam "tem resultado". Rebaixar a partir deles
             // esconde o "Ver resultado" — só com confirmação explícita.

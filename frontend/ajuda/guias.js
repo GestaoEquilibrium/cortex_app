@@ -21,7 +21,7 @@ window.CORTEX_GUIAS = [
   "passos": [
    {
     "titulo": "Antes de começar",
-    "html": "<p>O <strong>profissional externo</strong> é alguém de fora da clínica que acompanha ou pediu a avaliação: médico, coordenação da escola, psicólogo, fonoaudiólogo. Ele entra no CORTEX com login próprio, vê só os pacientes atribuídos a ele e, em cada paciente, só as abas marcadas. <strong>Ele não altera nada.</strong></p>\n<table class=\"aj-tab\"><thead><tr><th>O que fazer</th><th>Onde</th><th>Quem pode</th></tr></thead><tbody>\n<tr><td>Cadastrar o profissional externo</td><td>Configurações → Profissionais</td><td>Admin clínico</td></tr>\n<tr><td>Atribuir um paciente e escolher as abas</td><td>Pasta do paciente → Profissionais externos</td><td>Admin clínico e admin gestor</td></tr>\n<tr><td>Abrir a conversa do caso</td><td>Pasta do paciente → Vamos discutir o caso!</td><td>Admins e o próprio externo</td></tr></tbody></table>\n<ul class=\"aj-lista\"><li>O padrão é ver só a <strong>Correção</strong> (resultados dos testes) e o <strong>Laudo</strong>. O resto começa bloqueado.</li>\n<li>Um paciente pode ter vários externos, cada um com abas diferentes.</li>\n<li>O acesso antigo pelo QR do prontuário (botão Acesso externo) continua igual. É outra coisa e não usa este cadastro.</li>\n<li>Laudo Online em construção nunca aparece para o externo.</li></ul>"
+    "html": "<p>O <strong>profissional externo</strong> é alguém de fora da clínica que acompanha ou pediu a avaliação: médico, coordenação da escola, psicólogo, fonoaudiólogo. Ele entra no CORTEX com login próprio, vê só os pacientes atribuídos a ele e, em cada paciente, só as abas marcadas. <strong>Ele não altera nada.</strong></p>\n<table class=\"aj-tab\"><thead><tr><th>O que fazer</th><th>Onde</th><th>Quem pode</th></tr></thead><tbody>\n<tr><td>Cadastrar o profissional externo</td><td>Configurações → Profissionais, ou ele mesmo pelo link de cadastro</td><td>Admin clínico</td></tr>\n<tr><td>Responder pedidos de acesso</td><td>Configurações → Profissionais, ou na pasta do paciente</td><td>Admin clínico e admin gestor</td></tr>\n<tr><td>Atribuir um paciente e escolher as abas</td><td>Pasta do paciente → Profissionais externos</td><td>Admin clínico e admin gestor</td></tr>\n<tr><td>Abrir a conversa do caso</td><td>Pasta do paciente → Vamos discutir o caso!</td><td>Admins e o próprio externo</td></tr></tbody></table>\n<ul class=\"aj-lista\"><li>O padrão é ver só a <strong>Correção</strong> (resultados dos testes) e o <strong>Laudo</strong>. O resto começa bloqueado.</li>\n<li>Um paciente pode ter vários externos, cada um com abas diferentes.</li>\n<li>O acesso antigo pelo QR do prontuário (botão Acesso externo) continua igual. É outra coisa e não usa este cadastro.</li>\n<li>Laudo Online em construção nunca aparece para o externo.</li></ul>"
    },
    {
     "titulo": "Cadastrar o profissional",
@@ -113,6 +113,109 @@ window.CORTEX_GUIAS = [
        "h": 5.79,
        "titulo": "Salvar",
        "texto": "Cria o login. O profissional já pode entrar."
+      }
+     ]
+    }
+   },
+   {
+    "titulo": "Ou mande o link de cadastro",
+    "html": "<p>Em vez de cadastrar você, pode mandar o <strong>link de cadastro</strong>. O profissional preenche os próprios dados, entra direto no CORTEX sem nenhum paciente, busca o paciente pelo nome e pede acesso. O link fica no mesmo cartão de Profissionais externos.</p><p>Quem se cadastra sem esse link (por outro caminho) fica desativado e não entra.</p>",
+    "imagem": {
+     "src": "img/n4_config_link.webp",
+     "alt": "Link de cadastro e pedidos em Configurações",
+     "proporcao": 0.6296,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 22.69,
+       "y": 18.55,
+       "w": 51.17,
+       "h": 5.35,
+       "titulo": "Link de cadastro",
+       "texto": "Clique em Mostrar link para ver o endereço. Ele mostra quantas pessoas já se cadastraram por ele."
+      },
+      {
+       "n": 2,
+       "x": 81.47,
+       "y": 19.1,
+       "w": 5.57,
+       "h": 4.24,
+       "titulo": "Copiar",
+       "texto": "Copia o link para mandar por WhatsApp ou e-mail."
+      },
+      {
+       "n": 3,
+       "x": 86.89,
+       "y": 19.1,
+       "w": 9.3,
+       "h": 4.24,
+       "titulo": "Gerar novo link",
+       "texto": "O link atual para de funcionar. Use se ele foi parar com quem não devia. Quem já se cadastrou continua com acesso."
+      },
+      {
+       "n": 4,
+       "x": 22.84,
+       "y": 30.47,
+       "w": 73.21,
+       "h": 32.21,
+       "titulo": "Pedido de acesso",
+       "texto": "Pedidos esperando resposta, com a mensagem do profissional e o paciente pedido."
+      },
+      {
+       "n": 5,
+       "x": 85.59,
+       "y": 56.86,
+       "w": 9.51,
+       "h": 4.53,
+       "titulo": "Aprovar acesso",
+       "texto": "Libera o paciente com as abas marcadas logo acima. Ele recebe um aviso no sino."
+      }
+     ]
+    }
+   },
+   {
+    "titulo": "Responder pedidos de acesso",
+    "html": "<p>Quando um externo pede acesso, a coordenação recebe um aviso no sino. O aviso abre a pasta do paciente já com a janela dos externos aberta. Os pedidos também aparecem em Configurações → Profissionais.</p>",
+    "imagem": {
+     "src": "img/n5_pasta_pedido.webp",
+     "alt": "Pedido de acesso na pasta do paciente",
+     "proporcao": 0.6296,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 30.82,
+       "y": 31.46,
+       "w": 38.36,
+       "h": 42.62,
+       "titulo": "Pedido",
+       "texto": "Quem pediu, especialidade, registro e a mensagem que ele deixou."
+      },
+      {
+       "n": 2,
+       "x": 31.77,
+       "y": 50.7,
+       "w": 36.46,
+       "h": 17.56,
+       "titulo": "Abas se aprovar",
+       "texto": "Correção e Laudo já vêm marcadas. Ajuste antes de aprovar."
+      },
+      {
+       "n": 3,
+       "x": 58.72,
+       "y": 68.26,
+       "w": 9.51,
+       "h": 4.53,
+       "titulo": "Aprovar acesso",
+       "texto": "Libera na hora. O paciente aparece na lista dele e ele entra na conversa do caso."
+      },
+      {
+       "n": 4,
+       "x": 53.01,
+       "y": 68.26,
+       "w": 5.86,
+       "h": 4.53,
+       "titulo": "Recusar",
+       "texto": "Ele recebe um aviso de que o acesso não foi liberado e pode pedir de novo."
       }
      ]
     }
@@ -304,6 +407,10 @@ window.CORTEX_GUIAS = [
       "r": "O externo não tem tela para trocar a senha. Fale com o suporte (André)."
      },
      {
+      "p": "Alguém se cadastrou e não consegue entrar.",
+      "r": "Quem se cadastra sem o link da clínica fica desativado. Ative em Configurações → Profissionais, se for alguém conhecido."
+     },
+     {
       "p": "Ele tentou abrir outra tela do sistema.",
       "r": "O CORTEX manda ele de volta para a lista de pacientes. O menu dele tem Pacientes, Mensagens e Instruções."
      }
@@ -323,8 +430,73 @@ window.CORTEX_GUIAS = [
   "publicoTxt": "Para o profissional externo",
   "passos": [
    {
+    "titulo": "Fazer o cadastro pelo link",
+    "html": "<p>A clínica envia um <strong>link de cadastro</strong>. Abra, preencha seus dados e clique em <strong>Criar meu acesso e entrar</strong>. Você entra no CORTEX na hora. Se a clínica já fez o seu cadastro e mandou uma senha, pule para o próximo passo.</p><p>Se aparecer “Link vencido”, peça um link novo à clínica.</p>",
+    "imagem": {
+     "src": "img/n1_cadastro.webp",
+     "alt": "Página de cadastro",
+     "proporcao": 0.6296,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 48.54,
+       "y": 16.28,
+       "w": 35.13,
+       "h": 5.93,
+       "titulo": "Nome completo",
+       "texto": "Como você quer aparecer para a clínica."
+      },
+      {
+       "n": 2,
+       "x": 48.54,
+       "y": 24.88,
+       "w": 35.13,
+       "h": 5.93,
+       "titulo": "Especialidade ou instituição",
+       "texto": "Ex.: Neuropediatra, ou Coordenação pedagógica da Escola X."
+      },
+      {
+       "n": 3,
+       "x": 48.54,
+       "y": 44.42,
+       "w": 35.13,
+       "h": 5.93,
+       "titulo": "E-mail",
+       "texto": "Você vai usar este e-mail para entrar."
+      },
+      {
+       "n": 4,
+       "x": 48.54,
+       "y": 55.35,
+       "w": 17.42,
+       "h": 5.93,
+       "titulo": "Senha",
+       "texto": "Mínimo de 8 caracteres. A barrinha mostra se a senha está forte."
+      },
+      {
+       "n": 5,
+       "x": 48.69,
+       "y": 65.7,
+       "w": 34.84,
+       "h": 10.52,
+       "titulo": "Declaração de sigilo",
+       "texto": "Obrigatória. O acesso é só para acompanhar os pacientes liberados."
+      },
+      {
+       "n": 6,
+       "x": 48.69,
+       "y": 77.38,
+       "w": 34.84,
+       "h": 5.93,
+       "titulo": "Criar meu acesso e entrar",
+       "texto": "Cria o cadastro e já abre a sua lista de pacientes."
+      }
+     ]
+    }
+   },
+   {
     "titulo": "Entrar no CORTEX",
-    "html": "<p>Abra o endereço do CORTEX que a clínica enviou, no computador ou no celular, e entre com o e-mail e a senha que você recebeu. Para sair, use o ícone ao lado do seu nome, embaixo na barra lateral.</p>",
+    "html": "<p>Nas próximas vezes, abra o endereço do CORTEX que a clínica enviou, no computador ou no celular, e entre com o e-mail e a senha que você recebeu. Para sair, use o ícone ao lado do seu nome, embaixo na barra lateral.</p>",
     "imagem": {
      "src": "img/e1_login.webp",
      "alt": "Tela de entrada",
@@ -394,6 +566,82 @@ window.CORTEX_GUIAS = [
        "h": 22.67,
        "titulo": "Cartões dos pacientes",
        "texto": "Clique em um para abrir a pasta."
+      }
+     ]
+    }
+   },
+   {
+    "titulo": "Pedir acesso a um paciente",
+    "html": "<p>Digite o nome do paciente na busca, com pelo menos 3 letras. Abaixo dos seus pacientes aparecem os <strong>outros pacientes da clínica</strong> com esse nome. Deles você vê só o nome, a idade e o sexo, e não abre a pasta.</p>",
+    "imagem": {
+     "src": "img/n2_lista_busca.webp",
+     "alt": "Busca e pedido de acesso",
+     "proporcao": 0.6296,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 20.86,
+       "y": 18.66,
+       "w": 77.16,
+       "h": 12.38,
+       "titulo": "Boas-vindas",
+       "texto": "Aparece enquanto você não tem pacientes liberados."
+      },
+      {
+       "n": 2,
+       "x": 20.72,
+       "y": 12.15,
+       "w": 28.91,
+       "h": 5.35,
+       "titulo": "Busca",
+       "texto": "Digite o nome do paciente. A partir de 3 letras aparecem os outros pacientes da clínica."
+      },
+      {
+       "n": 3,
+       "x": 21.96,
+       "y": 72.27,
+       "w": 23.23,
+       "h": 5.12,
+       "titulo": "Solicitar acesso",
+       "texto": "Envia o pedido para a clínica."
+      },
+      {
+       "n": 4,
+       "x": 47.97,
+       "y": 72.5,
+       "w": 22.94,
+       "h": 4.74,
+       "titulo": "Pedido enviado",
+       "texto": "Seu pedido está esperando a resposta da clínica."
+      }
+     ]
+    }
+   },
+   {
+    "titulo": "Enviar o pedido",
+    "html": "<p>Se quiser, deixe uma mensagem para a clínica, por exemplo, quem você é para o paciente. Quando a clínica responder, você recebe um aviso no sino. Se aprovar, o paciente aparece na sua lista.</p>",
+    "imagem": {
+     "src": "img/n3_solicitar.webp",
+     "alt": "Janela de solicitar acesso",
+     "proporcao": 0.6296,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 35.8,
+       "y": 50.51,
+       "w": 28.4,
+       "h": 10.81,
+       "titulo": "Mensagem",
+       "texto": "Opcional. Ajuda a clínica a entender o pedido."
+      },
+      {
+       "n": 2,
+       "x": 54.6,
+       "y": 66.09,
+       "w": 9.75,
+       "h": 5.06,
+       "titulo": "Enviar pedido",
+       "texto": "Manda o pedido. Não precisa pedir de novo: o cartão mostra que está aguardando."
       }
      ]
     }
@@ -585,7 +833,11 @@ window.CORTEX_GUIAS = [
     "faq": [
      {
       "p": "Não vejo um paciente que acompanho.",
-      "r": "A clínica ainda não atribuiu esse paciente a você. Peça em Mensagens."
+      "r": "Busque pelo nome e clique em Solicitar acesso. A clínica responde pelo sino."
+     },
+     {
+      "p": "Meu pedido foi recusado.",
+      "r": "Fale com a clínica em Mensagens e, se for o caso, peça de novo."
      },
      {
       "p": "Não vejo um teste na Correção.",

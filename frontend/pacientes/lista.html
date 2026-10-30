@@ -115,11 +115,29 @@
     <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
     <script src="../shared/marcadores.js"></script>
+    <script src="../shared/externos_caso.js?v=ec3"></script>
 
     <script>
     let pacientes = [];
     let modoVisualizacao = localStorage.getItem('cortex_view_pacientes') || 'cards';
     let busca = '';
+    let ehExterno = false;
+    let buscaOutrosTimer = null;
+
+    // Externo: outros pacientes da clínica com esse nome (só o cartão, para pedir acesso)
+    function atualizarOutros() {
+        const el = document.getElementById('lista-outros');
+        if (!ehExterno || !el || !window.CortexExternosCaso) return;
+        clearTimeout(buscaOutrosTimer);
+        const texto = (document.getElementById('busca') || {}).value || '';
+        if (texto.trim().length < 3) { el.innerHTML = ''; return; }
+        buscaOutrosTimer = setTimeout(async () => {
+            const lista = await window.CortexExternosCaso.buscarOutros(texto);
+            if (((document.getElementById('busca') || {}).value || '') !== texto) return;
+            el.innerHTML = window.CortexExternosCaso.htmlOutros(lista, texto.trim());
+            window.CortexExternosCaso.ligarOutros(el, atualizarOutros);
+        }, 350);
+    }
     let filtroStatus = '';
     let filtroConvenio = '';
     let marcadoresMap = new Map();   // sprint_marcadores: paciente_id -> [marcadores]
@@ -129,17 +147,35 @@
     window.addEventListener('cortex:auth-ready', async (e) => {
         await CortexSidebar.render('pacientes');
 
-        // Profissional externo: vê só os pacientes atribuídos, sem cadastrar
-        if (window.cortexProfissional?.perfil === 'profissional_externo') {
+        // Profissional externo: vê só os pacientes atribuídos, sem cadastrar,
+        // e pode buscar outros pacientes pelo nome para pedir acesso
+        ehExterno = window.cortexProfissional?.perfil === 'profissional_externo';
+        if (ehExterno) {
             ['btn-pre-cadastro', 'btn-novo-paciente'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = 'none';
             });
+            const b = document.getElementById('busca');
+            if (b) b.placeholder = 'Buscar paciente pelo nome (seus e da clínica)...';
+            const conteudo = document.getElementById('lista-conteudo');
+            if (conteudo && !document.getElementById('lista-outros')) {
+                const outros = document.createElement('div');
+                outros.id = 'lista-outros';
+                conteudo.after(outros);
+                const boas = document.createElement('div');
+                boas.id = 'lista-boas-vindas';
+                conteudo.before(boas);
+            }
         }
 
         aplicarModoVisualizacao(modoVisualizacao);
         await carregarConvenios();
         await carregarPacientes();
+        if (ehExterno && window.CortexExternosCaso) {
+            const bv = new URLSearchParams(window.location.search).get('bemvindo') === '1';
+            const el = document.getElementById('lista-boas-vindas');
+            if (el && (bv || !pacientes.length)) el.innerHTML = window.CortexExternosCaso.htmlBoasVindas(!pacientes.length);
+        }
         setupListeners();
         await CortexAudit.log('leitura', 'pacientes_lista');
     });
@@ -148,6 +184,7 @@
         document.getElementById('busca').addEventListener('input', (e) => {
             busca = e.target.value.toLowerCase();
             renderizar();
+            atualizarOutros();
         });
 
         document.getElementById('filtro-status').addEventListener('change', (e) => {
@@ -416,6 +453,13 @@
     }
 
     function renderEmpty() {
+        if (ehExterno) {
+            return `
+                <div class="empty-state">
+                    <div class="empty-state-title">${pacientes.length ? 'Nenhum dos seus pacientes com esse nome' : 'Você ainda não tem pacientes liberados'}</div>
+                    <div class="empty-state-text">Digite o nome do paciente na busca (pelo menos 3 letras) para encontrar e pedir acesso.</div>
+                </div>`;
+        }
         if (pacientes.length === 0) {
             return `
                 <div class="empty-state">

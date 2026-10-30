@@ -65,6 +65,15 @@ function setupLoginForm() {
     const form = document.getElementById('login-form');
     if (!form) return;
 
+    // Voltou do sistema porque o cadastro está desativado
+    if (new URLSearchParams(window.location.search).get('inativo') === '1') {
+        const em = document.getElementById('error-message');
+        if (em) {
+            em.textContent = 'Seu acesso está desativado ou ainda não foi liberado pela clínica. Fale com a clínica.';
+            em.style.display = 'block';
+        }
+    }
+
     const button = document.getElementById('login-button');
     const btnText = button.querySelector('.btn-text');
     const btnLoading = button.querySelector('.btn-loading');

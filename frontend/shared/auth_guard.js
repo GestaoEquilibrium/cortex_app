@@ -119,7 +119,7 @@
         if (!profissional) {
             const { data, error: profError } = await window.cortexClient
                 .from('profissionais')
-                .select('id, nome_completo, email, perfil, foto_url')
+                .select('id, nome_completo, email, perfil, foto_url, ativo')
                 .eq('auth_user_id', session.user.id)
                 .maybeSingle(); // 0 linhas = null (sem erro), não levanta PGRST116
 
@@ -133,6 +133,14 @@
             }
             profissional = data;
             try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), dados: profissional })); } catch (e) {}
+        }
+
+        // Cadastro desativado (ou feito sem o link da clínica): não entra
+        if (profissional && profissional.ativo === false) {
+            try { sessionStorage.removeItem(CACHE_KEY); } catch (e) {}
+            try { await window.cortexClient.auth.signOut(); } catch (e) {}
+            window.location.href = caminhoRaiz + 'index.html?inativo=1';
+            return;
         }
 
         // ── Acesso de suporte técnico (só quem está em acesso_suporte, no banco) ──

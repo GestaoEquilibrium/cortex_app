@@ -293,7 +293,7 @@
     <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
     <script src="../shared/marcadores.js"></script>
-    <script src="../shared/externos_caso.js?v=ec2"></script>
+    <script src="../shared/externos_caso.js?v=ec3"></script>
 
     <script>
     let pacienteId = null;
@@ -375,6 +375,10 @@
             }
         } else if (ehAdmin && window.CortexExternosCaso) {
             externosPaciente = await window.CortexExternosCaso.listar(pacienteId);
+            // veio do aviso de pedido de acesso: já abre a janela dos externos
+            if (new URLSearchParams(window.location.search).get('externos') === '1') {
+                setTimeout(() => window.CortexPasta && window.CortexPasta.externos(), 300);
+            }
         }
 
         await Promise.all([

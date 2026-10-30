@@ -1026,6 +1026,7 @@
                     </div>
                     <button class="btn btn-primary" id="btn-novo-externo" style="flex-shrink: 0; white-space: nowrap;">+ Profissional externo</button>
                 </div>
+                <div id="cfg-externos-painel" style="margin-bottom: 16px;"></div>
                 ${externos.length ? `
                     <div class="cfg-conv-lista">
                         ${externos.filter(p => p.ativo).concat(externos.filter(p => !p.ativo)).map(p => renderProfLinha(p)).join('')}
@@ -1143,6 +1144,7 @@
 
     function bindProfissionais() {
         document.getElementById('btn-novo-prof').addEventListener('click', () => abrirModalProf(null));
+        if (window.CortexExternosCaso) window.CortexExternosCaso.painelConfig(document.getElementById('cfg-externos-painel'));
         const bExt = document.getElementById('btn-novo-externo');
         if (bExt) bExt.addEventListener('click', () => abrirModalProf(null, PERFIL_EXTERNO));
         const selPerfil = document.getElementById('prof-perfil');

@@ -110,6 +110,14 @@ window.CortexSidebar = (function() {
             adminOnly: true
         },
         {
+            id: 'ajuda',
+            labelCurto: 'Ajuda',
+            accent: 'var(--accent-cyan)',
+            label: 'Instruções',
+            href: '../ajuda/ajuda.html',
+            icon: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+        },
+        {
             id: 'configuracoes',
             labelCurto: 'Config.',
             accent: 'var(--accent-blue-2)',
@@ -404,7 +412,7 @@ window.CortexSidebar = (function() {
         const ehExterno = (prof?.perfil === 'profissional_externo');
         const itensVisiveis = NAV_ITEMS.filter(item => {
             // Profissional externo: só os pacientes dele e as mensagens
-            if (ehExterno) return item.id === 'pacientes' || item.id === 'mensagens';
+            if (ehExterno) return item.id === 'pacientes' || item.id === 'mensagens' || item.id === 'ajuda';
             if (item.adminOnly && !ehAdmin) return false;       // relatórios: clínico + gestor
             if (item.clinicoOnly && !ehClinico) return false;   // configurações: só clínico
             return true;

@@ -41,6 +41,11 @@ window.CortexExternosCaso = (function () {
         try { window.CortexAudit && window.CortexAudit.log(acao, 'vinculos_paciente_externo', id, { pacienteId, detalhes }); } catch (e) {}
     };
 
+    function raizApp() {
+        const p = window.location.pathname, i = p.indexOf('/frontend/');
+        return i >= 0 ? p.substring(0, i + '/frontend/'.length) : '/';
+    }
+
     function ehExterno() {
         return (window.cortexProfissional && window.cortexProfissional.perfil) === 'profissional_externo';
     }
@@ -174,6 +179,7 @@ window.CortexExternosCaso = (function () {
                     Quem é de fora da clínica (médico, escola, psicólogo...) entra no CORTEX com o próprio login,
                     vê só os pacientes atribuídos a ele e só as abas marcadas. Não altera nada.
                     O padrão é ver a <strong>Correção</strong> e o <strong>Laudo</strong>.
+                    <a href="../ajuda/ajuda.html?guia=externos-clinica" style="font-weight:700; color:#2F6FED;">Ver instruções</a>
                 </div>
                 ${vinculos.length ? `
                 <div class="xc-caso">
@@ -256,10 +262,7 @@ window.CortexExternosCaso = (function () {
                 toast(msg, 'danger');
                 return;
             }
-            const p = window.location.pathname;
-            const i = p.indexOf('/frontend/');
-            const raiz = i >= 0 ? p.substring(0, i + '/frontend/'.length) : '/';
-            window.location.href = raiz + 'chat/chat.html?conversa=' + encodeURIComponent(data.conversa_id);
+            window.location.href = raizApp() + 'chat/chat.html?conversa=' + encodeURIComponent(data.conversa_id);
         } catch (err) {
             console.error('[externos] discutir:', err);
             toast('Erro ao abrir a conversa: ' + (err.message || ''), 'danger');

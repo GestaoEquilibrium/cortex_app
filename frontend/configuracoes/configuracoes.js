@@ -1024,7 +1024,7 @@
                            e veem só os pacientes que vocês atribuírem (na pasta do paciente → <strong>🩺 Profissionais externos</strong>),
                            e só as abas liberadas. Não editam nada.</p>
                     </div>
-                    <button class="btn btn-primary" id="btn-novo-externo">+ Profissional externo</button>
+                    <button class="btn btn-primary" id="btn-novo-externo" style="flex-shrink: 0; white-space: nowrap;">+ Profissional externo</button>
                 </div>
                 ${externos.length ? `
                     <div class="cfg-conv-lista">

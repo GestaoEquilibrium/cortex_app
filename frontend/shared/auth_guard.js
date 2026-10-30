@@ -164,7 +164,7 @@
         // ── Profissional externo: só pacientes, resultados, laudo e chat ──
         if (profissional && profissional.perfil === 'profissional_externo') {
             const rel = path.substring(caminhoRaiz.length);
-            const permitido = /^(pacientes\/(lista|pasta)\.html|chat\/|correcao\/|laudo-online\/)/.test(rel);
+            const permitido = /^(pacientes\/(lista|pasta)\.html|chat\/|correcao\/|laudo-online\/|ajuda\/)/.test(rel);
             if (!permitido) {
                 window.location.replace(caminhoRaiz + 'pacientes/lista.html');
                 return;

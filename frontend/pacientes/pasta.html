@@ -293,7 +293,7 @@
     <script src="../shared/permissoes.js"></script>
     <script src="../shared/sidebar.js"></script>
     <script src="../shared/marcadores.js"></script>
-    <script src="../shared/externos_caso.js?v=ec1"></script>
+    <script src="../shared/externos_caso.js?v=ec2"></script>
 
     <script>
     let pacienteId = null;
@@ -691,7 +691,7 @@
                 <div class="pasta-banner-externo-ic">🩺</div>
                 <div>
                     <strong>Acesso de profissional externo</strong>
-                    <span>Você vê só o que a clínica liberou para este paciente, sem editar. Dúvidas? Use “Vamos discutir o caso!”.</span>
+                    <span>Você vê só o que a clínica liberou para este paciente, sem editar. Dúvidas? Use “Vamos discutir o caso!” ou veja as <a href="../ajuda/ajuda.html?guia=externo-uso" style="color:#8FE3E8; font-weight:700;">instruções</a>.</span>
                 </div>
             </div>
         ` : !podeEditar ? `
@@ -1260,7 +1260,8 @@
                     <div>
                         <h3 style="margin: 0 0 4px 0;">Laudo do Paciente</h3>
                         <p style="margin: 0; color: var(--color-text-muted); font-size: 13px;">
-                            Faça upload do PDF do laudo final. Cada envio gera uma nova versão automaticamente.
+                            ${ehExterno ? 'Laudo final em PDF, enviado pela clínica. Use Visualizar para ler ou Baixar para salvar.'
+                                        : 'Faça upload do PDF do laudo final. Cada envio gera uma nova versão automaticamente.'}
                         </p>
                     </div>
                     <div class="laudo-topo-acoes">

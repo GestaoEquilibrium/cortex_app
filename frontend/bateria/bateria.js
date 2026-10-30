@@ -381,6 +381,10 @@
         const container = document.getElementById('bateria-conteudo');
 
         const stats = calcularStats();
+        // Pronto para laudo: aparece logo abaixo do título (montado depois do HTML)
+        const ENCERRADAS = ['concluido_aplicacao', 'em_correcao', 'corrigido', 'integrado_laudo'];
+        const emAberto = state.aplicacoes.filter(a => !ENCERRADAS.includes(a.status)).length;
+        setTimeout(() => window.CortexProntoLaudo && window.CortexProntoLaudo.montarSlots(container), 0);
 
         const cabecalho = `
             <div class="anamnese-cabecalho">
@@ -404,6 +408,7 @@
                     ` : ''}
                 </div>
             </div>
+            <div class="pl-slot" data-pl="${state.pacienteId}" data-nome="${escapeHtml(state.paciente.nome_completo || '')}" data-pend="${emAberto}"></div>
         `;
 
         if (state.aplicacoes.length === 0) {

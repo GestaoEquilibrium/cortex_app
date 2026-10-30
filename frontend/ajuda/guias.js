@@ -864,6 +864,177 @@ window.CORTEX_GUIAS = [
   ]
  },
  {
+  "id": "pronto-laudo",
+  "icone": "📝",
+  "cor": "#16A34A",
+  "titulo": "Pronto para laudo",
+  "resumo": "O aplicador avisa que terminou; a coordenação recebe o aviso e acompanha quem está fazendo cada laudo.",
+  "publico": [
+   "admin_clinico",
+   "admin_gestor",
+   "neuropsicologo_aplicador",
+   "corretor",
+   "estagiario"
+  ],
+  "publicoTxt": "Para a equipe",
+  "passos": [
+   {
+    "titulo": "Marcar quando terminar",
+    "html": "<p>Terminou a aplicação? Na pasta do paciente (ou na Bateria), clique em <strong>Pronto para laudo</strong>. A faixa aparece logo abaixo do nome do paciente.</p>",
+    "imagem": {
+     "src": "img/p1_pasta_cta.webp",
+     "alt": "Pasta com o botão Pronto para laudo",
+     "proporcao": 0.4539,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 20.86,
+       "y": 57.24,
+       "w": 77.16,
+       "h": 11.54,
+       "titulo": "Faixa do laudo",
+       "texto": "Mostra se o paciente já foi marcado, por quem e quando."
+      },
+      {
+       "n": 2,
+       "x": 84.82,
+       "y": 59.34,
+       "w": 12.11,
+       "h": 7.34,
+       "titulo": "Pronto para laudo",
+       "texto": "Abre a confirmação para avisar a coordenação."
+      }
+     ]
+    }
+   },
+   {
+    "titulo": "Confirmar e deixar um recado",
+    "html": "<p>Se ainda houver teste em aberto na bateria, o CORTEX avisa. Dá para marcar mesmo assim e explicar na observação.</p>",
+    "imagem": {
+     "src": "img/p2_modal.webp",
+     "alt": "Confirmação de pronto para laudo",
+     "proporcao": 0.6296,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 35.94,
+       "y": 36.56,
+       "w": 28.11,
+       "h": 7.79,
+       "titulo": "Testes em aberto",
+       "texto": "Quantos testes da bateria ainda não foram encerrados."
+      },
+      {
+       "n": 2,
+       "x": 35.8,
+       "y": 53.74,
+       "w": 28.4,
+       "h": 10.81,
+       "titulo": "Observação",
+       "texto": "Opcional. Ex.: teste que não foi aplicado, escala que a escola ainda não respondeu."
+      },
+      {
+       "n": 3,
+       "x": 47.57,
+       "y": 68.15,
+       "w": 16.77,
+       "h": 5.06,
+       "titulo": "Marcar pronto para laudo",
+       "texto": "Avisa a coordenação na hora: aparece na tela, no sino e no celular de quem ativou o aviso."
+      }
+     ]
+    }
+   },
+   {
+    "titulo": "A coordenação vê no Dashboard",
+    "html": "<p>Admin clínico e admin gestor recebem o aviso e veem a lista <strong>Prontos para laudo</strong> no Dashboard, do mais antigo para o mais novo, com quem marcou e quando.</p>",
+    "imagem": {
+     "src": "img/p4_dashboard.webp",
+     "alt": "Dashboard com Prontos para laudo",
+     "proporcao": 0.6296,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 73.96,
+       "y": 29.83,
+       "w": 22.6,
+       "h": 25.03,
+       "titulo": "Prontos para laudo",
+       "texto": "A lista de quem está esperando laudo. O número verde é o total."
+      },
+      {
+       "n": 2,
+       "x": 92.53,
+       "y": 37.97,
+       "w": 3.15,
+       "h": 4.65,
+       "titulo": "Vou fazer o laudo",
+       "texto": "Pega o laudo para você. Os outros veem que já tem alguém fazendo."
+      }
+     ]
+    }
+   },
+   {
+    "titulo": "Vou fazer / Laudo feito",
+    "html": "<p>Na pasta, a coordenação também pode pegar o laudo, marcar como feito ou desmarcar. Quem marcou pode desmarcar enquanto ninguém pegou.</p>",
+    "imagem": {
+     "src": "img/p5_pasta_admin.webp",
+     "alt": "Pasta com pronto para laudo",
+     "proporcao": 0.4539,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 20.86,
+       "y": 54.89,
+       "w": 77.16,
+       "h": 15.18,
+       "titulo": "Pronto para laudo",
+       "texto": "Quem marcou, quando, e o recado deixado."
+      },
+      {
+       "n": 2,
+       "x": 68.78,
+       "y": 58.64,
+       "w": 11.97,
+       "h": 7.66,
+       "titulo": "Vou fazer o laudo",
+       "texto": "O laudo passa a ficar com você."
+      },
+      {
+       "n": 3,
+       "x": 80.6,
+       "y": 58.64,
+       "w": 8.75,
+       "h": 7.66,
+       "titulo": "Laudo feito",
+       "texto": "Tira da lista de pendentes e registra quem fez."
+      }
+     ]
+    }
+   },
+   {
+    "titulo": "Laudo em andamento",
+    "html": "<p>Enquanto alguém faz o laudo, a faixa fica azul com o nome dessa pessoa. Ao terminar, clique em <strong>Laudo feito</strong>. Se precisar devolver, use <strong>Voltar para pronto</strong>.</p>",
+    "imagem": {
+     "src": "img/p6_em_laudo.webp",
+     "alt": "Laudo em andamento",
+     "proporcao": 0.4539,
+     "marcas": [
+      {
+       "n": 1,
+       "x": 20.86,
+       "y": 54.89,
+       "w": 77.16,
+       "h": 15.18,
+       "titulo": "Em andamento",
+       "texto": "Quem está fazendo o laudo e desde quando."
+      }
+     ]
+    }
+   }
+  ]
+ },
+ {
   "id": "fluxo-instrumentos",
   "icone": "🧭",
   "cor": "#1F4E79",

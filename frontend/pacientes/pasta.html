@@ -294,6 +294,7 @@
     <script src="../shared/sidebar.js"></script>
     <script src="../shared/marcadores.js"></script>
     <script src="../shared/externos_caso.js?v=ec3"></script>
+    <script src="../shared/pronto_laudo.js?v=pl1"></script>
 
     <script>
     let pacienteId = null;
@@ -745,8 +746,14 @@
             </div>
         ` : '';
 
+        // Pronto para laudo: o aplicador avisa a coordenação (não aparece para externo)
+        const pendentesBateria = bateriaInfo ? Math.max(0, (bateriaInfo.total || 0) - (bateriaInfo.concluido || 0)) : 0;
+        const slotLaudo = ehExterno ? '' :
+            `<div class="pl-slot" data-pl="${pacienteId}" data-nome="${escapeHtml(paciente.nome_completo || '')}" data-pend="${pendentesBateria}"></div>`;
+
         document.getElementById('pasta-conteudo').innerHTML =
-            bannerReadOnly + bannerBateria + cabecalho + etapasHtml + conteudoEtapa;
+            bannerReadOnly + bannerBateria + cabecalho + slotLaudo + etapasHtml + conteudoEtapa;
+        if (window.CortexProntoLaudo && !ehExterno) window.CortexProntoLaudo.montarSlots(document.getElementById('pasta-conteudo'));
 
         document.getElementById('foto-input-hidden').onchange = uploadFoto;
         document.getElementById('mae-foto-input-hidden').onchange = uploadFotoMae;

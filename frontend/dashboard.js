@@ -273,6 +273,8 @@
                 </div>
             </div>
         `;
+        // Prontos para laudo (só a coordenação vê)
+        if (window.CortexProntoLaudo) window.CortexProntoLaudo.painelDashboard(document.getElementById('dash-prontos-laudo'));
     }
 
     function renderCards() {
@@ -435,6 +437,7 @@
     function renderAtalhos() {
         return `
             <div class="dash-bloco">
+                <div id="dash-prontos-laudo"></div>
                 ${renderBateriasConcluidas()}
 
                 <div class="dash-bloco-header" style="margin-top: 18px;">

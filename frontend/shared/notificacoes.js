@@ -36,6 +36,16 @@ window.CortexNotificacoes = (function () {
 
     // ─── Ícone e cor por tipo de evento ──────────────────────────────────────
     const TIPOS = {
+        pronto_laudo: {
+            emoji: '📝',
+            cor: '#16A34A',
+            gradiente: 'linear-gradient(135deg,#16A34A 0%,#15803D 100%)'
+        },
+        externo_pedido: {
+            emoji: '🩺',
+            cor: '#0E9AA7',
+            gradiente: 'linear-gradient(135deg,#0E9AA7 0%,#2F6FED 100%)'
+        },
         bateria_concluida: {
             emoji: '🎉',
             cor: '#22C55E',

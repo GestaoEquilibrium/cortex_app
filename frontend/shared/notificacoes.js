@@ -347,7 +347,7 @@ window.CortexNotificacoes = (function () {
 
         // Antes do botão de recolher, para ficar [marca] ..... [sino][chevron]
         const toggle = brand.querySelector('#sidebar-toggle-btn');
-        if (toggle) brand.insertBefore(btn, toggle);
+        if (toggle && toggle.parentNode) toggle.parentNode.insertBefore(btn, toggle);   // o botão fica dentro de .sidebar-actions
         else brand.appendChild(btn);
     }
 

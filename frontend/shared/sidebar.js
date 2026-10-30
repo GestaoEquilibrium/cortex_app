@@ -245,7 +245,7 @@ window.CortexSidebar = (function() {
 
             if (!window.CortexNotificacoes) {
                 const ok = await carregarAsset('script', {
-                    src: base + 'notificacoes.js?v=912',
+                    src: base + 'notificacoes.js?v=913',
                     'data-cortex-notif-js': '1'
                 });
                 if (!ok) return;

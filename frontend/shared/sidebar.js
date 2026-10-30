@@ -516,7 +516,7 @@ window.CortexSidebar = (function() {
                     ${window.cortexSuporte ? `<span id="sidebar-user-avatar-menu" role="button" tabindex="0" title="Suporte técnico" style="cursor:pointer;display:contents">${avatarHtml}</span>` : avatarHtml}
                     <div class="sidebar-user-info"${window.cortexSuporte ? ' id="sidebar-user-menu" role="button" tabindex="0" title="Suporte técnico"' : ''}>
                         <div class="sidebar-user-name">${escapeHtml(nomeExibido)}</div>
-                        <div class="sidebar-user-perfil">${window.cortexVerComo ? '👁 Vendo como · ' : ''}${escapeHtml(perfilLabel)}</div>
+                        <div class="sidebar-user-perfil">${window.cortexVerComo ? '👁 Vendo como · ' + escapeHtml(perfilLabel) : (window.cortexSuporte ? '🛠 Suporte técnico' : escapeHtml(perfilLabel))}</div>
                     </div>
                     <button class="sidebar-user-logout" id="sidebar-logout-btn" title="Sair">
                         ${LOGOUT_SVG}

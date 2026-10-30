@@ -514,7 +514,7 @@ window.CortexSidebar = (function() {
 
                 <div class="sidebar-user${window.cortexVerComo ? ' vendo-como' : ''}">
                     ${avatarHtml}
-                    <div class="sidebar-user-info"${window.cortexProfissionalReal ? ' id="sidebar-user-menu" role="button" tabindex="0" title="Opções do usuário"' : ''}>
+                    <div class="sidebar-user-info"${window.cortexSuporte ? ' id="sidebar-user-menu" role="button" tabindex="0" title="Suporte técnico"' : ''}>
                         <div class="sidebar-user-name">${escapeHtml(nomeExibido)}</div>
                         <div class="sidebar-user-perfil">${window.cortexVerComo ? '👁 Vendo como · ' : ''}${escapeHtml(perfilLabel)}</div>
                     </div>
@@ -527,7 +527,7 @@ window.CortexSidebar = (function() {
 
         setupEventos();
 
-        // nome na sidebar: menu do usuário com "ver o sistema como…" (admin clínico)
+        // nome na sidebar: menu do suporte técnico ("ver o sistema como…")
         const menuUsuario = document.getElementById('sidebar-user-menu');
         if (menuUsuario) {
             const abrir = () => { if (window.CortexVerComo) window.CortexVerComo.abrirMenu(menuUsuario); };

@@ -135,23 +135,37 @@
             try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), dados: profissional })); } catch (e) {}
         }
 
-        // ── Ver como (admin clínico vê o sistema como outra pessoa) ─────────
-        // O banco passa a responder como a pessoa escolhida (current_profissional_id
-        // e current_perfil). Aqui a tela também vira a dela e nada é gravado.
-        if (profissional.perfil === 'admin_clinico') {
-            let estado = null;
+        // ── Acesso de suporte técnico (só quem está em acesso_suporte, no banco) ──
+        // O suporte tem o "ver como": o banco passa a responder como a pessoa
+        // escolhida (current_profissional_id e current_perfil). Aqui a tela também
+        // vira a dela e nada é gravado. Quem não é suporte faz essa pergunta ao
+        // banco uma vez a cada 10 minutos por aba.
+        const SUP_KEY = 'cortex_sup_' + session.user.id;
+        let semSuporte = false;
+        try {
+            const c = JSON.parse(sessionStorage.getItem(SUP_KEY) || 'null');
+            semSuporte = !!(c && c.suporte === false && (Date.now() - c.ts) < 10 * 60 * 1000);
+        } catch (e) { /* refaz a pergunta */ }
+        if (!semSuporte) {
+            let sup = null;
             try {
-                const { data } = await window.cortexClient.rpc('ver_como_estado');
-                if (data && data.ativo && data.alvo && data.alvo.id) estado = data;
-            } catch (e) { /* SQL do "ver como" ainda não rodado: segue normal */ }
-            window.cortexProfissionalReal = profissional;
-            if (estado) {
-                window.cortexVerComo = estado;
-                profissional = estado.alvo;
-                ativarSoLeitura();
-                if (/\/chat\//.test(path)) { bloquearChat(); return; }
+                const { data } = await window.cortexClient.rpc('suporte_estado');
+                sup = data || null;
+            } catch (e) { /* SQL do suporte ainda não rodado: segue normal */ }
+            if (sup && sup.suporte) {
+                window.cortexSuporte = true;
+                window.cortexProfissionalReal = profissional;
+                const vc = sup.ver_como;
+                if (vc && vc.ativo && vc.alvo && vc.alvo.id) {
+                    window.cortexVerComo = vc;
+                    profissional = vc.alvo;
+                    ativarSoLeitura();
+                    if (/\/chat\//.test(path)) { bloquearChat(); return; }
+                }
+                carregarSuporte(caminhoRaiz);
+            } else if (sup) {
+                try { sessionStorage.setItem(SUP_KEY, JSON.stringify({ ts: Date.now(), suporte: false })); } catch (e) {}
             }
-            carregarVerComo(caminhoRaiz);
         }
 
         window.cortexProfissional = profissional;
@@ -218,9 +232,9 @@ window.cortexOnAuthReady = function (callback) {
 };
 
 // ============================================================================
-// VER COMO — modo só leitura e carregamento da tela (shared/ver_como.js)
+// SUPORTE / VER COMO — modo só leitura e carregamento da tela (shared/suporte.js)
 // ============================================================================
-// Enquanto o admin clínico vê o sistema como outra pessoa, tudo o que gravaria
+// Enquanto o suporte vê o sistema como outra pessoa, tudo o que gravaria
 // no banco é barrado aqui: insert/update/upsert/delete, rpcs que salvam,
 // envio de arquivo e funções do servidor. Assim nada sai com o nome da outra
 // pessoa. As leituras seguem normais (e o banco responde como ela).
@@ -287,12 +301,12 @@ function bloquearChat() {
     if (document.body) pintar(); else document.addEventListener('DOMContentLoaded', pintar);
 }
 
-// Carrega a faixa "vendo como" e o menu do nome (só para o admin clínico).
-function carregarVerComo(raiz) {
-    if (window.CortexVerComo || document.querySelector('script[data-cortex-ver-como]')) return;
+// Carrega as ferramentas do suporte técnico: menu do nome e faixa "vendo como".
+function carregarSuporte(raiz) {
+    if (window.CortexVerComo || document.querySelector('script[data-cortex-suporte]')) return;
     const s = document.createElement('script');
-    s.src = raiz + 'shared/ver_como.js?v=vc1';
-    s.setAttribute('data-cortex-ver-como', '1');
+    s.src = raiz + 'shared/suporte.js?v=sp1';
+    s.setAttribute('data-cortex-suporte', '1');
     s.defer = true;
     (document.head || document.documentElement).appendChild(s);
 }

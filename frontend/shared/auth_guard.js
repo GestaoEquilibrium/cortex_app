@@ -171,11 +171,22 @@
 
         // ── Profissional externo: só pacientes, resultados, laudo e chat ──
         if (profissional && profissional.perfil === 'profissional_externo') {
-            const rel = path.substring(caminhoRaiz.length);
-            const permitido = /^(pacientes\/(lista|pasta)\.html|chat\/|correcao\/|laudo-online\/|ajuda\/)/.test(rel);
+            // Cloudflare tira o ".html" do endereço (pacientes/lista): aceita com e sem
+            const rel = path.substring(caminhoRaiz.length).replace(/^\/+/, '');
+            const permitido = /^(pacientes\/(lista|pasta)(\.html)?\/?$|chat\/|correcao\/|laudo-online\/|ajuda\/)/.test(rel);
             if (!permitido) {
-                window.location.replace(caminhoRaiz + 'pacientes/lista.html');
-                return;
+                // trava contra ficar indo e voltando: no máximo 3 desvios em 15 s
+                let n = 0;
+                try {
+                    const t = JSON.parse(sessionStorage.getItem('cortex_ext_desvio') || '{}');
+                    n = (t.em && Date.now() - t.em < 15000) ? (t.n || 0) : 0;
+                    sessionStorage.setItem('cortex_ext_desvio', JSON.stringify({ n: n + 1, em: Date.now() }));
+                } catch (e) {}
+                if (n < 3) {
+                    window.location.replace(caminhoRaiz + 'pacientes/lista.html');
+                    return;
+                }
+                console.warn('[auth] desvio do profissional externo parado para não repetir:', rel);
             }
         }
 
